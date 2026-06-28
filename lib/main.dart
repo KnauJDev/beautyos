@@ -154,52 +154,91 @@ class BeautySection {
   const BeautySection(this.title, this.icon);
 }
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
+
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  late final Future<int> activeServicesCountFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    activeServicesCountFuture = _loadActiveServicesCount();
+  }
+
+  Future<int> _loadActiveServicesCount() async {
+    final response = await Supabase.instance.client
+        .from('services')
+        .select('id')
+        .eq('active', true)
+        .eq('visible_to_customer', true);
+
+    return response.length;
+  }
 
   @override
   Widget build(BuildContext context) {
     return AppPage(
       title: 'Dashboard',
       subtitle: 'Resumen general del centro de estética.',
-      children: const [
-        Wrap(
-          spacing: 16,
-          runSpacing: 16,
-          children: [
-            MetricCard(
-              icon: Icons.today_outlined,
-              title: 'Citas de hoy',
-              value: '8',
-              description: 'Citas programadas para hoy.',
-            ),
-            MetricCard(
-              icon: Icons.attach_money,
-              title: 'Ventas estimadas',
-              value: '\$420.000',
-              description: 'Valor aproximado de servicios agendados.',
-            ),
-            MetricCard(
-              icon: Icons.people_alt_outlined,
-              title: 'Clientes',
-              value: '2',
-              description: 'Clientes registrados en demo.',
-            ),
-            MetricCard(
-              icon: Icons.spa_outlined,
-              title: 'Servicios activos',
-              value: '3',
-              description: 'Servicios disponibles para agendar.',
-            ),
-          ],
+      children: [
+        FutureBuilder<int>(
+          future: activeServicesCountFuture,
+          builder: (context, snapshot) {
+            final isLoading =
+                snapshot.connectionState == ConnectionState.waiting;
+            final hasError = snapshot.hasError;
+            final servicesCount = snapshot.data ?? 0;
+
+            return Wrap(
+              spacing: 16,
+              runSpacing: 16,
+              children: [
+                const MetricCard(
+                  icon: Icons.today_outlined,
+                  title: 'Citas de hoy',
+                  value: '8',
+                  description: 'Citas programadas para hoy.',
+                ),
+                const MetricCard(
+                  icon: Icons.attach_money,
+                  title: 'Ventas estimadas',
+                  value: '\$420.000',
+                  description: 'Valor aproximado de servicios agendados.',
+                ),
+                const MetricCard(
+                  icon: Icons.people_alt_outlined,
+                  title: 'Clientes',
+                  value: '2',
+                  description: 'Clientes registrados en demo.',
+                ),
+                MetricCard(
+                  icon: Icons.spa_outlined,
+                  title: 'Servicios activos',
+                  value: hasError
+                      ? 'Error'
+                      : isLoading
+                      ? '...'
+                      : servicesCount.toString(),
+                  description: hasError
+                      ? 'No se pudo consultar Supabase.'
+                      : 'Servicios activos leídos desde Supabase.',
+                ),
+              ],
+            );
+          },
         ),
-        SizedBox(height: 24),
-        SectionTitle('Actividad reciente'),
-        InfoPanel(
+        const SizedBox(height: 24),
+        const SectionTitle('Actividad reciente'),
+        const InfoPanel(
           icon: Icons.check_circle_outline,
-          title: 'BeautyOS MVP en construcción',
+          title: 'BeautyOS conectado a Supabase',
           description:
-              'Ya tenemos pantalla inicial, navegación principal y estructura visual para empezar a conectar módulos.',
+              'El módulo Servicios ya lee datos reales desde Supabase. Ahora el Dashboard también empieza a mostrar métricas reales.',
         ),
       ],
     );
