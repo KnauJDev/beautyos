@@ -236,31 +236,195 @@ class AgendaPage extends StatelessWidget {
   }
 }
 
-class ServiciosPage extends StatelessWidget {
+class ServiciosPage extends StatefulWidget {
   const ServiciosPage({super.key});
+
+  @override
+  State<ServiciosPage> createState() => _ServiciosPageState();
+}
+
+class _ServiciosPageState extends State<ServiciosPage> {
+  late final Future<List<BeautyService>> servicesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    servicesFuture = _loadServices();
+  }
+
+  Future<List<BeautyService>> _loadServices() async {
+    final response = await Supabase.instance.client
+        .from('services')
+        .select('id, name, category, duration_minutes, price')
+        .eq('active', true)
+        .eq('visible_to_customer', true)
+        .order('name');
+
+    return response
+        .map<BeautyService>((item) => BeautyService.fromMap(item))
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) {
     return AppPage(
       title: 'Servicios',
-      subtitle: 'Catálogo de servicios, duración, precio y disponibilidad.',
-      children: const [
-        DemoListCard(
-          title: 'Servicios demo',
-          lines: [
-            'Corte de cabello · 45 min · \$35.000',
-            'Cepillado · 60 min · \$45.000',
-            'Tinte básico · 120 min · \$120.000',
-          ],
-        ),
-        SizedBox(height: 16),
-        InfoPanel(
-          icon: Icons.content_cut_outlined,
-          title: 'Luego conectaremos Supabase',
+      subtitle: 'Catálogo de servicios leído desde Supabase.',
+      children: [
+        const InfoPanel(
+          icon: Icons.cloud_done_outlined,
+          title: 'Conexión activa con Supabase',
           description:
-              'Estos servicios hoy son visuales. Después vendrán desde la tabla services de la base de datos.',
+              'Este módulo ya consulta la tabla services y muestra los servicios activos y visibles para el cliente.',
+        ),
+        const SizedBox(height: 16),
+        FutureBuilder<List<BeautyService>>(
+          future: servicesFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Card(
+                elevation: 1,
+                color: Colors.white,
+                child: Padding(
+                  padding: EdgeInsets.all(22),
+                  child: Row(
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(width: 16),
+                      Text('Cargando servicios desde Supabase...'),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            if (snapshot.hasError) {
+              return InfoPanel(
+                icon: Icons.error_outline,
+                title: 'No se pudieron cargar los servicios',
+                description: snapshot.error.toString(),
+              );
+            }
+
+            final services = snapshot.data ?? [];
+
+            if (services.isEmpty) {
+              return const InfoPanel(
+                icon: Icons.info_outline,
+                title: 'Sin servicios disponibles',
+                description:
+                    'No hay servicios activos y visibles para mostrar en este momento.',
+              );
+            }
+
+            return Card(
+              elevation: 1,
+              color: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(22),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SectionTitle('Servicios desde Supabase'),
+                    const SizedBox(height: 14),
+                    ...services.map((service) => ServiceRow(service: service)),
+                  ],
+                ),
+              ),
+            );
+          },
         ),
       ],
+    );
+  }
+}
+
+class BeautyService {
+  final String id;
+  final String name;
+  final String category;
+  final int durationMinutes;
+  final num price;
+
+  const BeautyService({
+    required this.id,
+    required this.name,
+    required this.category,
+    required this.durationMinutes,
+    required this.price,
+  });
+
+  factory BeautyService.fromMap(Map<String, dynamic> map) {
+    return BeautyService(
+      id: map['id'].toString(),
+      name: map['name']?.toString() ?? 'Sin nombre',
+      category: map['category']?.toString() ?? 'Sin categoría',
+      durationMinutes: map['duration_minutes'] as int? ?? 0,
+      price: map['price'] as num? ?? 0,
+    );
+  }
+
+  String get formattedPrice {
+    final value = price.toInt().toString();
+    final buffer = StringBuffer();
+
+    for (int i = 0; i < value.length; i++) {
+      final positionFromEnd = value.length - i;
+
+      buffer.write(value[i]);
+
+      if (positionFromEnd > 1 && positionFromEnd % 3 == 1) {
+        buffer.write('.');
+      }
+    }
+
+    return '\$$buffer';
+  }
+}
+
+class ServiceRow extends StatelessWidget {
+  final BeautyService service;
+
+  const ServiceRow({super.key, required this.service});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 9),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.check_circle_outline,
+            size: 22,
+            color: Color(0xFF7C3AED),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  service.name,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2D1B69),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${service.category} · ${service.durationMinutes} min · ${service.formattedPrice}',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
