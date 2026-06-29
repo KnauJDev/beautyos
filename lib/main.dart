@@ -162,22 +162,20 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  late final Future<int> activeServicesCountFuture;
+  late final Future<DashboardMetrics> dashboardMetricsFuture;
 
   @override
   void initState() {
     super.initState();
-    activeServicesCountFuture = _loadActiveServicesCount();
+    dashboardMetricsFuture = _loadDashboardMetrics();
   }
 
-  Future<int> _loadActiveServicesCount() async {
+  Future<DashboardMetrics> _loadDashboardMetrics() async {
     final response = await Supabase.instance.client
-        .from('services')
-        .select('id')
-        .eq('active', true)
-        .eq('visible_to_customer', true);
+        .rpc('get_dashboard_metrics')
+        .single();
 
-    return response.length;
+    return DashboardMetrics.fromMap(Map<String, dynamic>.from(response));
   }
 
   @override
@@ -186,35 +184,53 @@ class _DashboardPageState extends State<DashboardPage> {
       title: 'Dashboard',
       subtitle: 'Resumen general del centro de estética.',
       children: [
-        FutureBuilder<int>(
-          future: activeServicesCountFuture,
+        FutureBuilder<DashboardMetrics>(
+          future: dashboardMetricsFuture,
           builder: (context, snapshot) {
             final isLoading =
                 snapshot.connectionState == ConnectionState.waiting;
             final hasError = snapshot.hasError;
-            final servicesCount = snapshot.data ?? 0;
+            final metrics = snapshot.data;
 
             return Wrap(
               spacing: 16,
               runSpacing: 16,
               children: [
-                const MetricCard(
+                MetricCard(
                   icon: Icons.today_outlined,
                   title: 'Citas de hoy',
-                  value: '8',
-                  description: 'Citas programadas para hoy.',
+                  value: hasError
+                      ? 'Error'
+                      : isLoading
+                      ? '...'
+                      : metrics!.todayTicketsCount.toString(),
+                  description: hasError
+                      ? 'No se pudo consultar Supabase.'
+                      : 'Citas programadas para hoy.',
                 ),
-                const MetricCard(
-                  icon: Icons.attach_money,
-                  title: 'Ventas estimadas',
-                  value: '\$420.000',
-                  description: 'Valor aproximado de servicios agendados.',
+                MetricCard(
+                  icon: Icons.confirmation_number_outlined,
+                  title: 'Tickets confirmados',
+                  value: hasError
+                      ? 'Error'
+                      : isLoading
+                      ? '...'
+                      : metrics!.confirmedTicketsCount.toString(),
+                  description: hasError
+                      ? 'No se pudo consultar Supabase.'
+                      : 'Tickets confirmados en Supabase.',
                 ),
-                const MetricCard(
+                MetricCard(
                   icon: Icons.people_alt_outlined,
                   title: 'Clientes',
-                  value: '2',
-                  description: 'Clientes registrados en demo.',
+                  value: hasError
+                      ? 'Error'
+                      : isLoading
+                      ? '...'
+                      : metrics!.clientsCount.toString(),
+                  description: hasError
+                      ? 'No se pudo consultar Supabase.'
+                      : 'Clientes registrados activos.',
                 ),
                 MetricCard(
                   icon: Icons.spa_outlined,
@@ -223,10 +239,10 @@ class _DashboardPageState extends State<DashboardPage> {
                       ? 'Error'
                       : isLoading
                       ? '...'
-                      : servicesCount.toString(),
+                      : metrics!.activeServicesCount.toString(),
                   description: hasError
                       ? 'No se pudo consultar Supabase.'
-                      : 'Servicios activos leídos desde Supabase.',
+                      : 'Servicios activos visibles.',
                 ),
               ],
             );
@@ -235,12 +251,35 @@ class _DashboardPageState extends State<DashboardPage> {
         const SizedBox(height: 24),
         const SectionTitle('Actividad reciente'),
         const InfoPanel(
-          icon: Icons.check_circle_outline,
-          title: 'BeautyOS conectado a Supabase',
+          icon: Icons.analytics_outlined,
+          title: 'Dashboard leyendo función segura',
           description:
-              'El módulo Servicios ya lee datos reales desde Supabase. Ahora el Dashboard también empieza a mostrar métricas reales.',
+              'Las métricas principales ahora vienen desde la función get_dashboard_metrics de Supabase, sin exponer tablas privadas completas.',
         ),
       ],
+    );
+  }
+}
+
+class DashboardMetrics {
+  final int activeServicesCount;
+  final int clientsCount;
+  final int confirmedTicketsCount;
+  final int todayTicketsCount;
+
+  const DashboardMetrics({
+    required this.activeServicesCount,
+    required this.clientsCount,
+    required this.confirmedTicketsCount,
+    required this.todayTicketsCount,
+  });
+
+  factory DashboardMetrics.fromMap(Map<String, dynamic> map) {
+    return DashboardMetrics(
+      activeServicesCount: map['active_services_count'] as int? ?? 0,
+      clientsCount: map['clients_count'] as int? ?? 0,
+      confirmedTicketsCount: map['confirmed_tickets_count'] as int? ?? 0,
+      todayTicketsCount: map['today_tickets_count'] as int? ?? 0,
     );
   }
 }
