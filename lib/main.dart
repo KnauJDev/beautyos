@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'models/dashboard_metrics.dart';
+import 'models/beauty_service.dart';
 import 'services/dashboard_service.dart';
+import 'services/services_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -296,26 +298,15 @@ class ServiciosPage extends StatefulWidget {
 }
 
 class _ServiciosPageState extends State<ServiciosPage> {
+  final ServicesService servicesService = const ServicesService();
   late final Future<List<BeautyService>> servicesFuture;
 
   @override
   void initState() {
     super.initState();
-    servicesFuture = _loadServices();
+    servicesFuture = servicesService.getActiveVisibleServices();
   }
 
-  Future<List<BeautyService>> _loadServices() async {
-    final response = await Supabase.instance.client
-        .from('services')
-        .select('id, name, category, duration_minutes, price')
-        .eq('active', true)
-        .eq('visible_to_customer', true)
-        .order('name');
-
-    return response
-        .map<BeautyService>((item) => BeautyService.fromMap(item))
-        .toList();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -391,48 +382,6 @@ class _ServiciosPageState extends State<ServiciosPage> {
   }
 }
 
-class BeautyService {
-  final String id;
-  final String name;
-  final String category;
-  final int durationMinutes;
-  final num price;
-
-  const BeautyService({
-    required this.id,
-    required this.name,
-    required this.category,
-    required this.durationMinutes,
-    required this.price,
-  });
-
-  factory BeautyService.fromMap(Map<String, dynamic> map) {
-    return BeautyService(
-      id: map['id'].toString(),
-      name: map['name']?.toString() ?? 'Sin nombre',
-      category: map['category']?.toString() ?? 'Sin categoría',
-      durationMinutes: map['duration_minutes'] as int? ?? 0,
-      price: map['price'] as num? ?? 0,
-    );
-  }
-
-  String get formattedPrice {
-    final value = price.toInt().toString();
-    final buffer = StringBuffer();
-
-    for (int i = 0; i < value.length; i++) {
-      final positionFromEnd = value.length - i;
-
-      buffer.write(value[i]);
-
-      if (positionFromEnd > 1 && positionFromEnd % 3 == 1) {
-        buffer.write('.');
-      }
-    }
-
-    return '\$$buffer';
-  }
-}
 
 class ServiceRow extends StatelessWidget {
   final BeautyService service;
