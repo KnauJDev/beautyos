@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'models/dashboard_metrics.dart';
+import 'services/dashboard_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -163,21 +164,15 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  final DashboardService dashboardService = const DashboardService();
   late final Future<DashboardMetrics> dashboardMetricsFuture;
 
   @override
   void initState() {
     super.initState();
-    dashboardMetricsFuture = _loadDashboardMetrics();
+    dashboardMetricsFuture = dashboardService.getMetrics();
   }
 
-  Future<DashboardMetrics> _loadDashboardMetrics() async {
-    final response = await Supabase.instance.client
-        .rpc('get_dashboard_metrics')
-        .single();
-
-    return DashboardMetrics.fromMap(Map<String, dynamic>.from(response));
-  }
 
   @override
   Widget build(BuildContext context) {
