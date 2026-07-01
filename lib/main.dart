@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'widgets/app_widgets.dart';
+import 'pages/agenda_page.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/services_page.dart';
 
@@ -155,36 +156,6 @@ class BeautySection {
   final IconData icon;
 
   const BeautySection(this.title, this.icon);
-}
-
-class AgendaPage extends StatelessWidget {
-  const AgendaPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return AppPage(
-      title: 'Agenda',
-      subtitle: 'Aquí veremos las citas por fecha, cliente y estilista.',
-      children: const [
-        InfoPanel(
-          icon: Icons.calendar_month_outlined,
-          title: 'Próximo objetivo',
-          description:
-              'Mostrar las citas creadas en Supabase y organizarlas por día. La agenda nacerá desde los tickets confirmados.',
-        ),
-        SizedBox(height: 16),
-        DemoListCard(
-          title: 'Cita demo',
-          lines: [
-            'Cliente: María Rodríguez',
-            'Servicio: Corte de cabello',
-            'Estilista: Sandra Gómez',
-            'Estado: Confirmado',
-          ],
-        ),
-      ],
-    );
-  }
 }
 
 class ClientesPage extends StatelessWidget {
