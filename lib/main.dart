@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'widgets/app_widgets.dart';
 import 'pages/agenda_page.dart';
+import 'pages/clients_page.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/services_page.dart';
 
@@ -156,34 +157,6 @@ class BeautySection {
   final IconData icon;
 
   const BeautySection(this.title, this.icon);
-}
-
-class ClientesPage extends StatelessWidget {
-  const ClientesPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return AppPage(
-      title: 'Clientes',
-      subtitle: 'Historial, contacto y preferencias de cada cliente.',
-      children: const [
-        DemoListCard(
-          title: 'Clientes demo',
-          lines: [
-            'María Rodríguez · +57 310 444 1111',
-            'Laura Martínez · +57 310 444 2222',
-          ],
-        ),
-        SizedBox(height: 16),
-        InfoPanel(
-          icon: Icons.people_outline,
-          title: 'Visión comercial',
-          description:
-              'Este módulo ayudará al negocio a no perder clientes y recordar su historial de servicios.',
-        ),
-      ],
-    );
-  }
 }
 
 class TicketsPage extends StatelessWidget {
