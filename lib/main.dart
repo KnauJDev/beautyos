@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'widgets/app_widgets.dart';
 import 'pages/agenda_page.dart';
 import 'pages/clients_page.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/services_page.dart';
+import 'pages/tickets_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -158,35 +158,3 @@ class BeautySection {
 
   const BeautySection(this.title, this.icon);
 }
-
-class TicketsPage extends StatelessWidget {
-  const TicketsPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return AppPage(
-      title: 'Tickets',
-      subtitle:
-          'Seguimiento de cada solicitud desde WhatsApp hasta finalización.',
-      children: const [
-        DemoListCard(
-          title: 'Ticket demo',
-          lines: [
-            'Canal: Manual',
-            'Cliente: María Rodríguez',
-            'Servicio: Corte de cabello',
-            'Estado: Confirmado',
-          ],
-        ),
-        SizedBox(height: 16),
-        InfoPanel(
-          icon: Icons.confirmation_number_outlined,
-          title: 'Corazón operativo de BeautyOS',
-          description:
-              'El ticket será la pieza central: de aquí saldrá la agenda, el historial, el estado del servicio y los reportes.',
-        ),
-      ],
-    );
-  }
-}
-
