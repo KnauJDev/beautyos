@@ -4,6 +4,7 @@ import 'pages/agenda_page.dart';
 import 'pages/clients_page.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/reports_page.dart';
+import 'pages/settings_page.dart';
 import 'pages/services_page.dart';
 import 'pages/stylists_page.dart';
 import 'pages/tickets_page.dart';
@@ -55,6 +56,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
     BeautySection('Clientes', Icons.people_outline),
     BeautySection('Tickets', Icons.confirmation_number_outlined),
     BeautySection('Reportes', Icons.bar_chart_outlined),
+    BeautySection('Configuraci\u00f3n', Icons.settings_outlined),
   ];
 
   @override
@@ -129,6 +131,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                     ClientesPage(),
                     TicketsPage(),
                     ReportesPage(),
+                    ConfiguracionPage(),
                   ],
                 ),
               ),
@@ -164,3 +167,4 @@ class BeautySection {
 
   const BeautySection(this.title, this.icon);
 }
+
