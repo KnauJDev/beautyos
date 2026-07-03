@@ -1,6 +1,8 @@
 ﻿import 'package:flutter/material.dart';
 
+import '../models/business_hour.dart';
 import '../models/business_settings.dart';
+import '../services/business_hours_service.dart';
 import '../services/business_settings_service.dart';
 import '../widgets/app_widgets.dart';
 
@@ -15,12 +17,17 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
   final BusinessSettingsService businessSettingsService =
       const BusinessSettingsService();
 
+  final BusinessHoursService businessHoursService =
+      const BusinessHoursService();
+
   late final Future<BusinessSettings> businessSettingsFuture;
+  late final Future<List<BusinessHour>> businessHoursFuture;
 
   @override
   void initState() {
     super.initState();
     businessSettingsFuture = businessSettingsService.getBusinessSettings();
+    businessHoursFuture = businessHoursService.getBusinessHours();
   }
 
   @override
@@ -71,15 +78,44 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
           },
         ),
         const SizedBox(height: 16),
-        const SectionTitle('Próximas configuraciones'),
-        const DemoListCard(
-          title: 'Horarios de atención',
-          lines: [
-            'Días laborales',
-            'Hora de apertura',
-            'Hora de cierre',
-          ],
+        const SectionTitle('Horarios de atención'),
+        FutureBuilder<List<BusinessHour>>(
+          future: businessHoursFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              );
+            }
+
+            if (snapshot.hasError) {
+              return const InfoPanel(
+                icon: Icons.error_outline,
+                title: 'No se pudieron cargar los horarios',
+                description:
+                    'Revisa la conexión con Supabase o la función get_business_hours.',
+              );
+            }
+
+            final hours = snapshot.data ?? [];
+
+            if (hours.isEmpty) {
+              return const InfoPanel(
+                icon: Icons.info_outline,
+                title: 'Sin horarios registrados',
+                description:
+                    'Todavía no hay horarios activos para mostrar en Configuración.',
+              );
+            }
+
+            return BusinessHoursCard(hours: hours);
+          },
         ),
+        const SizedBox(height: 16),
+        const SectionTitle('Próximas configuraciones'),
         const DemoListCard(
           title: 'Políticas de agenda',
           lines: [
@@ -130,6 +166,58 @@ class BusinessSettingsCard extends StatelessWidget {
             _SettingsLine(label: 'Facebook', value: settings.facebook),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class BusinessHoursCard extends StatelessWidget {
+  final List<BusinessHour> hours;
+
+  const BusinessHoursCard({
+    super.key,
+    required this.hours,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            for (final hour in hours) _BusinessHourRow(hour: hour),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BusinessHourRow extends StatelessWidget {
+  final BusinessHour hour;
+
+  const _BusinessHourRow({
+    required this.hour,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              hour.dayName,
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          Expanded(
+            child: Text(hour.scheduleText),
+          ),
+        ],
       ),
     );
   }
