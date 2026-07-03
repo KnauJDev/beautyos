@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'pages/agenda_page.dart';
 import 'pages/clients_page.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/services_page.dart';
+import 'pages/stylists_page.dart';
 import 'pages/tickets_page.dart';
 
 Future<void> main() async {
@@ -49,6 +50,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
     BeautySection('Dashboard', Icons.dashboard_outlined),
     BeautySection('Agenda', Icons.calendar_month_outlined),
     BeautySection('Servicios', Icons.content_cut_outlined),
+    BeautySection('Estilistas', Icons.badge_outlined),
     BeautySection('Clientes', Icons.people_outline),
     BeautySection('Tickets', Icons.confirmation_number_outlined),
   ];
@@ -121,6 +123,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                     DashboardPage(),
                     AgendaPage(),
                     ServiciosPage(),
+                    EstilistasPage(),
                     ClientesPage(),
                     TicketsPage(),
                   ],
