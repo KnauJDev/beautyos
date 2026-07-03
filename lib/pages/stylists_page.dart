@@ -1,6 +1,8 @@
 ﻿import 'package:flutter/material.dart';
 
+import '../models/stylist_service_summary.dart';
 import '../models/stylist_summary.dart';
+import '../services/stylist_services_service.dart';
 import '../services/stylists_service.dart';
 import '../widgets/app_widgets.dart';
 
@@ -13,29 +15,43 @@ class EstilistasPage extends StatefulWidget {
 
 class _EstilistasPageState extends State<EstilistasPage> {
   final StylistsService stylistsService = const StylistsService();
-  late final Future<List<StylistSummary>> stylistsFuture;
+  final StylistServicesService stylistServicesService =
+      const StylistServicesService();
+
+  late final Future<_StylistsPageData> pageDataFuture;
 
   @override
   void initState() {
     super.initState();
-    stylistsFuture = stylistsService.getStylistsSummary();
+    pageDataFuture = _loadPageData();
+  }
+
+  Future<_StylistsPageData> _loadPageData() async {
+    final stylists = await stylistsService.getStylistsSummary();
+    final stylistServices =
+        await stylistServicesService.getStylistServicesSummary();
+
+    return _StylistsPageData(
+      stylists: stylists,
+      stylistServices: stylistServices,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return AppPage(
       title: 'Estilistas',
-      subtitle: 'Equipo de trabajo, especialidades y contacto.',
+      subtitle: 'Equipo de trabajo, especialidades y servicios asignados.',
       children: [
         const InfoPanel(
           icon: Icons.badge_outlined,
           title: 'Estilistas conectados con Supabase',
           description:
-              'Este m\u00f3dulo consulta estilistas activos mediante una funci\u00f3n segura, sin abrir directamente toda la tabla stylists.',
+              'Este m\u00f3dulo ahora muestra estilistas activos y los servicios que puede realizar cada uno mediante funciones seguras.',
         ),
         const SizedBox(height: 16),
-        FutureBuilder<List<StylistSummary>>(
-          future: stylistsFuture,
+        FutureBuilder<_StylistsPageData>(
+          future: pageDataFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Card(
@@ -62,7 +78,9 @@ class _EstilistasPageState extends State<EstilistasPage> {
               );
             }
 
-            final stylists = snapshot.data ?? [];
+            final data = snapshot.data;
+            final stylists = data?.stylists ?? [];
+            final stylistServices = data?.stylistServices ?? [];
 
             if (stylists.isEmpty) {
               return const InfoPanel(
@@ -81,10 +99,22 @@ class _EstilistasPageState extends State<EstilistasPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SectionTitle('Estilistas desde Supabase'),
+                    const SectionTitle('Estilistas y servicios asignados'),
                     const SizedBox(height: 14),
                     ...stylists.map(
-                      (stylist) => StylistCard(stylist: stylist),
+                      (stylist) {
+                        final services = stylistServices
+                            .where(
+                              (service) =>
+                                  service.stylistName == stylist.name,
+                            )
+                            .toList();
+
+                        return StylistCard(
+                          stylist: stylist,
+                          services: services,
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -99,8 +129,13 @@ class _EstilistasPageState extends State<EstilistasPage> {
 
 class StylistCard extends StatelessWidget {
   final StylistSummary stylist;
+  final List<StylistServiceSummary> services;
 
-  const StylistCard({super.key, required this.stylist});
+  const StylistCard({
+    super.key,
+    required this.stylist,
+    required this.services,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -157,6 +192,34 @@ class StylistCard extends StatelessWidget {
                     color: Color(0xFF6B7280),
                   ),
                 ),
+                const SizedBox(height: 14),
+                const Text(
+                  'Servicios asignados',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2D1B69),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                if (services.isEmpty)
+                  const Text(
+                    'Sin servicios asignados.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF6B7280),
+                    ),
+                  )
+                else
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: services
+                        .map(
+                          (service) => StylistServiceChip(service: service),
+                        )
+                        .toList(),
+                  ),
               ],
             ),
           ),
@@ -164,4 +227,42 @@ class StylistCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class StylistServiceChip extends StatelessWidget {
+  final StylistServiceSummary service;
+
+  const StylistServiceChip({super.key, required this.service});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 9,
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEDE9FE),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        '${service.serviceName} \u00b7 ${service.formattedPrice} \u00b7 ${service.durationMinutes} min',
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: Color(0xFF6D28D9),
+        ),
+      ),
+    );
+  }
+}
+
+class _StylistsPageData {
+  final List<StylistSummary> stylists;
+  final List<StylistServiceSummary> stylistServices;
+
+  const _StylistsPageData({
+    required this.stylists,
+    required this.stylistServices,
+  });
 }
