@@ -87,6 +87,30 @@ class _DashboardPageState extends State<DashboardPage> {
                       ? 'No se pudo consultar Supabase.'
                       : 'Servicios activos visibles.',
                 ),
+                MetricCard(
+                  icon: Icons.badge_outlined,
+                  title: 'Estilistas activos',
+                  value: hasError
+                      ? 'Error'
+                      : isLoading
+                      ? '...'
+                      : metrics!.activeStylistsCount.toString(),
+                  description: hasError
+                      ? 'No se pudo consultar Supabase.'
+                      : 'Equipo activo disponible.',
+                ),
+                MetricCard(
+                  icon: Icons.assignment_ind_outlined,
+                  title: 'Servicios asignados',
+                  value: hasError
+                      ? 'Error'
+                      : isLoading
+                      ? '...'
+                      : metrics!.activeStylistServicesCount.toString(),
+                  description: hasError
+                      ? 'No se pudo consultar Supabase.'
+                      : 'Relaciones activas estilista-servicio.',
+                ),
               ],
             );
           },
@@ -97,7 +121,7 @@ class _DashboardPageState extends State<DashboardPage> {
           icon: Icons.analytics_outlined,
           title: 'Dashboard leyendo funci\u00f3n segura',
           description:
-              'Las m\u00e9tricas principales ahora vienen desde la funci\u00f3n get_dashboard_metrics de Supabase, sin exponer tablas privadas completas.',
+              'Las m\u00e9tricas principales ahora vienen desde la funci\u00f3n get_dashboard_metrics de Supabase, incluyendo estilistas y servicios asignados.',
         ),
       ],
     );
