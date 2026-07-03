@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'pages/agenda_page.dart';
 import 'pages/clients_page.dart';
 import 'pages/dashboard_page.dart';
+import 'pages/reports_page.dart';
 import 'pages/services_page.dart';
 import 'pages/stylists_page.dart';
 import 'pages/tickets_page.dart';
@@ -53,6 +54,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
     BeautySection('Estilistas', Icons.badge_outlined),
     BeautySection('Clientes', Icons.people_outline),
     BeautySection('Tickets', Icons.confirmation_number_outlined),
+    BeautySection('Reportes', Icons.bar_chart_outlined),
   ];
 
   @override
@@ -126,6 +128,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                     EstilistasPage(),
                     ClientesPage(),
                     TicketsPage(),
+                    ReportesPage(),
                   ],
                 ),
               ),
