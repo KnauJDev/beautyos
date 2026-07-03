@@ -1,7 +1,9 @@
 ﻿import 'package:flutter/material.dart';
 
+import '../models/appointment_policy.dart';
 import '../models/business_hour.dart';
 import '../models/business_settings.dart';
+import '../services/appointment_policy_service.dart';
 import '../services/business_hours_service.dart';
 import '../services/business_settings_service.dart';
 import '../widgets/app_widgets.dart';
@@ -20,14 +22,19 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
   final BusinessHoursService businessHoursService =
       const BusinessHoursService();
 
+  final AppointmentPolicyService appointmentPolicyService =
+      const AppointmentPolicyService();
+
   late final Future<BusinessSettings> businessSettingsFuture;
   late final Future<List<BusinessHour>> businessHoursFuture;
+  late final Future<AppointmentPolicy> appointmentPolicyFuture;
 
   @override
   void initState() {
     super.initState();
     businessSettingsFuture = businessSettingsService.getBusinessSettings();
     businessHoursFuture = businessHoursService.getBusinessHours();
+    appointmentPolicyFuture = appointmentPolicyService.getAppointmentPolicy();
   }
 
   @override
@@ -115,15 +122,42 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
           },
         ),
         const SizedBox(height: 16),
-        const SectionTitle('Próximas configuraciones'),
-        const DemoListCard(
-          title: 'Políticas de agenda',
-          lines: [
-            'Anticipos',
-            'Cancelaciones',
-            'Reagendamientos y confirmaciones',
-          ],
+        const SectionTitle('Políticas de agenda'),
+        FutureBuilder<AppointmentPolicy>(
+          future: appointmentPolicyFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              );
+            }
+
+            if (snapshot.hasError) {
+              return const InfoPanel(
+                icon: Icons.error_outline,
+                title: 'No se pudieron cargar las políticas',
+                description:
+                    'Revisa la conexión con Supabase o la función get_appointment_policy.',
+              );
+            }
+
+            if (!snapshot.hasData) {
+              return const InfoPanel(
+                icon: Icons.info_outline,
+                title: 'Sin políticas registradas',
+                description:
+                    'Todavía no hay políticas activas para mostrar en Configuración.',
+              );
+            }
+
+            return AppointmentPolicyCard(policy: snapshot.data!);
+          },
         ),
+        const SizedBox(height: 16),
+        const SectionTitle('Próximas configuraciones'),
         const DemoListCard(
           title: 'Comisiones',
           lines: [
@@ -187,6 +221,40 @@ class BusinessHoursCard extends StatelessWidget {
         child: Column(
           children: [
             for (final hour in hours) _BusinessHourRow(hour: hour),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class AppointmentPolicyCard extends StatelessWidget {
+  final AppointmentPolicy policy;
+
+  const AppointmentPolicyCard({
+    super.key,
+    required this.policy,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SettingsLine(label: 'Anticipo', value: policy.depositText),
+            _SettingsLine(label: 'Cancelación', value: policy.cancellationText),
+            _SettingsLine(label: 'Reagendamiento', value: policy.rescheduleText),
+            _SettingsLine(
+              label: 'Confirmación',
+              value: policy.manualConfirmationText,
+            ),
+            _SettingsLine(
+              label: 'Cliente',
+              value: policy.customerRescheduleText,
+            ),
           ],
         ),
       ),
