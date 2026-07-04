@@ -1,6 +1,8 @@
 ﻿import 'package:flutter/material.dart';
 
+import '../models/purchase_item_summary.dart';
 import '../models/purchase_summary.dart';
+import '../services/purchase_items_service.dart';
 import '../services/purchases_service.dart';
 import '../widgets/app_widgets.dart';
 
@@ -13,18 +15,30 @@ class ComprasPage extends StatefulWidget {
 
 class _ComprasPageState extends State<ComprasPage> {
   final PurchasesService _purchasesService = const PurchasesService();
+  final PurchaseItemsService _purchaseItemsService =
+      const PurchaseItemsService();
 
-  late Future<List<PurchaseSummary>> _purchasesFuture;
+  late Future<_PurchasesPageData> _purchasesFuture;
 
   @override
   void initState() {
     super.initState();
-    _purchasesFuture = _purchasesService.getPurchasesSummary();
+    _purchasesFuture = _loadPurchasesData();
+  }
+
+  Future<_PurchasesPageData> _loadPurchasesData() async {
+    final purchases = await _purchasesService.getPurchasesSummary();
+    final items = await _purchaseItemsService.getPurchaseItemsSummary();
+
+    return _PurchasesPageData(
+      purchases: purchases,
+      items: items,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<PurchaseSummary>>(
+    return FutureBuilder<_PurchasesPageData>(
       future: _purchasesFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -41,23 +55,30 @@ class _ComprasPageState extends State<ComprasPage> {
           );
         }
 
-        final purchases = snapshot.data ?? [];
+        final data = snapshot.data ??
+            const _PurchasesPageData(
+              purchases: [],
+              items: [],
+            );
 
-        return _PurchasesContent(purchases: purchases);
+        return _PurchasesContent(data: data);
       },
     );
   }
 }
 
 class _PurchasesContent extends StatelessWidget {
-  final List<PurchaseSummary> purchases;
+  final _PurchasesPageData data;
 
   const _PurchasesContent({
-    required this.purchases,
+    required this.data,
   });
 
   @override
   Widget build(BuildContext context) {
+    final purchases = data.purchases;
+    final items = data.items;
+
     final totalPurchases = purchases.length;
     final totalAmount = purchases.fold<double>(
       0,
@@ -77,18 +98,23 @@ class _PurchasesContent extends StatelessWidget {
           icon: Icons.shopping_cart_outlined,
           title: 'Compras del negocio',
           description:
-              'Aquí se muestran las compras registradas para alimentar inventario y controlar proveedores.',
+              'Aqui se muestran las compras registradas para alimentar inventario y controlar proveedores.',
         ),
         const SizedBox(height: 16),
         _PurchasesSummaryCard(
           totalPurchases: totalPurchases,
           totalAmount: totalAmount,
           suppliers: suppliers,
+          itemLines: items.length,
         ),
         const SizedBox(height: 16),
         const SectionTitle('Compras registradas'),
         const SizedBox(height: 12),
         _PurchasesTable(purchases: purchases),
+        const SizedBox(height: 24),
+        const SectionTitle('Detalle de productos comprados'),
+        const SizedBox(height: 12),
+        _PurchaseItemsTable(items: items),
       ],
     );
   }
@@ -98,11 +124,13 @@ class _PurchasesSummaryCard extends StatelessWidget {
   final int totalPurchases;
   final double totalAmount;
   final int suppliers;
+  final int itemLines;
 
   const _PurchasesSummaryCard({
     required this.totalPurchases,
     required this.totalAmount,
     required this.suppliers,
+    required this.itemLines,
   });
 
   @override
@@ -129,6 +157,12 @@ class _PurchasesSummaryCard extends StatelessWidget {
           description: 'Proveedores distintos',
           icon: Icons.local_shipping_outlined,
         ),
+        MetricCard(
+          title: 'Productos',
+          value: '$itemLines',
+          description: 'Lineas de detalle',
+          icon: Icons.inventory_2_outlined,
+        ),
       ],
     );
   }
@@ -147,7 +181,7 @@ class _PurchasesTable extends StatelessWidget {
       return const InfoPanel(
         icon: Icons.info_outline,
         title: 'Sin compras registradas',
-        description: 'Todavía no hay compras cargadas en el sistema.',
+        description: 'Todavia no hay compras cargadas en el sistema.',
       );
     }
 
@@ -191,4 +225,80 @@ class _PurchasesTable extends StatelessWidget {
       ),
     );
   }
+}
+
+class _PurchaseItemsTable extends StatelessWidget {
+  final List<PurchaseItemSummary> items;
+
+  const _PurchaseItemsTable({
+    required this.items,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return const InfoPanel(
+        icon: Icons.info_outline,
+        title: 'Sin detalle de compras',
+        description:
+            'Todavia no hay productos asociados a las compras registradas.',
+      );
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            columns: const [
+              DataColumn(label: Text('Fecha')),
+              DataColumn(label: Text('Factura')),
+              DataColumn(label: Text('Proveedor')),
+              DataColumn(label: Text('Producto')),
+              DataColumn(label: Text('Categoria')),
+              DataColumn(label: Text('Cantidad')),
+              DataColumn(label: Text('Costo unitario')),
+              DataColumn(label: Text('Subtotal')),
+              DataColumn(label: Text('Notas')),
+            ],
+            rows: [
+              for (final item in items)
+                DataRow(
+                  cells: [
+                    DataCell(Text(item.purchaseDate)),
+                    DataCell(Text(item.invoiceText)),
+                    DataCell(Text(item.supplierName)),
+                    DataCell(Text(item.productName)),
+                    DataCell(Text(item.productCategory)),
+                    DataCell(Text(item.quantityText)),
+                    DataCell(Text(item.formattedUnitCost)),
+                    DataCell(Text(item.formattedLineTotal)),
+                    DataCell(
+                      SizedBox(
+                        width: 300,
+                        child: Text(
+                          item.notesText,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PurchasesPageData {
+  final List<PurchaseSummary> purchases;
+  final List<PurchaseItemSummary> items;
+
+  const _PurchasesPageData({
+    required this.purchases,
+    required this.items,
+  });
 }
