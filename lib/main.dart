@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'pages/agenda_page.dart';
 import 'pages/clients_page.dart';
 import 'pages/dashboard_page.dart';
+import 'pages/inventory_page.dart';
 import 'pages/reports_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/services_page.dart';
@@ -56,6 +57,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
     BeautySection('Clientes', Icons.people_outline),
     BeautySection('Tickets', Icons.confirmation_number_outlined),
     BeautySection('Reportes', Icons.bar_chart_outlined),
+    BeautySection('Inventario', Icons.inventory_2_outlined),
     BeautySection('Configuraci\u00f3n', Icons.settings_outlined),
   ];
 
@@ -131,6 +133,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                     ClientesPage(),
                     TicketsPage(),
                     ReportesPage(),
+                    InventarioPage(),
                     ConfiguracionPage(),
                   ],
                 ),
@@ -167,4 +170,5 @@ class BeautySection {
 
   const BeautySection(this.title, this.icon);
 }
+
 
