@@ -1,6 +1,8 @@
 ﻿import 'package:flutter/material.dart';
 
+import '../models/inventory_movement_summary.dart';
 import '../models/product_summary.dart';
+import '../services/inventory_movements_service.dart';
 import '../services/products_service.dart';
 import '../widgets/app_widgets.dart';
 
@@ -13,13 +15,25 @@ class InventarioPage extends StatefulWidget {
 
 class _InventarioPageState extends State<InventarioPage> {
   final ProductsService productsService = const ProductsService();
+  final InventoryMovementsService movementsService =
+      const InventoryMovementsService();
 
-  late final Future<List<ProductSummary>> productsFuture;
+  late final Future<_InventoryPageData> inventoryFuture;
 
   @override
   void initState() {
     super.initState();
-    productsFuture = productsService.getProductsSummary();
+    inventoryFuture = _loadInventoryData();
+  }
+
+  Future<_InventoryPageData> _loadInventoryData() async {
+    final products = await productsService.getProductsSummary();
+    final movements = await movementsService.getInventoryMovementsSummary();
+
+    return _InventoryPageData(
+      products: products,
+      movements: movements,
+    );
   }
 
   @override
@@ -32,12 +46,11 @@ class _InventarioPageState extends State<InventarioPage> {
           icon: Icons.inventory_2_outlined,
           title: 'Inventario conectado a Supabase',
           description:
-              'Aquí veremos productos para venta, insumos internos, cantidades actuales, mínimos de stock y precios base.',
+              'Aquí veremos productos para venta, insumos internos, cantidades actuales, mínimos de stock, precios base y movimientos recientes.',
         ),
         const SizedBox(height: 16),
-        const SectionTitle('Productos e insumos'),
-        FutureBuilder<List<ProductSummary>>(
-          future: productsFuture,
+        FutureBuilder<_InventoryPageData>(
+          future: inventoryFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Card(
@@ -53,24 +66,46 @@ class _InventarioPageState extends State<InventarioPage> {
                 icon: Icons.error_outline,
                 title: 'No se pudo cargar el inventario',
                 description:
-                    'Revisa la conexión con Supabase o la función get_products_summary.',
+                    'Revisa la conexión con Supabase o las funciones de inventario.',
               );
             }
 
-            final products = snapshot.data ?? [];
+            final data = snapshot.data;
 
-            if (products.isEmpty) {
+            if (data == null) {
               return const InfoPanel(
                 icon: Icons.info_outline,
-                title: 'Sin productos registrados',
+                title: 'Sin datos de inventario',
                 description:
-                    'Todavía no hay productos o insumos activos para mostrar.',
+                    'Todavía no hay productos ni movimientos para mostrar.',
               );
             }
 
-            return ProductsList(products: products);
+            return _InventoryContent(data: data);
           },
         ),
+      ],
+    );
+  }
+}
+
+class _InventoryContent extends StatelessWidget {
+  final _InventoryPageData data;
+
+  const _InventoryContent({
+    required this.data,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionTitle('Resumen de inventario'),
+        ProductsList(products: data.products),
+        const SizedBox(height: 16),
+        const SectionTitle('Movimientos recientes'),
+        MovementsList(movements: data.movements),
       ],
     );
   }
@@ -86,6 +121,14 @@ class ProductsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (products.isEmpty) {
+      return const InfoPanel(
+        icon: Icons.info_outline,
+        title: 'Sin productos registrados',
+        description: 'Todavía no hay productos o insumos activos para mostrar.',
+      );
+    }
+
     final saleProducts = products
         .where((product) => product.productType == 'sale')
         .length;
@@ -109,6 +152,33 @@ class ProductsList extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         for (final product in products) ProductCard(product: product),
+      ],
+    );
+  }
+}
+
+class MovementsList extends StatelessWidget {
+  final List<InventoryMovementSummary> movements;
+
+  const MovementsList({
+    super.key,
+    required this.movements,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (movements.isEmpty) {
+      return const InfoPanel(
+        icon: Icons.info_outline,
+        title: 'Sin movimientos registrados',
+        description:
+            'Todavía no hay entradas, consumos, ventas u otros movimientos.',
+      );
+    }
+
+    return Column(
+      children: [
+        for (final movement in movements) MovementCard(movement: movement),
       ],
     );
   }
@@ -192,6 +262,41 @@ class ProductCard extends StatelessWidget {
   }
 }
 
+class MovementCard extends StatelessWidget {
+  final InventoryMovementSummary movement;
+
+  const MovementCard({
+    super.key,
+    required this.movement,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              movement.productName,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 6),
+            Text('${movement.productCategory} · ${movement.movementTypeText}'),
+            const SizedBox(height: 12),
+            _ProductLine(label: 'Cantidad', value: movement.quantityText),
+            _ProductLine(label: 'Costo unitario', value: movement.formattedUnitCost),
+            _ProductLine(label: 'Fecha', value: movement.createdDateText),
+            _ProductLine(label: 'Notas', value: movement.notes),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _InventoryMetric extends StatelessWidget {
   final String label;
   final String value;
@@ -248,3 +353,14 @@ class _ProductLine extends StatelessWidget {
     );
   }
 }
+
+class _InventoryPageData {
+  final List<ProductSummary> products;
+  final List<InventoryMovementSummary> movements;
+
+  const _InventoryPageData({
+    required this.products,
+    required this.movements,
+  });
+}
+
