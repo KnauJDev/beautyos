@@ -5,6 +5,7 @@ import 'pages/clients_page.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/inventory_page.dart';
 import 'pages/purchases_page.dart';
+import 'pages/expenses_page.dart';
 import 'pages/reports_page.dart';
 import 'pages/settings_page.dart';
 import 'pages/services_page.dart';
@@ -59,6 +60,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
     BeautySection('Tickets', Icons.confirmation_number_outlined),
     BeautySection('Reportes', Icons.bar_chart_outlined),
     BeautySection('Compras', Icons.shopping_cart_outlined),
+    BeautySection('Gastos', Icons.payments_outlined),
     BeautySection('Inventario', Icons.inventory_2_outlined),
     BeautySection('Configuraci\u00f3n', Icons.settings_outlined),
   ];
@@ -136,6 +138,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                     TicketsPage(),
                     ReportesPage(),
                     ComprasPage(),
+                    GastosPage(),
                     InventarioPage(),
                     ConfiguracionPage(),
                   ],
@@ -173,6 +176,7 @@ class BeautySection {
 
   const BeautySection(this.title, this.icon);
 }
+
 
 
 
