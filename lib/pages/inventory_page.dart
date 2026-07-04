@@ -151,7 +151,7 @@ class ProductsList extends StatelessWidget {
           lowStockProducts: lowStockProducts,
         ),
         const SizedBox(height: 12),
-        for (final product in products) ProductCard(product: product),
+        ProductsTable(products: products),
       ],
     );
   }
@@ -176,14 +176,47 @@ class MovementsList extends StatelessWidget {
       );
     }
 
-    return Column(
-      children: [
-        for (final movement in movements) MovementCard(movement: movement),
-      ],
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            columns: const [
+              DataColumn(label: Text('Fecha')),
+              DataColumn(label: Text('Producto')),
+              DataColumn(label: Text('Tipo')),
+              DataColumn(label: Text('Cantidad')),
+              DataColumn(label: Text('Costo')),
+              DataColumn(label: Text('Notas')),
+            ],
+            rows: [
+              for (final movement in movements)
+                DataRow(
+                  cells: [
+                    DataCell(Text(movement.createdDateText)),
+                    DataCell(Text(movement.productName)),
+                    DataCell(Text(movement.movementTypeText)),
+                    DataCell(Text(movement.quantityText)),
+                    DataCell(Text(movement.formattedUnitCost)),
+                    DataCell(
+                      SizedBox(
+                        width: 260,
+                        child: Text(
+                          movement.notes,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
-
 class InventorySummaryCard extends StatelessWidget {
   final int totalProducts;
   final int saleProducts;
@@ -218,50 +251,59 @@ class InventorySummaryCard extends StatelessWidget {
   }
 }
 
-class ProductCard extends StatelessWidget {
-  final ProductSummary product;
+class ProductsTable extends StatelessWidget {
+  final List<ProductSummary> products;
 
-  const ProductCard({
+  const ProductsTable({
     super.key,
-    required this.product,
+    required this.products,
   });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              product.name,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 6),
-            Text('${product.category} · ${product.productTypeText}'),
-            const SizedBox(height: 12),
-            _ProductLine(label: 'Stock actual', value: product.stockText),
-            _ProductLine(label: 'Stock mínimo', value: product.minimumStockText),
-            _ProductLine(label: 'Estado', value: product.stockStatusText),
-            _ProductLine(
-              label: 'Precio compra',
-              value: product.formattedPurchasePrice,
-            ),
-            _ProductLine(
-              label: 'Precio venta',
-              value: product.visibleForSale
-                  ? product.formattedSalePrice
-                  : 'No aplica',
-            ),
-          ],
+        padding: const EdgeInsets.all(12),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: DataTable(
+            columns: const [
+              DataColumn(label: Text('Producto')),
+              DataColumn(label: Text('Categoría')),
+              DataColumn(label: Text('Tipo')),
+              DataColumn(label: Text('Stock')),
+              DataColumn(label: Text('Mínimo')),
+              DataColumn(label: Text('Estado')),
+              DataColumn(label: Text('Compra')),
+              DataColumn(label: Text('Venta')),
+            ],
+            rows: [
+              for (final product in products)
+                DataRow(
+                  cells: [
+                    DataCell(Text(product.name)),
+                    DataCell(Text(product.category)),
+                    DataCell(Text(product.productTypeText)),
+                    DataCell(Text(product.stockText)),
+                    DataCell(Text(product.minimumStockText)),
+                    DataCell(Text(product.stockStatusText)),
+                    DataCell(Text(product.formattedPurchasePrice)),
+                    DataCell(
+                      Text(
+                        product.visibleForSale
+                            ? product.formattedSalePrice
+                            : 'No aplica',
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
-
 class MovementCard extends StatelessWidget {
   final InventoryMovementSummary movement;
 
@@ -363,4 +405,6 @@ class _InventoryPageData {
     required this.movements,
   });
 }
+
+
 
