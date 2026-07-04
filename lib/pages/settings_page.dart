@@ -3,9 +3,11 @@
 import '../models/appointment_policy.dart';
 import '../models/business_hour.dart';
 import '../models/business_settings.dart';
+import '../models/commission_policy.dart';
 import '../services/appointment_policy_service.dart';
 import '../services/business_hours_service.dart';
 import '../services/business_settings_service.dart';
+import '../services/commission_policy_service.dart';
 import '../widgets/app_widgets.dart';
 
 class ConfiguracionPage extends StatefulWidget {
@@ -25,9 +27,13 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
   final AppointmentPolicyService appointmentPolicyService =
       const AppointmentPolicyService();
 
+  final CommissionPolicyService commissionPolicyService =
+      const CommissionPolicyService();
+
   late final Future<BusinessSettings> businessSettingsFuture;
   late final Future<List<BusinessHour>> businessHoursFuture;
   late final Future<AppointmentPolicy> appointmentPolicyFuture;
+  late final Future<CommissionPolicy> commissionPolicyFuture;
 
   @override
   void initState() {
@@ -35,6 +41,7 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
     businessSettingsFuture = businessSettingsService.getBusinessSettings();
     businessHoursFuture = businessHoursService.getBusinessHours();
     appointmentPolicyFuture = appointmentPolicyService.getAppointmentPolicy();
+    commissionPolicyFuture = commissionPolicyService.getCommissionPolicy();
   }
 
   @override
@@ -157,14 +164,39 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
           },
         ),
         const SizedBox(height: 16),
-        const SectionTitle('Próximas configuraciones'),
-        const DemoListCard(
-          title: 'Comisiones',
-          lines: [
-            'Reglas de pago para estilistas',
-            'Por servicio o porcentaje',
-            'Base futura para nómina/comisiones',
-          ],
+        const SectionTitle('Comisiones'),
+        FutureBuilder<CommissionPolicy>(
+          future: commissionPolicyFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              );
+            }
+
+            if (snapshot.hasError) {
+              return const InfoPanel(
+                icon: Icons.error_outline,
+                title: 'No se pudieron cargar las comisiones',
+                description:
+                    'Revisa la conexión con Supabase o la función get_commission_policy.',
+              );
+            }
+
+            if (!snapshot.hasData) {
+              return const InfoPanel(
+                icon: Icons.info_outline,
+                title: 'Sin comisiones registradas',
+                description:
+                    'Todavía no hay reglas activas de comisión para mostrar en Configuración.',
+              );
+            }
+
+            return CommissionPolicyCard(policy: snapshot.data!);
+          },
         ),
       ],
     );
@@ -255,6 +287,33 @@ class AppointmentPolicyCard extends StatelessWidget {
               label: 'Cliente',
               value: policy.customerRescheduleText,
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class CommissionPolicyCard extends StatelessWidget {
+  final CommissionPolicy policy;
+
+  const CommissionPolicyCard({
+    super.key,
+    required this.policy,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SettingsLine(label: 'Tipo', value: policy.commissionTypeText),
+            _SettingsLine(label: 'Comisión', value: policy.commissionValueText),
+            _SettingsLine(label: 'Descuentos', value: policy.discountText),
+            _SettingsLine(label: 'Notas', value: policy.notes),
           ],
         ),
       ),
