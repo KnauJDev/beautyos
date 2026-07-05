@@ -15,11 +15,25 @@ class _FotosTrabajosPageState extends State<FotosTrabajosPage> {
   final WorkPhotosService _workPhotosService = const WorkPhotosService();
 
   late Future<List<WorkPhotoSummary>> _workPhotosFuture;
+  String _selectedFilter = 'all';
 
   @override
   void initState() {
     super.initState();
     _workPhotosFuture = _workPhotosService.getWorkPhotosSummary();
+  }
+
+  List<WorkPhotoSummary> _filterPhotos(List<WorkPhotoSummary> photos) {
+    switch (_selectedFilter) {
+      case 'visible':
+        return photos.where((photo) => photo.visibleToCustomer).toList();
+      case 'portfolio':
+        return photos.where((photo) => photo.approvedForPortfolio).toList();
+      case 'pending_ai':
+        return photos.where((photo) => photo.aiStatus == 'pending').toList();
+      default:
+        return photos;
+    }
   }
 
   @override
@@ -41,30 +55,46 @@ class _FotosTrabajosPageState extends State<FotosTrabajosPage> {
           );
         }
 
-        final photos = snapshot.data ?? [];
+        final allPhotos = snapshot.data ?? [];
+        final filteredPhotos = _filterPhotos(allPhotos);
 
-        return _WorkPhotosContent(photos: photos);
+        return _WorkPhotosContent(
+          allPhotos: allPhotos,
+          photos: filteredPhotos,
+          selectedFilter: _selectedFilter,
+          onFilterChanged: (filter) {
+            setState(() {
+              _selectedFilter = filter;
+            });
+          },
+        );
       },
     );
   }
 }
 
 class _WorkPhotosContent extends StatelessWidget {
+  final List<WorkPhotoSummary> allPhotos;
   final List<WorkPhotoSummary> photos;
+  final String selectedFilter;
+  final ValueChanged<String> onFilterChanged;
 
   const _WorkPhotosContent({
+    required this.allPhotos,
     required this.photos,
+    required this.selectedFilter,
+    required this.onFilterChanged,
   });
 
   @override
   Widget build(BuildContext context) {
-    final totalPhotos = photos.length;
+    final totalPhotos = allPhotos.length;
     final visiblePhotos =
-        photos.where((photo) => photo.visibleToCustomer).length;
+        allPhotos.where((photo) => photo.visibleToCustomer).length;
     final portfolioPhotos =
-        photos.where((photo) => photo.approvedForPortfolio).length;
+        allPhotos.where((photo) => photo.approvedForPortfolio).length;
     final pendingAiPhotos =
-        photos.where((photo) => photo.aiStatus == 'pending').length;
+        allPhotos.where((photo) => photo.aiStatus == 'pending').length;
 
     return AppPage(
       title: 'Fotos de trabajos',
@@ -108,10 +138,84 @@ class _WorkPhotosContent extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
-        const SectionTitle('Galeria de trabajos'),
+        _WorkPhotoFilters(
+          selectedFilter: selectedFilter,
+          onFilterChanged: onFilterChanged,
+        ),
+        const SizedBox(height: 16),
+        SectionTitle('Galeria de trabajos (${photos.length})'),
         const SizedBox(height: 12),
         _WorkPhotosGrid(photos: photos),
       ],
+    );
+  }
+}
+
+class _WorkPhotoFilters extends StatelessWidget {
+  final String selectedFilter;
+  final ValueChanged<String> onFilterChanged;
+
+  const _WorkPhotoFilters({
+    required this.selectedFilter,
+    required this.onFilterChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 10,
+      children: [
+        _FilterChipButton(
+          label: 'Todas',
+          value: 'all',
+          selectedFilter: selectedFilter,
+          onFilterChanged: onFilterChanged,
+        ),
+        _FilterChipButton(
+          label: 'Visibles',
+          value: 'visible',
+          selectedFilter: selectedFilter,
+          onFilterChanged: onFilterChanged,
+        ),
+        _FilterChipButton(
+          label: 'Portafolio',
+          value: 'portfolio',
+          selectedFilter: selectedFilter,
+          onFilterChanged: onFilterChanged,
+        ),
+        _FilterChipButton(
+          label: 'IA pendiente',
+          value: 'pending_ai',
+          selectedFilter: selectedFilter,
+          onFilterChanged: onFilterChanged,
+        ),
+      ],
+    );
+  }
+}
+
+class _FilterChipButton extends StatelessWidget {
+  final String label;
+  final String value;
+  final String selectedFilter;
+  final ValueChanged<String> onFilterChanged;
+
+  const _FilterChipButton({
+    required this.label,
+    required this.value,
+    required this.selectedFilter,
+    required this.onFilterChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isSelected = selectedFilter == value;
+
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (_) => onFilterChanged(value),
     );
   }
 }
@@ -128,8 +232,8 @@ class _WorkPhotosGrid extends StatelessWidget {
     if (photos.isEmpty) {
       return const InfoPanel(
         icon: Icons.info_outline,
-        title: 'Sin fotos registradas',
-        description: 'Todavia no hay fotos de trabajos cargadas en el sistema.',
+        title: 'Sin fotos para este filtro',
+        description: 'No hay fotos que coincidan con el filtro seleccionado.',
       );
     }
 
