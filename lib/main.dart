@@ -7,6 +7,7 @@ import 'pages/clients_page.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/inventory_page.dart';
 import 'pages/work_photos_page.dart';
+import 'widgets/session_badge.dart';
 import 'pages/reviews_page.dart';
 import 'pages/purchases_page.dart';
 import 'pages/expenses_page.dart';
@@ -101,6 +102,9 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                   ),
                 ),
               ),
+              const SizedBox(width: 12),
+              const SessionBadge(),
+              const SizedBox(width: 8),
               IconButton(
                 tooltip: 'Cerrar sesión',
                 onPressed: signOut,
@@ -251,6 +255,7 @@ class BeautySection {
 
   const BeautySection(this.title, this.icon);
 }
+
 
 
 
