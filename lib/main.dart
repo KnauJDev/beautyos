@@ -1,5 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'pages/auth_gate.dart';
 import 'pages/agenda_page.dart';
 import 'pages/clients_page.dart';
 import 'pages/dashboard_page.dart';
@@ -38,7 +40,9 @@ class BeautyOSApp extends StatelessWidget {
         useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFFF8F5FF),
       ),
-      home: const BeautyOSHome(),
+      home: const AuthGate(
+        authenticatedChild: BeautyOSHome(),
+      ),
     );
   }
 }
@@ -182,6 +186,7 @@ class BeautySection {
 
   const BeautySection(this.title, this.icon);
 }
+
 
 
 
