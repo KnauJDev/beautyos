@@ -5,6 +5,7 @@ import 'pages/clients_page.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/inventory_page.dart';
 import 'pages/work_photos_page.dart';
+import 'pages/reviews_page.dart';
 import 'pages/purchases_page.dart';
 import 'pages/expenses_page.dart';
 import 'pages/reports_page.dart';
@@ -63,6 +64,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
     BeautySection('Compras', Icons.shopping_cart_outlined),
     BeautySection('Gastos', Icons.payments_outlined),
     BeautySection('Fotos de trabajos', Icons.photo_library_outlined),
+    BeautySection('Reseñas', Icons.rate_review_outlined),
     BeautySection('Inventario', Icons.inventory_2_outlined),
     BeautySection('Configuraci\u00f3n', Icons.settings_outlined),
   ];
@@ -142,6 +144,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                     ComprasPage(),
                     GastosPage(),
                     FotosTrabajosPage(),
+                    ResenasPage(),
                     InventarioPage(),
                     ConfiguracionPage(),
                   ],
@@ -179,6 +182,7 @@ class BeautySection {
 
   const BeautySection(this.title, this.icon);
 }
+
 
 
 
