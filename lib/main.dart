@@ -57,6 +57,10 @@ class BeautyOSHome extends StatefulWidget {
 class _BeautyOSHomeState extends State<BeautyOSHome> {
   int selectedIndex = 0;
 
+  Future<void> signOut() async {
+    await Supabase.instance.client.auth.signOut();
+  }
+
   final List<BeautySection> sections = const [
     BeautySection('Dashboard', Icons.dashboard_outlined),
     BeautySection('Agenda', Icons.calendar_month_outlined),
@@ -89,7 +93,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
             foregroundColor: Colors.white,
             actions: [
               Padding(
-                padding: const EdgeInsets.only(right: 16),
+                padding: const EdgeInsets.only(right: 8),
                 child: Center(
                   child: Text(
                     sections[selectedIndex].title,
@@ -97,42 +101,25 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                   ),
                 ),
               ),
+              IconButton(
+                tooltip: 'Cerrar sesión',
+                onPressed: signOut,
+                icon: const Icon(Icons.logout_outlined),
+              ),
+              const SizedBox(width: 8),
             ],
           ),
           body: Row(
             children: [
               if (isWide)
-                NavigationRail(
+                _SideMenu(
+                  sections: sections,
                   selectedIndex: selectedIndex,
-                  extended: true,
-                  minExtendedWidth: 190,
-                  backgroundColor: Colors.white,
-                  selectedIconTheme: const IconThemeData(
-                    color: Color(0xFF7C3AED),
-                  ),
-                  selectedLabelTextStyle: const TextStyle(
-                    color: Color(0xFF2D1B69),
-                    fontWeight: FontWeight.bold,
-                  ),
-                  unselectedIconTheme: const IconThemeData(
-                    color: Color(0xFF6B7280),
-                  ),
-                  unselectedLabelTextStyle: const TextStyle(
-                    color: Color(0xFF6B7280),
-                  ),
                   onDestinationSelected: (index) {
                     setState(() {
                       selectedIndex = index;
                     });
                   },
-                  destinations: sections
-                      .map(
-                        (section) => NavigationRailDestination(
-                          icon: Icon(section.icon),
-                          label: Text(section.title),
-                        ),
-                      )
-                      .toList(),
                 ),
               Expanded(
                 child: IndexedStack(
@@ -180,12 +167,92 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
   }
 }
 
+class _SideMenu extends StatelessWidget {
+  const _SideMenu({
+    required this.sections,
+    required this.selectedIndex,
+    required this.onDestinationSelected,
+  });
+
+  final List<BeautySection> sections;
+  final int selectedIndex;
+  final ValueChanged<int> onDestinationSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 230,
+      color: Colors.white,
+      child: SafeArea(
+        top: false,
+        child: ListView.builder(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          itemCount: sections.length,
+          itemBuilder: (context, index) {
+            final section = sections[index];
+            final isSelected = index == selectedIndex;
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 4,
+              ),
+              child: Material(
+                color: isSelected
+                    ? const Color(0xFFEEE6FF)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(24),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(24),
+                  onTap: () => onDestinationSelected(index),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          section.icon,
+                          color: isSelected
+                              ? const Color(0xFF7C3AED)
+                              : const Color(0xFF6B7280),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Text(
+                            section.title,
+                            style: TextStyle(
+                              fontWeight: isSelected
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: isSelected
+                                  ? const Color(0xFF2D1B69)
+                                  : const Color(0xFF6B7280),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
 class BeautySection {
   final String title;
   final IconData icon;
 
   const BeautySection(this.title, this.icon);
 }
+
+
 
 
 
