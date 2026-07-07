@@ -27,34 +27,52 @@ returns table (
   line_total numeric,
   notes text
 )
-language sql
+language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  current_tenant_id uuid;
+begin
+  current_tenant_id := public.get_my_tenant_id();
+
+  if current_tenant_id is null then
+    raise exception 'No existe un perfil activo asociado al usuario actual.';
+  end if;
+
+  if not public.is_owner_or_admin() then
+    raise exception 'No autorizado. Solo owner o admin puede ver detalle de compras.';
+  end if;
+
+  return query
   select
-    purchase_items.id,
-    purchases.id as purchase_id,
-    purchases.supplier_name,
-    purchases.purchase_date,
-    purchases.invoice_number,
-    products.name as product_name,
-    products.category as product_category,
-    purchase_items.quantity,
-    products.unit,
-    purchase_items.unit_cost,
-    purchase_items.line_total,
-    purchase_items.notes
-  from public.purchase_items
-  join public.purchases
-    on purchases.id = purchase_items.purchase_id
-  join public.products
-    on products.id = purchase_items.product_id
-  join public.tenants
-    on tenants.id = purchase_items.tenant_id
-  where tenants.active = true
-    and purchases.active = true
-    and products.active = true
-  order by purchases.purchase_date desc, purchase_items.created_at desc;
+    pi.id,
+    p.id as purchase_id,
+    p.supplier_name,
+    p.purchase_date,
+    p.invoice_number,
+    pr.name as product_name,
+    pr.category as product_category,
+    pi.quantity,
+    pr.unit,
+    pi.unit_cost,
+    pi.line_total,
+    pi.notes
+  from public.purchase_items pi
+  join public.purchases p
+    on p.id = pi.purchase_id
+  join public.products pr
+    on pr.id = pi.product_id
+  where pi.tenant_id = current_tenant_id
+    and p.tenant_id = current_tenant_id
+    and pr.tenant_id = current_tenant_id
+    and p.active = true
+    and pr.active = true
+  order by p.purchase_date desc, pi.created_at desc;
+end;
 $$;
 
-grant execute on function public.get_purchase_items_summary() to anon, authenticated;
+revoke execute on function public.get_purchase_items_summary() from anon;
+revoke execute on function public.get_purchase_items_summary() from public;
+
+grant execute on function public.get_purchase_items_summary() to authenticated;
