@@ -2,6 +2,7 @@
 -- BeautyOS - Paso 619
 -- Crear tabla de gastos del negocio y funcion segura resumida
 -- Archivo: supabase/sql/025_create_expenses.sql
+-- Version endurecida con tenant actual y rol owner/admin
 -- ============================================================
 
 create table if not exists public.expenses (
@@ -55,21 +56,40 @@ returns table (
   payment_method text,
   notes text
 )
-language sql
+language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  current_tenant_id uuid;
+begin
+  current_tenant_id := public.get_my_tenant_id();
+
+  if current_tenant_id is null then
+    raise exception 'No existe un perfil activo asociado al usuario actual.';
+  end if;
+
+  if not public.is_owner_or_admin() then
+    raise exception 'No autorizado. Solo owner o admin puede ver gastos.';
+  end if;
+
+  return query
   select
-    expenses.id,
-    expenses.expense_date,
-    expenses.category,
-    expenses.description,
-    expenses.amount,
-    expenses.payment_method,
-    expenses.notes
-  from public.expenses
-  where expenses.active = true
-  order by expenses.expense_date desc, expenses.created_at desc;
+    e.id,
+    e.expense_date,
+    e.category,
+    e.description,
+    e.amount,
+    e.payment_method,
+    e.notes
+  from public.expenses e
+  where e.active = true
+    and e.tenant_id = current_tenant_id
+  order by e.expense_date desc, e.created_at desc;
+end;
 $$;
 
-grant execute on function public.get_expenses_summary() to anon, authenticated;
+revoke execute on function public.get_expenses_summary() from anon;
+revoke execute on function public.get_expenses_summary() from public;
+
+grant execute on function public.get_expenses_summary() to authenticated;
