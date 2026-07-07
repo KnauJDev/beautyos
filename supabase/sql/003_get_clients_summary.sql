@@ -5,9 +5,10 @@
 -- Crear una función segura para listar clientes resumidos sin
 -- exponer directamente toda la tabla public.clients.
 --
--- Nota:
--- Esta función está pensada para etapa MVP/demo.
--- Más adelante se ajustará con autenticación, roles y tenant_id.
+-- Version endurecida:
+-- - Usa tenant del usuario conectado.
+-- - Requiere rol owner/admin.
+-- - No permite acceso anon.
 -- ============================================================
 
 create or replace function public.get_clients_summary()
@@ -17,18 +18,37 @@ returns table (
   phone text,
   created_at timestamptz
 )
-language sql
+language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  current_tenant_id uuid;
+begin
+  current_tenant_id := public.get_my_tenant_id();
+
+  if current_tenant_id is null then
+    raise exception 'No existe un perfil activo asociado al usuario actual.';
+  end if;
+
+  if not public.is_owner_or_admin() then
+    raise exception 'No autorizado. Solo owner o admin puede ver clientes.';
+  end if;
+
+  return query
   select
-    clients.id,
-    clients.name,
-    clients.phone,
-    clients.created_at
-  from public.clients
-  where clients.active = true
-  order by clients.created_at desc;
+    c.id,
+    c.name,
+    c.phone,
+    c.created_at
+  from public.clients c
+  where c.tenant_id = current_tenant_id
+    and c.active = true
+  order by c.created_at desc;
+end;
 $$;
 
-grant execute on function public.get_clients_summary() to anon, authenticated;
+revoke execute on function public.get_clients_summary() from anon;
+revoke execute on function public.get_clients_summary() from public;
+
+grant execute on function public.get_clients_summary() to authenticated;
