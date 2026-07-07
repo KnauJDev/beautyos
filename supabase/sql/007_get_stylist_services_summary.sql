@@ -5,10 +5,10 @@
 -- Crear una función segura para listar qué servicios puede
 -- realizar cada estilista activo.
 --
--- Nota:
--- Esta función está pensada para etapa MVP/demo.
--- Más adelante se ajustará con autenticación, roles, tenant_id,
--- disponibilidad, comisiones y reglas por sucursal.
+-- Version endurecida:
+-- - Usa tenant del usuario conectado.
+-- - Requiere rol owner/admin.
+-- - No permite acceso anon.
 -- ============================================================
 
 create or replace function public.get_stylist_services_summary()
@@ -21,29 +21,50 @@ returns table (
   duration_minutes integer,
   active boolean
 )
-language sql
+language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  current_tenant_id uuid;
+begin
+  current_tenant_id := public.get_my_tenant_id();
+
+  if current_tenant_id is null then
+    raise exception 'No existe un perfil activo asociado al usuario actual.';
+  end if;
+
+  if not public.is_owner_or_admin() then
+    raise exception 'No autorizado. Solo owner o admin puede ver servicios asignados.';
+  end if;
+
+  return query
   select
-    stylist_services.id,
-    stylists.name as stylist_name,
-    services.name as service_name,
-    services.category,
-    services.price,
-    services.duration_minutes,
-    stylist_services.active
-  from public.stylist_services
-  left join public.stylists
-    on stylists.id = stylist_services.stylist_id
-  left join public.services
-    on services.id = stylist_services.service_id
-  where stylist_services.active = true
-    and stylists.active = true
-    and services.active = true
+    ss.id,
+    st.name as stylist_name,
+    s.name as service_name,
+    s.category,
+    s.price,
+    s.duration_minutes,
+    ss.active
+  from public.stylist_services ss
+  join public.stylists st
+    on st.id = ss.stylist_id
+   and st.tenant_id = current_tenant_id
+  join public.services s
+    on s.id = ss.service_id
+   and s.tenant_id = current_tenant_id
+  where ss.tenant_id = current_tenant_id
+    and ss.active = true
+    and st.active = true
+    and s.active = true
   order by
-    stylists.name asc,
-    services.name asc;
+    st.name asc,
+    s.name asc;
+end;
 $$;
 
-grant execute on function public.get_stylist_services_summary() to anon, authenticated;
+revoke execute on function public.get_stylist_services_summary() from anon;
+revoke execute on function public.get_stylist_services_summary() from public;
+
+grant execute on function public.get_stylist_services_summary() to authenticated;
