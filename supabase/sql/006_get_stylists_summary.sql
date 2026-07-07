@@ -5,10 +5,10 @@
 -- Crear una función segura para listar estilistas activos sin
 -- exponer directamente toda la tabla public.stylists.
 --
--- Nota:
--- Esta función está pensada para etapa MVP/demo.
--- Más adelante se ajustará con autenticación, roles, tenant_id,
--- horarios, disponibilidad y ranking.
+-- Version endurecida:
+-- - Usa tenant del usuario conectado.
+-- - Requiere rol owner/admin.
+-- - No permite acceso anon.
 -- ============================================================
 
 create or replace function public.get_stylists_summary()
@@ -19,19 +19,38 @@ returns table (
   specialty text,
   created_at timestamptz
 )
-language sql
+language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  current_tenant_id uuid;
+begin
+  current_tenant_id := public.get_my_tenant_id();
+
+  if current_tenant_id is null then
+    raise exception 'No existe un perfil activo asociado al usuario actual.';
+  end if;
+
+  if not public.is_owner_or_admin() then
+    raise exception 'No autorizado. Solo owner o admin puede ver estilistas.';
+  end if;
+
+  return query
   select
-    stylists.id,
-    stylists.name,
-    stylists.phone,
-    stylists.specialty,
-    stylists.created_at
-  from public.stylists
-  where stylists.active = true
-  order by stylists.name asc;
+    st.id,
+    st.name,
+    st.phone,
+    st.specialty,
+    st.created_at
+  from public.stylists st
+  where st.tenant_id = current_tenant_id
+    and st.active = true
+  order by st.name asc;
+end;
 $$;
 
-grant execute on function public.get_stylists_summary() to anon, authenticated;
+revoke execute on function public.get_stylists_summary() from anon;
+revoke execute on function public.get_stylists_summary() from public;
+
+grant execute on function public.get_stylists_summary() to authenticated;
