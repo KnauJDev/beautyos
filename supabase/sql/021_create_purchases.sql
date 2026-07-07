@@ -25,24 +25,40 @@ returns table (
   payment_method text,
   notes text
 )
-language sql
+language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  current_tenant_id uuid;
+begin
+  current_tenant_id := public.get_my_tenant_id();
+
+  if current_tenant_id is null then
+    raise exception 'No existe un perfil activo asociado al usuario actual.';
+  end if;
+
+  if not public.is_owner_or_admin() then
+    raise exception 'No autorizado. Solo owner o admin puede ver compras.';
+  end if;
+
+  return query
   select
-    purchases.id,
-    purchases.supplier_name,
-    purchases.purchase_date,
-    purchases.invoice_number,
-    purchases.total_amount,
-    purchases.payment_method,
-    purchases.notes
-  from public.purchases
-  join public.tenants
-    on tenants.id = purchases.tenant_id
-  where tenants.active = true
-    and purchases.active = true
-  order by purchases.purchase_date desc, purchases.created_at desc;
+    p.id,
+    p.supplier_name,
+    p.purchase_date,
+    p.invoice_number,
+    p.total_amount,
+    p.payment_method,
+    p.notes
+  from public.purchases p
+  where p.active = true
+    and p.tenant_id = current_tenant_id
+  order by p.purchase_date desc, p.created_at desc;
+end;
 $$;
 
-grant execute on function public.get_purchases_summary() to anon, authenticated;
+revoke execute on function public.get_purchases_summary() from anon;
+revoke execute on function public.get_purchases_summary() from public;
+
+grant execute on function public.get_purchases_summary() to authenticated;
