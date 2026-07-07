@@ -1,7 +1,7 @@
 ﻿-- ============================================================
--- BeautyOS - Paso 639
--- Funcion segura de resumen financiero
+-- BeautyOS - Funcion segura de resumen financiero
 -- Archivo: supabase/sql/027_get_financial_summary.sql
+-- Version endurecida con tenant actual y rol owner/admin
 -- ============================================================
 
 create or replace function public.get_financial_summary()
@@ -11,52 +11,78 @@ returns table (
   total_expenses numeric,
   net_result numeric
 )
-language sql
+language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  current_tenant_id uuid;
+begin
+  current_tenant_id := public.get_my_tenant_id();
+
+  if current_tenant_id is null then
+    raise exception 'No existe un perfil activo asociado al usuario actual.';
+  end if;
+
+  if not public.is_owner_or_admin() then
+    raise exception 'No autorizado. Solo owner o admin puede ver el resumen financiero.';
+  end if;
+
+  return query
   select
     coalesce((
-      select sum(ticket_services.price)
-      from public.tickets
-      join public.ticket_services
-        on ticket_services.ticket_id = tickets.id
-      where lower(tickets.status) in ('confirmado', 'en_proceso', 'finalizado')
+      select sum(ts.price)
+      from public.tickets t
+      join public.ticket_services ts
+        on ts.ticket_id = t.id
+      where t.tenant_id = current_tenant_id
+        and ts.tenant_id = current_tenant_id
+        and lower(t.status) in ('confirmado', 'en_proceso', 'finalizado')
     ), 0)::numeric as total_sales,
 
     coalesce((
-      select sum(purchases.total_amount)
-      from public.purchases
-      where purchases.active = true
+      select sum(p.total_amount)
+      from public.purchases p
+      where p.tenant_id = current_tenant_id
+        and p.active = true
     ), 0)::numeric as total_purchases,
 
     coalesce((
-      select sum(expenses.amount)
-      from public.expenses
-      where expenses.active = true
+      select sum(e.amount)
+      from public.expenses e
+      where e.tenant_id = current_tenant_id
+        and e.active = true
     ), 0)::numeric as total_expenses,
 
     (
       coalesce((
-        select sum(ticket_services.price)
-        from public.tickets
-        join public.ticket_services
-          on ticket_services.ticket_id = tickets.id
-        where lower(tickets.status) in ('confirmado', 'en_proceso', 'finalizado')
+        select sum(ts.price)
+        from public.tickets t
+        join public.ticket_services ts
+          on ts.ticket_id = t.id
+        where t.tenant_id = current_tenant_id
+          and ts.tenant_id = current_tenant_id
+          and lower(t.status) in ('confirmado', 'en_proceso', 'finalizado')
       ), 0)
       -
       coalesce((
-        select sum(purchases.total_amount)
-        from public.purchases
-        where purchases.active = true
+        select sum(p.total_amount)
+        from public.purchases p
+        where p.tenant_id = current_tenant_id
+          and p.active = true
       ), 0)
       -
       coalesce((
-        select sum(expenses.amount)
-        from public.expenses
-        where expenses.active = true
+        select sum(e.amount)
+        from public.expenses e
+        where e.tenant_id = current_tenant_id
+          and e.active = true
       ), 0)
     )::numeric as net_result;
+end;
 $$;
 
-grant execute on function public.get_financial_summary() to anon, authenticated;
+revoke execute on function public.get_financial_summary() from anon;
+revoke execute on function public.get_financial_summary() from public;
+
+grant execute on function public.get_financial_summary() to authenticated;
