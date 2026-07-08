@@ -1,4 +1,18 @@
-﻿create or replace function public.get_business_settings()
+﻿-- ============================================================
+-- 010_get_business_settings.sql
+-- BeautyOS AI
+-- Propósito:
+-- Obtener los datos básicos de configuración del negocio
+-- del usuario autenticado.
+--
+-- Versión endurecida:
+-- - Usa tenant del usuario conectado.
+-- - Requiere rol owner/admin.
+-- - No permite acceso anon.
+-- - Evita leer el primer tenant activo por error.
+-- ============================================================
+
+create or replace function public.get_business_settings()
 returns table (
   id uuid,
   name text,
@@ -9,23 +23,41 @@ returns table (
   instagram text,
   facebook text
 )
-language sql
+language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  current_tenant_id uuid;
+begin
+  current_tenant_id := public.get_my_tenant_id();
+
+  if current_tenant_id is null then
+    raise exception 'No existe un perfil activo asociado al usuario actual.';
+  end if;
+
+  if not public.is_owner_or_admin() then
+    raise exception 'No autorizado. Solo owner o admin puede ver la configuración del negocio.';
+  end if;
+
+  return query
   select
-    tenants.id,
-    tenants.name,
-    tenants.business_type,
-    tenants.contact_email,
-    tenants.contact_phone,
-    tenants.whatsapp,
-    tenants.instagram,
-    tenants.facebook
-  from public.tenants
-  where tenants.active = true
-  order by tenants.created_at asc
+    t.id,
+    t.name,
+    t.business_type,
+    t.contact_email,
+    t.contact_phone,
+    t.whatsapp,
+    t.instagram,
+    t.facebook
+  from public.tenants t
+  where t.id = current_tenant_id
+    and t.active = true
   limit 1;
+end;
 $$;
 
-grant execute on function public.get_business_settings() to anon, authenticated;
+revoke execute on function public.get_business_settings() from anon;
+revoke execute on function public.get_business_settings() from public;
+
+grant execute on function public.get_business_settings() to authenticated;
