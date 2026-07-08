@@ -1,4 +1,18 @@
-﻿create table if not exists public.inventory_movements (
+﻿-- ============================================================
+-- 019_create_inventory_movements.sql
+-- BeautyOS AI
+-- Propósito:
+-- Crear la tabla de movimientos de inventario y una función segura
+-- para consultar movimientos del tenant del usuario autenticado.
+--
+-- Versión endurecida:
+-- - Usa tenant del usuario conectado.
+-- - Requiere rol owner/admin.
+-- - No permite acceso anon.
+-- - Evita leer movimientos, costos y notas de otros negocios.
+-- ============================================================
+
+create table if not exists public.inventory_movements (
   id uuid primary key default gen_random_uuid(),
   tenant_id uuid not null references public.tenants(id) on delete cascade,
   product_id uuid not null references public.products(id) on delete cascade,
@@ -24,28 +38,49 @@ returns table (
   notes text,
   created_at timestamptz
 )
-language sql
+language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  current_tenant_id uuid;
+begin
+  current_tenant_id := public.get_my_tenant_id();
+
+  if current_tenant_id is null then
+    raise exception 'No existe un perfil activo asociado al usuario actual.';
+  end if;
+
+  if not public.is_owner_or_admin() then
+    raise exception 'No autorizado. Solo owner o admin puede ver movimientos de inventario.';
+  end if;
+
+  return query
   select
-    inventory_movements.id,
-    products.name as product_name,
-    products.category as product_category,
-    inventory_movements.movement_type,
-    inventory_movements.quantity,
-    products.unit,
-    inventory_movements.unit_cost,
-    inventory_movements.notes,
-    inventory_movements.created_at
-  from public.inventory_movements
-  join public.products
-    on products.id = inventory_movements.product_id
-  join public.tenants
-    on tenants.id = inventory_movements.tenant_id
-  where tenants.active = true
-  order by inventory_movements.created_at desc
+    im.id,
+    p.name as product_name,
+    p.category as product_category,
+    im.movement_type,
+    im.quantity,
+    p.unit,
+    im.unit_cost,
+    im.notes,
+    im.created_at
+  from public.inventory_movements im
+  join public.products p
+    on p.id = im.product_id
+   and p.tenant_id = current_tenant_id
+  join public.tenants t
+    on t.id = im.tenant_id
+  where im.tenant_id = current_tenant_id
+    and p.active = true
+    and t.active = true
+  order by im.created_at desc
   limit 50;
+end;
 $$;
 
-grant execute on function public.get_inventory_movements_summary() to anon, authenticated;
+revoke execute on function public.get_inventory_movements_summary() from anon;
+revoke execute on function public.get_inventory_movements_summary() from public;
+
+grant execute on function public.get_inventory_movements_summary() to authenticated;
