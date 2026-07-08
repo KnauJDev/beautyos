@@ -1,37 +1,36 @@
--- ============================================================
+﻿-- ============================================================
 -- BeautyOS
 -- Archivo: 002_services_read_policy.sql
 -- Propósito:
 -- Crear una política RLS para permitir que BeautyOS lea servicios
--- activos y visibles para clientes, sin permitir edición, creación
--- ni eliminación desde la app pública.
+-- activos y visibles del tenant del usuario autenticado.
+--
+-- Version endurecida:
+-- - No permite lectura anon.
+-- - Permite lectura solo a authenticated.
+-- - Filtra por tenant del usuario conectado.
+-- - Mantiene lectura solo de servicios activos y visibles.
 -- ============================================================
 
 alter table public.services enable row level security;
 
-do $$
-begin
-  if not exists (
-    select 1
-    from pg_policies
-    where schemaname = 'public'
-      and tablename = 'services'
-      and policyname = 'Allow public read active services'
-  ) then
-    execute '
-      create policy "Allow public read active services"
-      on public.services
-      for select
-      to anon, authenticated
-      using (
-        active = true
-        and visible_to_customer = true
-      )
-    ';
-  end if;
-end $$;
+drop policy if exists "Allow public read active services"
+on public.services;
 
--- Prueba rápida:
+drop policy if exists "Authenticated users can read active visible services from their tenant"
+on public.services;
+
+create policy "Authenticated users can read active visible services from their tenant"
+on public.services
+for select
+to authenticated
+using (
+  tenant_id = public.get_my_tenant_id()
+  and active = true
+  and visible_to_customer = true
+);
+
+-- Prueba rápida después de iniciar sesión:
 -- select
 --   id,
 --   name,
