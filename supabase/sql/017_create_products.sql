@@ -1,4 +1,18 @@
-﻿create table if not exists public.products (
+﻿-- ============================================================
+-- 017_create_products.sql
+-- BeautyOS AI
+-- Propósito:
+-- Crear la tabla de productos y una función segura
+-- para consultar productos del tenant del usuario autenticado.
+--
+-- Versión endurecida:
+-- - Usa tenant del usuario conectado.
+-- - Requiere rol owner/admin.
+-- - No permite acceso anon.
+-- - Evita leer productos, stock y precios de otros negocios.
+-- ============================================================
+
+create table if not exists public.products (
   id uuid primary key default gen_random_uuid(),
   tenant_id uuid not null references public.tenants(id) on delete cascade,
   name text not null,
@@ -36,27 +50,46 @@ returns table (
   sale_price numeric,
   visible_for_sale boolean
 )
-language sql
+language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  current_tenant_id uuid;
+begin
+  current_tenant_id := public.get_my_tenant_id();
+
+  if current_tenant_id is null then
+    raise exception 'No existe un perfil activo asociado al usuario actual.';
+  end if;
+
+  if not public.is_owner_or_admin() then
+    raise exception 'No autorizado. Solo owner o admin puede ver productos e inventario.';
+  end if;
+
+  return query
   select
-    products.id,
-    products.name,
-    products.category,
-    products.product_type,
-    products.unit,
-    products.current_stock,
-    products.minimum_stock,
-    products.purchase_price,
-    products.sale_price,
-    products.visible_for_sale
-  from public.products
-  join public.tenants
-    on tenants.id = products.tenant_id
-  where tenants.active = true
-    and products.active = true
-  order by products.name asc;
+    p.id,
+    p.name,
+    p.category,
+    p.product_type,
+    p.unit,
+    p.current_stock,
+    p.minimum_stock,
+    p.purchase_price,
+    p.sale_price,
+    p.visible_for_sale
+  from public.products p
+  join public.tenants t
+    on t.id = p.tenant_id
+  where p.tenant_id = current_tenant_id
+    and p.active = true
+    and t.active = true
+  order by p.name asc;
+end;
 $$;
 
-grant execute on function public.get_products_summary() to anon, authenticated;
+revoke execute on function public.get_products_summary() from anon;
+revoke execute on function public.get_products_summary() from public;
+
+grant execute on function public.get_products_summary() to authenticated;
