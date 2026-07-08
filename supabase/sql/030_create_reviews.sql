@@ -2,6 +2,12 @@
 -- BeautyOS - Paso 679
 -- Tabla y funcion segura para reseñas
 -- Archivo: supabase/sql/030_create_reviews.sql
+--
+-- Versión endurecida:
+-- - Usa tenant del usuario conectado.
+-- - Requiere rol owner/admin.
+-- - No permite acceso anon.
+-- - Evita leer reseñas, clientes, estilistas y servicios de otros negocios.
 -- ============================================================
 
 create table if not exists public.reviews (
@@ -53,30 +59,52 @@ returns table (
   visible_to_public boolean,
   created_at timestamptz
 )
-language sql
+language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  current_tenant_id uuid;
+begin
+  current_tenant_id := public.get_my_tenant_id();
+
+  if current_tenant_id is null then
+    raise exception 'No existe un perfil activo asociado al usuario actual.';
+  end if;
+
+  if not public.is_owner_or_admin() then
+    raise exception 'No autorizado. Solo owner o admin puede ver reseñas.';
+  end if;
+
+  return query
   select
-    reviews.id,
-    reviews.ticket_id,
-    coalesce(clients.name, 'Cliente no asociado') as client_name,
-    coalesce(stylists.name, 'Estilista no asociado') as stylist_name,
-    coalesce(services.name, 'Servicio no asociado') as service_name,
-    reviews.rating,
-    reviews.comment,
-    reviews.moderation_status,
-    reviews.visible_to_public,
-    reviews.created_at
-  from public.reviews
-  left join public.clients
-    on clients.id = reviews.client_id
-  left join public.stylists
-    on stylists.id = reviews.stylist_id
-  left join public.services
-    on services.id = reviews.service_id
-  where reviews.active = true
-  order by reviews.created_at desc;
+    r.id,
+    r.ticket_id,
+    coalesce(c.name, 'Cliente no asociado') as client_name,
+    coalesce(st.name, 'Estilista no asociado') as stylist_name,
+    coalesce(s.name, 'Servicio no asociado') as service_name,
+    r.rating,
+    r.comment,
+    r.moderation_status,
+    r.visible_to_public,
+    r.created_at
+  from public.reviews r
+  left join public.clients c
+    on c.id = r.client_id
+   and c.tenant_id = current_tenant_id
+  left join public.stylists st
+    on st.id = r.stylist_id
+   and st.tenant_id = current_tenant_id
+  left join public.services s
+    on s.id = r.service_id
+   and s.tenant_id = current_tenant_id
+  where r.tenant_id = current_tenant_id
+    and r.active = true
+  order by r.created_at desc;
+end;
 $$;
 
-grant execute on function public.get_reviews_summary() to anon, authenticated;
+revoke execute on function public.get_reviews_summary() from anon;
+revoke execute on function public.get_reviews_summary() from public;
+
+grant execute on function public.get_reviews_summary() to authenticated;
