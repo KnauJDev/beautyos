@@ -1,4 +1,18 @@
-﻿create table if not exists public.appointment_policies (
+﻿-- ============================================================
+-- 013_create_appointment_policies.sql
+-- BeautyOS AI
+-- Propósito:
+-- Crear la tabla de políticas de agenda y una función segura
+-- para consultar las políticas del tenant del usuario autenticado.
+--
+-- Versión endurecida:
+-- - Usa tenant del usuario conectado.
+-- - Requiere rol owner/admin.
+-- - No permite acceso anon.
+-- - Evita leer políticas de otros negocios.
+-- ============================================================
+
+create table if not exists public.appointment_policies (
   id uuid primary key default gen_random_uuid(),
   tenant_id uuid not null references public.tenants(id) on delete cascade,
   requires_deposit boolean not null default false,
@@ -25,25 +39,43 @@ returns table (
   manual_confirmation_required boolean,
   customer_reschedule_allowed boolean
 )
-language sql
+language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  current_tenant_id uuid;
+begin
+  current_tenant_id := public.get_my_tenant_id();
+
+  if current_tenant_id is null then
+    raise exception 'No existe un perfil activo asociado al usuario actual.';
+  end if;
+
+  if not public.is_owner_or_admin() then
+    raise exception 'No autorizado. Solo owner o admin puede ver las políticas de agenda.';
+  end if;
+
+  return query
   select
-    appointment_policies.id,
-    appointment_policies.requires_deposit,
-    appointment_policies.deposit_percentage,
-    appointment_policies.cancellation_hours,
-    appointment_policies.reschedule_hours,
-    appointment_policies.manual_confirmation_required,
-    appointment_policies.customer_reschedule_allowed
-  from public.appointment_policies
-  join public.tenants
-    on tenants.id = appointment_policies.tenant_id
-  where tenants.active = true
-    and appointment_policies.active = true
-  order by appointment_policies.created_at asc
+    ap.id,
+    ap.requires_deposit,
+    ap.deposit_percentage,
+    ap.cancellation_hours,
+    ap.reschedule_hours,
+    ap.manual_confirmation_required,
+    ap.customer_reschedule_allowed
+  from public.appointment_policies ap
+  join public.tenants t
+    on t.id = ap.tenant_id
+  where ap.tenant_id = current_tenant_id
+    and ap.active = true
+    and t.active = true
   limit 1;
+end;
 $$;
 
-grant execute on function public.get_appointment_policy() to anon, authenticated;
+revoke execute on function public.get_appointment_policy() from anon;
+revoke execute on function public.get_appointment_policy() from public;
+
+grant execute on function public.get_appointment_policy() to authenticated;
