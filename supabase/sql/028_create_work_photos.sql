@@ -2,6 +2,12 @@
 -- BeautyOS - Paso 654
 -- Tabla y funcion segura para fotos de trabajos
 -- Archivo: supabase/sql/028_create_work_photos.sql
+--
+-- Versión endurecida:
+-- - Usa tenant del usuario conectado.
+-- - Requiere rol owner/admin.
+-- - No permite acceso anon.
+-- - Evita leer fotos, clientes y estilistas de otros negocios.
 -- ============================================================
 
 create table if not exists public.work_photos (
@@ -52,29 +58,50 @@ returns table (
   approved_for_portfolio boolean,
   created_at timestamptz
 )
-language sql
+language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  current_tenant_id uuid;
+begin
+  current_tenant_id := public.get_my_tenant_id();
+
+  if current_tenant_id is null then
+    raise exception 'No existe un perfil activo asociado al usuario actual.';
+  end if;
+
+  if not public.is_owner_or_admin() then
+    raise exception 'No autorizado. Solo owner o admin puede ver fotos de trabajos.';
+  end if;
+
+  return query
   select
-    work_photos.id,
-    work_photos.ticket_id,
-    coalesce(clients.name, 'Cliente no asociado') as client_name,
-    coalesce(stylists.name, 'Estilista no asociado') as stylist_name,
-    work_photos.photo_url,
-    work_photos.photo_type,
-    work_photos.caption,
-    work_photos.ai_status,
-    work_photos.visible_to_customer,
-    work_photos.approved_for_portfolio,
-    work_photos.created_at
-  from public.work_photos
-  left join public.clients
-    on clients.id = work_photos.client_id
-  left join public.stylists
-    on stylists.id = work_photos.stylist_id
-  where work_photos.active = true
-  order by work_photos.created_at desc;
+    wp.id,
+    wp.ticket_id,
+    coalesce(c.name, 'Cliente no asociado') as client_name,
+    coalesce(st.name, 'Estilista no asociado') as stylist_name,
+    wp.photo_url,
+    wp.photo_type,
+    wp.caption,
+    wp.ai_status,
+    wp.visible_to_customer,
+    wp.approved_for_portfolio,
+    wp.created_at
+  from public.work_photos wp
+  left join public.clients c
+    on c.id = wp.client_id
+   and c.tenant_id = current_tenant_id
+  left join public.stylists st
+    on st.id = wp.stylist_id
+   and st.tenant_id = current_tenant_id
+  where wp.tenant_id = current_tenant_id
+    and wp.active = true
+  order by wp.created_at desc;
+end;
 $$;
 
-grant execute on function public.get_work_photos_summary() to anon, authenticated;
+revoke execute on function public.get_work_photos_summary() from anon;
+revoke execute on function public.get_work_photos_summary() from public;
+
+grant execute on function public.get_work_photos_summary() to authenticated;
