@@ -1,0 +1,250 @@
+﻿import 'package:flutter/material.dart';
+
+import '../models/my_stylist_agenda_item.dart';
+import '../services/my_stylist_agenda_service.dart';
+import '../widgets/app_widgets.dart';
+
+class MyStylistAgendaPage extends StatefulWidget {
+  const MyStylistAgendaPage({super.key});
+
+  @override
+  State<MyStylistAgendaPage> createState() => _MyStylistAgendaPageState();
+}
+
+class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
+  final MyStylistAgendaService agendaService = const MyStylistAgendaService();
+
+  late final Future<List<MyStylistAgendaItem>> agendaFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    agendaFuture = agendaService.getMyStylistAgenda();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AppPage(
+      title: 'Mi agenda',
+      subtitle: 'Citas y servicios asignados a tu usuario estilista.',
+      children: [
+        FutureBuilder<List<MyStylistAgendaItem>>(
+          future: agendaFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+
+            if (snapshot.hasError) {
+              return InfoPanel(
+                icon: Icons.error_outline,
+                title: 'No pudimos cargar tu agenda',
+                description: snapshot.error.toString(),
+              );
+            }
+
+            final items = snapshot.data ?? <MyStylistAgendaItem>[];
+
+            if (items.isEmpty) {
+              return const InfoPanel(
+                icon: Icons.event_busy_outlined,
+                title: 'Sin citas asignadas',
+                description: 'Cuando tengas servicios asignados, apareceran aqui.',
+              );
+            }
+
+            final totalValue = items.fold<double>(
+              0,
+              (sum, item) => sum + item.price,
+            );
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _AgendaSummary(
+                  itemsCount: items.length,
+                  totalValue: totalValue,
+                ),
+                const SizedBox(height: 24),
+                const SectionTitle('Servicios asignados'),
+                const SizedBox(height: 12),
+                _AgendaTable(items: items),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _AgendaSummary extends StatefulWidget {
+  const _AgendaSummary({
+    required this.itemsCount,
+    required this.totalValue,
+  });
+
+  final int itemsCount;
+  final double totalValue;
+
+  @override
+  State<_AgendaSummary> createState() => _AgendaSummaryState();
+}
+
+class _AgendaSummaryState extends State<_AgendaSummary> {
+  bool showMoney = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final amountText = showMoney ? _formatMoney(widget.totalValue) : '••••••';
+
+    return Wrap(
+      spacing: 16,
+      runSpacing: 16,
+      children: [
+        MetricCard(
+          title: 'Servicios',
+          value: widget.itemsCount.toString(),
+          description: 'Asignados a tu agenda',
+          icon: Icons.event_available_outlined,
+        ),
+        SizedBox(
+          width: 260,
+          child: Card(
+            elevation: 0,
+            color: const Color(0xFFF5F3FF),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.payments_outlined,
+                    color: Color(0xFF7C3AED),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Valor servicios',
+                          style: TextStyle(
+                            color: Color(0xFF6B7280),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          amountText,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF111827),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Puedes ocultar o mostrar la cifra',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: showMoney ? 'Ocultar cifra' : 'Mostrar cifra',
+                    onPressed: () {
+                      setState(() {
+                        showMoney = !showMoney;
+                      });
+                    },
+                    icon: Icon(
+                      showMoney
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatMoney(double value) {
+    final rounded = value.round().toString();
+    final buffer = StringBuffer();
+
+    for (var i = 0; i < rounded.length; i++) {
+      final positionFromEnd = rounded.length - i;
+
+      buffer.write(rounded[i]);
+
+      if (positionFromEnd > 1 && positionFromEnd % 3 == 1) {
+        buffer.write('.');
+      }
+    }
+
+    return '\$$buffer';
+  }
+}
+
+class _AgendaTable extends StatelessWidget {
+  const _AgendaTable({required this.items});
+
+  final List<MyStylistAgendaItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: const BorderSide(color: Color(0xFFE5E7EB)),
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          columns: const [
+            DataColumn(label: Text('Fecha')),
+            DataColumn(label: Text('Hora')),
+            DataColumn(label: Text('Cliente')),
+            DataColumn(label: Text('Servicio')),
+            DataColumn(label: Text('Ticket')),
+            DataColumn(label: Text('Servicio estado')),
+            DataColumn(label: Text('Duracion')),
+            DataColumn(label: Text('Valor')),
+            DataColumn(label: Text('Notas')),
+          ],
+          rows: items
+              .map(
+                (item) => DataRow(
+                  cells: [
+                    DataCell(Text(item.scheduledDateText)),
+                    DataCell(Text(item.scheduledTimeText)),
+                    DataCell(Text(item.clientName)),
+                    DataCell(Text(item.serviceName)),
+                    DataCell(Text(item.ticketStatusText)),
+                    DataCell(Text(item.serviceStatusText)),
+                    DataCell(Text(item.durationText)),
+                    DataCell(Text(item.formattedPrice)),
+                    DataCell(Text(item.notesText)),
+                  ],
+                ),
+              )
+              .toList(),
+        ),
+      ),
+    );
+  }
+}
