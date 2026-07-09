@@ -10,6 +10,7 @@ import 'pages/clients_page.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/inventory_page.dart';
 import 'pages/my_stylist_agenda_page.dart';
+import 'pages/my_stylist_work_photos_page.dart';
 import 'pages/work_photos_page.dart';
 import 'widgets/session_badge.dart';
 import 'pages/reviews_page.dart';
@@ -87,6 +88,10 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
       ),      const BeautyModule(
         section: BeautySection('Mi agenda', Icons.event_available_outlined),
         page: MyStylistAgendaPage(),
+        allowedRoles: <String>{'stylist'},
+      ),      const BeautyModule(
+        section: BeautySection('Mis fotos', Icons.photo_library_outlined),
+        page: MyStylistWorkPhotosPage(),
         allowedRoles: <String>{'stylist'},
       ),
       const BeautyModule(
@@ -375,5 +380,6 @@ class BeautyModule {
     return allowedRoles.contains(role);
   }
 }
+
 
 
