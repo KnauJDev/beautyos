@@ -1,6 +1,9 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'models/my_profile.dart';
+import 'services/my_profile_service.dart';
+
 import 'pages/auth_gate.dart';
 import 'pages/agenda_page.dart';
 import 'pages/clients_page.dart';
@@ -58,113 +61,209 @@ class BeautyOSHome extends StatefulWidget {
 class _BeautyOSHomeState extends State<BeautyOSHome> {
   int selectedIndex = 0;
 
+  final MyProfileService myProfileService = const MyProfileService();
+
+  late final Future<MyProfile?> profileFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    profileFuture = myProfileService.getMyProfile();
+  }
+
   Future<void> signOut() async {
     await Supabase.instance.client.auth.signOut();
   }
 
-  final List<BeautySection> sections = const [
-    BeautySection('Dashboard', Icons.dashboard_outlined),
-    BeautySection('Agenda', Icons.calendar_month_outlined),
-    BeautySection('Servicios', Icons.content_cut_outlined),
-    BeautySection('Estilistas', Icons.badge_outlined),
-    BeautySection('Clientes', Icons.people_outline),
-    BeautySection('Tickets', Icons.confirmation_number_outlined),
-    BeautySection('Reportes', Icons.bar_chart_outlined),
-    BeautySection('Compras', Icons.shopping_cart_outlined),
-    BeautySection('Gastos', Icons.payments_outlined),
-    BeautySection('Fotos de trabajos', Icons.photo_library_outlined),
-    BeautySection('Reseñas', Icons.rate_review_outlined),
-    BeautySection('Inventario', Icons.inventory_2_outlined),
-    BeautySection('Configuraci\u00f3n', Icons.settings_outlined),
-  ];
+  List<BeautyModule> _modulesForProfile(MyProfile? profile) {
+    final role = profile?.role ?? 'client';
+
+    final modules = <BeautyModule>[
+      const BeautyModule(
+        section: BeautySection('Dashboard', Icons.dashboard_outlined),
+        page: DashboardPage(),
+        allowedRoles: <String>{'owner', 'admin'},
+      ),
+      const BeautyModule(
+        section: BeautySection('Agenda', Icons.calendar_month_outlined),
+        page: AgendaPage(),
+        allowedRoles: <String>{'owner', 'admin'},
+      ),
+      const BeautyModule(
+        section: BeautySection('Servicios', Icons.content_cut_outlined),
+        page: ServiciosPage(),
+        allowedRoles: <String>{'owner', 'admin', 'stylist', 'assistant', 'client'},
+      ),
+      const BeautyModule(
+        section: BeautySection('Estilistas', Icons.badge_outlined),
+        page: EstilistasPage(),
+        allowedRoles: <String>{'owner', 'admin'},
+      ),
+      const BeautyModule(
+        section: BeautySection('Clientes', Icons.people_outline),
+        page: ClientesPage(),
+        allowedRoles: <String>{'owner', 'admin'},
+      ),
+      const BeautyModule(
+        section: BeautySection('Tickets', Icons.confirmation_number_outlined),
+        page: TicketsPage(),
+        allowedRoles: <String>{'owner', 'admin'},
+      ),
+      const BeautyModule(
+        section: BeautySection('Reportes', Icons.bar_chart_outlined),
+        page: ReportesPage(),
+        allowedRoles: <String>{'owner', 'admin'},
+      ),
+      const BeautyModule(
+        section: BeautySection('Compras', Icons.shopping_cart_outlined),
+        page: ComprasPage(),
+        allowedRoles: <String>{'owner', 'admin'},
+      ),
+      const BeautyModule(
+        section: BeautySection('Gastos', Icons.payments_outlined),
+        page: GastosPage(),
+        allowedRoles: <String>{'owner', 'admin'},
+      ),
+      const BeautyModule(
+        section: BeautySection('Fotos de trabajos', Icons.photo_library_outlined),
+        page: FotosTrabajosPage(),
+        allowedRoles: <String>{'owner', 'admin'},
+      ),
+      const BeautyModule(
+        section: BeautySection('Rese\u00f1as', Icons.rate_review_outlined),
+        page: ResenasPage(),
+        allowedRoles: <String>{'owner', 'admin'},
+      ),
+      const BeautyModule(
+        section: BeautySection('Inventario', Icons.inventory_2_outlined),
+        page: InventarioPage(),
+        allowedRoles: <String>{'owner', 'admin'},
+      ),
+      const BeautyModule(
+        section: BeautySection('Configuraci\u00f3n', Icons.settings_outlined),
+        page: ConfiguracionPage(),
+        allowedRoles: <String>{'owner', 'admin'},
+      ),
+    ];
+
+    return modules.where((module) => module.canAccess(role)).toList(growable: false);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isWide = constraints.maxWidth >= 850;
-
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text(
-              'BeautyOS',
-              style: TextStyle(fontWeight: FontWeight.bold),
+    return FutureBuilder<MyProfile?>(
+      future: profileFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(),
             ),
-            backgroundColor: const Color(0xFF7C3AED),
-            foregroundColor: Colors.white,
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: Center(
-                  child: Text(
-                    sections[selectedIndex].title,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+          );
+        }
+
+        final modules = _modulesForProfile(snapshot.data);
+
+        if (modules.isEmpty) {
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text(
+                'BeautyOS',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              backgroundColor: const Color(0xFF7C3AED),
+              foregroundColor: Colors.white,
+              actions: [
+                IconButton(
+                  tooltip: 'Cerrar sesi\u00f3n',
+                  onPressed: signOut,
+                  icon: const Icon(Icons.logout_outlined),
+                ),
+              ],
+            ),
+            body: const Center(
+              child: Text('Tu usuario no tiene modulos asignados.'),
+            ),
+          );
+        }
+
+        final currentIndex = selectedIndex >= modules.length ? 0 : selectedIndex;
+        final sections = modules.map((module) => module.section).toList(growable: false);
+        final pages = modules.map((module) => module.page).toList(growable: false);
+
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth >= 850;
+
+            return Scaffold(
+              appBar: AppBar(
+                title: const Text(
+                  'BeautyOS',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                backgroundColor: const Color(0xFF7C3AED),
+                foregroundColor: Colors.white,
+                actions: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Center(
+                      child: Text(
+                        sections[currentIndex].title,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  const SessionBadge(),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    tooltip: 'Cerrar sesi\u00f3n',
+                    onPressed: signOut,
+                    icon: const Icon(Icons.logout_outlined),
+                  ),
+                  const SizedBox(width: 8),
+                ],
               ),
-              const SizedBox(width: 12),
-              const SessionBadge(),
-              const SizedBox(width: 8),
-              IconButton(
-                tooltip: 'Cerrar sesión',
-                onPressed: signOut,
-                icon: const Icon(Icons.logout_outlined),
+              body: Row(
+                children: [
+                  if (isWide)
+                    _SideMenu(
+                      sections: sections,
+                      selectedIndex: currentIndex,
+                      onDestinationSelected: (index) {
+                        setState(() {
+                          selectedIndex = index;
+                        });
+                      },
+                    ),
+                  Expanded(
+                    child: IndexedStack(
+                      index: currentIndex,
+                      children: pages,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-            ],
-          ),
-          body: Row(
-            children: [
-              if (isWide)
-                _SideMenu(
-                  sections: sections,
-                  selectedIndex: selectedIndex,
-                  onDestinationSelected: (index) {
-                    setState(() {
-                      selectedIndex = index;
-                    });
-                  },
-                ),
-              Expanded(
-                child: IndexedStack(
-                  index: selectedIndex,
-                  children: const [
-                    DashboardPage(),
-                    AgendaPage(),
-                    ServiciosPage(),
-                    EstilistasPage(),
-                    ClientesPage(),
-                    TicketsPage(),
-                    ReportesPage(),
-                    ComprasPage(),
-                    GastosPage(),
-                    FotosTrabajosPage(),
-                    ResenasPage(),
-                    InventarioPage(),
-                    ConfiguracionPage(),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          bottomNavigationBar: isWide
-              ? null
-              : NavigationBar(
-                  selectedIndex: selectedIndex,
-                  onDestinationSelected: (index) {
-                    setState(() {
-                      selectedIndex = index;
-                    });
-                  },
-                  destinations: sections
-                      .map(
-                        (section) => NavigationDestination(
-                          icon: Icon(section.icon),
-                          label: section.title,
-                        ),
-                      )
-                      .toList(),
-                ),
+              bottomNavigationBar: isWide
+                  ? null
+                  : NavigationBar(
+                      selectedIndex: currentIndex,
+                      onDestinationSelected: (index) {
+                        setState(() {
+                          selectedIndex = index;
+                        });
+                      },
+                      destinations: sections
+                          .map(
+                            (section) => NavigationDestination(
+                              icon: Icon(section.icon),
+                              label: section.title,
+                            ),
+                          )
+                          .toList(),
+                    ),
+            );
+          },
         );
       },
     );
@@ -256,13 +355,18 @@ class BeautySection {
   const BeautySection(this.title, this.icon);
 }
 
+class BeautyModule {
+  const BeautyModule({
+    required this.section,
+    required this.page,
+    required this.allowedRoles,
+  });
 
+  final BeautySection section;
+  final Widget page;
+  final Set<String> allowedRoles;
 
-
-
-
-
-
-
-
-
+  bool canAccess(String role) {
+    return allowedRoles.contains(role);
+  }
+}
