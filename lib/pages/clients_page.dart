@@ -13,12 +13,71 @@ class ClientesPage extends StatefulWidget {
 
 class _ClientesPageState extends State<ClientesPage> {
   final ClientsService clientsService = const ClientsService();
-  late final Future<List<ClientSummary>> clientsFuture;
+  late Future<List<ClientSummary>> clientsFuture;
 
   @override
   void initState() {
     super.initState();
     clientsFuture = clientsService.getClientsSummary();
+  }
+
+  void _refreshClients() {
+    setState(() {
+      clientsFuture = clientsService.getClientsSummary();
+    });
+  }
+
+  Future<void> _openCreateClientDialog() async {
+    final formData = await showDialog<_ClientFormData>(
+      context: context,
+      builder: (context) => const _CreateClientDialog(),
+    );
+
+    if (formData == null) {
+      return;
+    }
+
+    try {
+      final createdClient = await clientsService.createClient(
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
+        notes: formData.notes,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (createdClient == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No se pudo crear el cliente. Verifica tus permisos.',
+            ),
+          ),
+        );
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cliente creado: ${createdClient.name}'),
+        ),
+      );
+
+      _refreshClients();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error creando cliente: $error'),
+        ),
+      );
+    }
   }
 
   @override
@@ -27,11 +86,20 @@ class _ClientesPageState extends State<ClientesPage> {
       title: 'Clientes',
       subtitle: 'Historial, contacto y preferencias de cada cliente.',
       children: [
-        const InfoPanel(
+        InfoPanel(
           icon: Icons.people_outline,
           title: 'Clientes conectados con Supabase',
           description:
-              'Este m\u00f3dulo ahora consulta clientes activos mediante una funci\u00f3n segura, sin abrir directamente toda la tabla clients.',
+              'Este modulo consulta clientes activos mediante una funcion segura y permite crear clientes internos del negocio.',
+        ),
+        const SizedBox(height: 16),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: FilledButton.icon(
+            onPressed: _openCreateClientDialog,
+            icon: const Icon(Icons.person_add_alt_1_outlined),
+            label: const Text('Nuevo cliente'),
+          ),
         ),
         const SizedBox(height: 16),
         FutureBuilder<List<ClientSummary>>(
@@ -93,6 +161,146 @@ class _ClientesPageState extends State<ClientesPage> {
       ],
     );
   }
+}
+
+class _CreateClientDialog extends StatefulWidget {
+  const _CreateClientDialog();
+
+  @override
+  State<_CreateClientDialog> createState() => _CreateClientDialogState();
+}
+
+class _CreateClientDialogState extends State<_CreateClientDialog> {
+  final formKey = GlobalKey<FormState>();
+  final nameController = TextEditingController();
+  final phoneController = TextEditingController();
+  final emailController = TextEditingController();
+  final notesController = TextEditingController();
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    phoneController.dispose();
+    emailController.dispose();
+    notesController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (!formKey.currentState!.validate()) {
+      return;
+    }
+
+    Navigator.of(context).pop(
+      _ClientFormData(
+        name: nameController.text.trim(),
+        phone: phoneController.text.trim(),
+        email: emailController.text.trim().isEmpty
+            ? null
+            : emailController.text.trim(),
+        notes: notesController.text.trim().isEmpty
+            ? null
+            : notesController.text.trim(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Nuevo cliente'),
+      content: SizedBox(
+        width: 440,
+        child: Form(
+          key: formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre',
+                    prefixIcon: Icon(Icons.person_outline),
+                  ),
+                  textInputAction: TextInputAction.next,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Escribe el nombre del cliente';
+                    }
+
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: phoneController,
+                  decoration: const InputDecoration(
+                    labelText: 'Telefono',
+                    prefixIcon: Icon(Icons.phone_outlined),
+                  ),
+                  keyboardType: TextInputType.phone,
+                  textInputAction: TextInputAction.next,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Escribe el telefono del cliente';
+                    }
+
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'Email opcional',
+                    prefixIcon: Icon(Icons.email_outlined),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: notesController,
+                  decoration: const InputDecoration(
+                    labelText: 'Notas opcionales',
+                    prefixIcon: Icon(Icons.notes_outlined),
+                  ),
+                  minLines: 2,
+                  maxLines: 4,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton.icon(
+          onPressed: _submit,
+          icon: const Icon(Icons.save_outlined),
+          label: const Text('Guardar cliente'),
+        ),
+      ],
+    );
+  }
+}
+
+class _ClientFormData {
+  const _ClientFormData({
+    required this.name,
+    required this.phone,
+    this.email,
+    this.notes,
+  });
+
+  final String name;
+  final String phone;
+  final String? email;
+  final String? notes;
 }
 
 class ClientRow extends StatelessWidget {
