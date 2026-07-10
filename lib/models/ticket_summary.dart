@@ -85,18 +85,27 @@
 
   String get statusLabel {
     switch (status.toLowerCase()) {
+      case 'solicitado':
+        return 'Solicitado';
       case 'cotizado':
         return 'Cotizado';
       case 'confirmado':
         return 'Confirmado';
+      case 'en_espera':
+        return 'En espera';
       case 'en_proceso':
         return 'En proceso';
       case 'finalizado':
         return 'Finalizado';
+      case 'cerrado':
+        return 'Cerrado';
       case 'cancelado':
         return 'Cancelado';
+      case 'no_asistio':
+        return 'No asistio';
       default:
         return status;
     }
   }
 }
+

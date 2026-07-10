@@ -13,4 +13,43 @@ class TicketsService {
         .map<TicketSummary>((item) => TicketSummary.fromMap(item))
         .toList();
   }
+
+  Future<TicketSummary?> createTicket({
+    required String clientId,
+    DateTime? scheduledAt,
+    String channel = 'manual',
+    String? notes,
+  }) async {
+    final response = await Supabase.instance.client.rpc(
+      'create_ticket',
+      params: {
+        'p_client_id': clientId,
+        'p_scheduled_at': scheduledAt?.toUtc().toIso8601String(),
+        'p_channel': channel,
+        'p_notes': notes,
+      },
+    );
+
+    final rows = response as List<dynamic>;
+
+    if (rows.isEmpty) {
+      return null;
+    }
+
+    final createdTicket = Map<String, dynamic>.from(rows.first as Map);
+
+    return TicketSummary(
+      id: createdTicket['id'].toString(),
+      clientName: 'Cliente seleccionado',
+      scheduledAt: createdTicket['scheduled_at'] == null
+          ? null
+          : DateTime.tryParse(createdTicket['scheduled_at'].toString()),
+      status: createdTicket['status']?.toString() ?? 'solicitado',
+      channel: createdTicket['channel']?.toString() ?? channel,
+      serviceNames: 'Sin servicios',
+      stylistNames: 'Sin estilista',
+      totalPrice: 0,
+      totalDurationMinutes: 0,
+    );
+  }
 }
