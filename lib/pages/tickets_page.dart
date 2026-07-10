@@ -13,12 +13,18 @@ class TicketsPage extends StatefulWidget {
 
 class _TicketsPageState extends State<TicketsPage> {
   final TicketsService ticketsService = const TicketsService();
-  late final Future<List<TicketSummary>> ticketsFuture;
+  late Future<List<TicketSummary>> ticketsFuture;
 
   @override
   void initState() {
     super.initState();
     ticketsFuture = ticketsService.getTicketsSummary();
+  }
+
+  void _refreshTickets() {
+    setState(() {
+      ticketsFuture = ticketsService.getTicketsSummary();
+    });
   }
 
   @override
@@ -33,6 +39,15 @@ class _TicketsPageState extends State<TicketsPage> {
           title: 'Tickets conectados con Supabase',
           description:
               'Este m\u00f3dulo ahora consulta tickets resumidos mediante una funci\u00f3n segura, sin abrir directamente las tablas sensibles.',
+        ),
+        const SizedBox(height: 16),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: OutlinedButton.icon(
+            onPressed: _refreshTickets,
+            icon: const Icon(Icons.refresh_outlined),
+            label: const Text('Actualizar tickets'),
+          ),
         ),
         const SizedBox(height: 16),
         FutureBuilder<List<TicketSummary>>(
@@ -200,3 +215,5 @@ class TicketStatusBadge extends StatelessWidget {
     );
   }
 }
+
+
