@@ -1,6 +1,8 @@
 ﻿import 'package:flutter/material.dart';
 
+import '../models/client_summary.dart';
 import '../models/ticket_summary.dart';
+import '../services/clients_service.dart';
 import '../services/tickets_service.dart';
 import '../widgets/app_widgets.dart';
 
@@ -12,6 +14,7 @@ class TicketsPage extends StatefulWidget {
 }
 
 class _TicketsPageState extends State<TicketsPage> {
+  final ClientsService clientsService = const ClientsService();
   final TicketsService ticketsService = const TicketsService();
   late Future<List<TicketSummary>> ticketsFuture;
 
@@ -25,6 +28,69 @@ class _TicketsPageState extends State<TicketsPage> {
     setState(() {
       ticketsFuture = ticketsService.getTicketsSummary();
     });
+  }
+
+  Future<void> _openCreateTicketDialog() async {
+    try {
+      final clients = await clientsService.getClientsSummary();
+
+      if (!mounted) {
+        return;
+      }
+
+      if (clients.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Primero debes crear al menos un cliente.'),
+          ),
+        );
+        return;
+      }
+
+      final formData = await showDialog<_TicketFormData>(
+        context: context,
+        builder: (context) => _CreateTicketDialog(clients: clients),
+      );
+
+      if (formData == null) {
+        return;
+      }
+
+      final createdTicket = await ticketsService.createTicket(
+        clientId: formData.clientId,
+        scheduledAt: formData.scheduledAt,
+        channel: formData.channel,
+        notes: formData.notes,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (createdTicket == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No se pudo crear el ticket. Verifica tus permisos.',
+            ),
+          ),
+        );
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ticket creado correctamente.')),
+      );
+      _refreshTickets();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error creando ticket: $error')),
+      );
+    }
   }
 
   @override
@@ -41,13 +107,21 @@ class _TicketsPageState extends State<TicketsPage> {
               'Este m\u00f3dulo ahora consulta tickets resumidos mediante una funci\u00f3n segura, sin abrir directamente las tablas sensibles.',
         ),
         const SizedBox(height: 16),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: OutlinedButton.icon(
-            onPressed: _refreshTickets,
-            icon: const Icon(Icons.refresh_outlined),
-            label: const Text('Actualizar tickets'),
-          ),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            FilledButton.icon(
+              onPressed: _openCreateTicketDialog,
+              icon: const Icon(Icons.add_card_outlined),
+              label: const Text('Nuevo ticket'),
+            ),
+            OutlinedButton.icon(
+              onPressed: _refreshTickets,
+              icon: const Icon(Icons.refresh_outlined),
+              label: const Text('Actualizar tickets'),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         FutureBuilder<List<TicketSummary>>(
@@ -109,6 +183,232 @@ class _TicketsPageState extends State<TicketsPage> {
       ],
     );
   }
+}
+
+class _CreateTicketDialog extends StatefulWidget {
+  const _CreateTicketDialog({required this.clients});
+
+  final List<ClientSummary> clients;
+
+  @override
+  State<_CreateTicketDialog> createState() => _CreateTicketDialogState();
+}
+
+class _CreateTicketDialogState extends State<_CreateTicketDialog> {
+  final formKey = GlobalKey<FormState>();
+  final notesController = TextEditingController();
+
+  String? selectedClientId;
+  DateTime? scheduledAt;
+  String channel = 'manual';
+
+  @override
+  void dispose() {
+    notesController.dispose();
+    super.dispose();
+  }
+
+  String get scheduledAtText {
+    if (scheduledAt == null) {
+      return 'Sin fecha programada';
+    }
+
+    final date = scheduledAt!;
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+
+    return '$day/$month/${date.year} $hour:$minute';
+  }
+
+  Future<void> _selectDateAndTime() async {
+    final now = DateTime.now();
+    final initialDate = scheduledAt ?? now;
+    final date = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(now.year - 1),
+      lastDate: DateTime(now.year + 3),
+    );
+
+    if (date == null || !mounted) {
+      return;
+    }
+
+    final initialTime = scheduledAt == null
+        ? TimeOfDay.fromDateTime(now)
+        : TimeOfDay.fromDateTime(scheduledAt!);
+    final time = await showTimePicker(
+      context: context,
+      initialTime: initialTime,
+    );
+
+    if (time == null || !mounted) {
+      return;
+    }
+
+    setState(() {
+      scheduledAt = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
+      );
+    });
+  }
+
+  void _submit() {
+    if (!formKey.currentState!.validate()) {
+      return;
+    }
+
+    Navigator.of(context).pop(
+      _TicketFormData(
+        clientId: selectedClientId!,
+        scheduledAt: scheduledAt,
+        channel: channel,
+        notes: notesController.text.trim().isEmpty
+            ? null
+            : notesController.text.trim(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Nuevo ticket'),
+      content: SizedBox(
+        width: 480,
+        child: Form(
+          key: formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  initialValue: selectedClientId,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Cliente',
+                    prefixIcon: Icon(Icons.person_outline),
+                  ),
+                  items: widget.clients
+                      .map(
+                        (client) => DropdownMenuItem<String>(
+                          value: client.id,
+                          child: Text(
+                            '${client.name} · ${client.phone}',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedClientId = value;
+                    });
+                  },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Selecciona un cliente';
+                    }
+
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  initialValue: channel,
+                  decoration: const InputDecoration(
+                    labelText: 'Canal',
+                    prefixIcon: Icon(Icons.call_split_outlined),
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'manual',
+                      child: Text('Manual'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        channel = value;
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.event_outlined),
+                  title: const Text('Fecha y hora opcionales'),
+                  subtitle: Text(scheduledAtText),
+                  trailing: Wrap(
+                    spacing: 4,
+                    children: [
+                      if (scheduledAt != null)
+                        IconButton(
+                          tooltip: 'Quitar fecha',
+                          onPressed: () {
+                            setState(() {
+                              scheduledAt = null;
+                            });
+                          },
+                          icon: const Icon(Icons.clear),
+                        ),
+                      IconButton(
+                        tooltip: 'Elegir fecha y hora',
+                        onPressed: _selectDateAndTime,
+                        icon: const Icon(Icons.edit_calendar_outlined),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: notesController,
+                  decoration: const InputDecoration(
+                    labelText: 'Notas opcionales',
+                    prefixIcon: Icon(Icons.notes_outlined),
+                  ),
+                  minLines: 2,
+                  maxLines: 4,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton.icon(
+          onPressed: _submit,
+          icon: const Icon(Icons.save_outlined),
+          label: const Text('Crear ticket'),
+        ),
+      ],
+    );
+  }
+}
+
+class _TicketFormData {
+  const _TicketFormData({
+    required this.clientId,
+    required this.scheduledAt,
+    required this.channel,
+    required this.notes,
+  });
+
+  final String clientId;
+  final DateTime? scheduledAt;
+  final String channel;
+  final String? notes;
 }
 
 class TicketRow extends StatelessWidget {
