@@ -1,5 +1,6 @@
 ﻿import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/ticket_service_option.dart';
 import '../models/ticket_summary.dart';
 
 class TicketsService {
@@ -12,6 +13,34 @@ class TicketsService {
     return response
         .map<TicketSummary>((item) => TicketSummary.fromMap(item))
         .toList();
+  }
+
+  Future<List<TicketServiceOption>> getTicketServiceOptions() async {
+    final response = await Supabase.instance.client
+        .rpc('get_ticket_service_options');
+
+    return response
+        .map<TicketServiceOption>(
+          (item) => TicketServiceOption.fromMap(item),
+        )
+        .toList();
+  }
+
+  Future<bool> addTicketService({
+    required String ticketId,
+    required String serviceId,
+    String? stylistId,
+  }) async {
+    final response = await Supabase.instance.client.rpc(
+      'add_ticket_service',
+      params: {
+        'p_ticket_id': ticketId,
+        'p_service_id': serviceId,
+        'p_stylist_id': stylistId,
+      },
+    );
+
+    return (response as List<dynamic>).isNotEmpty;
   }
 
   Future<TicketSummary?> createTicket({
