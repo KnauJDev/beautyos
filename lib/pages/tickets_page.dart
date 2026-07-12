@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 
 import '../models/client_summary.dart';
+import '../models/ticket_service_option.dart';
 import '../models/ticket_summary.dart';
 import '../services/clients_service.dart';
 import '../services/tickets_service.dart';
@@ -93,6 +94,75 @@ class _TicketsPageState extends State<TicketsPage> {
     }
   }
 
+  Future<void> _openAddTicketServiceDialog(TicketSummary ticket) async {
+    try {
+      final options = await ticketsService.getTicketServiceOptions();
+
+      if (!mounted) {
+        return;
+      }
+
+      if (options.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No hay servicios activos disponibles.'),
+          ),
+        );
+        return;
+      }
+
+      final formData = await showDialog<_TicketServiceFormData>(
+        context: context,
+        builder: (context) => _AddTicketServiceDialog(options: options),
+      );
+
+      if (formData == null) {
+        return;
+      }
+
+      final added = await ticketsService.addTicketService(
+        ticketId: ticket.id,
+        serviceId: formData.serviceId,
+        stylistId: formData.stylistId,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (!added) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo agregar el servicio al ticket.'),
+          ),
+        );
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Servicio agregado correctamente.')),
+      );
+      _refreshTickets();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error agregando servicio: $error')),
+      );
+    }
+  }
+
+  bool _canAddServices(TicketSummary ticket) {
+    return !{
+      'finalizado',
+      'cerrado',
+      'cancelado',
+      'no_asistio',
+    }.contains(ticket.status);
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppPage(
@@ -173,7 +243,14 @@ class _TicketsPageState extends State<TicketsPage> {
                   children: [
                     const SectionTitle('Tickets desde Supabase'),
                     const SizedBox(height: 14),
-                    ...tickets.map((ticket) => TicketRow(ticket: ticket)),
+                    ...tickets.map(
+                      (ticket) => TicketRow(
+                        ticket: ticket,
+                        onAddService: _canAddServices(ticket)
+                            ? () => _openAddTicketServiceDialog(ticket)
+                            : null,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -411,10 +488,210 @@ class _TicketFormData {
   final String? notes;
 }
 
+class _AddTicketServiceDialog extends StatefulWidget {
+  const _AddTicketServiceDialog({required this.options});
+
+  final List<TicketServiceOption> options;
+
+  @override
+  State<_AddTicketServiceDialog> createState() =>
+      _AddTicketServiceDialogState();
+}
+
+class _AddTicketServiceDialogState
+    extends State<_AddTicketServiceDialog> {
+  final formKey = GlobalKey<FormState>();
+
+  String? selectedServiceId;
+  String selectedStylistId = '';
+
+  List<TicketServiceOption> get services {
+    final uniqueServices = <String, TicketServiceOption>{};
+
+    for (final option in widget.options) {
+      uniqueServices.putIfAbsent(option.serviceId, () => option);
+    }
+
+    return uniqueServices.values.toList();
+  }
+
+  List<TicketServiceOption> get stylists {
+    if (selectedServiceId == null) {
+      return [];
+    }
+
+    return widget.options
+        .where(
+          (option) =>
+              option.serviceId == selectedServiceId &&
+              option.stylistId != null,
+        )
+        .toList();
+  }
+
+  TicketServiceOption? get selectedService {
+    if (selectedServiceId == null) {
+      return null;
+    }
+
+    for (final option in services) {
+      if (option.serviceId == selectedServiceId) {
+        return option;
+      }
+    }
+
+    return null;
+  }
+
+  void _submit() {
+    if (!formKey.currentState!.validate()) {
+      return;
+    }
+
+    Navigator.of(context).pop(
+      _TicketServiceFormData(
+        serviceId: selectedServiceId!,
+        stylistId: selectedStylistId.isEmpty ? null : selectedStylistId,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final service = selectedService;
+
+    return AlertDialog(
+      title: const Text('Agregar servicio'),
+      content: SizedBox(
+        width: 500,
+        child: Form(
+          key: formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  initialValue: selectedServiceId,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Servicio',
+                    prefixIcon: Icon(Icons.content_cut_outlined),
+                  ),
+                  items: services
+                      .map(
+                        (option) => DropdownMenuItem<String>(
+                          value: option.serviceId,
+                          child: Text(
+                            '${option.serviceName} · ${option.formattedPrice}',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedServiceId = value;
+                      selectedStylistId = '';
+                    });
+                  },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Selecciona un servicio';
+                    }
+
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  key: ValueKey(selectedServiceId),
+                  initialValue: selectedStylistId,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Estilista opcional',
+                    prefixIcon: Icon(Icons.badge_outlined),
+                  ),
+                  items: [
+                    const DropdownMenuItem<String>(
+                      value: '',
+                      child: Text('Sin asignar'),
+                    ),
+                    ...stylists.map(
+                      (option) => DropdownMenuItem<String>(
+                        value: option.stylistId!,
+                        child: Text(
+                          option.stylistName ?? 'Sin estilista',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ],
+                  onChanged: selectedServiceId == null
+                      ? null
+                      : (value) {
+                          setState(() {
+                            selectedStylistId = value ?? '';
+                          });
+                        },
+                ),
+                if (service != null) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F3FF),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Text(
+                      '${service.category} · ${service.formattedPrice} · '
+                      '${service.durationMinutes} min',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF5B21B6),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton.icon(
+          onPressed: _submit,
+          icon: const Icon(Icons.add_outlined),
+          label: const Text('Agregar servicio'),
+        ),
+      ],
+    );
+  }
+}
+
+class _TicketServiceFormData {
+  const _TicketServiceFormData({
+    required this.serviceId,
+    required this.stylistId,
+  });
+
+  final String serviceId;
+  final String? stylistId;
+}
+
 class TicketRow extends StatelessWidget {
   final TicketSummary ticket;
+  final VoidCallback? onAddService;
 
-  const TicketRow({super.key, required this.ticket});
+  const TicketRow({
+    super.key,
+    required this.ticket,
+    required this.onAddService,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -480,6 +757,14 @@ class TicketRow extends StatelessWidget {
                     color: Color(0xFF059669),
                   ),
                 ),
+                if (onAddService != null) ...[
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: onAddService,
+                    icon: const Icon(Icons.add_outlined),
+                    label: const Text('Agregar servicio'),
+                  ),
+                ],
               ],
             ),
           ),
