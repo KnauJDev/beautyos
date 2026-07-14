@@ -20,4 +20,19 @@ class MyStylistAgendaService {
         )
         .toList();
   }
+
+  Future<bool> changeTicketServiceStatus({
+    required String ticketServiceId,
+    required String newStatus,
+  }) async {
+    final response = await Supabase.instance.client.rpc(
+      'change_ticket_service_status',
+      params: {
+        'p_ticket_service_id': ticketServiceId,
+        'p_new_status': newStatus,
+      },
+    );
+
+    return (response as List<dynamic>).isNotEmpty;
+  }
 }

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../models/my_stylist_agenda_item.dart';
 import '../services/my_stylist_agenda_service.dart';
@@ -14,12 +14,92 @@ class MyStylistAgendaPage extends StatefulWidget {
 class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
   final MyStylistAgendaService agendaService = const MyStylistAgendaService();
 
-  late final Future<List<MyStylistAgendaItem>> agendaFuture;
+  late Future<List<MyStylistAgendaItem>> agendaFuture;
 
   @override
   void initState() {
     super.initState();
     agendaFuture = agendaService.getMyStylistAgenda();
+  }
+
+  void _refreshAgenda() {
+    setState(() {
+      agendaFuture = agendaService.getMyStylistAgenda();
+    });
+  }
+
+  Future<void> _updateServiceStatus(
+    MyStylistAgendaItem item,
+    String newStatus,
+  ) async {
+    try {
+      final updated = await agendaService.changeTicketServiceStatus(
+        ticketServiceId: item.ticketServiceId,
+        newStatus: newStatus,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (!updated) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo actualizar el servicio.')),
+        );
+        return;
+      }
+
+      final message = newStatus == 'en_proceso'
+          ? 'Servicio iniciado correctamente.'
+          : 'Servicio finalizado correctamente.';
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+      _refreshAgenda();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo actualizar el servicio: $error')),
+      );
+    }
+  }
+
+  Future<void> _confirmAndUpdateServiceStatus(
+    MyStylistAgendaItem item,
+    String newStatus,
+  ) async {
+    if (newStatus == 'finalizado') {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Finalizar servicio'),
+          content: Text(
+            '¿Confirmas que terminaste ${item.serviceName} para '
+            '${item.clientName}?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Volver'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Sí, finalizar'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed != true) {
+        return;
+      }
+    }
+
+    await _updateServiceStatus(item, newStatus);
   }
 
   @override
@@ -32,9 +112,7 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
           future: agendaFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
+              return const Center(child: CircularProgressIndicator());
             }
 
             if (snapshot.hasError) {
@@ -51,7 +129,8 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
               return const InfoPanel(
                 icon: Icons.event_busy_outlined,
                 title: 'Sin citas asignadas',
-                description: 'Cuando tengas servicios asignados, apareceran aqui.',
+                description:
+                    'Cuando tengas servicios asignados, apareceran aqui.',
               );
             }
 
@@ -70,7 +149,10 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
                 const SizedBox(height: 24),
                 const SectionTitle('Servicios asignados'),
                 const SizedBox(height: 12),
-                _AgendaTable(items: items),
+                _AgendaTable(
+                  items: items,
+                  onUpdateServiceStatus: _confirmAndUpdateServiceStatus,
+                ),
               ],
             );
           },
@@ -81,10 +163,7 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
 }
 
 class _AgendaSummary extends StatefulWidget {
-  const _AgendaSummary({
-    required this.itemsCount,
-    required this.totalValue,
-  });
+  const _AgendaSummary({required this.itemsCount, required this.totalValue});
 
   final int itemsCount;
   final double totalValue;
@@ -122,10 +201,7 @@ class _AgendaSummaryState extends State<_AgendaSummary> {
               padding: const EdgeInsets.all(18),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.payments_outlined,
-                    color: Color(0xFF7C3AED),
-                  ),
+                  const Icon(Icons.payments_outlined, color: Color(0xFF7C3AED)),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
@@ -199,9 +275,14 @@ class _AgendaSummaryState extends State<_AgendaSummary> {
 }
 
 class _AgendaTable extends StatelessWidget {
-  const _AgendaTable({required this.items});
+  const _AgendaTable({
+    required this.items,
+    required this.onUpdateServiceStatus,
+  });
 
   final List<MyStylistAgendaItem> items;
+  final Future<void> Function(MyStylistAgendaItem item, String newStatus)
+  onUpdateServiceStatus;
 
   @override
   Widget build(BuildContext context) {
@@ -225,6 +306,7 @@ class _AgendaTable extends StatelessWidget {
             DataColumn(label: Text('Duracion')),
             DataColumn(label: Text('Valor')),
             DataColumn(label: Text('Notas')),
+            DataColumn(label: Text('Acción')),
           ],
           rows: items
               .map(
@@ -239,6 +321,12 @@ class _AgendaTable extends StatelessWidget {
                     DataCell(Text(item.durationText)),
                     DataCell(Text(item.formattedPrice)),
                     DataCell(Text(item.notesText)),
+                    DataCell(
+                      _ServiceActionButton(
+                        item: item,
+                        onUpdateServiceStatus: onUpdateServiceStatus,
+                      ),
+                    ),
                   ],
                 ),
               )
@@ -246,5 +334,36 @@ class _AgendaTable extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _ServiceActionButton extends StatelessWidget {
+  const _ServiceActionButton({
+    required this.item,
+    required this.onUpdateServiceStatus,
+  });
+
+  final MyStylistAgendaItem item;
+  final Future<void> Function(MyStylistAgendaItem item, String newStatus)
+  onUpdateServiceStatus;
+
+  @override
+  Widget build(BuildContext context) {
+    switch (item.serviceStatus) {
+      case 'pendiente':
+        return FilledButton.icon(
+          onPressed: () => onUpdateServiceStatus(item, 'en_proceso'),
+          icon: const Icon(Icons.play_arrow_outlined),
+          label: const Text('Iniciar'),
+        );
+      case 'en_proceso':
+        return OutlinedButton.icon(
+          onPressed: () => onUpdateServiceStatus(item, 'finalizado'),
+          icon: const Icon(Icons.task_alt_outlined),
+          label: const Text('Finalizar'),
+        );
+      default:
+        return const Text('Sin acción');
+    }
   }
 }
