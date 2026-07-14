@@ -195,6 +195,51 @@ class _TicketsPageState extends State<TicketsPage> {
     }
   }
 
+  Future<void> _openChangeTicketStatusDialog(TicketSummary ticket) async {
+    final formData = await showDialog<_TicketStatusFormData>(
+      context: context,
+      builder: (context) => _ChangeTicketStatusDialog(ticket: ticket),
+    );
+
+    if (formData == null) {
+      return;
+    }
+
+    try {
+      final changed = await ticketsService.changeTicketStatus(
+        ticketId: ticket.id,
+        newStatus: formData.newStatus,
+        reason: formData.reason,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (!changed) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo actualizar el estado del ticket.'),
+          ),
+        );
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Estado del ticket actualizado.')),
+      );
+      _refreshTickets();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo actualizar el estado: $error')),
+      );
+    }
+  }
+
   bool _canAddServices(TicketSummary ticket) {
     return !{
       'finalizado',
@@ -207,6 +252,27 @@ class _TicketsPageState extends State<TicketsPage> {
   bool _canReschedule(TicketSummary ticket) {
     return ticket.scheduledAt != null &&
         {'apartado', 'confirmado', 'en_espera'}.contains(ticket.status);
+  }
+
+  bool _canChangeStatus(TicketSummary ticket) {
+    return _availableNextStatuses(ticket.status).isNotEmpty;
+  }
+
+  static List<String> _availableNextStatuses(String currentStatus) {
+    switch (currentStatus) {
+      case 'solicitado':
+        return ['cotizado', 'apartado', 'confirmado', 'cancelado'];
+      case 'cotizado':
+        return ['apartado', 'confirmado', 'cancelado'];
+      case 'apartado':
+        return ['confirmado', 'cancelado'];
+      case 'confirmado':
+        return ['en_espera', 'en_proceso', 'cancelado', 'no_asistio'];
+      case 'en_espera':
+        return ['en_proceso', 'cancelado', 'no_asistio'];
+      default:
+        return [];
+    }
   }
 
   @override
@@ -296,6 +362,9 @@ class _TicketsPageState extends State<TicketsPage> {
                             : null,
                         onReschedule: _canReschedule(ticket)
                             ? () => _openRescheduleTicketDialog(ticket)
+                            : null,
+                        onChangeStatus: _canChangeStatus(ticket)
+                            ? () => _openChangeTicketStatusDialog(ticket)
                             : null,
                       ),
                     ),
@@ -876,16 +945,182 @@ class _RescheduleTicketFormData {
   final String reason;
 }
 
+class _ChangeTicketStatusDialog extends StatefulWidget {
+  const _ChangeTicketStatusDialog({required this.ticket});
+
+  final TicketSummary ticket;
+
+  @override
+  State<_ChangeTicketStatusDialog> createState() =>
+      _ChangeTicketStatusDialogState();
+}
+
+class _ChangeTicketStatusDialogState extends State<_ChangeTicketStatusDialog> {
+  final formKey = GlobalKey<FormState>();
+  final reasonController = TextEditingController();
+  late final List<String> availableStatuses;
+  String? selectedStatus;
+
+  @override
+  void initState() {
+    super.initState();
+    availableStatuses = _TicketsPageState._availableNextStatuses(
+      widget.ticket.status,
+    );
+  }
+
+  @override
+  void dispose() {
+    reasonController.dispose();
+    super.dispose();
+  }
+
+  bool get requiresReason {
+    return selectedStatus == 'cancelado' || selectedStatus == 'no_asistio';
+  }
+
+  void _submit() {
+    if (!formKey.currentState!.validate()) {
+      return;
+    }
+
+    Navigator.of(context).pop(
+      _TicketStatusFormData(
+        newStatus: selectedStatus!,
+        reason: reasonController.text.trim().isEmpty
+            ? null
+            : reasonController.text.trim(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Actualizar estado'),
+      content: SizedBox(
+        width: 440,
+        child: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Estado actual: ${widget.ticket.statusLabel}'),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                initialValue: selectedStatus,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Nuevo estado',
+                  prefixIcon: Icon(Icons.swap_horiz_outlined),
+                ),
+                items: availableStatuses
+                    .map(
+                      (status) => DropdownMenuItem<String>(
+                        value: status,
+                        child: Text(_ticketStatusLabel(status)),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    selectedStatus = value;
+                  });
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Selecciona el nuevo estado';
+                  }
+
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: reasonController,
+                decoration: InputDecoration(
+                  labelText: requiresReason
+                      ? 'Motivo obligatorio'
+                      : 'Motivo opcional',
+                  prefixIcon: const Icon(Icons.notes_outlined),
+                ),
+                minLines: 2,
+                maxLines: 4,
+                validator: (value) {
+                  if (requiresReason &&
+                      (value == null || value.trim().isEmpty)) {
+                    return 'Indica el motivo de esta decisión';
+                  }
+
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton.icon(
+          onPressed: _submit,
+          icon: const Icon(Icons.save_outlined),
+          label: const Text('Actualizar estado'),
+        ),
+      ],
+    );
+  }
+}
+
+class _TicketStatusFormData {
+  const _TicketStatusFormData({required this.newStatus, required this.reason});
+
+  final String newStatus;
+  final String? reason;
+}
+
+String _ticketStatusLabel(String status) {
+  switch (status) {
+    case 'solicitado':
+      return 'Solicitado';
+    case 'cotizado':
+      return 'Cotizado';
+    case 'apartado':
+      return 'Apartado';
+    case 'confirmado':
+      return 'Confirmado';
+    case 'en_espera':
+      return 'En espera';
+    case 'en_proceso':
+      return 'En proceso';
+    case 'finalizado':
+      return 'Finalizado';
+    case 'cancelado':
+      return 'Cancelado';
+    case 'no_asistio':
+      return 'No asistió';
+    default:
+      return status;
+  }
+}
+
 class TicketRow extends StatelessWidget {
   final TicketSummary ticket;
   final VoidCallback? onAddService;
   final VoidCallback? onReschedule;
+  final VoidCallback? onChangeStatus;
 
   const TicketRow({
     super.key,
     required this.ticket,
     required this.onAddService,
     required this.onReschedule,
+    required this.onChangeStatus,
   });
 
   @override
@@ -952,7 +1187,9 @@ class TicketRow extends StatelessWidget {
                     color: Color(0xFF059669),
                   ),
                 ),
-                if (onAddService != null || onReschedule != null) ...[
+                if (onAddService != null ||
+                    onReschedule != null ||
+                    onChangeStatus != null) ...[
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 10,
@@ -969,6 +1206,12 @@ class TicketRow extends StatelessWidget {
                           onPressed: onReschedule,
                           icon: const Icon(Icons.event_repeat_outlined),
                           label: const Text('Reprogramar'),
+                        ),
+                      if (onChangeStatus != null)
+                        OutlinedButton.icon(
+                          onPressed: onChangeStatus,
+                          icon: const Icon(Icons.swap_horiz_outlined),
+                          label: const Text('Cambiar estado'),
                         ),
                     ],
                   ),

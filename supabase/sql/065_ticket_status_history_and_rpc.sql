@@ -82,6 +82,10 @@ begin
     raise exception 'Un ticket solo podrá cerrarse cuando exista el registro de pago.';
   end if;
 
+  if v_new_status in ('cancelado', 'no_asistio') and v_reason is null then
+    raise exception 'Indica el motivo para cancelar o marcar que no asistió.';
+  end if;
+
   if v_new_status in ('apartado', 'confirmado', 'en_espera', 'en_proceso')
      and v_ticket.scheduled_at is null then
     raise exception 'Programa fecha y hora antes de llevar el ticket a ese estado.';

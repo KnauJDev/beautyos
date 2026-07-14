@@ -58,6 +58,23 @@ class TicketsService {
     return (response as List<dynamic>).isNotEmpty;
   }
 
+  Future<bool> changeTicketStatus({
+    required String ticketId,
+    required String newStatus,
+    String? reason,
+  }) async {
+    final response = await Supabase.instance.client.rpc(
+      'change_ticket_status',
+      params: {
+        'p_ticket_id': ticketId,
+        'p_new_status': newStatus,
+        'p_reason': reason,
+      },
+    );
+
+    return (response as List<dynamic>).isNotEmpty;
+  }
+
   Future<TicketSummary?> createTicket({
     required String clientId,
     DateTime? scheduledAt,
