@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/client_summary.dart';
 import '../models/ticket_service_option.dart';
+import '../models/ticket_service_correction_option.dart';
 import '../models/ticket_summary.dart';
 import '../services/clients_service.dart';
 import '../services/tickets_service.dart';
@@ -240,6 +241,65 @@ class _TicketsPageState extends State<TicketsPage> {
     }
   }
 
+  Future<void> _openCorrectCompletionDialog(TicketSummary ticket) async {
+    try {
+      final options = await ticketsService.getTicketServicesForCorrection(
+        ticket.id,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (options.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No hay servicios finalizados para corregir.'),
+          ),
+        );
+        return;
+      }
+
+      final formData = await showDialog<_CorrectionFormData>(
+        context: context,
+        builder: (context) => _CorrectCompletionDialog(options: options),
+      );
+
+      if (formData == null) {
+        return;
+      }
+
+      final corrected = await ticketsService.reopenFinishedTicketService(
+        ticketServiceId: formData.ticketServiceId,
+        reason: formData.reason,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (!corrected) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo corregir la finalización.')),
+        );
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Servicio reabierto correctamente.')),
+      );
+      _refreshTickets();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('No se pudo corregir: $error')));
+    }
+  }
+
   bool _canAddServices(TicketSummary ticket) {
     return !{
       'finalizado',
@@ -256,6 +316,10 @@ class _TicketsPageState extends State<TicketsPage> {
 
   bool _canChangeStatus(TicketSummary ticket) {
     return _availableNextStatuses(ticket.status).isNotEmpty;
+  }
+
+  bool _canCorrectCompletion(TicketSummary ticket) {
+    return {'en_proceso', 'finalizado'}.contains(ticket.status);
   }
 
   static List<String> _availableNextStatuses(String currentStatus) {
@@ -365,6 +429,9 @@ class _TicketsPageState extends State<TicketsPage> {
                             : null,
                         onChangeStatus: _canChangeStatus(ticket)
                             ? () => _openChangeTicketStatusDialog(ticket)
+                            : null,
+                        onCorrectCompletion: _canCorrectCompletion(ticket)
+                            ? () => _openCorrectCompletionDialog(ticket)
                             : null,
                       ),
                     ),
@@ -1084,6 +1151,142 @@ class _TicketStatusFormData {
   final String? reason;
 }
 
+class _CorrectCompletionDialog extends StatefulWidget {
+  const _CorrectCompletionDialog({required this.options});
+
+  final List<TicketServiceCorrectionOption> options;
+
+  @override
+  State<_CorrectCompletionDialog> createState() =>
+      _CorrectCompletionDialogState();
+}
+
+class _CorrectCompletionDialogState extends State<_CorrectCompletionDialog> {
+  final formKey = GlobalKey<FormState>();
+  final reasonController = TextEditingController();
+  String? selectedTicketServiceId;
+
+  @override
+  void dispose() {
+    reasonController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (!formKey.currentState!.validate()) {
+      return;
+    }
+
+    Navigator.of(context).pop(
+      _CorrectionFormData(
+        ticketServiceId: selectedTicketServiceId!,
+        reason: reasonController.text.trim(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Corregir finalización'),
+      content: SizedBox(
+        width: 500,
+        child: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7ED),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Text(
+                  'El servicio seleccionado y su ticket volverán a '
+                  '“En proceso”. La corrección quedará registrada.',
+                  style: TextStyle(color: Color(0xFF9A3412)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                initialValue: selectedTicketServiceId,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Servicio finalizado',
+                  prefixIcon: Icon(Icons.task_alt_outlined),
+                ),
+                items: widget.options
+                    .map(
+                      (option) => DropdownMenuItem<String>(
+                        value: option.ticketServiceId,
+                        child: Text(
+                          option.label,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    selectedTicketServiceId = value;
+                  });
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Selecciona el servicio que deseas reabrir';
+                  }
+
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: reasonController,
+                decoration: const InputDecoration(
+                  labelText: 'Motivo obligatorio',
+                  prefixIcon: Icon(Icons.notes_outlined),
+                ),
+                minLines: 2,
+                maxLines: 4,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Indica por qué se corrige la finalización';
+                  }
+
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton.icon(
+          onPressed: _submit,
+          icon: const Icon(Icons.restart_alt_outlined),
+          label: const Text('Reabrir servicio'),
+        ),
+      ],
+    );
+  }
+}
+
+class _CorrectionFormData {
+  const _CorrectionFormData({
+    required this.ticketServiceId,
+    required this.reason,
+  });
+
+  final String ticketServiceId;
+  final String reason;
+}
+
 String _ticketStatusLabel(String status) {
   switch (status) {
     case 'solicitado':
@@ -1114,6 +1317,7 @@ class TicketRow extends StatelessWidget {
   final VoidCallback? onAddService;
   final VoidCallback? onReschedule;
   final VoidCallback? onChangeStatus;
+  final VoidCallback? onCorrectCompletion;
 
   const TicketRow({
     super.key,
@@ -1121,6 +1325,7 @@ class TicketRow extends StatelessWidget {
     required this.onAddService,
     required this.onReschedule,
     required this.onChangeStatus,
+    required this.onCorrectCompletion,
   });
 
   @override
@@ -1189,7 +1394,8 @@ class TicketRow extends StatelessWidget {
                 ),
                 if (onAddService != null ||
                     onReschedule != null ||
-                    onChangeStatus != null) ...[
+                    onChangeStatus != null ||
+                    onCorrectCompletion != null) ...[
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 10,
@@ -1212,6 +1418,12 @@ class TicketRow extends StatelessWidget {
                           onPressed: onChangeStatus,
                           icon: const Icon(Icons.swap_horiz_outlined),
                           label: const Text('Cambiar estado'),
+                        ),
+                      if (onCorrectCompletion != null)
+                        OutlinedButton.icon(
+                          onPressed: onCorrectCompletion,
+                          icon: const Icon(Icons.restart_alt_outlined),
+                          label: const Text('Corregir finalización'),
                         ),
                     ],
                   ),

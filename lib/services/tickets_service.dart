@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/ticket_service_option.dart';
+import '../models/ticket_service_correction_option.dart';
 import '../models/ticket_summary.dart';
 
 class TicketsService {
@@ -70,6 +71,35 @@ class TicketsService {
         'p_new_status': newStatus,
         'p_reason': reason,
       },
+    );
+
+    return (response as List<dynamic>).isNotEmpty;
+  }
+
+  Future<List<TicketServiceCorrectionOption>> getTicketServicesForCorrection(
+    String ticketId,
+  ) async {
+    final response = await Supabase.instance.client.rpc(
+      'get_ticket_services_for_correction',
+      params: {'p_ticket_id': ticketId},
+    );
+
+    return (response as List<dynamic>)
+        .map(
+          (item) => TicketServiceCorrectionOption.fromMap(
+            Map<String, dynamic>.from(item as Map),
+          ),
+        )
+        .toList();
+  }
+
+  Future<bool> reopenFinishedTicketService({
+    required String ticketServiceId,
+    required String reason,
+  }) async {
+    final response = await Supabase.instance.client.rpc(
+      'reopen_finished_ticket_service',
+      params: {'p_ticket_service_id': ticketServiceId, 'p_reason': reason},
     );
 
     return (response as List<dynamic>).isNotEmpty;

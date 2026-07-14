@@ -7,11 +7,15 @@ create table if not exists public.ticket_service_history (
   ticket_service_id uuid not null references public.ticket_services(id) on delete restrict,
   previous_status text not null,
   new_status text not null,
+  reason text,
   created_by uuid not null,
   created_at timestamptz not null default now()
 );
 
 alter table public.ticket_service_history enable row level security;
+
+alter table public.ticket_service_history
+  add column if not exists reason text;
 
 create index if not exists ticket_service_history_tenant_service_created_at_idx
   on public.ticket_service_history (tenant_id, ticket_service_id, created_at desc);
