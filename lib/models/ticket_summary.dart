@@ -8,6 +8,9 @@ class TicketSummary {
   final String stylistNames;
   final num totalPrice;
   final int totalDurationMinutes;
+  final num paidAmount;
+  final num balanceAmount;
+  final String paymentStatus;
 
   const TicketSummary({
     required this.id,
@@ -19,6 +22,9 @@ class TicketSummary {
     required this.stylistNames,
     required this.totalPrice,
     required this.totalDurationMinutes,
+    required this.paidAmount,
+    required this.balanceAmount,
+    required this.paymentStatus,
   });
 
   factory TicketSummary.fromMap(Map<String, dynamic> map) {
@@ -34,6 +40,9 @@ class TicketSummary {
       stylistNames: map['stylist_names']?.toString() ?? 'Sin estilista',
       totalPrice: _readNumber(map['total_price']),
       totalDurationMinutes: _readInt(map['total_duration_minutes']),
+      paidAmount: _readNumber(map['paid_amount']),
+      balanceAmount: _readNumber(map['balance_amount']),
+      paymentStatus: map['payment_status']?.toString() ?? 'sin_pago',
     );
   }
 
@@ -54,7 +63,19 @@ class TicketSummary {
   }
 
   String get formattedPrice {
-    final value = totalPrice.toInt().toString();
+    return _formatMoney(totalPrice);
+  }
+
+  String get formattedPaidAmount {
+    return _formatMoney(paidAmount);
+  }
+
+  String get formattedBalanceAmount {
+    return _formatMoney(balanceAmount);
+  }
+
+  static String _formatMoney(num amount) {
+    final value = amount.toInt().toString();
     final buffer = StringBuffer();
 
     for (int i = 0; i < value.length; i++) {
@@ -68,6 +89,10 @@ class TicketSummary {
     }
 
     return '\$$buffer';
+  }
+
+  bool get showsPaymentInfo {
+    return status == 'finalizado' || status == 'cerrado' || paidAmount > 0;
   }
 
   String get scheduledAtText {

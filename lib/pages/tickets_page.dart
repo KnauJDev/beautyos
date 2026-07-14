@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/client_summary.dart';
 import '../models/ticket_service_option.dart';
 import '../models/ticket_service_correction_option.dart';
+import '../models/ticket_payment.dart';
 import '../models/ticket_summary.dart';
 import '../services/clients_service.dart';
 import '../services/tickets_service.dart';
@@ -300,6 +301,64 @@ class _TicketsPageState extends State<TicketsPage> {
     }
   }
 
+  Future<void> _openPaymentsDialog(TicketSummary ticket) async {
+    try {
+      final summaryFuture = ticketsService.getTicketPaymentSummary(ticket.id);
+      final paymentsFuture = ticketsService.getTicketPayments(ticket.id);
+      final summary = await summaryFuture;
+      final payments = await paymentsFuture;
+
+      if (!mounted) {
+        return;
+      }
+
+      final formData = await showDialog<_PaymentFormData>(
+        context: context,
+        builder: (context) => _PaymentsDialog(
+          ticket: ticket,
+          summary: summary,
+          payments: payments,
+        ),
+      );
+
+      if (formData == null) {
+        return;
+      }
+
+      final registered = await ticketsService.registerTicketPayment(
+        ticketId: ticket.id,
+        amount: formData.amount,
+        method: formData.method,
+        reference: formData.reference,
+        notes: formData.notes,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (!registered) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo registrar el pago.')),
+        );
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pago registrado correctamente.')),
+      );
+      _refreshTickets();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo gestionar el pago: $error')),
+      );
+    }
+  }
+
   bool _canAddServices(TicketSummary ticket) {
     return !{
       'finalizado',
@@ -320,6 +379,10 @@ class _TicketsPageState extends State<TicketsPage> {
 
   bool _canCorrectCompletion(TicketSummary ticket) {
     return {'en_proceso', 'finalizado'}.contains(ticket.status);
+  }
+
+  bool _canManagePayments(TicketSummary ticket) {
+    return {'finalizado', 'cerrado'}.contains(ticket.status);
   }
 
   static List<String> _availableNextStatuses(String currentStatus) {
@@ -432,6 +495,9 @@ class _TicketsPageState extends State<TicketsPage> {
                             : null,
                         onCorrectCompletion: _canCorrectCompletion(ticket)
                             ? () => _openCorrectCompletionDialog(ticket)
+                            : null,
+                        onManagePayments: _canManagePayments(ticket)
+                            ? () => _openPaymentsDialog(ticket)
                             : null,
                       ),
                     ),
@@ -1287,6 +1353,274 @@ class _CorrectionFormData {
   final String reason;
 }
 
+class _PaymentsDialog extends StatefulWidget {
+  const _PaymentsDialog({
+    required this.ticket,
+    required this.summary,
+    required this.payments,
+  });
+
+  final TicketSummary ticket;
+  final TicketPaymentSummary summary;
+  final List<TicketPaymentRecord> payments;
+
+  @override
+  State<_PaymentsDialog> createState() => _PaymentsDialogState();
+}
+
+class _PaymentsDialogState extends State<_PaymentsDialog> {
+  final formKey = GlobalKey<FormState>();
+  final amountController = TextEditingController();
+  final referenceController = TextEditingController();
+  final notesController = TextEditingController();
+  String method = 'efectivo';
+
+  bool get canRegisterPayment {
+    return widget.ticket.status == 'finalizado' &&
+        widget.summary.balanceAmount > 0;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    amountController.text = widget.summary.balanceAmount.toStringAsFixed(0);
+  }
+
+  @override
+  void dispose() {
+    amountController.dispose();
+    referenceController.dispose();
+    notesController.dispose();
+    super.dispose();
+  }
+
+  num? _parseAmount(String value) {
+    final normalized = value.trim().replaceAll('.', '').replaceAll(',', '.');
+    return num.tryParse(normalized);
+  }
+
+  void _submit() {
+    if (!formKey.currentState!.validate()) {
+      return;
+    }
+
+    Navigator.of(context).pop(
+      _PaymentFormData(
+        amount: _parseAmount(amountController.text)!,
+        method: method,
+        reference: referenceController.text.trim().isEmpty
+            ? null
+            : referenceController.text.trim(),
+        notes: notesController.text.trim().isEmpty
+            ? null
+            : notesController.text.trim(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Pagos y saldo'),
+      content: SizedBox(
+        width: 560,
+        child: SingleChildScrollView(
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F3FF),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Wrap(
+                    spacing: 24,
+                    runSpacing: 10,
+                    children: [
+                      _PaymentMetric(
+                        label: 'Total',
+                        value: formatMoney(widget.summary.totalAmount),
+                      ),
+                      _PaymentMetric(
+                        label: 'Pagado',
+                        value: formatMoney(widget.summary.paidAmount),
+                      ),
+                      _PaymentMetric(
+                        label: 'Saldo',
+                        value: formatMoney(widget.summary.balanceAmount),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Text(
+                  'Movimientos registrados',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 8),
+                if (widget.payments.isEmpty)
+                  const Text('Aún no hay pagos registrados.')
+                else
+                  ...widget.payments.map(
+                    (payment) => ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.payments_outlined),
+                      title: Text(
+                        '${formatMoney(payment.amount)} · '
+                        '${payment.methodLabel}',
+                      ),
+                      subtitle: Text(
+                        [
+                          payment.receivedAtText,
+                          if (payment.reference != null &&
+                              payment.reference!.trim().isNotEmpty)
+                            'Ref: ${payment.reference}',
+                        ].join(' · '),
+                      ),
+                      trailing: Text(payment.status),
+                    ),
+                  ),
+                if (canRegisterPayment) ...[
+                  const Divider(height: 32),
+                  const Text(
+                    'Registrar nuevo pago',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: amountController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(
+                      labelText: 'Valor del pago',
+                      prefixIcon: Icon(Icons.attach_money_outlined),
+                    ),
+                    validator: (value) {
+                      final amount = _parseAmount(value ?? '');
+
+                      if (amount == null || amount <= 0) {
+                        return 'Escribe un valor mayor que cero';
+                      }
+
+                      if (amount > widget.summary.balanceAmount) {
+                        return 'El pago no puede superar el saldo';
+                      }
+
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: method,
+                    decoration: const InputDecoration(
+                      labelText: 'Método de pago',
+                      prefixIcon: Icon(Icons.account_balance_wallet_outlined),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'efectivo',
+                        child: Text('Efectivo'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'tarjeta',
+                        child: Text('Tarjeta'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'transferencia',
+                        child: Text('Transferencia'),
+                      ),
+                      DropdownMenuItem(value: 'otro', child: Text('Otro')),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          method = value;
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: referenceController,
+                    decoration: const InputDecoration(
+                      labelText: 'Referencia opcional',
+                      prefixIcon: Icon(Icons.tag_outlined),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: notesController,
+                    decoration: const InputDecoration(
+                      labelText: 'Notas opcionales',
+                      prefixIcon: Icon(Icons.notes_outlined),
+                    ),
+                    minLines: 2,
+                    maxLines: 3,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(canRegisterPayment ? 'Cancelar' : 'Cerrar'),
+        ),
+        if (canRegisterPayment)
+          FilledButton.icon(
+            onPressed: _submit,
+            icon: const Icon(Icons.save_outlined),
+            label: const Text('Registrar pago'),
+          ),
+      ],
+    );
+  }
+}
+
+class _PaymentMetric extends StatelessWidget {
+  const _PaymentMetric({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(color: Color(0xFF6B7280))),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+        ),
+      ],
+    );
+  }
+}
+
+class _PaymentFormData {
+  const _PaymentFormData({
+    required this.amount,
+    required this.method,
+    required this.reference,
+    required this.notes,
+  });
+
+  final num amount;
+  final String method;
+  final String? reference;
+  final String? notes;
+}
+
 String _ticketStatusLabel(String status) {
   switch (status) {
     case 'solicitado':
@@ -1318,6 +1652,7 @@ class TicketRow extends StatelessWidget {
   final VoidCallback? onReschedule;
   final VoidCallback? onChangeStatus;
   final VoidCallback? onCorrectCompletion;
+  final VoidCallback? onManagePayments;
 
   const TicketRow({
     super.key,
@@ -1326,6 +1661,7 @@ class TicketRow extends StatelessWidget {
     required this.onReschedule,
     required this.onChangeStatus,
     required this.onCorrectCompletion,
+    required this.onManagePayments,
   });
 
   @override
@@ -1392,10 +1728,25 @@ class TicketRow extends StatelessWidget {
                     color: Color(0xFF059669),
                   ),
                 ),
+                if (ticket.showsPaymentInfo) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    'Pagado: ${ticket.formattedPaidAmount} · '
+                    'Saldo: ${ticket.formattedBalanceAmount}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: ticket.balanceAmount == 0
+                          ? const Color(0xFF059669)
+                          : const Color(0xFFD97706),
+                    ),
+                  ),
+                ],
                 if (onAddService != null ||
                     onReschedule != null ||
                     onChangeStatus != null ||
-                    onCorrectCompletion != null) ...[
+                    onCorrectCompletion != null ||
+                    onManagePayments != null) ...[
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 10,
@@ -1424,6 +1775,16 @@ class TicketRow extends StatelessWidget {
                           onPressed: onCorrectCompletion,
                           icon: const Icon(Icons.restart_alt_outlined),
                           label: const Text('Corregir finalización'),
+                        ),
+                      if (onManagePayments != null)
+                        FilledButton.icon(
+                          onPressed: onManagePayments,
+                          icon: const Icon(Icons.payments_outlined),
+                          label: Text(
+                            ticket.status == 'cerrado'
+                                ? 'Ver pagos'
+                                : 'Pagos y saldo',
+                          ),
                         ),
                     ],
                   ),

@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/ticket_service_option.dart';
 import '../models/ticket_service_correction_option.dart';
+import '../models/ticket_payment.dart';
 import '../models/ticket_summary.dart';
 
 class TicketsService {
@@ -105,6 +106,58 @@ class TicketsService {
     return (response as List<dynamic>).isNotEmpty;
   }
 
+  Future<TicketPaymentSummary> getTicketPaymentSummary(String ticketId) async {
+    final response = await Supabase.instance.client.rpc(
+      'get_ticket_payment_summary',
+      params: {'p_ticket_id': ticketId},
+    );
+    final rows = response as List<dynamic>;
+
+    if (rows.isEmpty) {
+      throw StateError('No se pudo consultar el saldo del ticket.');
+    }
+
+    return TicketPaymentSummary.fromMap(
+      Map<String, dynamic>.from(rows.first as Map),
+    );
+  }
+
+  Future<List<TicketPaymentRecord>> getTicketPayments(String ticketId) async {
+    final response = await Supabase.instance.client.rpc(
+      'get_ticket_payments',
+      params: {'p_ticket_id': ticketId},
+    );
+
+    return (response as List<dynamic>)
+        .map(
+          (item) => TicketPaymentRecord.fromMap(
+            Map<String, dynamic>.from(item as Map),
+          ),
+        )
+        .toList();
+  }
+
+  Future<bool> registerTicketPayment({
+    required String ticketId,
+    required num amount,
+    required String method,
+    String? reference,
+    String? notes,
+  }) async {
+    final response = await Supabase.instance.client.rpc(
+      'register_ticket_payment',
+      params: {
+        'p_ticket_id': ticketId,
+        'p_amount': amount,
+        'p_method': method,
+        'p_reference': reference,
+        'p_notes': notes,
+      },
+    );
+
+    return (response as List<dynamic>).isNotEmpty;
+  }
+
   Future<TicketSummary?> createTicket({
     required String clientId,
     DateTime? scheduledAt,
@@ -141,6 +194,9 @@ class TicketsService {
       stylistNames: 'Sin estilista',
       totalPrice: 0,
       totalDurationMinutes: 0,
+      paidAmount: 0,
+      balanceAmount: 0,
+      paymentStatus: 'sin_pago',
     );
   }
 }
