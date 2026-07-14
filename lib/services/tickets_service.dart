@@ -158,6 +158,18 @@ class TicketsService {
     return (response as List<dynamic>).isNotEmpty;
   }
 
+  Future<bool> voidTicketPayment({
+    required String paymentId,
+    required String reason,
+  }) async {
+    final response = await Supabase.instance.client.rpc(
+      'void_ticket_payment',
+      params: {'p_payment_id': paymentId, 'p_reason': reason},
+    );
+
+    return (response as List<dynamic>).isNotEmpty;
+  }
+
   Future<TicketSummary?> createTicket({
     required String clientId,
     DateTime? scheduledAt,

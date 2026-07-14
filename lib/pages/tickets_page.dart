@@ -312,7 +312,7 @@ class _TicketsPageState extends State<TicketsPage> {
         return;
       }
 
-      final formData = await showDialog<_PaymentFormData>(
+      final dialogResult = await showDialog<Object>(
         context: context,
         builder: (context) => _PaymentsDialog(
           ticket: ticket,
@@ -321,32 +321,46 @@ class _TicketsPageState extends State<TicketsPage> {
         ),
       );
 
-      if (formData == null) {
+      if (dialogResult == null) {
         return;
       }
 
-      final registered = await ticketsService.registerTicketPayment(
-        ticketId: ticket.id,
-        amount: formData.amount,
-        method: formData.method,
-        reference: formData.reference,
-        notes: formData.notes,
-      );
+      late final bool succeeded;
+      late final String successMessage;
+
+      if (dialogResult is _PaymentFormData) {
+        succeeded = await ticketsService.registerTicketPayment(
+          ticketId: ticket.id,
+          amount: dialogResult.amount,
+          method: dialogResult.method,
+          reference: dialogResult.reference,
+          notes: dialogResult.notes,
+        );
+        successMessage = 'Pago registrado correctamente.';
+      } else if (dialogResult is _VoidPaymentFormData) {
+        succeeded = await ticketsService.voidTicketPayment(
+          paymentId: dialogResult.paymentId,
+          reason: dialogResult.reason,
+        );
+        successMessage = 'Pago anulado y saldo actualizado.';
+      } else {
+        return;
+      }
 
       if (!mounted) {
         return;
       }
 
-      if (!registered) {
+      if (!succeeded) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se pudo registrar el pago.')),
+          const SnackBar(content: Text('No se pudo completar la operación.')),
         );
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pago registrado correctamente.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(successMessage)));
       _refreshTickets();
     } catch (error) {
       if (!mounted) {
@@ -1418,6 +1432,21 @@ class _PaymentsDialogState extends State<_PaymentsDialog> {
     );
   }
 
+  Future<void> _requestVoid(TicketPaymentRecord payment) async {
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (context) => _VoidPaymentDialog(payment: payment),
+    );
+
+    if (reason == null || !mounted) {
+      return;
+    }
+
+    Navigator.of(
+      context,
+    ).pop(_VoidPaymentFormData(paymentId: payment.paymentId, reason: reason));
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -1482,7 +1511,20 @@ class _PaymentsDialogState extends State<_PaymentsDialog> {
                             'Ref: ${payment.reference}',
                         ].join(' · '),
                       ),
-                      trailing: Text(payment.status),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(payment.status),
+                          if (payment.status == 'registrado') ...[
+                            const SizedBox(width: 6),
+                            IconButton(
+                              tooltip: 'Anular pago',
+                              onPressed: () => _requestVoid(payment),
+                              icon: const Icon(Icons.undo_outlined),
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
                   ),
                 if (canRegisterPayment) ...[
@@ -1619,6 +1661,101 @@ class _PaymentFormData {
   final String method;
   final String? reference;
   final String? notes;
+}
+
+class _VoidPaymentDialog extends StatefulWidget {
+  const _VoidPaymentDialog({required this.payment});
+
+  final TicketPaymentRecord payment;
+
+  @override
+  State<_VoidPaymentDialog> createState() => _VoidPaymentDialogState();
+}
+
+class _VoidPaymentDialogState extends State<_VoidPaymentDialog> {
+  final formKey = GlobalKey<FormState>();
+  final reasonController = TextEditingController();
+
+  @override
+  void dispose() {
+    reasonController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (!formKey.currentState!.validate()) {
+      return;
+    }
+
+    Navigator.of(context).pop(reasonController.text.trim());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Anular pago'),
+      content: SizedBox(
+        width: 440,
+        child: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${formatMoney(widget.payment.amount)} · '
+                '${widget.payment.methodLabel}',
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'El movimiento se conservará como anulado y el saldo del '
+                'ticket se restaurará.',
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: reasonController,
+                decoration: const InputDecoration(
+                  labelText: 'Motivo obligatorio',
+                  prefixIcon: Icon(Icons.notes_outlined),
+                ),
+                minLines: 2,
+                maxLines: 4,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Indica por qué se anula el pago';
+                  }
+
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Volver'),
+        ),
+        FilledButton.icon(
+          onPressed: _submit,
+          icon: const Icon(Icons.undo_outlined),
+          label: const Text('Anular pago'),
+        ),
+      ],
+    );
+  }
+}
+
+class _VoidPaymentFormData {
+  const _VoidPaymentFormData({required this.paymentId, required this.reason});
+
+  final String paymentId;
+  final String reason;
 }
 
 String _ticketStatusLabel(String status) {
