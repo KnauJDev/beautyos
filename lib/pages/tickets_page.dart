@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../models/client_summary.dart';
 import '../models/ticket_service_option.dart';
@@ -71,9 +71,7 @@ class _TicketsPageState extends State<TicketsPage> {
       if (createdTicket == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-              'No se pudo crear el ticket. Verifica tus permisos.',
-            ),
+            content: Text('No se pudo crear el ticket. Verifica tus permisos.'),
           ),
         );
         return;
@@ -88,9 +86,9 @@ class _TicketsPageState extends State<TicketsPage> {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error creando ticket: $error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error creando ticket: $error')));
     }
   }
 
@@ -154,6 +152,49 @@ class _TicketsPageState extends State<TicketsPage> {
     }
   }
 
+  Future<void> _openRescheduleTicketDialog(TicketSummary ticket) async {
+    final formData = await showDialog<_RescheduleTicketFormData>(
+      context: context,
+      builder: (context) => _RescheduleTicketDialog(ticket: ticket),
+    );
+
+    if (formData == null) {
+      return;
+    }
+
+    try {
+      final rescheduled = await ticketsService.rescheduleTicket(
+        ticketId: ticket.id,
+        newScheduledAt: formData.scheduledAt,
+        reason: formData.reason,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (!rescheduled) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo reprogramar el ticket.')),
+        );
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ticket reprogramado correctamente.')),
+      );
+      _refreshTickets();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('No se pudo reprogramar: $error')));
+    }
+  }
+
   bool _canAddServices(TicketSummary ticket) {
     return !{
       'finalizado',
@@ -161,6 +202,11 @@ class _TicketsPageState extends State<TicketsPage> {
       'cancelado',
       'no_asistio',
     }.contains(ticket.status);
+  }
+
+  bool _canReschedule(TicketSummary ticket) {
+    return ticket.scheduledAt != null &&
+        {'apartado', 'confirmado', 'en_espera'}.contains(ticket.status);
   }
 
   @override
@@ -228,8 +274,7 @@ class _TicketsPageState extends State<TicketsPage> {
               return const InfoPanel(
                 icon: Icons.info_outline,
                 title: 'Sin tickets disponibles',
-                description:
-                    'No hay tickets para mostrar en este momento.',
+                description: 'No hay tickets para mostrar en este momento.',
               );
             }
 
@@ -248,6 +293,9 @@ class _TicketsPageState extends State<TicketsPage> {
                         ticket: ticket,
                         onAddService: _canAddServices(ticket)
                             ? () => _openAddTicketServiceDialog(ticket)
+                            : null,
+                        onReschedule: _canReschedule(ticket)
+                            ? () => _openRescheduleTicketDialog(ticket)
                             : null,
                       ),
                     ),
@@ -404,10 +452,7 @@ class _CreateTicketDialogState extends State<_CreateTicketDialog> {
                     prefixIcon: Icon(Icons.call_split_outlined),
                   ),
                   items: const [
-                    DropdownMenuItem(
-                      value: 'manual',
-                      child: Text('Manual'),
-                    ),
+                    DropdownMenuItem(value: 'manual', child: Text('Manual')),
                   ],
                   onChanged: (value) {
                     if (value != null) {
@@ -498,8 +543,7 @@ class _AddTicketServiceDialog extends StatefulWidget {
       _AddTicketServiceDialogState();
 }
 
-class _AddTicketServiceDialogState
-    extends State<_AddTicketServiceDialog> {
+class _AddTicketServiceDialogState extends State<_AddTicketServiceDialog> {
   final formKey = GlobalKey<FormState>();
 
   String? selectedServiceId;
@@ -523,8 +567,7 @@ class _AddTicketServiceDialogState
     return widget.options
         .where(
           (option) =>
-              option.serviceId == selectedServiceId &&
-              option.stylistId != null,
+              option.serviceId == selectedServiceId && option.stylistId != null,
         )
         .toList();
   }
@@ -683,14 +726,166 @@ class _TicketServiceFormData {
   final String? stylistId;
 }
 
+class _RescheduleTicketDialog extends StatefulWidget {
+  const _RescheduleTicketDialog({required this.ticket});
+
+  final TicketSummary ticket;
+
+  @override
+  State<_RescheduleTicketDialog> createState() =>
+      _RescheduleTicketDialogState();
+}
+
+class _RescheduleTicketDialogState extends State<_RescheduleTicketDialog> {
+  final formKey = GlobalKey<FormState>();
+  final reasonController = TextEditingController();
+  late DateTime scheduledAt;
+
+  @override
+  void initState() {
+    super.initState();
+    scheduledAt = widget.ticket.scheduledAt!.toLocal();
+  }
+
+  @override
+  void dispose() {
+    reasonController.dispose();
+    super.dispose();
+  }
+
+  String get scheduledAtText {
+    final day = scheduledAt.day.toString().padLeft(2, '0');
+    final month = scheduledAt.month.toString().padLeft(2, '0');
+    final hour = scheduledAt.hour.toString().padLeft(2, '0');
+    final minute = scheduledAt.minute.toString().padLeft(2, '0');
+
+    return '$day/$month/${scheduledAt.year} $hour:$minute';
+  }
+
+  Future<void> _selectDateAndTime() async {
+    final now = DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      initialDate: scheduledAt.isBefore(now) ? now : scheduledAt,
+      firstDate: DateTime(now.year, now.month, now.day),
+      lastDate: DateTime(now.year + 3),
+    );
+
+    if (date == null || !mounted) {
+      return;
+    }
+
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(scheduledAt),
+    );
+
+    if (time == null || !mounted) {
+      return;
+    }
+
+    setState(() {
+      scheduledAt = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
+      );
+    });
+  }
+
+  void _submit() {
+    if (!formKey.currentState!.validate()) {
+      return;
+    }
+
+    Navigator.of(context).pop(
+      _RescheduleTicketFormData(
+        scheduledAt: scheduledAt,
+        reason: reasonController.text.trim(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Reprogramar ticket'),
+      content: SizedBox(
+        width: 480,
+        child: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.event_repeat_outlined),
+                title: const Text('Nueva fecha y hora'),
+                subtitle: Text(scheduledAtText),
+                trailing: IconButton(
+                  tooltip: 'Elegir fecha y hora',
+                  onPressed: _selectDateAndTime,
+                  icon: const Icon(Icons.edit_calendar_outlined),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: reasonController,
+                decoration: const InputDecoration(
+                  labelText: 'Motivo de la reprogramación',
+                  prefixIcon: Icon(Icons.notes_outlined),
+                ),
+                minLines: 2,
+                maxLines: 4,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Indica el motivo de la reprogramación';
+                  }
+
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton.icon(
+          onPressed: _submit,
+          icon: const Icon(Icons.event_available_outlined),
+          label: const Text('Reprogramar'),
+        ),
+      ],
+    );
+  }
+}
+
+class _RescheduleTicketFormData {
+  const _RescheduleTicketFormData({
+    required this.scheduledAt,
+    required this.reason,
+  });
+
+  final DateTime scheduledAt;
+  final String reason;
+}
+
 class TicketRow extends StatelessWidget {
   final TicketSummary ticket;
   final VoidCallback? onAddService;
+  final VoidCallback? onReschedule;
 
   const TicketRow({
     super.key,
     required this.ticket,
     required this.onAddService,
+    required this.onReschedule,
   });
 
   @override
@@ -757,12 +952,25 @@ class TicketRow extends StatelessWidget {
                     color: Color(0xFF059669),
                   ),
                 ),
-                if (onAddService != null) ...[
+                if (onAddService != null || onReschedule != null) ...[
                   const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: onAddService,
-                    icon: const Icon(Icons.add_outlined),
-                    label: const Text('Agregar servicio'),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 8,
+                    children: [
+                      if (onAddService != null)
+                        OutlinedButton.icon(
+                          onPressed: onAddService,
+                          icon: const Icon(Icons.add_outlined),
+                          label: const Text('Agregar servicio'),
+                        ),
+                      if (onReschedule != null)
+                        OutlinedButton.icon(
+                          onPressed: onReschedule,
+                          icon: const Icon(Icons.event_repeat_outlined),
+                          label: const Text('Reprogramar'),
+                        ),
+                    ],
                   ),
                 ],
               ],
@@ -800,5 +1008,3 @@ class TicketStatusBadge extends StatelessWidget {
     );
   }
 }
-
-

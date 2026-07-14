@@ -1,4 +1,4 @@
-﻿import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/ticket_service_option.dart';
 import '../models/ticket_summary.dart';
@@ -7,8 +7,7 @@ class TicketsService {
   const TicketsService();
 
   Future<List<TicketSummary>> getTicketsSummary() async {
-    final response = await Supabase.instance.client
-        .rpc('get_tickets_summary');
+    final response = await Supabase.instance.client.rpc('get_tickets_summary');
 
     return response
         .map<TicketSummary>((item) => TicketSummary.fromMap(item))
@@ -16,13 +15,12 @@ class TicketsService {
   }
 
   Future<List<TicketServiceOption>> getTicketServiceOptions() async {
-    final response = await Supabase.instance.client
-        .rpc('get_ticket_service_options');
+    final response = await Supabase.instance.client.rpc(
+      'get_ticket_service_options',
+    );
 
     return response
-        .map<TicketServiceOption>(
-          (item) => TicketServiceOption.fromMap(item),
-        )
+        .map<TicketServiceOption>((item) => TicketServiceOption.fromMap(item))
         .toList();
   }
 
@@ -37,6 +35,23 @@ class TicketsService {
         'p_ticket_id': ticketId,
         'p_service_id': serviceId,
         'p_stylist_id': stylistId,
+      },
+    );
+
+    return (response as List<dynamic>).isNotEmpty;
+  }
+
+  Future<bool> rescheduleTicket({
+    required String ticketId,
+    required DateTime newScheduledAt,
+    required String reason,
+  }) async {
+    final response = await Supabase.instance.client.rpc(
+      'reschedule_ticket',
+      params: {
+        'p_ticket_id': ticketId,
+        'p_new_scheduled_at': newScheduledAt.toUtc().toIso8601String(),
+        'p_reason': reason,
       },
     );
 

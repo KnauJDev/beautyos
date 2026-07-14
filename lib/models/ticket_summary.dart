@@ -1,4 +1,4 @@
-﻿class TicketSummary {
+class TicketSummary {
   final String id;
   final String clientName;
   final DateTime? scheduledAt;
@@ -89,6 +89,8 @@
         return 'Solicitado';
       case 'cotizado':
         return 'Cotizado';
+      case 'apartado':
+        return 'Apartado';
       case 'confirmado':
         return 'Confirmado';
       case 'en_espera':
@@ -108,4 +110,3 @@
     }
   }
 }
-
