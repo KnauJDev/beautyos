@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'models/my_profile.dart';
@@ -21,6 +21,7 @@ import 'pages/settings_page.dart';
 import 'pages/services_page.dart';
 import 'pages/stylists_page.dart';
 import 'pages/tickets_page.dart';
+import 'pages/users_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,9 +47,7 @@ class BeautyOSApp extends StatelessWidget {
         useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFFF8F5FF),
       ),
-      home: const AuthGate(
-        authenticatedChild: BeautyOSHome(),
-      ),
+      home: const AuthGate(authenticatedChild: BeautyOSHome()),
     );
   }
 }
@@ -85,11 +84,13 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         section: BeautySection('Dashboard', Icons.dashboard_outlined),
         page: DashboardPage(),
         allowedRoles: <String>{'owner', 'admin'},
-      ),      const BeautyModule(
+      ),
+      const BeautyModule(
         section: BeautySection('Mi agenda', Icons.event_available_outlined),
         page: MyStylistAgendaPage(),
         allowedRoles: <String>{'stylist'},
-      ),      const BeautyModule(
+      ),
+      const BeautyModule(
         section: BeautySection('Mis fotos', Icons.photo_library_outlined),
         page: MyStylistWorkPhotosPage(),
         allowedRoles: <String>{'stylist'},
@@ -102,12 +103,23 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
       const BeautyModule(
         section: BeautySection('Servicios', Icons.content_cut_outlined),
         page: ServiciosPage(),
-        allowedRoles: <String>{'owner', 'admin', 'stylist', 'assistant', 'client'},
+        allowedRoles: <String>{
+          'owner',
+          'admin',
+          'stylist',
+          'assistant',
+          'client',
+        },
       ),
       const BeautyModule(
         section: BeautySection('Estilistas', Icons.badge_outlined),
         page: EstilistasPage(),
         allowedRoles: <String>{'owner', 'admin'},
+      ),
+      const BeautyModule(
+        section: BeautySection('Usuarios', Icons.manage_accounts_outlined),
+        page: UsuariosPage(),
+        allowedRoles: <String>{'owner'},
       ),
       const BeautyModule(
         section: BeautySection('Clientes', Icons.people_outline),
@@ -135,7 +147,10 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         allowedRoles: <String>{'owner', 'admin'},
       ),
       const BeautyModule(
-        section: BeautySection('Fotos de trabajos', Icons.photo_library_outlined),
+        section: BeautySection(
+          'Fotos de trabajos',
+          Icons.photo_library_outlined,
+        ),
         page: FotosTrabajosPage(),
         allowedRoles: <String>{'owner', 'admin'},
       ),
@@ -156,7 +171,9 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
       ),
     ];
 
-    return modules.where((module) => module.canAccess(role)).toList(growable: false);
+    return modules
+        .where((module) => module.canAccess(role))
+        .toList(growable: false);
   }
 
   @override
@@ -166,9 +183,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
+            body: Center(child: CircularProgressIndicator()),
           );
         }
 
@@ -197,9 +212,15 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           );
         }
 
-        final currentIndex = selectedIndex >= modules.length ? 0 : selectedIndex;
-        final sections = modules.map((module) => module.section).toList(growable: false);
-        final pages = modules.map((module) => module.page).toList(growable: false);
+        final currentIndex = selectedIndex >= modules.length
+            ? 0
+            : selectedIndex;
+        final sections = modules
+            .map((module) => module.section)
+            .toList(growable: false);
+        final pages = modules
+            .map((module) => module.page)
+            .toList(growable: false);
 
         return LayoutBuilder(
           builder: (context, constraints) {
@@ -247,10 +268,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                       },
                     ),
                   Expanded(
-                    child: IndexedStack(
-                      index: currentIndex,
-                      children: pages,
-                    ),
+                    child: IndexedStack(index: currentIndex, children: pages),
                   ),
                 ],
               ),
@@ -306,10 +324,7 @@ class _SideMenu extends StatelessWidget {
             final isSelected = index == selectedIndex;
 
             return Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 4,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               child: Material(
                 color: isSelected
                     ? const Color(0xFFEEE6FF)
@@ -380,6 +395,3 @@ class BeautyModule {
     return allowedRoles.contains(role);
   }
 }
-
-
-
