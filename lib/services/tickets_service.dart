@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/ticket_service_option.dart';
+import '../models/ticket_service_management_item.dart';
 import '../models/ticket_service_correction_option.dart';
 import '../models/ticket_payment.dart';
 import '../models/ticket_summary.dart';
@@ -38,6 +39,54 @@ class TicketsService {
         'p_service_id': serviceId,
         'p_stylist_id': stylistId,
       },
+    );
+
+    return (response as List<dynamic>).isNotEmpty;
+  }
+
+  Future<List<TicketServiceManagementItem>> getTicketServicesForManagement(
+    String ticketId,
+  ) async {
+    final response = await Supabase.instance.client.rpc(
+      'get_ticket_services_for_management',
+      params: {'p_ticket_id': ticketId},
+    );
+
+    return (response as List<dynamic>)
+        .map(
+          (item) => TicketServiceManagementItem.fromMap(
+            Map<String, dynamic>.from(item as Map),
+          ),
+        )
+        .toList();
+  }
+
+  Future<bool> updateTicketServiceAssignment({
+    required String ticketServiceId,
+    required String serviceId,
+    String? stylistId,
+    required String reason,
+  }) async {
+    final response = await Supabase.instance.client.rpc(
+      'update_ticket_service_assignment',
+      params: {
+        'p_ticket_service_id': ticketServiceId,
+        'p_service_id': serviceId,
+        'p_stylist_id': stylistId,
+        'p_reason': reason,
+      },
+    );
+
+    return (response as List<dynamic>).isNotEmpty;
+  }
+
+  Future<bool> removeTicketService({
+    required String ticketServiceId,
+    required String reason,
+  }) async {
+    final response = await Supabase.instance.client.rpc(
+      'remove_ticket_service',
+      params: {'p_ticket_service_id': ticketServiceId, 'p_reason': reason},
     );
 
     return (response as List<dynamic>).isNotEmpty;

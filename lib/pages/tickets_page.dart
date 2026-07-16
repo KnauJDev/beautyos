@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/client_summary.dart';
 import '../models/ticket_service_option.dart';
+import '../models/ticket_service_management_item.dart';
 import '../models/ticket_service_correction_option.dart';
 import '../models/ticket_payment.dart';
 import '../models/ticket_summary.dart';
@@ -88,9 +90,11 @@ class _TicketsPageState extends State<TicketsPage> {
         return;
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error creando ticket: $error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error creando ticket: ${_friendlyError(error)}'),
+        ),
+      );
     }
   }
 
@@ -149,7 +153,110 @@ class _TicketsPageState extends State<TicketsPage> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error agregando servicio: $error')),
+        SnackBar(
+          content: Text(
+            'No se pudo agregar el servicio: ${_friendlyError(error)}',
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _openManageTicketServicesDialog(TicketSummary ticket) async {
+    try {
+      final itemsFuture = ticketsService.getTicketServicesForManagement(
+        ticket.id,
+      );
+      final optionsFuture = ticketsService.getTicketServiceOptions();
+      final items = await itemsFuture;
+      final options = await optionsFuture;
+
+      if (!mounted) {
+        return;
+      }
+
+      if (items.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No hay servicios activos para gestionar.'),
+          ),
+        );
+        return;
+      }
+
+      final action = await showDialog<_TicketServiceManagementAction>(
+        context: context,
+        builder: (context) => _ManageTicketServicesDialog(items: items),
+      );
+
+      if (action == null || !mounted) {
+        return;
+      }
+
+      late final bool succeeded;
+      late final String successMessage;
+
+      if (action.type == _TicketServiceManagementActionType.edit) {
+        final formData = await showDialog<_EditTicketServiceFormData>(
+          context: context,
+          builder: (context) =>
+              _EditTicketServiceDialog(item: action.item, options: options),
+        );
+
+        if (formData == null) {
+          return;
+        }
+
+        succeeded = await ticketsService.updateTicketServiceAssignment(
+          ticketServiceId: action.item.ticketServiceId,
+          serviceId: formData.serviceId,
+          stylistId: formData.stylistId,
+          reason: formData.reason,
+        );
+        successMessage = 'Servicio y asignacion actualizados.';
+      } else {
+        final formData = await showDialog<_RemoveTicketServiceFormData>(
+          context: context,
+          builder: (context) => _RemoveTicketServiceDialog(item: action.item),
+        );
+
+        if (formData == null) {
+          return;
+        }
+
+        succeeded = await ticketsService.removeTicketService(
+          ticketServiceId: action.item.ticketServiceId,
+          reason: formData.reason,
+        );
+        successMessage = 'Servicio retirado sin borrar su historial.';
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      if (!succeeded) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo completar la operacion.')),
+        );
+        return;
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(successMessage)));
+      _refreshTickets();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'No se pudo gestionar el servicio: ${_friendlyError(error)}',
+          ),
+        ),
       );
     }
   }
@@ -191,9 +298,11 @@ class _TicketsPageState extends State<TicketsPage> {
         return;
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('No se pudo reprogramar: $error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No se pudo reprogramar: ${_friendlyError(error)}'),
+        ),
+      );
     }
   }
 
@@ -237,7 +346,11 @@ class _TicketsPageState extends State<TicketsPage> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo actualizar el estado: $error')),
+        SnackBar(
+          content: Text(
+            'No se pudo actualizar el estado: ${_friendlyError(error)}',
+          ),
+        ),
       );
     }
   }
@@ -295,9 +408,11 @@ class _TicketsPageState extends State<TicketsPage> {
         return;
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('No se pudo corregir: $error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No se pudo corregir: ${_friendlyError(error)}'),
+        ),
+      );
     }
   }
 
@@ -368,23 +483,38 @@ class _TicketsPageState extends State<TicketsPage> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No se pudo gestionar el pago: $error')),
+        SnackBar(
+          content: Text(
+            'No se pudo gestionar el pago: ${_friendlyError(error)}',
+          ),
+        ),
       );
     }
   }
 
   bool _canAddServices(TicketSummary ticket) {
-    return !{
-      'finalizado',
-      'cerrado',
-      'cancelado',
-      'no_asistio',
+    return {
+      'solicitado',
+      'cotizado',
+      'apartado',
+      'confirmado',
+      'en_espera',
     }.contains(ticket.status);
+  }
+
+  bool _canManageServices(TicketSummary ticket) {
+    return _canAddServices(ticket) && ticket.totalDurationMinutes > 0;
   }
 
   bool _canReschedule(TicketSummary ticket) {
     return ticket.scheduledAt != null &&
-        {'apartado', 'confirmado', 'en_espera'}.contains(ticket.status);
+        {
+          'solicitado',
+          'cotizado',
+          'apartado',
+          'confirmado',
+          'en_espera',
+        }.contains(ticket.status);
   }
 
   bool _canChangeStatus(TicketSummary ticket) {
@@ -500,6 +630,9 @@ class _TicketsPageState extends State<TicketsPage> {
                         ticket: ticket,
                         onAddService: _canAddServices(ticket)
                             ? () => _openAddTicketServiceDialog(ticket)
+                            : null,
+                        onManageServices: _canManageServices(ticket)
+                            ? () => _openManageTicketServicesDialog(ticket)
                             : null,
                         onReschedule: _canReschedule(ticket)
                             ? () => _openRescheduleTicketDialog(ticket)
@@ -932,6 +1065,13 @@ class _AddTicketServiceDialogState extends State<_AddTicketServiceDialog> {
   }
 }
 
+String _friendlyError(Object error) {
+  if (error is PostgrestException) {
+    return error.message;
+  }
+  return error.toString();
+}
+
 class _TicketServiceFormData {
   const _TicketServiceFormData({
     required this.serviceId,
@@ -940,6 +1080,455 @@ class _TicketServiceFormData {
 
   final String serviceId;
   final String? stylistId;
+}
+
+enum _TicketServiceManagementActionType { edit, remove }
+
+class _TicketServiceManagementAction {
+  const _TicketServiceManagementAction({
+    required this.type,
+    required this.item,
+  });
+
+  final _TicketServiceManagementActionType type;
+  final TicketServiceManagementItem item;
+}
+
+class _ManageTicketServicesDialog extends StatelessWidget {
+  const _ManageTicketServicesDialog({required this.items});
+
+  final List<TicketServiceManagementItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Gestionar servicios'),
+      content: SizedBox(
+        width: 620,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 520),
+          child: ListView.separated(
+            shrinkWrap: true,
+            itemCount: items.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 10),
+            itemBuilder: (context, index) {
+              final item = items[index];
+
+              return Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF9FAFB),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.content_cut_outlined,
+                      color: Color(0xFF7C3AED),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.serviceName,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF2D1B69),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Estilista: ${item.stylistName ?? 'Sin asignar'}',
+                            style: const TextStyle(color: Color(0xFF6B7280)),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${item.formattedPrice} · ${item.durationMinutes} min',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF059669),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: () => Navigator.of(context).pop(
+                            _TicketServiceManagementAction(
+                              type: _TicketServiceManagementActionType.edit,
+                              item: item,
+                            ),
+                          ),
+                          icon: const Icon(Icons.edit_outlined, size: 18),
+                          label: const Text('Editar'),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: () => Navigator.of(context).pop(
+                            _TicketServiceManagementAction(
+                              type: _TicketServiceManagementActionType.remove,
+                              item: item,
+                            ),
+                          ),
+                          icon: const Icon(
+                            Icons.remove_circle_outline,
+                            size: 18,
+                          ),
+                          label: const Text('Retirar'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cerrar'),
+        ),
+      ],
+    );
+  }
+}
+
+class _EditTicketServiceDialog extends StatefulWidget {
+  const _EditTicketServiceDialog({required this.item, required this.options});
+
+  final TicketServiceManagementItem item;
+  final List<TicketServiceOption> options;
+
+  @override
+  State<_EditTicketServiceDialog> createState() =>
+      _EditTicketServiceDialogState();
+}
+
+class _EditTicketServiceDialogState extends State<_EditTicketServiceDialog> {
+  final formKey = GlobalKey<FormState>();
+  final reasonController = TextEditingController();
+
+  String? selectedServiceId;
+  String selectedStylistId = '';
+
+  List<TicketServiceOption> get services {
+    final uniqueServices = <String, TicketServiceOption>{};
+
+    for (final option in widget.options) {
+      uniqueServices.putIfAbsent(option.serviceId, () => option);
+    }
+
+    final result = uniqueServices.values.toList();
+    result.sort((a, b) => a.serviceName.compareTo(b.serviceName));
+    return result;
+  }
+
+  List<TicketServiceOption> get stylists {
+    if (selectedServiceId == null) {
+      return [];
+    }
+
+    return widget.options
+        .where(
+          (option) =>
+              option.serviceId == selectedServiceId && option.stylistId != null,
+        )
+        .toList();
+  }
+
+  TicketServiceOption? get selectedService {
+    for (final option in services) {
+      if (option.serviceId == selectedServiceId) {
+        return option;
+      }
+    }
+
+    return null;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    selectedServiceId =
+        widget.options.any(
+          (option) => option.serviceId == widget.item.serviceId,
+        )
+        ? widget.item.serviceId
+        : null;
+
+    final currentStylistId = widget.item.stylistId;
+    if (currentStylistId != null &&
+        widget.options.any(
+          (option) =>
+              option.serviceId == selectedServiceId &&
+              option.stylistId == currentStylistId,
+        )) {
+      selectedStylistId = currentStylistId;
+    }
+  }
+
+  @override
+  void dispose() {
+    reasonController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (!formKey.currentState!.validate()) {
+      return;
+    }
+
+    Navigator.of(context).pop(
+      _EditTicketServiceFormData(
+        serviceId: selectedServiceId!,
+        stylistId: selectedStylistId.isEmpty ? null : selectedStylistId,
+        reason: reasonController.text.trim(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final service = selectedService;
+
+    return AlertDialog(
+      title: const Text('Editar servicio asignado'),
+      content: SizedBox(
+        width: 500,
+        child: Form(
+          key: formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  initialValue: selectedServiceId,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Servicio',
+                    prefixIcon: Icon(Icons.content_cut_outlined),
+                  ),
+                  items: services
+                      .map(
+                        (option) => DropdownMenuItem<String>(
+                          value: option.serviceId,
+                          child: Text(
+                            '${option.serviceName} · ${option.formattedPrice}',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedServiceId = value;
+                      selectedStylistId = '';
+                    });
+                  },
+                  validator: (value) => value == null || value.isEmpty
+                      ? 'Selecciona un servicio'
+                      : null,
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  key: ValueKey(selectedServiceId),
+                  initialValue: selectedStylistId,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Estilista opcional',
+                    prefixIcon: Icon(Icons.badge_outlined),
+                  ),
+                  items: [
+                    const DropdownMenuItem<String>(
+                      value: '',
+                      child: Text('Sin asignar'),
+                    ),
+                    ...stylists.map(
+                      (option) => DropdownMenuItem<String>(
+                        value: option.stylistId!,
+                        child: Text(
+                          option.stylistName ?? 'Sin estilista',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ],
+                  onChanged: selectedServiceId == null
+                      ? null
+                      : (value) {
+                          setState(() {
+                            selectedStylistId = value ?? '';
+                          });
+                        },
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: reasonController,
+                  decoration: const InputDecoration(
+                    labelText: 'Motivo del cambio',
+                    prefixIcon: Icon(Icons.notes_outlined),
+                  ),
+                  minLines: 2,
+                  maxLines: 3,
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? 'Indica por que realizas el cambio'
+                      : null,
+                ),
+                if (service != null) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F3FF),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Text(
+                      '${service.category} · ${service.formattedPrice} · '
+                      '${service.durationMinutes} min',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF5B21B6),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton.icon(
+          onPressed: _submit,
+          icon: const Icon(Icons.save_outlined),
+          label: const Text('Guardar cambio'),
+        ),
+      ],
+    );
+  }
+}
+
+class _EditTicketServiceFormData {
+  const _EditTicketServiceFormData({
+    required this.serviceId,
+    required this.stylistId,
+    required this.reason,
+  });
+
+  final String serviceId;
+  final String? stylistId;
+  final String reason;
+}
+
+class _RemoveTicketServiceDialog extends StatefulWidget {
+  const _RemoveTicketServiceDialog({required this.item});
+
+  final TicketServiceManagementItem item;
+
+  @override
+  State<_RemoveTicketServiceDialog> createState() =>
+      _RemoveTicketServiceDialogState();
+}
+
+class _RemoveTicketServiceDialogState
+    extends State<_RemoveTicketServiceDialog> {
+  final formKey = GlobalKey<FormState>();
+  final reasonController = TextEditingController();
+
+  @override
+  void dispose() {
+    reasonController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (!formKey.currentState!.validate()) {
+      return;
+    }
+
+    Navigator.of(
+      context,
+    ).pop(_RemoveTicketServiceFormData(reason: reasonController.text.trim()));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Retirar servicio'),
+      content: SizedBox(
+        width: 460,
+        child: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.item.serviceName,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF2D1B69),
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'El servicio dejará de contar en el ticket y la agenda. '
+                'Su historial se conservará para auditoría.',
+                style: TextStyle(color: Color(0xFF6B7280)),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: reasonController,
+                decoration: const InputDecoration(
+                  labelText: 'Motivo del retiro',
+                  prefixIcon: Icon(Icons.notes_outlined),
+                ),
+                minLines: 2,
+                maxLines: 3,
+                validator: (value) => value == null || value.trim().isEmpty
+                    ? 'Indica por que retiras el servicio'
+                    : null,
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton.icon(
+          onPressed: _submit,
+          icon: const Icon(Icons.remove_circle_outline),
+          label: const Text('Retirar servicio'),
+        ),
+      ],
+    );
+  }
+}
+
+class _RemoveTicketServiceFormData {
+  const _RemoveTicketServiceFormData({required this.reason});
+
+  final String reason;
 }
 
 class _RescheduleTicketDialog extends StatefulWidget {
@@ -1786,6 +2375,7 @@ String _ticketStatusLabel(String status) {
 class TicketRow extends StatelessWidget {
   final TicketSummary ticket;
   final VoidCallback? onAddService;
+  final VoidCallback? onManageServices;
   final VoidCallback? onReschedule;
   final VoidCallback? onChangeStatus;
   final VoidCallback? onCorrectCompletion;
@@ -1795,6 +2385,7 @@ class TicketRow extends StatelessWidget {
     super.key,
     required this.ticket,
     required this.onAddService,
+    required this.onManageServices,
     required this.onReschedule,
     required this.onChangeStatus,
     required this.onCorrectCompletion,
@@ -1880,6 +2471,7 @@ class TicketRow extends StatelessWidget {
                   ),
                 ],
                 if (onAddService != null ||
+                    onManageServices != null ||
                     onReschedule != null ||
                     onChangeStatus != null ||
                     onCorrectCompletion != null ||
@@ -1894,6 +2486,12 @@ class TicketRow extends StatelessWidget {
                           onPressed: onAddService,
                           icon: const Icon(Icons.add_outlined),
                           label: const Text('Agregar servicio'),
+                        ),
+                      if (onManageServices != null)
+                        OutlinedButton.icon(
+                          onPressed: onManageServices,
+                          icon: const Icon(Icons.tune_outlined),
+                          label: const Text('Gestionar servicios'),
                         ),
                       if (onReschedule != null)
                         OutlinedButton.icon(

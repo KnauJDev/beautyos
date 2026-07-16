@@ -14,18 +14,43 @@ class MyStylistAgendaPage extends StatefulWidget {
 class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
   final MyStylistAgendaService agendaService = const MyStylistAgendaService();
 
+  late DateTime selectedDate;
   late Future<List<MyStylistAgendaItem>> agendaFuture;
 
   @override
   void initState() {
     super.initState();
-    agendaFuture = agendaService.getMyStylistAgenda();
+    selectedDate = DateUtils.dateOnly(DateTime.now());
+    agendaFuture = agendaService.getMyStylistAgenda(selectedDate);
   }
 
   void _refreshAgenda() {
     setState(() {
-      agendaFuture = agendaService.getMyStylistAgenda();
+      agendaFuture = agendaService.getMyStylistAgenda(selectedDate);
     });
+  }
+
+  void _changeDate(DateTime date) {
+    setState(() {
+      selectedDate = DateUtils.dateOnly(date);
+      agendaFuture = agendaService.getMyStylistAgenda(selectedDate);
+    });
+  }
+
+  Future<void> _pickDate() async {
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(DateTime.now().year + 5, 12, 31),
+      helpText: 'Selecciona el dia de la agenda',
+      cancelText: 'Cancelar',
+      confirmText: 'Ver agenda',
+    );
+
+    if (pickedDate != null) {
+      _changeDate(pickedDate);
+    }
   }
 
   Future<void> _updateServiceStatus(
@@ -108,6 +133,16 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
       title: 'Mi agenda',
       subtitle: 'Citas y servicios asignados a tu usuario estilista.',
       children: [
+        _AgendaDateNavigator(
+          selectedDate: selectedDate,
+          onPreviousDay: () =>
+              _changeDate(selectedDate.subtract(const Duration(days: 1))),
+          onToday: () => _changeDate(DateTime.now()),
+          onNextDay: () =>
+              _changeDate(selectedDate.add(const Duration(days: 1))),
+          onPickDate: _pickDate,
+        ),
+        const SizedBox(height: 18),
         FutureBuilder<List<MyStylistAgendaItem>>(
           future: agendaFuture,
           builder: (context, snapshot) {
@@ -126,11 +161,12 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
             final items = snapshot.data ?? <MyStylistAgendaItem>[];
 
             if (items.isEmpty) {
-              return const InfoPanel(
+              return InfoPanel(
                 icon: Icons.event_busy_outlined,
-                title: 'Sin citas asignadas',
+                title: 'Sin citas confirmadas',
                 description:
-                    'Cuando tengas servicios asignados, apareceran aqui.',
+                    'No hay servicios confirmados para ${_formatLongDate(selectedDate)}. '
+                    'Los tickets Solicitados solo apareceran despues de ser confirmados.',
               );
             }
 
@@ -160,6 +196,96 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
       ],
     );
   }
+}
+
+class _AgendaDateNavigator extends StatelessWidget {
+  const _AgendaDateNavigator({
+    required this.selectedDate,
+    required this.onPreviousDay,
+    required this.onToday,
+    required this.onNextDay,
+    required this.onPickDate,
+  });
+
+  final DateTime selectedDate;
+  final VoidCallback onPreviousDay;
+  final VoidCallback onToday;
+  final VoidCallback onNextDay;
+  final VoidCallback onPickDate;
+
+  @override
+  Widget build(BuildContext context) {
+    final today = DateUtils.dateOnly(DateTime.now());
+    final isToday = DateUtils.isSameDay(selectedDate, today);
+
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: const BorderSide(color: Color(0xFFE5E7EB)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+        child: Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            IconButton.outlined(
+              tooltip: 'Dia anterior',
+              onPressed: onPreviousDay,
+              icon: const Icon(Icons.chevron_left),
+            ),
+            OutlinedButton.icon(
+              onPressed: onPickDate,
+              icon: const Icon(Icons.calendar_month_outlined),
+              label: Text(_formatLongDate(selectedDate)),
+            ),
+            IconButton.outlined(
+              tooltip: 'Dia siguiente',
+              onPressed: onNextDay,
+              icon: const Icon(Icons.chevron_right),
+            ),
+            TextButton.icon(
+              onPressed: isToday ? null : onToday,
+              icon: const Icon(Icons.today_outlined),
+              label: Text(isToday ? 'Hoy seleccionado' : 'Ir a hoy'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _formatLongDate(DateTime date) {
+  const weekdays = [
+    'lunes',
+    'martes',
+    'miercoles',
+    'jueves',
+    'viernes',
+    'sabado',
+    'domingo',
+  ];
+  const months = [
+    'enero',
+    'febrero',
+    'marzo',
+    'abril',
+    'mayo',
+    'junio',
+    'julio',
+    'agosto',
+    'septiembre',
+    'octubre',
+    'noviembre',
+    'diciembre',
+  ];
+
+  return '${weekdays[date.weekday - 1]}, ${date.day} de '
+      '${months[date.month - 1]} de ${date.year}';
 }
 
 class _AgendaSummary extends StatefulWidget {

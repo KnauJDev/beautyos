@@ -1,5 +1,6 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
+import '../models/stylist_service_option.dart';
 import '../models/stylist_service_summary.dart';
 import '../models/stylist_summary.dart';
 import '../services/stylist_services_service.dart';
@@ -18,7 +19,7 @@ class _EstilistasPageState extends State<EstilistasPage> {
   final StylistServicesService stylistServicesService =
       const StylistServicesService();
 
-  late final Future<_StylistsPageData> pageDataFuture;
+  late Future<_StylistsPageData> pageDataFuture;
 
   @override
   void initState() {
@@ -28,13 +29,59 @@ class _EstilistasPageState extends State<EstilistasPage> {
 
   Future<_StylistsPageData> _loadPageData() async {
     final stylists = await stylistsService.getStylistsSummary();
-    final stylistServices =
-        await stylistServicesService.getStylistServicesSummary();
+    final stylistServices = await stylistServicesService
+        .getStylistServicesSummary();
 
     return _StylistsPageData(
       stylists: stylists,
       stylistServices: stylistServices,
     );
+  }
+
+  Future<void> _refreshPage() async {
+    setState(() {
+      pageDataFuture = _loadPageData();
+    });
+    await pageDataFuture;
+  }
+
+  Future<void> _manageStylistServices(StylistSummary stylist) async {
+    try {
+      final options = await stylistServicesService.getStylistServiceOptions(
+        stylist.id,
+      );
+
+      if (!mounted) return;
+
+      final selectedServiceIds = await showDialog<List<String>>(
+        context: context,
+        builder: (context) =>
+            _ManageStylistServicesDialog(stylist: stylist, options: options),
+      );
+
+      if (selectedServiceIds == null) return;
+
+      await stylistServicesService.setStylistServices(
+        stylistId: stylist.id,
+        serviceIds: selectedServiceIds,
+      );
+      await _refreshPage();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Servicios de ${stylist.name} actualizados correctamente.',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudieron guardar los servicios: $error')),
+      );
+    }
   }
 
   @override
@@ -47,7 +94,7 @@ class _EstilistasPageState extends State<EstilistasPage> {
           icon: Icons.badge_outlined,
           title: 'Estilistas conectados con Supabase',
           description:
-              'Este m\u00f3dulo ahora muestra estilistas activos y los servicios que puede realizar cada uno mediante funciones seguras.',
+              'Consulta el equipo y administra de forma segura los servicios que puede realizar cada estilista.',
         ),
         const SizedBox(height: 16),
         FutureBuilder<_StylistsPageData>(
@@ -101,21 +148,19 @@ class _EstilistasPageState extends State<EstilistasPage> {
                   children: [
                     const SectionTitle('Estilistas y servicios asignados'),
                     const SizedBox(height: 14),
-                    ...stylists.map(
-                      (stylist) {
-                        final services = stylistServices
-                            .where(
-                              (service) =>
-                                  service.stylistName == stylist.name,
-                            )
-                            .toList();
+                    ...stylists.map((stylist) {
+                      final services = stylistServices
+                          .where(
+                            (service) => service.stylistName == stylist.name,
+                          )
+                          .toList();
 
-                        return StylistCard(
-                          stylist: stylist,
-                          services: services,
-                        );
-                      },
-                    ),
+                      return StylistCard(
+                        stylist: stylist,
+                        services: services,
+                        onManageServices: () => _manageStylistServices(stylist),
+                      );
+                    }),
                   ],
                 ),
               ),
@@ -130,11 +175,13 @@ class _EstilistasPageState extends State<EstilistasPage> {
 class StylistCard extends StatelessWidget {
   final StylistSummary stylist;
   final List<StylistServiceSummary> services;
+  final VoidCallback onManageServices;
 
   const StylistCard({
     super.key,
     required this.stylist,
     required this.services,
+    required this.onManageServices,
   });
 
   @override
@@ -205,23 +252,24 @@ class StylistCard extends StatelessWidget {
                 if (services.isEmpty)
                   const Text(
                     'Sin servicios asignados.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF6B7280),
-                    ),
+                    style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
                   )
                 else
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: services
-                        .map(
-                          (service) => StylistServiceChip(service: service),
-                        )
+                        .map((service) => StylistServiceChip(service: service))
                         .toList(),
                   ),
               ],
             ),
+          ),
+          const SizedBox(width: 12),
+          OutlinedButton.icon(
+            onPressed: onManageServices,
+            icon: const Icon(Icons.tune_outlined, size: 18),
+            label: const Text('Gestionar servicios'),
           ),
         ],
       ),
@@ -237,10 +285,7 @@ class StylistServiceChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 9,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
         color: const Color(0xFFEDE9FE),
         borderRadius: BorderRadius.circular(999),
@@ -253,6 +298,118 @@ class StylistServiceChip extends StatelessWidget {
           color: Color(0xFF6D28D9),
         ),
       ),
+    );
+  }
+}
+
+class _ManageStylistServicesDialog extends StatefulWidget {
+  const _ManageStylistServicesDialog({
+    required this.stylist,
+    required this.options,
+  });
+
+  final StylistSummary stylist;
+  final List<StylistServiceOption> options;
+
+  @override
+  State<_ManageStylistServicesDialog> createState() =>
+      _ManageStylistServicesDialogState();
+}
+
+class _ManageStylistServicesDialogState
+    extends State<_ManageStylistServicesDialog> {
+  late final Set<String> selectedServiceIds;
+
+  @override
+  void initState() {
+    super.initState();
+    selectedServiceIds = widget.options
+        .where((option) => option.assigned)
+        .map((option) => option.serviceId)
+        .toSet();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Servicios de ${widget.stylist.name}'),
+      content: SizedBox(
+        width: 560,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Marca los servicios que esta profesional puede realizar. '
+              'Los cambios aplican a nuevas asignaciones y no borran el historial.',
+            ),
+            const SizedBox(height: 16),
+            if (widget.options.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 18),
+                child: Text('No hay servicios activos para asignar.'),
+              )
+            else
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: widget.options.length,
+                  separatorBuilder: (context, index) =>
+                      const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final option = widget.options[index];
+                    final selected = selectedServiceIds.contains(
+                      option.serviceId,
+                    );
+
+                    return CheckboxListTile(
+                      value: selected,
+                      contentPadding: EdgeInsets.zero,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      title: Text(option.serviceName),
+                      subtitle: Text(
+                        '${option.category} · ${option.formattedPrice} · '
+                        '${option.durationMinutes} min',
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          if (value ?? false) {
+                            selectedServiceIds.add(option.serviceId);
+                          } else {
+                            selectedServiceIds.remove(option.serviceId);
+                          }
+                        });
+                      },
+                    );
+                  },
+                ),
+              ),
+            if (selectedServiceIds.isEmpty && widget.options.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              const Text(
+                'Sin servicios seleccionados, esta profesional no aparecera '
+                'como opcion al asignar nuevos servicios.',
+                style: TextStyle(color: Color(0xFFB45309)),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton.icon(
+          onPressed: widget.options.isEmpty
+              ? null
+              : () => Navigator.of(
+                  context,
+                ).pop(selectedServiceIds.toList(growable: false)),
+          icon: const Icon(Icons.save_outlined),
+          label: const Text('Guardar servicios'),
+        ),
+      ],
     );
   }
 }

@@ -5,9 +5,10 @@ import '../models/my_stylist_agenda_item.dart';
 class MyStylistAgendaService {
   const MyStylistAgendaService();
 
-  Future<List<MyStylistAgendaItem>> getMyStylistAgenda() async {
+  Future<List<MyStylistAgendaItem>> getMyStylistAgenda(DateTime date) async {
     final response = await Supabase.instance.client.rpc(
-      'get_my_stylist_agenda',
+      'get_my_stylist_agenda_by_date',
+      params: {'p_date': _formatDate(date)},
     );
 
     final rows = response as List<dynamic>;
@@ -19,6 +20,13 @@ class MyStylistAgendaService {
           ),
         )
         .toList();
+  }
+
+  String _formatDate(DateTime date) {
+    final year = date.year.toString().padLeft(4, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '$year-$month-$day';
   }
 
   Future<bool> changeTicketServiceStatus({
