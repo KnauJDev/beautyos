@@ -1,4 +1,4 @@
-﻿import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/client_summary.dart';
 
@@ -6,8 +6,17 @@ class ClientsService {
   const ClientsService();
 
   Future<List<ClientSummary>> getClientsSummary() async {
-    final response = await Supabase.instance.client
-        .rpc('get_clients_summary');
+    final response = await Supabase.instance.client.rpc('get_clients_summary');
+
+    return response
+        .map<ClientSummary>((item) => ClientSummary.fromMap(item))
+        .toList();
+  }
+
+  Future<List<ClientSummary>> getClientsManagementSummary() async {
+    final response = await Supabase.instance.client.rpc(
+      'get_clients_management_summary',
+    );
 
     return response
         .map<ClientSummary>((item) => ClientSummary.fromMap(item))
@@ -36,8 +45,35 @@ class ClientsService {
       return null;
     }
 
-    return ClientSummary.fromMap(
-      Map<String, dynamic>.from(rows.first as Map),
+    return ClientSummary.fromMap(Map<String, dynamic>.from(rows.first as Map));
+  }
+
+  Future<ClientSummary?> updateClient({
+    required String clientId,
+    required String name,
+    required String phone,
+    String? email,
+    String? notes,
+    required bool active,
+  }) async {
+    final response = await Supabase.instance.client.rpc(
+      'update_client',
+      params: {
+        'p_client_id': clientId,
+        'p_name': name,
+        'p_phone': phone,
+        'p_email': email,
+        'p_notes': notes,
+        'p_active': active,
+      },
     );
+
+    final rows = response as List<dynamic>;
+
+    if (rows.isEmpty) {
+      return null;
+    }
+
+    return ClientSummary.fromMap(Map<String, dynamic>.from(rows.first as Map));
   }
 }
