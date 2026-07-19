@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/ticket_service_option.dart';
+import '../models/available_appointment_slot.dart';
 import '../models/ticket_service_management_item.dart';
 import '../models/ticket_service_correction_option.dart';
 import '../models/ticket_payment.dart';
@@ -42,6 +43,53 @@ class TicketsService {
     );
 
     return (response as List<dynamic>).isNotEmpty;
+  }
+
+  Future<bool> createScheduledTicketWithService({
+    required String clientId,
+    required String serviceId,
+    required String stylistId,
+    required DateTime scheduledAt,
+    String channel = 'manual',
+    String? notes,
+  }) async {
+    final response = await Supabase.instance.client.rpc(
+      'create_scheduled_ticket_with_service',
+      params: {
+        'p_client_id': clientId,
+        'p_service_id': serviceId,
+        'p_stylist_id': stylistId,
+        'p_scheduled_at': scheduledAt.toUtc().toIso8601String(),
+        'p_channel': channel,
+        'p_notes': notes,
+      },
+    );
+
+    return (response as List<dynamic>).isNotEmpty;
+  }
+
+  Future<List<AvailableAppointmentSlot>> getAvailableAppointmentSlots({
+    required String serviceId,
+    required String stylistId,
+    required DateTime date,
+  }) async {
+    final day = DateTime(date.year, date.month, date.day);
+    final response = await Supabase.instance.client.rpc(
+      'get_available_appointment_slots',
+      params: {
+        'p_service_id': serviceId,
+        'p_stylist_id': stylistId,
+        'p_date': day.toIso8601String().substring(0, 10),
+      },
+    );
+
+    return (response as List<dynamic>)
+        .map(
+          (item) => AvailableAppointmentSlot.fromMap(
+            Map<String, dynamic>.from(item as Map),
+          ),
+        )
+        .toList();
   }
 
   Future<List<TicketServiceManagementItem>> getTicketServicesForManagement(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/client_summary.dart';
+import '../models/available_appointment_slot.dart';
 import '../models/ticket_service_option.dart';
 import '../models/ticket_service_management_item.dart';
 import '../models/ticket_service_correction_option.dart';
@@ -35,48 +36,50 @@ class _TicketsPageState extends State<TicketsPage> {
     });
   }
 
-  Future<void> _openCreateTicketDialog() async {
+  Future<void> _openCreateAppointmentDialog() async {
     try {
-      final clients = await clientsService.getClientsSummary();
+      final clientsFuture = clientsService.getClientsSummary();
+      final optionsFuture = ticketsService.getTicketServiceOptions();
+      final clients = await clientsFuture;
+      final options = await optionsFuture;
 
       if (!mounted) {
         return;
       }
 
-      final formData = await showDialog<_TicketFormData>(
-        context: context,
-        builder: (context) => _CreateTicketDialog(
-          clients: clients,
-          clientsService: clientsService,
-        ),
-      );
-
-      if (formData == null) {
-        return;
-      }
-
-      final createdTicket = await ticketsService.createTicket(
-        clientId: formData.clientId,
-        scheduledAt: formData.scheduledAt,
-        channel: formData.channel,
-        notes: formData.notes,
-      );
-
-      if (!mounted) {
-        return;
-      }
-
-      if (createdTicket == null) {
+      if (options.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('No se pudo crear el ticket. Verifica tus permisos.'),
+            content: Text('No hay servicios activos disponibles.'),
           ),
         );
         return;
       }
 
+      final created = await showDialog<bool>(
+        context: context,
+        builder: (context) => _CreateAppointmentDialog(
+          clients: clients,
+          clientsService: clientsService,
+          ticketsService: ticketsService,
+          options: options,
+        ),
+      );
+
+      if (created != true) {
+        return;
+      }
+
+      if (!mounted) {
+        return;
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ticket creado correctamente.')),
+        const SnackBar(
+          content: Text(
+            'Reserva creada correctamente y pendiente de confirmación.',
+          ),
+        ),
       );
       _refreshTickets();
     } catch (error) {
@@ -86,7 +89,9 @@ class _TicketsPageState extends State<TicketsPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error creando ticket: ${_friendlyError(error)}'),
+          content: Text(
+            'No se pudo crear la reserva: ${_friendlyError(error)}',
+          ),
         ),
       );
     }
@@ -559,9 +564,9 @@ class _TicketsPageState extends State<TicketsPage> {
           runSpacing: 12,
           children: [
             FilledButton.icon(
-              onPressed: _openCreateTicketDialog,
-              icon: const Icon(Icons.add_card_outlined),
-              label: const Text('Nuevo ticket'),
+              onPressed: _openCreateAppointmentDialog,
+              icon: const Icon(Icons.event_available_outlined),
+              label: const Text('Nueva cita'),
             ),
             OutlinedButton.icon(
               onPressed: _refreshTickets,
@@ -647,6 +652,620 @@ class _TicketsPageState extends State<TicketsPage> {
               ),
             );
           },
+        ),
+      ],
+    );
+  }
+}
+
+class _CreateAppointmentDialog extends StatefulWidget {
+  const _CreateAppointmentDialog({
+    required this.clients,
+    required this.clientsService,
+    required this.ticketsService,
+    required this.options,
+  });
+
+  final List<ClientSummary> clients;
+  final ClientsService clientsService;
+  final TicketsService ticketsService;
+  final List<TicketServiceOption> options;
+
+  @override
+  State<_CreateAppointmentDialog> createState() =>
+      _CreateAppointmentDialogState();
+}
+
+class _CreateAppointmentDialogState extends State<_CreateAppointmentDialog> {
+  final formKey = GlobalKey<FormState>();
+  final notesController = TextEditingController();
+
+  late final List<ClientSummary> clients;
+  String? selectedServiceId;
+  String? selectedStylistId;
+  String? selectedClientId;
+  DateTime? selectedDate;
+  DateTime? scheduledAt;
+  List<AvailableAppointmentSlot>? availableSlots;
+  bool isCreatingClient = false;
+  bool isLoadingSlots = false;
+  bool isSaving = false;
+  String? bookingError;
+  String? slotsError;
+
+  @override
+  void initState() {
+    super.initState();
+    clients = [...widget.clients]
+      ..sort(
+        (first, second) =>
+            first.name.toLowerCase().compareTo(second.name.toLowerCase()),
+      );
+  }
+
+  @override
+  void dispose() {
+    notesController.dispose();
+    super.dispose();
+  }
+
+  List<TicketServiceOption> get services {
+    final uniqueServices = <String, TicketServiceOption>{};
+    for (final option in widget.options) {
+      uniqueServices.putIfAbsent(option.serviceId, () => option);
+    }
+    final result = uniqueServices.values.toList();
+    result.sort(
+      (first, second) => first.serviceName.compareTo(second.serviceName),
+    );
+    return result;
+  }
+
+  List<TicketServiceOption> get stylists {
+    if (selectedServiceId == null) {
+      return [];
+    }
+
+    final result = widget.options
+        .where(
+          (option) =>
+              option.serviceId == selectedServiceId && option.stylistId != null,
+        )
+        .toList();
+    result.sort(
+      (first, second) =>
+          (first.stylistName ?? '').compareTo(second.stylistName ?? ''),
+    );
+    return result;
+  }
+
+  TicketServiceOption? get selectedService {
+    for (final service in services) {
+      if (service.serviceId == selectedServiceId) {
+        return service;
+      }
+    }
+    return null;
+  }
+
+  TicketServiceOption? get selectedStylist {
+    for (final stylist in stylists) {
+      if (stylist.stylistId == selectedStylistId) {
+        return stylist;
+      }
+    }
+    return null;
+  }
+
+  String get scheduledAtText {
+    if (scheduledAt == null) {
+      return 'Selecciona fecha y hora';
+    }
+
+    final date = scheduledAt!;
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '$day/$month/${date.year} $hour:$minute';
+  }
+
+  String get selectedDateText {
+    if (selectedDate == null) {
+      return 'Selecciona el día para ver las horas disponibles';
+    }
+
+    final date = selectedDate!;
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day/$month/${date.year}';
+  }
+
+  Future<void> _selectDate() async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final date = await showDatePicker(
+      context: context,
+      initialDate: selectedDate ?? today,
+      firstDate: today,
+      lastDate: DateTime(now.year + 3),
+    );
+
+    if (date == null || !mounted) {
+      return;
+    }
+
+    setState(() {
+      selectedDate = DateTime(date.year, date.month, date.day);
+      scheduledAt = null;
+      availableSlots = null;
+      slotsError = null;
+    });
+
+    await _loadAvailableSlots();
+  }
+
+  Future<void> _loadAvailableSlots() async {
+    if (selectedServiceId == null ||
+        selectedStylistId == null ||
+        selectedDate == null) {
+      return;
+    }
+
+    setState(() {
+      isLoadingSlots = true;
+      slotsError = null;
+      availableSlots = null;
+    });
+
+    try {
+      final slots = await widget.ticketsService.getAvailableAppointmentSlots(
+        serviceId: selectedServiceId!,
+        stylistId: selectedStylistId!,
+        date: selectedDate!,
+      );
+
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        availableSlots = slots;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        slotsError = _friendlyError(error);
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoadingSlots = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _openQuickCreateClientDialog() async {
+    final formData = await showDialog<_QuickClientFormData>(
+      context: context,
+      builder: (context) => const _QuickCreateClientDialog(),
+    );
+
+    if (formData == null || !mounted) {
+      return;
+    }
+
+    setState(() {
+      isCreatingClient = true;
+    });
+
+    try {
+      final createdClient = await widget.clientsService.createClient(
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
+        notes: formData.notes,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (createdClient == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No se pudo crear el cliente.')),
+        );
+        return;
+      }
+
+      setState(() {
+        clients.add(createdClient);
+        clients.sort(
+          (first, second) =>
+              first.name.toLowerCase().compareTo(second.name.toLowerCase()),
+        );
+        selectedClientId = createdClient.id;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error creando cliente: ${_friendlyError(error)}'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isCreatingClient = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _submit() async {
+    if (!formKey.currentState!.validate()) {
+      return;
+    }
+
+    final now = DateTime.now();
+    if (scheduledAt == null || !scheduledAt!.isAfter(now)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Selecciona una fecha y hora futura para la reserva.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      isSaving = true;
+      bookingError = null;
+    });
+
+    try {
+      final created = await widget.ticketsService
+          .createScheduledTicketWithService(
+            clientId: selectedClientId!,
+            serviceId: selectedServiceId!,
+            stylistId: selectedStylistId!,
+            scheduledAt: scheduledAt!,
+            notes: notesController.text.trim().isEmpty
+                ? null
+                : notesController.text.trim(),
+          );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (!created) {
+        setState(() {
+          bookingError = 'No se pudo guardar la reserva. Intenta nuevamente.';
+        });
+        return;
+      }
+
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        bookingError = _friendlyError(error);
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          isSaving = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final service = selectedService;
+    final stylist = selectedStylist;
+
+    return AlertDialog(
+      title: const Text('Nueva cita'),
+      content: SizedBox(
+        width: 560,
+        child: Form(
+          key: formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  initialValue: selectedServiceId,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: '1. Servicio',
+                    prefixIcon: Icon(Icons.content_cut_outlined),
+                  ),
+                  items: services
+                      .map(
+                        (option) => DropdownMenuItem(
+                          value: option.serviceId,
+                          child: Text(
+                            '${option.serviceName} · ${option.formattedPrice}',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedServiceId = value;
+                      selectedStylistId = null;
+                      scheduledAt = null;
+                      availableSlots = null;
+                      slotsError = null;
+                    });
+                  },
+                  validator: (value) => value == null || value.isEmpty
+                      ? 'Selecciona un servicio'
+                      : null,
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  key: ValueKey('appointment-stylist-$selectedServiceId'),
+                  initialValue: selectedStylistId,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: '2. Estilista disponible',
+                    prefixIcon: Icon(Icons.badge_outlined),
+                  ),
+                  items: stylists
+                      .map(
+                        (option) => DropdownMenuItem(
+                          value: option.stylistId,
+                          child: Text(option.stylistName ?? 'Sin estilista'),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: selectedServiceId == null
+                      ? null
+                      : (value) {
+                          setState(() {
+                            selectedStylistId = value;
+                            scheduledAt = null;
+                            availableSlots = null;
+                            slotsError = null;
+                          });
+                          _loadAvailableSlots();
+                        },
+                  validator: (value) {
+                    if (selectedServiceId != null && stylists.isEmpty) {
+                      return 'Este servicio no tiene estilistas habilitados';
+                    }
+                    return value == null || value.isEmpty
+                        ? 'Selecciona un estilista'
+                        : null;
+                  },
+                ),
+                const SizedBox(height: 12),
+                FormField<DateTime>(
+                  validator: (_) => scheduledAt == null
+                      ? 'Selecciona una hora disponible'
+                      : null,
+                  builder: (field) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.event_available_outlined),
+                        title: const Text('3. Fecha y hora disponible'),
+                        subtitle: Text(
+                          scheduledAt == null
+                              ? selectedDateText
+                              : scheduledAtText,
+                        ),
+                        trailing: IconButton(
+                          tooltip: 'Elegir fecha',
+                          onPressed: _selectDate,
+                          icon: const Icon(Icons.edit_calendar_outlined),
+                        ),
+                        onTap: _selectDate,
+                      ),
+                      if (selectedServiceId != null &&
+                          selectedStylistId != null &&
+                          selectedDate != null) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          isLoadingSlots
+                              ? 'Calculando disponibilidad...'
+                              : 'Horas disponibles para $selectedDateText',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF374151),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        if (isLoadingSlots)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(12),
+                              child: CircularProgressIndicator(),
+                            ),
+                          )
+                        else if (slotsError != null)
+                          Text(
+                            slotsError!,
+                            style: const TextStyle(color: Color(0xFFB91C1C)),
+                          )
+                        else if (availableSlots != null &&
+                            availableSlots!.isEmpty)
+                          const Text(
+                            'No quedan horarios disponibles para este día. Elige otra fecha o estilista.',
+                            style: TextStyle(color: Color(0xFFB45309)),
+                          )
+                        else if (availableSlots != null)
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: availableSlots!
+                                .map(
+                                  (slot) => ChoiceChip(
+                                    label: Text(slot.label),
+                                    selected:
+                                        scheduledAt?.isAtSameMomentAs(
+                                          slot.startsAt,
+                                        ) ??
+                                        false,
+                                    onSelected: (_) {
+                                      setState(() {
+                                        scheduledAt = slot.startsAt;
+                                        bookingError = null;
+                                      });
+                                    },
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  key: ValueKey('appointment-client-$selectedClientId'),
+                  initialValue: selectedClientId,
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    labelText: '4. Cliente',
+                    prefixIcon: Icon(Icons.person_outline),
+                  ),
+                  items: clients
+                      .map(
+                        (client) => DropdownMenuItem(
+                          value: client.id,
+                          child: Text(
+                            '${client.name} · ${client.phone}',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedClientId = value;
+                    });
+                  },
+                  validator: (value) => value == null || value.isEmpty
+                      ? 'Selecciona un cliente'
+                      : null,
+                ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: isCreatingClient
+                        ? null
+                        : _openQuickCreateClientDialog,
+                    icon: isCreatingClient
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.person_add_alt_1_outlined),
+                    label: Text(
+                      isCreatingClient
+                          ? 'Guardando cliente...'
+                          : 'Crear cliente rápido',
+                    ),
+                  ),
+                ),
+                TextFormField(
+                  controller: notesController,
+                  decoration: const InputDecoration(
+                    labelText: 'Notas opcionales',
+                    prefixIcon: Icon(Icons.notes_outlined),
+                  ),
+                  minLines: 2,
+                  maxLines: 3,
+                ),
+                if (service != null &&
+                    stylist != null &&
+                    scheduledAt != null) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F3FF),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Text(
+                      '${service.serviceName} con ${stylist.stylistName}\\n'
+                      '$scheduledAtText · ${service.formattedPrice} · '
+                      '${service.durationMinutes} min',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF5B21B6),
+                      ),
+                    ),
+                  ),
+                ],
+                if (bookingError != null) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFFCA5A5)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.warning_amber_rounded,
+                          color: Color(0xFFB91C1C),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            bookingError!,
+                            style: const TextStyle(
+                              color: Color(0xFF991B1B),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: isSaving ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton.icon(
+          onPressed: isSaving ? null : _submit,
+          icon: isSaving
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Icon(Icons.event_available_outlined),
+          label: Text(isSaving ? 'Guardando...' : 'Crear reserva'),
         ),
       ],
     );
