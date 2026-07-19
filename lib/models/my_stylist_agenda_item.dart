@@ -1,4 +1,4 @@
-﻿class MyStylistAgendaItem {
+class MyStylistAgendaItem {
   const MyStylistAgendaItem({
     required this.ticketServiceId,
     required this.ticketId,
@@ -128,6 +128,8 @@
         return 'Inicio';
       case 'cotizado':
         return 'Cotizado';
+      case 'solicitado':
+        return 'Solicitado';
       case 'confirmado':
         return 'Confirmado';
       case 'en_proceso':

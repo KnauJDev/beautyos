@@ -141,6 +141,7 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
           onNextDay: () =>
               _changeDate(selectedDate.add(const Duration(days: 1))),
           onPickDate: _pickDate,
+          onRefresh: _refreshAgenda,
         ),
         const SizedBox(height: 18),
         FutureBuilder<List<MyStylistAgendaItem>>(
@@ -163,14 +164,19 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
             if (items.isEmpty) {
               return InfoPanel(
                 icon: Icons.event_busy_outlined,
-                title: 'Sin citas confirmadas',
+                title: 'Sin citas ni solicitudes',
                 description:
-                    'No hay servicios confirmados para ${_formatLongDate(selectedDate)}. '
-                    'Los tickets Solicitados solo apareceran despues de ser confirmados.',
+                    'No tienes servicios asignados para ${_formatLongDate(selectedDate)}.',
               );
             }
 
-            final totalValue = items.fold<double>(
+            final requestedItems = items
+                .where((item) => item.ticketStatus == 'solicitado')
+                .toList();
+            final confirmedItems = items
+                .where((item) => item.ticketStatus != 'solicitado')
+                .toList();
+            final totalValue = confirmedItems.fold<double>(
               0,
               (sum, item) => sum + item.price,
             );
@@ -178,17 +184,39 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _AgendaSummary(
-                  itemsCount: items.length,
-                  totalValue: totalValue,
-                ),
-                const SizedBox(height: 24),
-                const SectionTitle('Servicios asignados'),
-                const SizedBox(height: 12),
-                _AgendaTable(
-                  items: items,
-                  onUpdateServiceStatus: _confirmAndUpdateServiceStatus,
-                ),
+                if (requestedItems.isNotEmpty) ...[
+                  const SectionTitle('Solicitudes pendientes de confirmación'),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Estas solicitudes ya están asignadas a ti, pero administración todavía debe confirmarlas.',
+                    style: TextStyle(color: Color(0xFF667085)),
+                  ),
+                  const SizedBox(height: 12),
+                  _AgendaTable(
+                    items: requestedItems,
+                    onUpdateServiceStatus: _confirmAndUpdateServiceStatus,
+                  ),
+                  const SizedBox(height: 24),
+                ],
+                if (confirmedItems.isNotEmpty) ...[
+                  _AgendaSummary(
+                    itemsCount: confirmedItems.length,
+                    totalValue: totalValue,
+                  ),
+                  const SizedBox(height: 24),
+                  const SectionTitle('Servicios confirmados'),
+                  const SizedBox(height: 12),
+                  _AgendaTable(
+                    items: confirmedItems,
+                    onUpdateServiceStatus: _confirmAndUpdateServiceStatus,
+                  ),
+                ] else
+                  InfoPanel(
+                    icon: Icons.event_available_outlined,
+                    title: 'Sin citas confirmadas',
+                    description:
+                        'Todavía no tienes servicios confirmados para ${_formatLongDate(selectedDate)}.',
+                  ),
               ],
             );
           },
@@ -205,6 +233,7 @@ class _AgendaDateNavigator extends StatelessWidget {
     required this.onToday,
     required this.onNextDay,
     required this.onPickDate,
+    required this.onRefresh,
   });
 
   final DateTime selectedDate;
@@ -212,6 +241,7 @@ class _AgendaDateNavigator extends StatelessWidget {
   final VoidCallback onToday;
   final VoidCallback onNextDay;
   final VoidCallback onPickDate;
+  final VoidCallback onRefresh;
 
   @override
   Widget build(BuildContext context) {
@@ -251,6 +281,11 @@ class _AgendaDateNavigator extends StatelessWidget {
               onPressed: isToday ? null : onToday,
               icon: const Icon(Icons.today_outlined),
               label: Text(isToday ? 'Hoy seleccionado' : 'Ir a hoy'),
+            ),
+            OutlinedButton.icon(
+              onPressed: onRefresh,
+              icon: const Icon(Icons.refresh_outlined),
+              label: const Text('Actualizar agenda'),
             ),
           ],
         ),
@@ -475,6 +510,13 @@ class _ServiceActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (item.ticketStatus == 'solicitado') {
+      return const Chip(
+        avatar: Icon(Icons.hourglass_top_outlined, size: 18),
+        label: Text('Esperando confirmación'),
+      );
+    }
+
     switch (item.serviceStatus) {
       case 'pendiente':
         return FilledButton.icon(

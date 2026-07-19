@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../models/agenda_summary.dart';
 import '../services/agenda_service.dart';
@@ -13,12 +13,18 @@ class AgendaPage extends StatefulWidget {
 
 class _AgendaPageState extends State<AgendaPage> {
   final AgendaService agendaService = const AgendaService();
-  late final Future<List<AgendaSummary>> agendaFuture;
+  late Future<List<AgendaSummary>> agendaFuture;
 
   @override
   void initState() {
     super.initState();
     agendaFuture = agendaService.getAgendaSummary();
+  }
+
+  void _refreshAgenda() {
+    setState(() {
+      agendaFuture = agendaService.getAgendaSummary();
+    });
   }
 
   @override
@@ -32,6 +38,12 @@ class _AgendaPageState extends State<AgendaPage> {
           title: 'Agenda conectada con Supabase',
           description:
               'Este m\u00f3dulo ahora consulta citas reales desde tickets confirmados o en proceso mediante una funci\u00f3n segura.',
+        ),
+        const SizedBox(height: 16),
+        OutlinedButton.icon(
+          onPressed: _refreshAgenda,
+          icon: const Icon(Icons.refresh_outlined),
+          label: const Text('Actualizar agenda'),
         ),
         const SizedBox(height: 16),
         FutureBuilder<List<AgendaSummary>>(
@@ -84,9 +96,8 @@ class _AgendaPageState extends State<AgendaPage> {
                     const SectionTitle('Citas desde Supabase'),
                     const SizedBox(height: 14),
                     ...appointments.map(
-                      (appointment) => AgendaAppointmentCard(
-                        appointment: appointment,
-                      ),
+                      (appointment) =>
+                          AgendaAppointmentCard(appointment: appointment),
                     ),
                   ],
                 ),
@@ -102,10 +113,7 @@ class _AgendaPageState extends State<AgendaPage> {
 class AgendaAppointmentCard extends StatelessWidget {
   final AgendaSummary appointment;
 
-  const AgendaAppointmentCard({
-    super.key,
-    required this.appointment,
-  });
+  const AgendaAppointmentCard({super.key, required this.appointment});
 
   @override
   Widget build(BuildContext context) {

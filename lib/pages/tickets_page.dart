@@ -43,18 +43,12 @@ class _TicketsPageState extends State<TicketsPage> {
         return;
       }
 
-      if (clients.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Primero debes crear al menos un cliente.'),
-          ),
-        );
-        return;
-      }
-
       final formData = await showDialog<_TicketFormData>(
         context: context,
-        builder: (context) => _CreateTicketDialog(clients: clients),
+        builder: (context) => _CreateTicketDialog(
+          clients: clients,
+          clientsService: clientsService,
+        ),
       );
 
       if (formData == null) {
@@ -660,9 +654,13 @@ class _TicketsPageState extends State<TicketsPage> {
 }
 
 class _CreateTicketDialog extends StatefulWidget {
-  const _CreateTicketDialog({required this.clients});
+  const _CreateTicketDialog({
+    required this.clients,
+    required this.clientsService,
+  });
 
   final List<ClientSummary> clients;
+  final ClientsService clientsService;
 
   @override
   State<_CreateTicketDialog> createState() => _CreateTicketDialogState();
@@ -672,9 +670,21 @@ class _CreateTicketDialogState extends State<_CreateTicketDialog> {
   final formKey = GlobalKey<FormState>();
   final notesController = TextEditingController();
 
+  late final List<ClientSummary> clients;
   String? selectedClientId;
   DateTime? scheduledAt;
   String channel = 'manual';
+  bool isCreatingClient = false;
+
+  @override
+  void initState() {
+    super.initState();
+    clients = [...widget.clients]
+      ..sort(
+        (first, second) =>
+            first.name.toLowerCase().compareTo(second.name.toLowerCase()),
+      );
+  }
 
   @override
   void dispose() {
@@ -733,6 +743,76 @@ class _CreateTicketDialogState extends State<_CreateTicketDialog> {
     });
   }
 
+  Future<void> _openQuickCreateClientDialog() async {
+    final formData = await showDialog<_QuickClientFormData>(
+      context: context,
+      builder: (context) => const _QuickCreateClientDialog(),
+    );
+
+    if (formData == null || !mounted) {
+      return;
+    }
+
+    setState(() {
+      isCreatingClient = true;
+    });
+
+    try {
+      final createdClient = await widget.clientsService.createClient(
+        name: formData.name,
+        phone: formData.phone,
+        email: formData.email,
+        notes: formData.notes,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (createdClient == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No se pudo crear el cliente. Verifica tus permisos.',
+            ),
+          ),
+        );
+        return;
+      }
+
+      setState(() {
+        clients.add(createdClient);
+        clients.sort(
+          (first, second) =>
+              first.name.toLowerCase().compareTo(second.name.toLowerCase()),
+        );
+        selectedClientId = createdClient.id;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cliente creado y seleccionado correctamente.'),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error creando cliente: ${_friendlyError(error)}'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isCreatingClient = false;
+        });
+      }
+    }
+  }
+
   void _submit() {
     if (!formKey.currentState!.validate()) {
       return;
@@ -763,13 +843,14 @@ class _CreateTicketDialogState extends State<_CreateTicketDialog> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<String>(
+                  key: ValueKey(selectedClientId),
                   initialValue: selectedClientId,
                   isExpanded: true,
                   decoration: const InputDecoration(
                     labelText: 'Cliente',
                     prefixIcon: Icon(Icons.person_outline),
                   ),
-                  items: widget.clients
+                  items: clients
                       .map(
                         (client) => DropdownMenuItem<String>(
                           value: client.id,
@@ -792,6 +873,27 @@ class _CreateTicketDialogState extends State<_CreateTicketDialog> {
 
                     return null;
                   },
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: isCreatingClient
+                        ? null
+                        : _openQuickCreateClientDialog,
+                    icon: isCreatingClient
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.person_add_alt_1_outlined),
+                    label: Text(
+                      isCreatingClient
+                          ? 'Guardando cliente...'
+                          : 'Crear cliente rápido',
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
@@ -879,6 +981,140 @@ class _TicketFormData {
   final String clientId;
   final DateTime? scheduledAt;
   final String channel;
+  final String? notes;
+}
+
+class _QuickCreateClientDialog extends StatefulWidget {
+  const _QuickCreateClientDialog();
+
+  @override
+  State<_QuickCreateClientDialog> createState() =>
+      _QuickCreateClientDialogState();
+}
+
+class _QuickCreateClientDialogState extends State<_QuickCreateClientDialog> {
+  final formKey = GlobalKey<FormState>();
+  final nameController = TextEditingController();
+  final phoneController = TextEditingController();
+  final emailController = TextEditingController();
+  final notesController = TextEditingController();
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    phoneController.dispose();
+    emailController.dispose();
+    notesController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (!formKey.currentState!.validate()) {
+      return;
+    }
+
+    Navigator.of(context).pop(
+      _QuickClientFormData(
+        name: nameController.text.trim(),
+        phone: phoneController.text.trim(),
+        email: emailController.text.trim().isEmpty
+            ? null
+            : emailController.text.trim(),
+        notes: notesController.text.trim().isEmpty
+            ? null
+            : notesController.text.trim(),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Crear cliente rápido'),
+      content: SizedBox(
+        width: 440,
+        child: Form(
+          key: formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameController,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre',
+                    prefixIcon: Icon(Icons.person_outline),
+                  ),
+                  textInputAction: TextInputAction.next,
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? 'Escribe el nombre del cliente'
+                      : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: phoneController,
+                  decoration: const InputDecoration(
+                    labelText: 'Teléfono',
+                    prefixIcon: Icon(Icons.phone_outlined),
+                  ),
+                  keyboardType: TextInputType.phone,
+                  textInputAction: TextInputAction.next,
+                  validator: (value) => value == null || value.trim().isEmpty
+                      ? 'Escribe el teléfono del cliente'
+                      : null,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'Email opcional',
+                    prefixIcon: Icon(Icons.email_outlined),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: notesController,
+                  decoration: const InputDecoration(
+                    labelText: 'Notas opcionales',
+                    prefixIcon: Icon(Icons.notes_outlined),
+                  ),
+                  minLines: 2,
+                  maxLines: 4,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton.icon(
+          onPressed: _submit,
+          icon: const Icon(Icons.save_outlined),
+          label: const Text('Guardar cliente'),
+        ),
+      ],
+    );
+  }
+}
+
+class _QuickClientFormData {
+  const _QuickClientFormData({
+    required this.name,
+    required this.phone,
+    this.email,
+    this.notes,
+  });
+
+  final String name;
+  final String phone;
+  final String? email;
   final String? notes;
 }
 
