@@ -1,6 +1,6 @@
 # Impacto y migración segura a multisede
 
-**Estado:** Tramos 0, A, B y C cerrados en producción; D1–D2, D3.2–D3.4 y D4.0 verificados localmente, sin modificar producción
+**Estado:** Tramos 0, A, B y C cerrados en producción; D1–D2, D3.2–D3.4 y D4.0–D4.1 verificados localmente, sin modificar producción
 **Fecha:** 20 de julio de 2026
 **Fuente auditada:** SQL versionado `supabase/sql/001–125`, migraciones administradas y servicios Flutter actuales.
 
@@ -25,6 +25,8 @@
 **Avance D3.4 20/07/2026:** las seis firmas heredadas conservan su definición, pero el ensayo aislado revocó idempotentemente `EXECUTE` para `PUBLIC`, `anon` y `authenticated`; solo `service_role` mantiene permiso temporal. Las invocaciones reales de `anon` y `authenticated` fueron denegadas y la prueba integral posterior confirmó que los seis `_v2` continúan funcionando por sede y rol. No hubo cambios en producción. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_D3_4_REVOCACION_RPC_HEREDADAS_2026-07-20.md`.
 
 **Avance D4.0 20/07/2026:** una prueba transaccional simuló un cliente autenticado antiguo: confirmó el bloqueo inicial, reotorgó temporalmente `EXECUTE`, comprobó que la invocación ya no fallaba por privilegio, reaplicó la revocación y verificó que los seis `_v2` conservaron su matriz de acceso. Todo terminó con `ROLLBACK`; producción no fue modificada. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_D4_0_REVERSIBILIDAD_CLIENTE_HEREDADO_2026-07-20.md`.
+
+**Avance D4.1 20/07/2026:** se verificó la preparación de conexión sin exponer secretos. La CLI `2.109.1` está disponible, pero faltan `supabase/config.toml`, `.mcp.json` y un destino no productivo conectable; la pila CLI local tampoco está disponible. Quedó definida la matriz de solo lectura para repetir D4.0 y el criterio de detenerse si el destino no puede identificarse inequívocamente. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_D4_1_PREPARACION_ENTORNO_CONECTABLE_2026-07-20.md`.
 
 ## 1. Objetivo
 
@@ -133,7 +135,7 @@ Cada RPC operativa seguirá la secuencia: autenticar → resolver sede → compr
 
 **Puerta:** flujo integral funciona en dos sedes de ensayo y los resultados coinciden.
 
-**Cierre Tramo C 20/07/2026:** el contexto efectivo, las RPC `_v2`, Flutter por sede, reservas, tickets, agendas, pagos, caja, reportes e inventario fueron aprobados en ensayo y producción. D0 verificó después cero filas operativas sin sede y 15 puentes temporales activos. D1 retiró localmente la dependencia Flutter heredada, D2 verificó en ensayo la obligatoriedad de sede, D3.0 clasificó la compatibilidad restante, D3.1 aprobó el diseño de los seis reemplazos pendientes, D3.2 los implementó localmente, D3.3 confirmó la ausencia de consumidores internos, D3.4 cerró localmente su acceso externo y D4.0 probó su reversibilidad con un cliente heredado. La siguiente microcompuerta es D4.1: repetir la matriz en un entorno Supabase conectable y documentar la fotografía de solo lectura del esquema vivo.
+**Cierre Tramo C 20/07/2026:** el contexto efectivo, las RPC `_v2`, Flutter por sede, reservas, tickets, agendas, pagos, caja, reportes e inventario fueron aprobados en ensayo y producción. D0 verificó después cero filas operativas sin sede y 15 puentes temporales activos. D1 retiró localmente la dependencia Flutter heredada, D2 verificó en ensayo la obligatoriedad de sede, D3.0 clasificó la compatibilidad restante, D3.1 aprobó el diseño de los seis reemplazos pendientes, D3.2 los implementó localmente, D3.3 confirmó la ausencia de consumidores internos, D3.4 cerró localmente su acceso externo, D4.0 probó su reversibilidad con un cliente heredado y D4.1 preparó la matriz de conexión segura. La siguiente microcompuerta es D4.2: seleccionar un entorno no productivo conectable antes de ejecutar consultas remotas.
 
 ### Tramo D — Endurecimiento
 
