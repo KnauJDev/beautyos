@@ -1,7 +1,7 @@
 # Tramo C — diseño de operación consciente de sede
 
 **Fecha:** 20 de julio de 2026  
-**Estado:** diseño cerrado; C1 y backend C2 implementados y aprobados en ensayo aislado; conexión Flutter pendiente; producción no autorizada
+**Estado:** C1–C4 implementados y aprobados en ensayo aislado; producción no autorizada
 **Antecedentes:** Tramos A y B aplicados y auditados en producción
 
 ## 1. Objetivo
@@ -101,7 +101,18 @@ Solo `tenant_owner` tendrá una ruta consolidada futura; no se representará la 
 - C2b incorporó trece RPC `_v2` para administrar servicios de tickets, reprogramar, cambiar estados, corregir finalizaciones y registrar/anular pagos.
 - La barrera final `enforce_stylist_schedule_conflict()` ahora serializa y detecta cruces dentro de la misma sede. El mismo profesional puede tener la misma franja en dos sedes distintas si la configuración del negocio lo permite, pero no dos citas superpuestas dentro de una sede.
 - Las pruebas reversibles `113` y `115` aprobaron A1/A2, Tenant B, operaciones completas y casos negativos. Las auditorías `114` y `116` confirmaron `SECURITY DEFINER`, `search_path=pg_catalog`, ausencia de ejecución anónima y grants mínimos.
-- Ningún objeto de C2 fue aplicado a producción. La siguiente compuerta es incorporar el contexto de sede a Flutter y sustituir Tickets/Agenda por las firmas `_v2` sin retirar las heredadas.
+- Ningún objeto de C2 fue aplicado a producción. Flutter ya transmite la sede efectiva a Tickets y Agenda sin retirar las firmas heredadas.
+
+### Avance verificado de Flutter, C3 y C4
+
+- Flutter obtiene los contextos permitidos con `get_my_branch_context_v2()`, selecciona automáticamente cuando solo existe una sede y permite cambiar entre sedes autorizadas cuando existen varias.
+- Tickets, Agenda, Mi agenda, Reportes, Compras, Gastos e Inventario reciben `branch_id`, recargan al cambiar de contexto y consumen la familia `_v2`; durante la ventana compatible conservan una ruta heredada únicamente cuando C1 aún no está desplegado.
+- C3 incorporó nueve RPC para cierre diario, comisiones, resumen financiero, ventas, compras, detalle de compras, gastos, productos y movimientos de inventario por sede.
+- La prueba reversible 117 aprobó totales exactos e independientes para A1/A2, stock separado y denegación uniforme de Tenant B. La auditoría 118 confirmó permisos mínimos y filtros explícitos de sede.
+- La prueba 119 comparó once familias heredadas contra sus contratos por sede en la Sede principal y no encontró diferencias en filas, conteos, importes ni estados.
+- La auditoría 120 confirmó 29 contratos públicos C1–C3, once firmas heredadas conservadas, 15 tablas operativas sin sedes nulas, 15 triggers puente, claves foráneas validadas e índices críticos por sede.
+- La batería completa 111–120, `flutter analyze` y `flutter test` aprobaron consecutivamente el 20/07/2026.
+- Los commits locales de cierre son `eca3cfe` (C3) y `9360f6e` (C4). No se ejecutó `supabase db push`, no se modificó producción y no se hizo `git push`.
 
 ## 5. Contratos técnicos
 

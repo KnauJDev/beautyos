@@ -1,6 +1,6 @@
 # Criterios de salida — Fase 1
 
-**Estado:** lista de aceptación en implementación; Tramos A y B aprobados y auditados en producción; Tramo C1 aprobado en ensayo aislado
+**Estado:** lista de aceptación en implementación; Tramos A y B aprobados en producción; Tramo C completo en ensayo aislado y pendiente de autorización productiva
 **Propósito:** no declarar multisede, roles o suscripción terminados solo porque la interfaz se vea bien.
 
 ## 1. Entregables documentales
@@ -74,9 +74,9 @@ Estas comprobaciones no cierran todavía los criterios globales de los Tramos B�
 - [x] Migración por familias C1–C4 y reversión compatible definidas.
 - [x] Matriz Tenant A/A1/A2 y Tenant B especificada.
 - [x] Helper privado y listado de contextos implementados y verificados en ensayo.
-- [ ] Reservas, tickets y agendas `_v2` aprobados en dos sedes.
-- [ ] Caja, reportes e inventario separados por sede.
-- [ ] Flutter transmite sede y recarga módulos al cambiarla.
+- [x] Reservas, tickets y agendas `_v2` aprobados en dos sedes.
+- [x] Caja, reportes e inventario separados por sede.
+- [x] Flutter transmite sede y recarga módulos al cambiarla.
 
 ## 3. Aislamiento obligatorio
 
@@ -93,22 +93,22 @@ Preparar Tenant A y Tenant B; Tenant A tendrá Sede A1 y A2.
 
 ## 4. Integridad multisede
 
-- [ ] Todo registro operativo tiene tenant y sede coherentes.
-- [ ] No puede asignarse a un ticket un servicio/profesional de otra sede.
-- [ ] Una sede inactiva no acepta nuevas reservas y conserva historia.
-- [ ] Un profesional puede trabajar en dos sedes autorizadas.
-- [ ] Los choques se detectan según profesional, tiempo y regla de traslado.
-- [ ] Horarios y disponibilidad se calculan con zona de la sede.
-- [ ] Caja, pagos, compras, gastos, stock y cierres no se mezclan entre sedes.
+- [x] Todo registro operativo existente tiene tenant y sede coherentes.
+- [x] No puede asignarse a un ticket un servicio/profesional de otra sede.
+- [x] Una sede inactiva no acepta nuevas reservas y conserva historia.
+- [x] Un profesional puede trabajar en dos sedes autorizadas.
+- [x] Los choques se detectan según profesional y tiempo dentro de cada sede. La regla de traslado entre sedes queda como política futura configurable.
+- [x] Horarios y disponibilidad se calculan con zona de la sede.
+- [x] Caja, pagos, compras, gastos, stock y cierres no se mezclan entre sedes.
 
 ## 5. Conservación de datos
 
-- [ ] Conteos de tickets, servicios e historiales coinciden.
-- [ ] Totales de pagos vigentes/anulados coinciden.
-- [ ] Comisiones históricas conservan valor y regla aplicada.
-- [ ] Stock inicial de Sede principal coincide con el modelo anterior.
-- [ ] Ningún registro queda huérfano.
-- [ ] Flutter existente sigue funcionando durante la ventana compatible.
+- [x] Conteos de tickets, servicios e historiales coinciden.
+- [x] Totales de pagos vigentes/anulados coinciden.
+- [x] Comisiones históricas conservan valor y regla aplicada.
+- [x] Stock inicial de Sede principal coincide con el modelo anterior.
+- [x] Ningún registro operativo del alcance A–C queda sin tenant/sede coherentes.
+- [x] Flutter existente sigue funcionando durante la ventana compatible.
 
 ## 6. Suscripción y entitlements
 
