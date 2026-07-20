@@ -1,6 +1,6 @@
 # Impacto y migración segura a multisede
 
-**Estado:** Tramos 0, A, B y C cerrados en producción; D1–D2 cerrados localmente y clasificación D3.0 aprobada, sin modificar producción
+**Estado:** Tramos 0, A, B y C cerrados en producción; D1–D2 cerrados localmente y diseño D3.1 aprobado, sin modificar producción
 **Fecha:** 20 de julio de 2026
 **Fuente auditada:** SQL versionado `supabase/sql/001–122`, migraciones administradas y servicios Flutter actuales.
 
@@ -15,6 +15,8 @@
 **Avance D1–D2 20/07/2026:** Flutter dejó de degradarse silenciosamente al contrato heredado en el commit local `a912394`. Después se creó y probó en la restauración aislada una migración que valida cero nulos y aplica `branch_id NOT NULL` a las 15 tablas operativas. Conteos, pagos, comisiones y stock permanecieron invariantes; producción no fue modificada. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_D2_OBLIGATORIEDAD_BRANCH_ID_2026-07-20.md`.
 
 **Avance D3.0 20/07/2026:** se clasificaron 15 triggers y 52 RPC heredadas. Siete triggers se conservan por integridad, seis raíces deben perder el fallback y dos de ticket opcional deben separar herencia de sede explícita. De las RPC, 24 son candidatas a retiro, seis deben ocultarse pero permanecen como dependencia interna, 13 conservan alcance tenant/catálogo, seis requieren reemplazo multisede y tres helpers quedan diferidos. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_D3_INVENTARIO_CLASIFICACION_COMPATIBILIDAD_2026-07-20.md`.
+
+**Avance D3.1 20/07/2026:** se aprobaron los contratos de seis RPC `_v2` con `p_branch_id` obligatorio, autorización efectiva por membresía, privilegios mínimos y respuestas compatibles con Flutter. Dashboard, horarios, política, reseñas y fotos quedan ligados a la sede seleccionada; `clients_count` conserva explícitamente alcance de catálogo tenant. Se definieron además la adaptación de cinco superficies Flutter, pruebas negativas y una secuencia reversible que mantiene temporalmente los contratos heredados. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_D3_1_DISENO_REEMPLAZOS_SEDE_2026-07-20.md`.
 
 ## 1. Objetivo
 
@@ -123,7 +125,7 @@ Cada RPC operativa seguirá la secuencia: autenticar → resolver sede → compr
 
 **Puerta:** flujo integral funciona en dos sedes de ensayo y los resultados coinciden.
 
-**Cierre Tramo C 20/07/2026:** el contexto efectivo, las RPC `_v2`, Flutter por sede, reservas, tickets, agendas, pagos, caja, reportes e inventario fueron aprobados en ensayo y producción. D0 verificó después cero filas operativas sin sede y 15 puentes temporales activos. D1 retiró localmente la dependencia Flutter heredada, D2 verificó en ensayo la obligatoriedad de sede y D3.0 clasificó la compatibilidad restante. La siguiente microcompuerta es D3.1: diseñar los seis reemplazos todavía consumidos sin sede efectiva.
+**Cierre Tramo C 20/07/2026:** el contexto efectivo, las RPC `_v2`, Flutter por sede, reservas, tickets, agendas, pagos, caja, reportes e inventario fueron aprobados en ensayo y producción. D0 verificó después cero filas operativas sin sede y 15 puentes temporales activos. D1 retiró localmente la dependencia Flutter heredada, D2 verificó en ensayo la obligatoriedad de sede, D3.0 clasificó la compatibilidad restante y D3.1 aprobó el diseño de los seis reemplazos pendientes. La siguiente microcompuerta es D3.2: implementarlos y verificarlos localmente sin retirar todavía los contratos heredados.
 
 ### Tramo D — Endurecimiento
 
