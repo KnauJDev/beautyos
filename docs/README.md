@@ -22,6 +22,8 @@ Esta carpeta es la fuente oficial viva de la arquitectura, producto y operación
 8. `01_arquitectura/auditorias/TRAMO_0_LINEA_BASE_2026-07-19.md`
 9. `02_operacion/RESPALDO_Y_RESTAURACION_SUPABASE.md`
 10. `../scripts/crear_respaldo_supabase.ps1` (asistente local; no contiene secretos)
+11. `01_arquitectura/auditorias/TRAMO_A_ESTRUCTURA_MULTISEDE_2026-07-20.md`
+12. `../supabase/migrations/20260720090817_tramo_a_estructura_multisede.sql`
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión estructural. No se reescriben para ocultar el pasado: una decisión futura la reemplaza mediante otro ADR.
 

@@ -1,6 +1,6 @@
 # Criterios de salida — Fase 1
 
-**Estado:** lista de aceptación previa a implementación  
+**Estado:** lista de aceptación en implementación; Tramo A aprobado en ensayo
 **Propósito:** no declarar multisede, roles o suscripción terminados solo porque la interfaz se vea bien.
 
 ## 1. Entregables documentales
@@ -15,15 +15,26 @@
 
 ## 2. Preparación técnica
 
-- [ ] Esquema vivo exportado y comparado con SQL versionado.
+- [x] Esquema vivo exportado y comparado con SQL versionado.
   - [x] Inventario vivo, objetos, RLS, RPC, migraciones administradas y diferencias documentados el 19/07/2026.
-  - [ ] Dump completo `schema.sql` generado y conservado fuera de Git.
-- [ ] Respaldo restaurable validado en entorno de prueba.
+  - [x] Dump completo `schema.sql` generado y conservado fuera de Git.
+- [x] Respaldo restaurable validado en entorno de prueba.
 - [ ] Migraciones revisadas por pares y ejecutadas primero en ensayo.
 - [x] Conteos y sumas financieras base registrados.
-- [ ] Plan de reversión ensayado.
+- [x] Plan de reversión del Tramo A ensayado.
 
-Evidencia actual: `docs/01_arquitectura/auditorias/TRAMO_0_LINEA_BASE_2026-07-19.md` y `supabase/sql/103_tramo_0_audit_multisite_baseline.sql`. El avance permanece bloqueado para DDL mientras no se complete `docs/02_operacion/RESPALDO_Y_RESTAURACION_SUPABASE.md`.
+Evidencia actual: `docs/01_arquitectura/auditorias/TRAMO_0_LINEA_BASE_2026-07-19.md`, `docs/01_arquitectura/auditorias/TRAMO_A_ESTRUCTURA_MULTISEDE_2026-07-20.md` y `supabase/sql/103–106`. El Tramo A está validado en ensayo; su aplicación al proyecto vivo requiere una compuerta y autorización explícitas.
+
+### Evidencia parcial completada por el Tramo A
+
+- [x] Toda entidad de catálogo existente tiene correspondencia en la Sede principal.
+- [x] Claves compuestas bloquean servicios y membresías pertenecientes a otro tenant.
+- [x] Pagos vigentes/anulados y comisiones vigentes/anuladas conservaron sus totales.
+- [x] El stock inicial copiado a la Sede principal coincide con el modelo anterior.
+- [x] Las tablas nuevas tienen RLS, grants mínimos e índices para sus claves foráneas.
+- [x] Las RPC heredadas principales siguieron respondiendo en la base restaurada.
+
+Estas comprobaciones no cierran todavía los criterios globales de los Tramos B–F.
 
 ## 3. Aislamiento obligatorio
 

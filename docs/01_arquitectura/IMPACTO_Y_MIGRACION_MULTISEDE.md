@@ -1,12 +1,14 @@
 # Impacto y migración segura a multisede
 
-**Estado:** especificación aprobada; Tramo 0 en ejecución controlada  
-**Fecha:** 19 de julio de 2026  
-**Fuente auditada:** SQL versionado `supabase/sql/001–102` y servicios Flutter actuales.
+**Estado:** Tramo 0 cerrado; Tramo A aprobado en ensayo y pendiente de autorización para producción
+**Fecha:** 20 de julio de 2026
+**Fuente auditada:** SQL versionado `supabase/sql/001–106`, migración administrada y servicios Flutter actuales.
 
 > Antes de aplicar cambios se realizará una fotografía del esquema vivo de Supabase. Este documento identifica el impacto desde el repositorio, pero no reemplaza esa comprobación.
 
-**Avance 19/07/2026:** la fotografía lógica, los conteos, los totales y las comprobaciones de integridad quedaron registrados en `docs/01_arquitectura/auditorias/TRAMO_0_LINEA_BASE_2026-07-19.md`. El proyecto vivo no recibió cambios. La puerta permanece cerrada hasta crear y restaurar una copia externa según `docs/02_operacion/RESPALDO_Y_RESTAURACION_SUPABASE.md`.
+**Avance 19/07/2026:** la fotografía lógica, los conteos, los totales y las comprobaciones de integridad quedaron registrados en `docs/01_arquitectura/auditorias/TRAMO_0_LINEA_BASE_2026-07-19.md`. El respaldo externo fue creado y restaurado en un entorno local aislado.
+
+**Avance 20/07/2026:** el Tramo A fue creado como migración aditiva, aplicado dos veces sobre la restauración, sometido a pruebas negativas entre tenants y revertido de forma controlada. Los datos operativos, financieros y de inventario permanecieron invariantes. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_A_ESTRUCTURA_MULTISEDE_2026-07-20.md`. El proyecto Supabase vivo todavía no recibió esta migración.
 
 ## 1. Objetivo
 

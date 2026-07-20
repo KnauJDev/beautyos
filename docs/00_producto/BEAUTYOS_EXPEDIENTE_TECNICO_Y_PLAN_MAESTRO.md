@@ -1,7 +1,7 @@
 # BeautyOS — Expediente técnico y plan maestro de construcción
 
 **Versión:** 1.2  
-**Estado:** Rector aprobado — Fase 1 diseñada; Tramo 0 en ejecución controlada  
+**Estado:** Rector aprobado — Fase 1 en implementación; Tramo A aprobado en ensayo
 **Fecha:** 19 de julio de 2026  
 **Propietario del producto:** Proyecto BeautyOS  
 **Regla de uso:** este documento define la dirección del producto. Cualquier cambio de alcance, regla de negocio o arquitectura debe registrarse aquí o en una decisión asociada antes de implementarse.
@@ -546,11 +546,12 @@ Si el usuario no conoce estos campos, Codex debe proponerlos antes de cambios es
 
 ## 18. Próxima acción autorizable
 
-**Completar la puerta de respaldo del Tramo 0:** la auditoría viva, las diferencias, los riesgos y la línea base financiera ya están documentados. Antes de aplicar cualquier DDL se generarán `roles.sql`, `schema.sql` y `data.sql`, se almacenarán fuera de Git y se restaurarán en un entorno de ensayo. Mientras esa prueba esté pendiente solo se permite preparar y revisar las migraciones aditivas del Tramo A; no aplicarlas.
+**Preparar la compuerta controlada del Tramo A:** el respaldo, la restauración, la migración aditiva, las pruebas de aislamiento y la reversión ya fueron validadas en ensayo. Antes de aplicar la migración al proyecto vivo se comprobará que el esquema no haya cambiado desde la auditoría, se generará un respaldo fresco si corresponde y se solicitará autorización explícita del propietario. Después de una aplicación y verificación satisfactorias comenzará el diseño detallado del Tramo B; no se mezclará ese backfill operacional con el despliegue del Tramo A.
 
 Documentos de ejecución:
 
 - `docs/01_arquitectura/IMPACTO_Y_MIGRACION_MULTISEDE.md`
 - `docs/01_arquitectura/auditorias/TRAMO_0_LINEA_BASE_2026-07-19.md`
+- `docs/01_arquitectura/auditorias/TRAMO_A_ESTRUCTURA_MULTISEDE_2026-07-20.md`
 - `docs/02_operacion/RESPALDO_Y_RESTAURACION_SUPABASE.md`
 - `docs/04_pruebas/CRITERIOS_SALIDA_FASE_1.md`
