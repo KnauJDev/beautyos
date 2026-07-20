@@ -1,6 +1,6 @@
 # Impacto y migración segura a multisede
 
-**Estado:** Tramos 0, A, B y C cerrados en producción; D1–D2, D3.2–D3.4 y D4.0–D4.5 verificados localmente/metadatos, sin modificar producción
+**Estado:** Tramos 0, A, B y C cerrados en producción; D1–D2, D3.2–D3.4 y D4.0–D4.6 verificados/localmente o en entorno no productivo, sin modificar producción
 **Fecha:** 20 de julio de 2026
 **Fuente auditada:** SQL versionado `supabase/sql/001–125`, migraciones administradas y servicios Flutter actuales.
 
@@ -37,6 +37,8 @@
 **Avance D4.4 20/07/2026:** se decidió alinear `beautyos-dev` aplicando D3.2 y D3.4 en orden, pero preservando trazabilidad de migración. El historial remoto existe y llega hasta C3; D3.2 y D3.4 no están registradas. No se ejecutaron cambios remotos. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_D4_4_DECISION_ALINEACION_DEV_2026-07-20.md`.
 
 **Avance D4.5 20/07/2026:** se preparó el mecanismo versionado para alinear `beautyos-dev`. La CLI `2.109.1` requiere vínculo o credenciales seguras fuera del repositorio; el conector Supabase disponible expone migraciones MCP y permite verificar historial con `list_migrations`. Queda seleccionada la ruta MCP para aplicar D3.2 y D3.4 en D4.6, sin SQL directo ni cambios remotos en D4.5. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_D4_5_MECANISMO_VERSIONADO_DEV_2026-07-20.md`.
+
+**Avance D4.6 20/07/2026:** `beautyos-dev` fue alineado con D3.2 y D3.4 mediante migraciones MCP registradas como `20260720200109_tramo_d3_2_20260720183122_reemplazos_lectura_por_sede` y `20260720200141_tramo_d3_4_20260720190528_revocar_rpc_heredadas`. La verificación confirmó seis RPC `_v2` activas por sede y seis firmas heredadas cerradas para `PUBLIC`, `anon` y `authenticated`; las 15 tablas operativas conservan cero `branch_id` nulos. Producción no fue modificada. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_D4_6_ALINEACION_DEV_MIGRACIONES_VERSIONADAS_2026-07-20.md`.
 
 ## 1. Objetivo
 
@@ -145,7 +147,7 @@ Cada RPC operativa seguirá la secuencia: autenticar → resolver sede → compr
 
 **Puerta:** flujo integral funciona en dos sedes de ensayo y los resultados coinciden.
 
-**Cierre Tramo C 20/07/2026:** el contexto efectivo, las RPC `_v2`, Flutter por sede, reservas, tickets, agendas, pagos, caja, reportes e inventario fueron aprobados en ensayo y producción. D0 verificó después cero filas operativas sin sede y 15 puentes temporales activos. D1 retiró localmente la dependencia Flutter heredada, D2 verificó en ensayo la obligatoriedad de sede, D3.0 clasificó la compatibilidad restante, D3.1 aprobó el diseño de los seis reemplazos pendientes, D3.2 los implementó localmente, D3.3 confirmó la ausencia de consumidores internos, D3.4 cerró localmente su acceso externo, D4.0 probó su reversibilidad con un cliente heredado, D4.1 preparó la matriz de conexión segura, D4.2 seleccionó `beautyos-dev` como candidato no productivo conectable, D4.3-pre dejó listo el SQL de fotografía, D4.3 confirmó que ese entorno requiere alineación, D4.4 decidió que la alineación debe preservar historial y D4.5 seleccionó el mecanismo MCP de migraciones. La siguiente microcompuerta es D4.6: aplicar en `beautyos-dev`, no en producción, D3.2 y D3.4 mediante migraciones verificables.
+**Cierre Tramo C 20/07/2026:** el contexto efectivo, las RPC `_v2`, Flutter por sede, reservas, tickets, agendas, pagos, caja, reportes e inventario fueron aprobados en ensayo y producción. D0 verificó después cero filas operativas sin sede y 15 puentes temporales activos. D1 retiró localmente la dependencia Flutter heredada, D2 verificó en ensayo la obligatoriedad de sede, D3.0 clasificó la compatibilidad restante, D3.1 aprobó el diseño de los seis reemplazos pendientes, D3.2 los implementó localmente, D3.3 confirmó la ausencia de consumidores internos, D3.4 cerró localmente su acceso externo, D4.0 probó su reversibilidad con un cliente heredado, D4.1 preparó la matriz de conexión segura, D4.2 seleccionó `beautyos-dev` como candidato no productivo conectable, D4.3-pre dejó listo el SQL de fotografía, D4.3 confirmó que ese entorno requiere alineación, D4.4 decidió que la alineación debe preservar historial, D4.5 seleccionó el mecanismo MCP de migraciones y D4.6 alineó `beautyos-dev`. La siguiente microcompuerta recomendada es D4.7: validar cliente heredado y reversibilidad en el entorno no productivo ya alineado.
 
 ### Tramo D — Endurecimiento
 
