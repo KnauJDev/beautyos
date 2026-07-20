@@ -1,7 +1,7 @@
 # BeautyOS — Expediente técnico y plan maestro de construcción
 
 **Versión:** 1.5
-**Estado:** Rector aprobado — Fase 1 en implementación; Tramos A, B y C aprobados en producción; D1–D2 cerrados localmente y D3.2 verificado, sin modificar producción
+**Estado:** Rector aprobado — Fase 1 en implementación; Tramos A, B y C aprobados en producción; D1–D2 cerrados localmente y D3.2–D3.3 verificados, sin modificar producción
 **Fecha:** 20 de julio de 2026
 **Propietario del producto:** Proyecto BeautyOS  
 **Regla de uso:** este documento define la dirección del producto. Cualquier cambio de alcance, regla de negocio o arquitectura debe registrarse aquí o en una decisión asociada antes de implementarse.
@@ -546,7 +546,7 @@ Si el usuario no conoce estos campos, Codex debe proponerlos antes de cambios es
 
 ## 18. Próxima acción autorizable
 
-**Continuar con D3.3 — preparar el retiro local de seis RPC heredadas sustituidas:** D3.2 creó y verificó los seis reemplazos `_v2`, actualizó Flutter y mantuvo los contratos antiguos para reversibilidad. El siguiente micro-paso deberá confirmar que no quedan consumidores Flutter ni dependencias SQL externas antes de diseñar la revocación o retiro local, sin tocar producción. Las alertas operativas continúan pausadas.
+**Continuar con D3.4 — ensayar la revocación local reversible de seis RPC heredadas sustituidas:** D3.3 confirmó que Flutter, migraciones y objetos SQL activos no consumen las seis firmas heredadas; el único ajuste previo es la prueba `124_verify...`, que hoy comprueba su existencia. Las firmas siguen expuestas a `anon`, `authenticated` y `service_role` en el ensayo local. El siguiente micro-paso debe revocar solo el acceso externo para `PUBLIC`, `anon` y `authenticated`, conservar temporalmente `service_role`, adaptar la verificación y probar denegaciones locales. No elimina funciones ni toca producción. Las alertas operativas continúan pausadas.
 
 Documentos de ejecución:
 
@@ -560,5 +560,6 @@ Documentos de ejecución:
 - `docs/01_arquitectura/auditorias/TRAMO_D3_INVENTARIO_CLASIFICACION_COMPATIBILIDAD_2026-07-20.md`
 - `docs/01_arquitectura/auditorias/TRAMO_D3_1_DISENO_REEMPLAZOS_SEDE_2026-07-20.md`
 - `docs/01_arquitectura/auditorias/TRAMO_D3_2_IMPLEMENTACION_REEMPLAZOS_SEDE_2026-07-20.md`
+- `docs/01_arquitectura/auditorias/TRAMO_D3_3_INVENTARIO_FINAL_RETIRO_RPC_2026-07-20.md`
 - `docs/02_operacion/RESPALDO_Y_RESTAURACION_SUPABASE.md`
 - `docs/04_pruebas/CRITERIOS_SALIDA_FASE_1.md`
