@@ -1,9 +1,9 @@
 # Tramo B — diseño e implementación del contexto operacional por sede
 
 **Fecha:** 20 de julio de 2026  
-**Estado:** implementado, revertido y reaplicado satisfactoriamente en ensayo; producción pendiente
+**Estado:** implementado y auditado satisfactoriamente en ensayo y producción
 **Tipo de cambio:** aditivo, compatible y reversible por compuertas  
-**Mutación de producción en este bloque:** ninguna
+**Mutación de producción en este bloque:** migración `20260720111110` aplicada el 20/07/2026 con autorización expresa
 
 ## 1. Decisión ejecutiva
 
@@ -271,7 +271,7 @@ La implementación de ensayo quedó aprobada técnicamente mediante:
 4. reversión protegida en `109_rollback_tramo_b_test_only.sql`;
 5. pruebas de RPC heredadas en `110_test_tramo_b_legacy_rpcs.sql`.
 
-El despliegue al proyecto vivo exige una autorización separada, un respaldo fresco posterior al Tramo A, aplicación controlada y auditoría posterior. Hasta entonces el estado correcto es **validado en ensayo, no aplicado en producción**.
+La compuerta productiva fue autorizada y ejecutada después de crear un respaldo fresco, reconciliar el historial de migraciones y comprobar mediante vista previa que solo se aplicaría el Tramo B. El estado correcto es **aplicado y auditado en producción**.
 
 ## 15. Resultado verificado de la implementación en ensayo
 
@@ -291,4 +291,24 @@ Resultados finales:
 - todas las claves foráneas nuevas quedaron validadas y con índice de apoyo; deuda detectada: cero;
 - `flutter analyze`: sin hallazgos; `flutter test`: todas las pruebas aprobadas.
 
-No se modificó Flutter, no se aplicó nada en producción y no se retiró el puente heredado.
+No se modificó Flutter y no se retiró el puente heredado.
+
+## 16. Resultado de la compuerta productiva
+
+El 20/07/2026 se creó y verificó el respaldo fresco `BeautyOS_Backup_2026-07-20_06-57-21`. Antes de desplegar se detectaron ocho versiones históricas existentes en Supabase pero ausentes del directorio local de migraciones. Sus archivos fueron reconstruidos con las fechas remotas originales; no se reparó ni reescribió el historial de producción.
+
+La vista previa de `db push` confirmó que las diez migraciones anteriores coincidían y que la única pendiente era `20260720111110_tramo_b_contexto_operacional_sede.sql`. Supabase aplicó esa migración y la lista posterior mostró las once versiones sincronizadas.
+
+Las auditorías productivas de solo lectura 104 y 107 finalizaron sin excepciones. Se conservaron:
+
+- pagos vigentes: **$250.000**;
+- pagos anulados: **$115.000**;
+- comisiones vigentes: **$100.000**;
+- comisiones anuladas: **$36.000**;
+- stock por sede: **2.530 unidades**.
+
+Los scripts 108 y 110 no se repitieron en producción porque sus propias cabeceras los restringen al entorno de ensayo; allí ya habían aprobado y sus escrituras terminaban con `ROLLBACK`. El script 109, destructivo y exclusivo de ensayo, no se ejecutó.
+
+El asesor oficial de seguridad no reportó errores bloqueantes. Registró 53 advertencias sobre RPC `SECURITY DEFINER` ejecutables por usuarios autenticados —patrón intencional de la aplicación que requiere auditoría individual antes del lanzamiento comercial— y una advertencia porque la protección de contraseñas filtradas está desactivada. El asesor de rendimiento registró dos políticas heredadas de `user_profiles` que pueden optimizar la evaluación de `auth.uid()`. Ninguna advertencia fue introducida por los helpers privados del Tramo B, cuya ejecución directa continúa revocada.
+
+La validación posterior cerró con `flutter analyze` sin hallazgos y `flutter test` aprobado. El siguiente tramo es C: hacer RPC, agenda, disponibilidad, caja y Flutter conscientes de la sede explícita, conservando por ahora la compatibilidad heredada.

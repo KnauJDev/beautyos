@@ -1,6 +1,6 @@
 # Criterios de salida — Fase 1
 
-**Estado:** lista de aceptación en implementación; Tramo A aprobado en producción; Tramo B validado en ensayo y pendiente de producción
+**Estado:** lista de aceptación en implementación; Tramos A y B aprobados y auditados en producción; Tramo C pendiente
 **Propósito:** no declarar multisede, roles o suscripción terminados solo porque la interfaz se vea bien.
 
 ## 1. Entregables documentales
@@ -23,7 +23,7 @@
 - [x] Conteos y sumas financieras base registrados.
 - [x] Plan de reversión del Tramo A ensayado.
 
-Evidencia actual: `docs/01_arquitectura/auditorias/TRAMO_0_LINEA_BASE_2026-07-19.md`, `docs/01_arquitectura/auditorias/TRAMO_A_ESTRUCTURA_MULTISEDE_2026-07-20.md`, `docs/01_arquitectura/auditorias/TRAMO_B_DISENO_BACKFILL_OPERACIONAL_2026-07-20.md` y `supabase/sql/103–110`. El Tramo A ya fue aplicado y verificado en producción. El Tramo B fue aplicado, revertido y reaplicado en ensayo, pero todavía no tiene autorización de despliegue productivo.
+Evidencia actual: `docs/01_arquitectura/auditorias/TRAMO_0_LINEA_BASE_2026-07-19.md`, `docs/01_arquitectura/auditorias/TRAMO_A_ESTRUCTURA_MULTISEDE_2026-07-20.md`, `docs/01_arquitectura/auditorias/TRAMO_B_DISENO_BACKFILL_OPERACIONAL_2026-07-20.md` y `supabase/sql/103–110`. Los Tramos A y B ya fueron aplicados y verificados en producción. Las pruebas con escrituras controladas 108 y 110 se ejecutaron únicamente en ensayo; las auditorías de solo lectura 104 y 107 se repitieron sobre producción.
 
 ### Evidencia parcial completada por el Tramo A
 
@@ -45,7 +45,7 @@ Estas comprobaciones no cierran todavía los criterios globales de los Tramos B�
 - [x] Pruebas negativas y condiciones de reversión diseñadas.
 - [x] Migración, auditoría y reversión del Tramo B creadas.
 - [x] Tramo B aplicado, revertido y reaplicado en ensayo.
-- [ ] Tramo B aplicado y verificado en producción.
+- [x] Tramo B aplicado y verificado en producción.
 
 ### Evidencia técnica completada por el Tramo B en ensayo
 
@@ -55,6 +55,16 @@ Estas comprobaciones no cierran todavía los criterios globales de los Tramos B�
 - [x] Las RPC heredadas principales siguieron funcionando y derivaron sede de forma segura.
 - [x] Todas las claves foráneas del esquema público quedaron con índice de apoyo.
 - [x] Flutter mantuvo análisis limpio y sus pruebas automatizadas aprobadas.
+
+### Evidencia productiva del Tramo B
+
+- [x] Respaldo fresco creado y verificado antes del despliegue.
+- [x] Historial local y remoto de migraciones reconciliado sin reparar ni reescribir producción.
+- [x] Vista previa de despliegue mostró exclusivamente la migración `20260720111110`.
+- [x] Migración aplicada y registrada por Supabase.
+- [x] Auditorías 104 y 107 terminaron sin excepciones y conservaron pagos, comisiones y stock.
+- [x] Asesores oficiales ejecutados: sin errores bloqueantes; advertencias preexistentes documentadas para endurecimiento posterior.
+- [x] `flutter analyze` sin hallazgos y `flutter test` aprobado después del despliegue.
 
 ## 3. Aislamiento obligatorio
 
