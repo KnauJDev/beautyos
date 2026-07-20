@@ -17,4 +17,5 @@
 | D-013 | Pagos SaaS y pagos del salón son dominios financieros separados. | Aprobada | 2026-07-19 | No comparten tablas, reportes ni conciliación. |
 | D-014 | La suspensión por falta de pago es gradual, reversible y sin borrado de datos. | Aprobada | 2026-07-19 | Owner conserva acceso a pago, motivo y exportación esencial. |
 | D-015 | La migración multisede será aditiva y por tramos con Sede principal. | Aprobada | 2026-07-19 | No se retiran campos antiguos hasta validar conservación e aislamiento. |
-| D-016 | El Tramo B mantiene `branch_id` nullable con triggers privados de compatibilidad hasta que Flutter y las RPC usen sede explícita. | Implementada en ensayo | 2026-07-20 | Las escrituras heredadas derivan una sede segura; el puente se retira solo en el Tramo D. |
+| D-016 | El Tramo B mantiene `branch_id` nullable con triggers privados de compatibilidad hasta que Flutter y las RPC usen sede explícita. | Implementada en producción | 2026-07-20 | Las escrituras heredadas derivan una sede segura; el puente se retira solo en el Tramo D. |
+| D-017 | El contexto de sede se selecciona en Flutter pero se resuelve y autoriza nuevamente en cada RPC. | Implementada en C1 de ensayo | 2026-07-20 | Las firmas `_v2` exigen `p_branch_id`; no se confía en JWT, metadatos ni variables de sesión para autorizar. |

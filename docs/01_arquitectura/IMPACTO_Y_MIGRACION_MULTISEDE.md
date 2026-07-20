@@ -1,6 +1,6 @@
 # Impacto y migración segura a multisede
 
-**Estado:** Tramo 0 cerrado; Tramo A aplicado y verificado en producción; Tramo B diseñado
+**Estado:** Tramos 0, A y B cerrados; Tramo C1 implementado y validado en ensayo aislado
 **Fecha:** 20 de julio de 2026
 **Fuente auditada:** SQL versionado `supabase/sql/001–106`, migración administrada y servicios Flutter actuales.
 
@@ -118,6 +118,8 @@ Cada RPC operativa seguirá la secuencia: autenticar → resolver sede → compr
 5. Registrar métricas y comparar resultados antiguos/nuevos.
 
 **Puerta:** flujo integral funciona en dos sedes de ensayo y los resultados coinciden.
+
+**Avance C1 20/07/2026:** se implementaron el resolver privado de acceso efectivo y `get_my_branch_context_v2()`. Las pruebas en una restauración desechable aprobaron propietario con A1/A2, administrador limitado a A1, estilista condicionado por membresía y vínculo profesional, bloqueo de Tenant B, revocación inmediata por membresía inactiva y ejecución real como rol `authenticated`. El helper privado no es invocable directamente por Flutter. Producción permanece intacta; la siguiente subcompuerta es C2.
 
 ### Tramo D — Endurecimiento
 

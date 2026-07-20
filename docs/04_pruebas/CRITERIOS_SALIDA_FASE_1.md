@@ -1,6 +1,6 @@
 # Criterios de salida — Fase 1
 
-**Estado:** lista de aceptación en implementación; Tramos A y B aprobados y auditados en producción; Tramo C pendiente
+**Estado:** lista de aceptación en implementación; Tramos A y B aprobados y auditados en producción; Tramo C1 aprobado en ensayo aislado
 **Propósito:** no declarar multisede, roles o suscripción terminados solo porque la interfaz se vea bien.
 
 ## 1. Entregables documentales
@@ -66,18 +66,30 @@ Estas comprobaciones no cierran todavía los criterios globales de los Tramos B�
 - [x] Asesores oficiales ejecutados: sin errores bloqueantes; advertencias preexistentes documentadas para endurecimiento posterior.
 - [x] `flutter analyze` sin hallazgos y `flutter test` aprobado después del despliegue.
 
+### Diseño cerrado para el Tramo C
+
+- [x] Contrato de sede efectiva definido por rol y vigencia.
+- [x] Selección automática para una sede y explícita para varias.
+- [x] Versionado `_v2` con `p_branch_id` obligatorio y sin sobrecargas ambiguas.
+- [x] Migración por familias C1–C4 y reversión compatible definidas.
+- [x] Matriz Tenant A/A1/A2 y Tenant B especificada.
+- [x] Helper privado y listado de contextos implementados y verificados en ensayo.
+- [ ] Reservas, tickets y agendas `_v2` aprobados en dos sedes.
+- [ ] Caja, reportes e inventario separados por sede.
+- [ ] Flutter transmite sede y recarga módulos al cambiarla.
+
 ## 3. Aislamiento obligatorio
 
 Preparar Tenant A y Tenant B; Tenant A tendrá Sede A1 y A2.
 
-- [ ] Owner A no ve Tenant B.
-- [ ] Admin A1 no ve ni modifica A2.
+- [x] Owner A no ve Tenant B en el contrato C1.
+- [x] Admin A1 no puede seleccionar A2 en el contrato C1.
 - [ ] Owner A consolida A1+A2.
-- [ ] Stylist A1 solo ve lo propio autorizado.
+- [x] Stylist A1 solo recibe sedes con membresía y vínculo profesional activos en C1.
 - [ ] Customer solo ve sus datos.
 - [ ] Plataforma no obtiene operación por privilegio implícito.
-- [ ] IDs manipulados en una RPC devuelven denegación sin filtrar información.
-- [ ] Usuario/membresía desactivada pierde acceso inmediatamente.
+- [x] Un `branch_id` manipulado contra Tenant B devuelve denegación uniforme en C1.
+- [x] Usuario/membresía desactivada pierde el contexto de sede en la siguiente RPC C1.
 
 ## 4. Integridad multisede
 
