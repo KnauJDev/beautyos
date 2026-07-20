@@ -10,17 +10,18 @@ import '../services/sales_report_service.dart';
 import '../widgets/app_widgets.dart';
 
 class ReportesPage extends StatefulWidget {
-  const ReportesPage({super.key});
+  const ReportesPage({super.key, required this.branchId});
+
+  final String? branchId;
 
   @override
   State<ReportesPage> createState() => _ReportesPageState();
 }
 
 class _ReportesPageState extends State<ReportesPage> {
-  final SalesReportService salesReportService = const SalesReportService();
-  final FinancialSummaryService financialSummaryService =
-      const FinancialSummaryService();
-  final DailyCloseService dailyCloseService = const DailyCloseService();
+  late final SalesReportService salesReportService;
+  late final FinancialSummaryService financialSummaryService;
+  late final DailyCloseService dailyCloseService;
 
   late Future<_ReportsPageData> reportsFuture;
   late DateTime selectedDate;
@@ -28,6 +29,11 @@ class _ReportesPageState extends State<ReportesPage> {
   @override
   void initState() {
     super.initState();
+    salesReportService = SalesReportService(branchId: widget.branchId);
+    financialSummaryService = FinancialSummaryService(
+      branchId: widget.branchId,
+    );
+    dailyCloseService = DailyCloseService(branchId: widget.branchId);
     final now = DateTime.now();
     selectedDate = DateTime(now.year, now.month, now.day);
     reportsFuture = _loadReportsData();

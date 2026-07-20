@@ -7,22 +7,25 @@ import '../services/products_service.dart';
 import '../widgets/app_widgets.dart';
 
 class InventarioPage extends StatefulWidget {
-  const InventarioPage({super.key});
+  const InventarioPage({super.key, required this.branchId});
+
+  final String? branchId;
 
   @override
   State<InventarioPage> createState() => _InventarioPageState();
 }
 
 class _InventarioPageState extends State<InventarioPage> {
-  final ProductsService productsService = const ProductsService();
-  final InventoryMovementsService movementsService =
-      const InventoryMovementsService();
+  late final ProductsService productsService;
+  late final InventoryMovementsService movementsService;
 
   late final Future<_InventoryPageData> inventoryFuture;
 
   @override
   void initState() {
     super.initState();
+    productsService = ProductsService(branchId: widget.branchId);
+    movementsService = InventoryMovementsService(branchId: widget.branchId);
     inventoryFuture = _loadInventoryData();
   }
 

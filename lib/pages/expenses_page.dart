@@ -5,20 +5,23 @@ import '../services/expenses_service.dart';
 import '../widgets/app_widgets.dart';
 
 class GastosPage extends StatefulWidget {
-  const GastosPage({super.key});
+  const GastosPage({super.key, required this.branchId});
+
+  final String? branchId;
 
   @override
   State<GastosPage> createState() => _GastosPageState();
 }
 
 class _GastosPageState extends State<GastosPage> {
-  final ExpensesService _expensesService = const ExpensesService();
+  late final ExpensesService _expensesService;
 
   late Future<List<ExpenseSummary>> _expensesFuture;
 
   @override
   void initState() {
     super.initState();
+    _expensesService = ExpensesService(branchId: widget.branchId);
     _expensesFuture = _expensesService.getExpensesSummary();
   }
 

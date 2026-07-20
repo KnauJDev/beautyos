@@ -7,22 +7,25 @@ import '../services/purchases_service.dart';
 import '../widgets/app_widgets.dart';
 
 class ComprasPage extends StatefulWidget {
-  const ComprasPage({super.key});
+  const ComprasPage({super.key, required this.branchId});
+
+  final String? branchId;
 
   @override
   State<ComprasPage> createState() => _ComprasPageState();
 }
 
 class _ComprasPageState extends State<ComprasPage> {
-  final PurchasesService _purchasesService = const PurchasesService();
-  final PurchaseItemsService _purchaseItemsService =
-      const PurchaseItemsService();
+  late final PurchasesService _purchasesService;
+  late final PurchaseItemsService _purchaseItemsService;
 
   late Future<_PurchasesPageData> _purchasesFuture;
 
   @override
   void initState() {
     super.initState();
+    _purchasesService = PurchasesService(branchId: widget.branchId);
+    _purchaseItemsService = PurchaseItemsService(branchId: widget.branchId);
     _purchasesFuture = _loadPurchasesData();
   }
 

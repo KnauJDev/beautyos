@@ -167,20 +167,29 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         ),
         allowedRoles: const <String>{'owner', 'admin'},
       ),
-      const BeautyModule(
-        section: BeautySection('Reportes', Icons.bar_chart_outlined),
-        page: ReportesPage(),
-        allowedRoles: <String>{'owner', 'admin'},
+      BeautyModule(
+        section: const BeautySection('Reportes', Icons.bar_chart_outlined),
+        page: ReportesPage(
+          key: ValueKey('reports-${branch.branchId ?? 'legacy'}'),
+          branchId: branch.branchId,
+        ),
+        allowedRoles: const <String>{'owner', 'admin'},
       ),
-      const BeautyModule(
-        section: BeautySection('Compras', Icons.shopping_cart_outlined),
-        page: ComprasPage(),
-        allowedRoles: <String>{'owner', 'admin'},
+      BeautyModule(
+        section: const BeautySection('Compras', Icons.shopping_cart_outlined),
+        page: ComprasPage(
+          key: ValueKey('purchases-${branch.branchId ?? 'legacy'}'),
+          branchId: branch.branchId,
+        ),
+        allowedRoles: const <String>{'owner', 'admin'},
       ),
-      const BeautyModule(
-        section: BeautySection('Gastos', Icons.payments_outlined),
-        page: GastosPage(),
-        allowedRoles: <String>{'owner', 'admin'},
+      BeautyModule(
+        section: const BeautySection('Gastos', Icons.payments_outlined),
+        page: GastosPage(
+          key: ValueKey('expenses-${branch.branchId ?? 'legacy'}'),
+          branchId: branch.branchId,
+        ),
+        allowedRoles: const <String>{'owner', 'admin'},
       ),
       const BeautyModule(
         section: BeautySection(
@@ -195,10 +204,16 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         page: ResenasPage(),
         allowedRoles: <String>{'owner', 'admin'},
       ),
-      const BeautyModule(
-        section: BeautySection('Inventario', Icons.inventory_2_outlined),
-        page: InventarioPage(),
-        allowedRoles: <String>{'owner', 'admin'},
+      BeautyModule(
+        section: const BeautySection(
+          'Inventario',
+          Icons.inventory_2_outlined,
+        ),
+        page: InventarioPage(
+          key: ValueKey('inventory-${branch.branchId ?? 'legacy'}'),
+          branchId: branch.branchId,
+        ),
+        allowedRoles: const <String>{'owner', 'admin'},
       ),
       const BeautyModule(
         section: BeautySection('Configuraci\u00f3n', Icons.settings_outlined),
