@@ -84,9 +84,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
       return const _HomeContextData(profile: null, branches: []);
     }
 
-    final branches = await branchContextService.getAccessibleBranches(
-      profile: profile,
-    );
+    final branches = await branchContextService.getAccessibleBranches();
     return _HomeContextData(profile: profile, branches: branches);
   }
 
@@ -112,7 +110,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           Icons.event_available_outlined,
         ),
         page: MyStylistAgendaPage(
-          key: ValueKey('my-agenda-${branch.branchId ?? 'legacy'}'),
+          key: ValueKey('my-agenda-${branch.branchId}'),
           branchId: branch.branchId,
         ),
         allowedRoles: const <String>{'stylist'},
@@ -125,7 +123,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
       BeautyModule(
         section: const BeautySection('Agenda', Icons.calendar_month_outlined),
         page: AgendaPage(
-          key: ValueKey('agenda-${branch.branchId ?? 'legacy'}'),
+          key: ValueKey('agenda-${branch.branchId}'),
           branchId: branch.branchId,
         ),
         allowedRoles: const <String>{'owner', 'admin'},
@@ -162,7 +160,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           Icons.confirmation_number_outlined,
         ),
         page: TicketsPage(
-          key: ValueKey('tickets-${branch.branchId ?? 'legacy'}'),
+          key: ValueKey('tickets-${branch.branchId}'),
           branchId: branch.branchId,
         ),
         allowedRoles: const <String>{'owner', 'admin'},
@@ -170,7 +168,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
       BeautyModule(
         section: const BeautySection('Reportes', Icons.bar_chart_outlined),
         page: ReportesPage(
-          key: ValueKey('reports-${branch.branchId ?? 'legacy'}'),
+          key: ValueKey('reports-${branch.branchId}'),
           branchId: branch.branchId,
         ),
         allowedRoles: const <String>{'owner', 'admin'},
@@ -178,7 +176,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
       BeautyModule(
         section: const BeautySection('Compras', Icons.shopping_cart_outlined),
         page: ComprasPage(
-          key: ValueKey('purchases-${branch.branchId ?? 'legacy'}'),
+          key: ValueKey('purchases-${branch.branchId}'),
           branchId: branch.branchId,
         ),
         allowedRoles: const <String>{'owner', 'admin'},
@@ -186,7 +184,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
       BeautyModule(
         section: const BeautySection('Gastos', Icons.payments_outlined),
         page: GastosPage(
-          key: ValueKey('expenses-${branch.branchId ?? 'legacy'}'),
+          key: ValueKey('expenses-${branch.branchId}'),
           branchId: branch.branchId,
         ),
         allowedRoles: const <String>{'owner', 'admin'},
@@ -205,12 +203,9 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         allowedRoles: <String>{'owner', 'admin'},
       ),
       BeautyModule(
-        section: const BeautySection(
-          'Inventario',
-          Icons.inventory_2_outlined,
-        ),
+        section: const BeautySection('Inventario', Icons.inventory_2_outlined),
         page: InventarioPage(
-          key: ValueKey('inventory-${branch.branchId ?? 'legacy'}'),
+          key: ValueKey('inventory-${branch.branchId}'),
           branchId: branch.branchId,
         ),
         allowedRoles: const <String>{'owner', 'admin'},

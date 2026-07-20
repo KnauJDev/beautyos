@@ -11,12 +11,11 @@ class BranchContext {
     required this.currencyCode,
     required this.isPrimary,
     required this.optionCount,
-    this.isLegacyFallback = false,
   });
 
-  final String? tenantId;
+  final String tenantId;
   final String tenantName;
-  final String? branchId;
+  final String branchId;
   final String branchName;
   final String? branchSlug;
   final String role;
@@ -25,13 +24,12 @@ class BranchContext {
   final String currencyCode;
   final bool isPrimary;
   final int optionCount;
-  final bool isLegacyFallback;
 
   factory BranchContext.fromMap(Map<String, dynamic> map) {
     return BranchContext(
-      tenantId: map['tenant_id']?.toString(),
+      tenantId: _requiredString(map, 'tenant_id'),
       tenantName: map['tenant_name']?.toString() ?? 'Negocio BeautyOS',
-      branchId: map['branch_id']?.toString(),
+      branchId: _requiredString(map, 'branch_id'),
       branchName: map['branch_name']?.toString() ?? 'Sede',
       branchSlug: map['branch_slug']?.toString(),
       role: map['role']?.toString() ?? '',
@@ -43,32 +41,19 @@ class BranchContext {
     );
   }
 
-  factory BranchContext.legacy({
-    required String? tenantId,
-    required String tenantName,
-    required String role,
-  }) {
-    return BranchContext(
-      tenantId: tenantId,
-      tenantName: tenantName,
-      branchId: null,
-      branchName: 'Sede principal',
-      branchSlug: null,
-      role: role,
-      stylistId: null,
-      timezone: 'America/Bogota',
-      currencyCode: 'COP',
-      isPrimary: true,
-      optionCount: 1,
-      isLegacyFallback: true,
-    );
-  }
-
   static int _readInt(dynamic value) {
     if (value is int) {
       return value;
     }
 
     return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  static String _requiredString(Map<String, dynamic> map, String key) {
+    final value = map[key]?.toString();
+    if (value == null || value.isEmpty) {
+      throw StateError('La sede autorizada no tiene $key.');
+    }
+    return value;
   }
 }

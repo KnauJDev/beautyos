@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../models/purchase_item_summary.dart';
 import '../models/purchase_summary.dart';
@@ -9,7 +9,7 @@ import '../widgets/app_widgets.dart';
 class ComprasPage extends StatefulWidget {
   const ComprasPage({super.key, required this.branchId});
 
-  final String? branchId;
+  final String branchId;
 
   @override
   State<ComprasPage> createState() => _ComprasPageState();
@@ -33,10 +33,7 @@ class _ComprasPageState extends State<ComprasPage> {
     final purchases = await _purchasesService.getPurchasesSummary();
     final items = await _purchaseItemsService.getPurchaseItemsSummary();
 
-    return _PurchasesPageData(
-      purchases: purchases,
-      items: items,
-    );
+    return _PurchasesPageData(purchases: purchases, items: items);
   }
 
   @override
@@ -45,9 +42,7 @@ class _ComprasPageState extends State<ComprasPage> {
       future: _purchasesFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return const Center(child: CircularProgressIndicator());
         }
 
         if (snapshot.hasError) {
@@ -58,11 +53,8 @@ class _ComprasPageState extends State<ComprasPage> {
           );
         }
 
-        final data = snapshot.data ??
-            const _PurchasesPageData(
-              purchases: [],
-              items: [],
-            );
+        final data =
+            snapshot.data ?? const _PurchasesPageData(purchases: [], items: []);
 
         return _PurchasesContent(data: data);
       },
@@ -73,9 +65,7 @@ class _ComprasPageState extends State<ComprasPage> {
 class _PurchasesContent extends StatelessWidget {
   final _PurchasesPageData data;
 
-  const _PurchasesContent({
-    required this.data,
-  });
+  const _PurchasesContent({required this.data});
 
   @override
   Widget build(BuildContext context) {
@@ -174,9 +164,7 @@ class _PurchasesSummaryCard extends StatelessWidget {
 class _PurchasesTable extends StatelessWidget {
   final List<PurchaseSummary> purchases;
 
-  const _PurchasesTable({
-    required this.purchases,
-  });
+  const _PurchasesTable({required this.purchases});
 
   @override
   Widget build(BuildContext context) {
@@ -233,9 +221,7 @@ class _PurchasesTable extends StatelessWidget {
 class _PurchaseItemsTable extends StatelessWidget {
   final List<PurchaseItemSummary> items;
 
-  const _PurchaseItemsTable({
-    required this.items,
-  });
+  const _PurchaseItemsTable({required this.items});
 
   @override
   Widget build(BuildContext context) {
@@ -300,8 +286,5 @@ class _PurchasesPageData {
   final List<PurchaseSummary> purchases;
   final List<PurchaseItemSummary> items;
 
-  const _PurchasesPageData({
-    required this.purchases,
-    required this.items,
-  });
+  const _PurchasesPageData({required this.purchases, required this.items});
 }

@@ -7,7 +7,7 @@ import '../widgets/app_widgets.dart';
 class MyStylistAgendaPage extends StatefulWidget {
   const MyStylistAgendaPage({super.key, required this.branchId});
 
-  final String? branchId;
+  final String branchId;
 
   @override
   State<MyStylistAgendaPage> createState() => _MyStylistAgendaPageState();

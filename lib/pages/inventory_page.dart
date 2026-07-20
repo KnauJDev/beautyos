@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../models/inventory_movement_summary.dart';
 import '../models/product_summary.dart';
@@ -9,7 +9,7 @@ import '../widgets/app_widgets.dart';
 class InventarioPage extends StatefulWidget {
   const InventarioPage({super.key, required this.branchId});
 
-  final String? branchId;
+  final String branchId;
 
   @override
   State<InventarioPage> createState() => _InventarioPageState();
@@ -33,10 +33,7 @@ class _InventarioPageState extends State<InventarioPage> {
     final products = await productsService.getProductsSummary();
     final movements = await movementsService.getInventoryMovementsSummary();
 
-    return _InventoryPageData(
-      products: products,
-      movements: movements,
-    );
+    return _InventoryPageData(products: products, movements: movements);
   }
 
   @override
@@ -95,9 +92,7 @@ class _InventarioPageState extends State<InventarioPage> {
 class _InventoryContent extends StatelessWidget {
   final _InventoryPageData data;
 
-  const _InventoryContent({
-    required this.data,
-  });
+  const _InventoryContent({required this.data});
 
   @override
   Widget build(BuildContext context) {
@@ -117,10 +112,7 @@ class _InventoryContent extends StatelessWidget {
 class ProductsList extends StatelessWidget {
   final List<ProductSummary> products;
 
-  const ProductsList({
-    super.key,
-    required this.products,
-  });
+  const ProductsList({super.key, required this.products});
 
   @override
   Widget build(BuildContext context) {
@@ -163,10 +155,7 @@ class ProductsList extends StatelessWidget {
 class MovementsList extends StatelessWidget {
   final List<InventoryMovementSummary> movements;
 
-  const MovementsList({
-    super.key,
-    required this.movements,
-  });
+  const MovementsList({super.key, required this.movements});
 
   @override
   Widget build(BuildContext context) {
@@ -220,6 +209,7 @@ class MovementsList extends StatelessWidget {
     );
   }
 }
+
 class InventorySummaryCard extends StatelessWidget {
   final int totalProducts;
   final int saleProducts;
@@ -257,10 +247,7 @@ class InventorySummaryCard extends StatelessWidget {
 class ProductsTable extends StatelessWidget {
   final List<ProductSummary> products;
 
-  const ProductsTable({
-    super.key,
-    required this.products,
-  });
+  const ProductsTable({super.key, required this.products});
 
   @override
   Widget build(BuildContext context) {
@@ -307,13 +294,11 @@ class ProductsTable extends StatelessWidget {
     );
   }
 }
+
 class MovementCard extends StatelessWidget {
   final InventoryMovementSummary movement;
 
-  const MovementCard({
-    super.key,
-    required this.movement,
-  });
+  const MovementCard({super.key, required this.movement});
 
   @override
   Widget build(BuildContext context) {
@@ -332,7 +317,10 @@ class MovementCard extends StatelessWidget {
             Text('${movement.productCategory} · ${movement.movementTypeText}'),
             const SizedBox(height: 12),
             _ProductLine(label: 'Cantidad', value: movement.quantityText),
-            _ProductLine(label: 'Costo unitario', value: movement.formattedUnitCost),
+            _ProductLine(
+              label: 'Costo unitario',
+              value: movement.formattedUnitCost,
+            ),
             _ProductLine(label: 'Fecha', value: movement.createdDateText),
             _ProductLine(label: 'Notas', value: movement.notes),
           ],
@@ -346,10 +334,7 @@ class _InventoryMetric extends StatelessWidget {
   final String label;
   final String value;
 
-  const _InventoryMetric({
-    required this.label,
-    required this.value,
-  });
+  const _InventoryMetric({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -358,10 +343,7 @@ class _InventoryMetric extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            value,
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
+          Text(value, style: Theme.of(context).textTheme.headlineSmall),
           Text(label),
         ],
       ),
@@ -373,10 +355,7 @@ class _ProductLine extends StatelessWidget {
   final String label;
   final String value;
 
-  const _ProductLine({
-    required this.label,
-    required this.value,
-  });
+  const _ProductLine({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -403,11 +382,5 @@ class _InventoryPageData {
   final List<ProductSummary> products;
   final List<InventoryMovementSummary> movements;
 
-  const _InventoryPageData({
-    required this.products,
-    required this.movements,
-  });
+  const _InventoryPageData({required this.products, required this.movements});
 }
-
-
-

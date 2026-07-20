@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../models/expense_summary.dart';
 import '../services/expenses_service.dart';
@@ -7,7 +7,7 @@ import '../widgets/app_widgets.dart';
 class GastosPage extends StatefulWidget {
   const GastosPage({super.key, required this.branchId});
 
-  final String? branchId;
+  final String branchId;
 
   @override
   State<GastosPage> createState() => _GastosPageState();
@@ -31,9 +31,7 @@ class _GastosPageState extends State<GastosPage> {
       future: _expensesFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return const Center(child: CircularProgressIndicator());
         }
 
         if (snapshot.hasError) {
@@ -55,9 +53,7 @@ class _GastosPageState extends State<GastosPage> {
 class _ExpensesContent extends StatelessWidget {
   final List<ExpenseSummary> expenses;
 
-  const _ExpensesContent({
-    required this.expenses,
-  });
+  const _ExpensesContent({required this.expenses});
 
   @override
   Widget build(BuildContext context) {
@@ -154,9 +150,7 @@ class _ExpensesSummaryCard extends StatelessWidget {
 class _ExpensesTable extends StatelessWidget {
   final List<ExpenseSummary> expenses;
 
-  const _ExpensesTable({
-    required this.expenses,
-  });
+  const _ExpensesTable({required this.expenses});
 
   @override
   Widget build(BuildContext context) {

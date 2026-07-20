@@ -15,7 +15,7 @@ import '../widgets/app_widgets.dart';
 class TicketsPage extends StatefulWidget {
   const TicketsPage({super.key, required this.branchId});
 
-  final String? branchId;
+  final String branchId;
 
   @override
   State<TicketsPage> createState() => _TicketsPageState();

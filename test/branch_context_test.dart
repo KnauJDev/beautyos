@@ -23,20 +23,16 @@ void main() {
       expect(context.branchName, 'Sede Centro');
       expect(context.isPrimary, isTrue);
       expect(context.optionCount, 2);
-      expect(context.isLegacyFallback, isFalse);
     });
 
-    test('mantiene compatibilidad mientras v2 no exista en produccion', () {
-      final context = BranchContext.legacy(
-        tenantId: 'tenant-a',
-        tenantName: 'Bella Mujer',
-        role: 'owner',
+    test('rechaza un contexto sin sede autorizada', () {
+      expect(
+        () => BranchContext.fromMap({
+          'tenant_id': 'tenant-a',
+          'branch_name': 'Sede Centro',
+        }),
+        throwsStateError,
       );
-
-      expect(context.branchId, isNull);
-      expect(context.branchName, 'Sede principal');
-      expect(context.optionCount, 1);
-      expect(context.isLegacyFallback, isTrue);
     });
   });
 }

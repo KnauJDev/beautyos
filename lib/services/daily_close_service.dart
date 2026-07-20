@@ -6,24 +6,15 @@ import '../models/daily_close_summary.dart';
 class DailyCloseService {
   const DailyCloseService({required this.branchId});
 
-  final String? branchId;
+  final String branchId;
 
   Future<DailyCloseSummary> getDailyClose(DateTime businessDate) async {
-    final start = DateTime(
-      businessDate.year,
-      businessDate.month,
-      businessDate.day,
-    );
-    final end = start.add(const Duration(days: 1));
-
     final response = await Supabase.instance.client
         .rpc(
-          branchId == null ? 'get_daily_close' : 'get_daily_close_v2',
+          'get_daily_close_v2',
           params: {
-            if (branchId != null) 'p_branch_id': branchId,
+            'p_branch_id': branchId,
             'p_business_date': _dateParameter(businessDate),
-            if (branchId == null) 'p_start_at': start.toUtc().toIso8601String(),
-            if (branchId == null) 'p_end_at': end.toUtc().toIso8601String(),
           },
         )
         .single();
@@ -34,20 +25,11 @@ class DailyCloseService {
   Future<List<CommissionSummary>> getCommissionSummary(
     DateTime businessDate,
   ) async {
-    final start = DateTime(
-      businessDate.year,
-      businessDate.month,
-      businessDate.day,
-    );
-    final end = start.add(const Duration(days: 1));
-
     final response = await Supabase.instance.client.rpc(
-      branchId == null ? 'get_commission_summary' : 'get_commission_summary_v2',
+      'get_commission_summary_v2',
       params: {
-        if (branchId != null) 'p_branch_id': branchId,
-        if (branchId != null) 'p_business_date': _dateParameter(businessDate),
-        if (branchId == null) 'p_start_at': start.toUtc().toIso8601String(),
-        if (branchId == null) 'p_end_at': end.toUtc().toIso8601String(),
+        'p_branch_id': branchId,
+        'p_business_date': _dateParameter(businessDate),
       },
     );
 

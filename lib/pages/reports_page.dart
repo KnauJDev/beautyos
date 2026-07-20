@@ -12,7 +12,7 @@ import '../widgets/app_widgets.dart';
 class ReportesPage extends StatefulWidget {
   const ReportesPage({super.key, required this.branchId});
 
-  final String? branchId;
+  final String branchId;
 
   @override
   State<ReportesPage> createState() => _ReportesPageState();
