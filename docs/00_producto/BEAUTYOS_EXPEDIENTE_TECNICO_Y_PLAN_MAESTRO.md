@@ -1,7 +1,7 @@
 # BeautyOS — Expediente técnico y plan maestro de construcción
 
-**Versión:** 1.4
-**Estado:** Rector aprobado — Fase 1 en implementación; Tramos A y B aprobados en producción; Tramo C1 implementado y validado en ensayo aislado
+**Versión:** 1.5
+**Estado:** Rector aprobado — Fase 1 en implementación; Tramos A, B y C aprobados en producción; Tramo D0 completado sin modificar producción
 **Fecha:** 20 de julio de 2026
 **Propietario del producto:** Proyecto BeautyOS  
 **Regla de uso:** este documento define la dirección del producto. Cualquier cambio de alcance, regla de negocio o arquitectura debe registrarse aquí o en una decisión asociada antes de implementarse.
@@ -546,7 +546,7 @@ Si el usuario no conoce estos campos, Codex debe proponerlos antes de cambios es
 
 ## 18. Próxima acción autorizable
 
-**Continuar con el Tramo C2 — reservas, tickets y agenda conscientes de sede:** C1 ya cuenta con resolver privado, RPC de sedes accesibles, pruebas Tenant A/A1/A2 y Tenant B, ejecución como `authenticated` y verificación de permisos en ensayo aislado. C2 versionará disponibilidad, creación de reservas, tickets y agendas con `p_branch_id` obligatorio. El contexto Flutter se conectará cuando las RPC que consumen las pantallas estén disponibles, para no romper la aplicación que aún apunta a producción. C3 cubrirá caja, reportes e inventario y C4 comparará rutas heredadas y `_v2`. No se retirará todavía el puente heredado y las alertas operativas continúan pausadas.
+**Continuar con D1 — Flutter estricto de sede:** los Tramos A, B y C están aprobados en producción. D0 confirmó cero filas operativas sin sede, 15 puentes activos y una salida de emergencia heredada en Flutter. D1 eliminará únicamente esa salida de emergencia y hará obligatorio un contexto real de sede en las familias operativas. No aplicará cambios a producción ni retirará todavía triggers o RPC antiguas. Las alertas operativas continúan pausadas.
 
 Documentos de ejecución:
 
@@ -554,5 +554,7 @@ Documentos de ejecución:
 - `docs/01_arquitectura/auditorias/TRAMO_0_LINEA_BASE_2026-07-19.md`
 - `docs/01_arquitectura/auditorias/TRAMO_A_ESTRUCTURA_MULTISEDE_2026-07-20.md`
 - `docs/01_arquitectura/auditorias/TRAMO_B_DISENO_BACKFILL_OPERACIONAL_2026-07-20.md`
+- `docs/01_arquitectura/auditorias/TRAMO_C_DESPLIEGUE_PRODUCTIVO_2026-07-20.md`
+- `docs/01_arquitectura/auditorias/TRAMO_D0_INVENTARIO_RETIRO_COMPATIBILIDAD_2026-07-20.md`
 - `docs/02_operacion/RESPALDO_Y_RESTAURACION_SUPABASE.md`
 - `docs/04_pruebas/CRITERIOS_SALIDA_FASE_1.md`
