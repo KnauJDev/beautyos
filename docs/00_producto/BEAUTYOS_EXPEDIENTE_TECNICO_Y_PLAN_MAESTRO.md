@@ -1,8 +1,8 @@
 # BeautyOS — Expediente técnico y plan maestro de construcción
 
-**Versión:** 1.2  
-**Estado:** Rector aprobado — Fase 1 en implementación; Tramo A aprobado en ensayo
-**Fecha:** 19 de julio de 2026  
+**Versión:** 1.3
+**Estado:** Rector aprobado — Fase 1 en implementación; Tramo A aprobado en producción
+**Fecha:** 20 de julio de 2026
 **Propietario del producto:** Proyecto BeautyOS  
 **Regla de uso:** este documento define la dirección del producto. Cualquier cambio de alcance, regla de negocio o arquitectura debe registrarse aquí o en una decisión asociada antes de implementarse.
 
@@ -546,7 +546,7 @@ Si el usuario no conoce estos campos, Codex debe proponerlos antes de cambios es
 
 ## 18. Próxima acción autorizable
 
-**Preparar la compuerta controlada del Tramo A:** el respaldo, la restauración, la migración aditiva, las pruebas de aislamiento y la reversión ya fueron validadas en ensayo. Antes de aplicar la migración al proyecto vivo se comprobará que el esquema no haya cambiado desde la auditoría, se generará un respaldo fresco si corresponde y se solicitará autorización explícita del propietario. Después de una aplicación y verificación satisfactorias comenzará el diseño detallado del Tramo B; no se mezclará ese backfill operacional con el despliegue del Tramo A.
+**Diseñar en detalle el Tramo B — contexto operacional por sede:** el Tramo A ya fue aplicado y verificado en producción. El siguiente bloque debe especificar, antes de ejecutar, cómo incorporar `branch_id` a horarios, tickets, servicios de ticket, pagos, comisiones, compras, gastos, inventario y demás entidades operativas; incluir backfill, invariantes, índices, compatibilidad temporal, pruebas negativas y reversión. No se modificará Flutter ni se retirará el modelo heredado dentro de la misma compuerta.
 
 Documentos de ejecución:
 

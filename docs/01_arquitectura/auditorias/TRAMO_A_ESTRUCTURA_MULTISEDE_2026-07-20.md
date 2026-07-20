@@ -1,17 +1,19 @@
 # Tramo A — Estructura aditiva multisede
 
 **Fecha de validación:** 20 de julio de 2026  
-**Estado:** preparado y aprobado en ensayo local; no aplicado todavía en producción  
-**Migración:** `supabase/migrations/20260720090817_tramo_a_estructura_multisede.sql`  
+**Estado:** aplicado y verificado en producción
+**Migraciones:** `20260720102317_tramo_a_estructura_multisede.sql` y `20260720102806_tramo_a_indexar_claves_foraneas.sql`
 **Base de ensayo:** restauración aislada del respaldo `BeautyOS_Backup_2026-07-19_19-12-48`
 
 ## 1. Resultado ejecutivo
 
 El Tramo A quedó implementado como una migración exclusivamente aditiva. Crea la estructura necesaria para que un tenant pueda operar varias sedes, genera una **Sede principal** para cada tenant existente y copia allí las relaciones actuales de equipo, servicios, estilistas, capacidades e inventario.
 
-La aplicación Flutter y las RPC actuales no cambian en este tramo. Las tablas originales continúan siendo la fuente de operación durante la ventana de compatibilidad. No se aplicó ningún cambio al proyecto Supabase vivo.
+La aplicación Flutter y las RPC actuales no cambian en este tramo. Las tablas originales continúan siendo la fuente de operación durante la ventana de compatibilidad. El 20 de julio de 2026 la estructura fue aplicada al proyecto vivo `beautyos-dev` después de comprobar Git, respaldo, historial remoto y línea base.
 
 La migración fue instalada dos veces sobre una restauración local limpia. Entre ambas instalaciones se ejecutó y comprobó la reversión completa del Tramo A. Los conteos operativos y los totales financieros permanecieron invariantes.
+
+En producción se ejecutó inmediatamente la verificación repetible. Supabase registró las migraciones administradas `20260720102317_tramo_a_estructura_multisede` y `20260720102806_tramo_a_indexar_claves_foraneas`.
 
 ## 2. Objetos creados
 
@@ -119,9 +121,16 @@ Resultado: **APROBADO y reproducible**.
 
 Bajo el contexto autenticado del propietario se ejecutaron las RPC actuales de tickets, clientes, agenda, opciones de servicio, productos y usuarios. Respondieron correctamente después del Tramo A. La agenda devolvió cero elementos porque la consulta heredada depende de la fecha operativa del respaldo, no por una incompatibilidad estructural.
 
+### 7.5 Asesores de seguridad y rendimiento
+
+Antes y después de la aplicación se ejecutaron los asesores de Supabase. Las siete tablas nuevas quedaron con RLS habilitada, sin grants directos para `anon` o `authenticated` y sin políticas todavía, tal como exige la ventana cerrada del Tramo A.
+
+El asesor de rendimiento identificó claves foráneas compuestas sin índice de apoyo completo. Se creó y aplicó una segunda migración exclusivamente aditiva con once índices. La comprobación final devolvió **cero claves foráneas nuevas sin índice**. Los avisos de índices sin uso son esperables porque las tablas acaban de crearse y Flutter todavía utiliza el modelo heredado.
+
 ## 8. Archivos del bloque
 
-- `supabase/migrations/20260720090817_tramo_a_estructura_multisede.sql`
+- `supabase/migrations/20260720102317_tramo_a_estructura_multisede.sql`
+- `supabase/migrations/20260720102806_tramo_a_indexar_claves_foraneas.sql`
 - `supabase/sql/104_verify_tramo_a_multisite.sql`
 - `supabase/sql/105_test_tramo_a_tenant_isolation.sql`
 - `supabase/sql/106_rollback_tramo_a_test_only.sql`
@@ -132,14 +141,16 @@ El Tramo A no agrega `branch_id` a tickets, pagos, compras, gastos, horarios u o
 
 Las alertas operativas continúan pausadas por decisión expresa del propietario.
 
-## 10. Puerta para producción
+## 10. Resultado de la compuerta de producción
 
-La migración está **lista técnicamente para una ejecución controlada**, pero sigue siendo **NO APLICADA EN PRODUCCIÓN**. Antes de tocar el proyecto vivo se exige:
+La compuerta fue ejecutada y cerrada satisfactoriamente:
 
-1. confirmar que no existen cambios de esquema posteriores al respaldo auditado;
-2. generar un respaldo fresco si cambió cualquier dato o definición relevante;
-3. revisar el estado y alcance exactos de Git;
-4. obtener autorización explícita del propietario para aplicar la migración;
-5. ejecutar inmediatamente `104_verify_tramo_a_multisite.sql` y detenerse ante cualquier diferencia.
+1. GitHub no contenía cambios paralelos y recibió los cuatro commits validados del Tramo 0 y Tramo A.
+2. El historial remoto terminaba antes del respaldo y las siete tablas nuevas no existían.
+3. La línea base viva coincidió con el respaldo: 12 tickets, 13 servicios asignados, pagos, comisiones y 2.530 unidades de stock.
+4. Las dos migraciones fueron registradas por Supabase sin error.
+5. `104_verify_tramo_a_multisite.sql` aprobó después de cada ajuste.
+6. Se obtuvieron correspondencias exactas: 1 sede principal, 2 membresías tenant, 2 membresías de sede, 4 servicios, 2 estilistas, 4 capacidades y 4 productos.
+7. Las siete tablas tienen RLS; existen cero grants directos para clientes y cero claves foráneas nuevas sin índice.
 
-**Decisión:** GO para preparar la compuerta de producción; NO-GO para aplicar sin autorización explícita.
+**Decisión:** Tramo A **APROBADO EN PRODUCCIÓN**. La siguiente puerta es el diseño detallado del Tramo B; no se mezclará su backfill operacional con este cierre.

@@ -1,4 +1,5 @@
 -- BeautyOS - Tramo A: estructura aditiva multi-tenant y multisede.
+-- Version local alineada con el historial administrado de Supabase.
 --
 -- Esta migracion no modifica firmas RPC ni columnas usadas por Flutter.
 -- Crea la nueva estructura, genera la Sede principal de cada tenant y
