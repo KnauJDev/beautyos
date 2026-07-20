@@ -1,8 +1,8 @@
 # Impacto y migración segura a multisede
 
-**Estado:** Tramos 0, A, B y C cerrados en producción; Tramo D0 completado sin modificar producción
+**Estado:** Tramos 0, A, B y C cerrados en producción; D1 cerrado localmente y D2 verificado en ensayo, sin modificar producción
 **Fecha:** 20 de julio de 2026
-**Fuente auditada:** SQL versionado `supabase/sql/001–106`, migración administrada y servicios Flutter actuales.
+**Fuente auditada:** SQL versionado `supabase/sql/001–121`, migraciones administradas y servicios Flutter actuales.
 
 > Antes de aplicar cambios se realizará una fotografía del esquema vivo de Supabase. Este documento identifica el impacto desde el repositorio, pero no reemplaza esa comprobación.
 
@@ -11,6 +11,8 @@
 **Avance 20/07/2026:** el Tramo A fue creado como migración aditiva, aplicado dos veces sobre la restauración, sometido a pruebas negativas entre tenants y revertido de forma controlada. Después se aplicó al proyecto Supabase vivo mediante dos migraciones administradas: estructura y optimización de claves foráneas. Los datos operativos, financieros y de inventario permanecieron invariantes. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_A_ESTRUCTURA_MULTISEDE_2026-07-20.md`.
 
 **Diseño Tramo B 20/07/2026:** se delimitó el backfill a 15 tablas y 139 filas, se definió herencia de sede, claves compuestas, índices, invariantes y un puente temporal para que las RPC heredadas sigan escribiendo en la Sede principal hasta el Tramo C. No se mutó producción. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_B_DISENO_BACKFILL_OPERACIONAL_2026-07-20.md`.
+
+**Avance D1–D2 20/07/2026:** Flutter dejó de degradarse silenciosamente al contrato heredado en el commit local `a912394`. Después se creó y probó en la restauración aislada una migración que valida cero nulos y aplica `branch_id NOT NULL` a las 15 tablas operativas. Conteos, pagos, comisiones y stock permanecieron invariantes; producción no fue modificada. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_D2_OBLIGATORIEDAD_BRANCH_ID_2026-07-20.md`.
 
 ## 1. Objetivo
 
@@ -119,7 +121,7 @@ Cada RPC operativa seguirá la secuencia: autenticar → resolver sede → compr
 
 **Puerta:** flujo integral funciona en dos sedes de ensayo y los resultados coinciden.
 
-**Cierre Tramo C 20/07/2026:** el contexto efectivo, las RPC `_v2`, Flutter por sede, reservas, tickets, agendas, pagos, caja, reportes e inventario fueron aprobados en ensayo y producción. D0 verificó después cero filas operativas sin sede, 15 puentes temporales activos y una dependencia Flutter todavía heredada. La siguiente microcompuerta es D1: retirar solo esa salida de emergencia antes de endurecer la base.
+**Cierre Tramo C 20/07/2026:** el contexto efectivo, las RPC `_v2`, Flutter por sede, reservas, tickets, agendas, pagos, caja, reportes e inventario fueron aprobados en ensayo y producción. D0 verificó después cero filas operativas sin sede y 15 puentes temporales activos. D1 retiró localmente la dependencia Flutter heredada y D2 verificó en ensayo la obligatoriedad de sede. La siguiente microcompuerta es D3: clasificar y retirar únicamente compatibilidad demostrablemente sin consumidores.
 
 ### Tramo D — Endurecimiento
 
