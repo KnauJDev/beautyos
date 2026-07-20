@@ -120,3 +120,6 @@ app.*.symbols
 # IDE local files
 .idea/
 *.iml
+
+# Supabase CLI local state (project link, tool versions and temporary files)
+supabase/.temp/
