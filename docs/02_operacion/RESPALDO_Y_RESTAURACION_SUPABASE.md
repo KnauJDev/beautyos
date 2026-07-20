@@ -1,8 +1,10 @@
 # Respaldo y restauración de Supabase
 
-**Estado:** procedimiento aprobado; ejecución inicial pendiente  
-**Proyecto de origen:** `beautyos-dev` (`eogppgbdnwxdtcbctaol`)  
-**Responsable:** propietario del producto con acompañamiento de Codex
+- **Estado:** procedimiento ejecutado y restauración de ensayo aprobada
+- **Proyecto de origen:** `beautyos-dev` (`eogppgbdnwxdtcbctaol`)
+- **Responsable:** propietario del producto con acompañamiento de Codex
+
+**Primera evidencia aprobada:** `BeautyOS_Backup_2026-07-19_19-12-48`, conservada fuera de Git en la carpeta privada `Documentos/BeautyOS Backups`.
 
 ## 1. Objetivo
 
@@ -48,7 +50,7 @@ Las contraseñas, cadenas de conexión y llaves no se escriben en documentos, sc
 
 ## 5. Preparación única del equipo
 
-Al 19/07/2026 quedaron instalados Docker Desktop 4.82.0, Node.js LTS 24.18.0 y Supabase CLI 2.109.1 mediante `npx`. También se habilitaron WSL y Plataforma de máquina virtual. El diagnóstico del ThinkPad T440s confirmó que el procesador admite virtualización, pero esta se encuentra desactivada en firmware; debe habilitarse en `Security > Virtualization` del BIOS y reiniciar Windows una vez para completar la preparación.
+Al 19/07/2026 quedaron instalados y operativos Docker Desktop 4.82.0, Docker Engine 29.6.1, Node.js LTS 24.18.0 y Supabase CLI 2.109.1 mediante `npx`. WSL 2, Plataforma de máquina virtual y la virtualización de firmware quedaron habilitados. También se validó la imagen oficial de Supabase Postgres 17.6.1.143 usada en el ensayo local.
 
 Después del reinicio:
 
@@ -88,6 +90,7 @@ El repositorio incluye `scripts/crear_respaldo_supabase.ps1`. El asistente:
 - solicita la conexión de forma oculta;
 - no la escribe en archivos ni en Git;
 - crea los tres dumps en `Documentos/BeautyOS Backups`;
+- excluye `storage.buckets_vectors` y `storage.vector_indexes`, tablas internas protegidas que la guía oficial indica omitir del volcado de datos;
 - comprueba que no estén vacíos;
 - genera las huellas SHA-256 y el manifiesto.
 
@@ -149,6 +152,20 @@ Restaurar roles, esquema y datos siguiendo la guía oficial y con detención ant
 
 No se acepta como prueba abrir el SQL o confiar en que el comando terminó: debe existir una base restaurada y consultable.
 
+### Resultado del ensayo del 19/07/2026
+
+- Se levantó un PostgreSQL 17.6.1.143 local, aislado y desechable mediante Docker.
+- Se restauraron roles, esquema y datos dentro de una transacción atómica, deteniéndose ante cualquier error.
+- Las tres huellas SHA-256 del paquete original coincidieron antes y después del ensayo.
+- El primer intento se revirtió correctamente al encontrar permisos protegidos sobre `storage.buckets_vectors`.
+- Se verificó que `storage.buckets_vectors` y `storage.vector_indexes` estaban vacías. Para el segundo intento se generó una copia temporal del volcado omitiendo únicamente esos dos bloques; el respaldo original no fue modificado.
+- Se compararon exactamente 51 tablas: **51 coincidentes y 0 diferencias**.
+- Auth conservó 2 usuarios y 2 identidades, comprobados solo por conteo y sin exponer datos personales.
+- El esquema público restaurado contiene 24 tablas, 54 funciones, 3 triggers, 64 índices, 322 restricciones y 3 políticas RLS.
+- Los 17 controles de integridad devolvieron 0 violaciones y los conteos financieros, operativos y de inventario coincidieron con la línea base.
+
+**Resultado:** restauración de ensayo aprobada. El entorno local puede eliminarse porque la evidencia reproducible quedó documentada y el paquete original permanece fuera de Git.
+
 ## 10. Criterio GO / NO-GO
 
 **GO** para migrar cuando:
@@ -159,6 +176,8 @@ No se acepta como prueba abrir el SQL o confiar en que el comando terminó: debe
 - se documentó la forma de volver a la versión anterior.
 
 **NO-GO** si falta cualquiera de esos puntos. En ese caso solo se permite diseñar y revisar migraciones, no aplicarlas.
+
+La evidencia del 19/07/2026 satisface esta puerta para iniciar el Tramo A. Cada futura migración seguirá exigiendo revisión, copia previa, pruebas y ruta de reversión propias.
 
 ## 11. Frecuencia futura
 

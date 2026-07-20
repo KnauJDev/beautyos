@@ -5,7 +5,7 @@
 **Región:** `us-west-2`  
 **PostgreSQL:** 17.6  
 **Plan:** Free  
-**Estado del tramo:** en curso; auditoría y línea base completadas, herramientas de respaldo instaladas, virtualización de firmware y respaldo restaurable pendientes.
+**Estado del tramo:** completado; auditoría, respaldo externo y restauración de ensayo aprobados.
 
 ## 1. Propósito y alcance
 
@@ -20,7 +20,7 @@ No se incluyen nombres, teléfonos, correos, documentos, UUID de usuarios ni otr
 - Los chequeos de referencias entre tenant, tickets, servicios, pagos, comisiones, inventario, fotos y reseñas dieron **cero inconsistencias**.
 - El registro administrado de Supabase contiene solo **8 migraciones**, mientras el repositorio conserva scripts numerados hasta `102`. Esto es una diferencia de trazabilidad, no evidencia de pérdida de tablas.
 - El acceso actual se apoya principalmente en RPC protegidas: hay **54 funciones públicas**, de las cuales **54** son `SECURITY DEFINER`; 53 pueden ser ejecutadas por `authenticated`, ninguna por `anon` ni `PUBLIC`.
-- La base es apta para continuar preparando una migración aditiva, pero **no se aplicará DDL hasta generar y validar un respaldo restaurable externo**.
+- La base es apta para continuar con una migración aditiva. El respaldo externo fue generado y su restauración se validó en un entorno local aislado antes de autorizar el Tramo A.
 
 ## 3. Inventario del esquema vivo
 
@@ -189,47 +189,54 @@ Referencia: [protección de contraseñas](https://supabase.com/docs/guides/auth/
 
 El plan Free no ofrece copias diarias restaurables administradas. Supabase recomienda que estos proyectos exporten regularmente roles, esquema y datos con `supabase db dump` y mantengan una copia externa.
 
-La preparación local avanzó de la siguiente forma:
+La preparación local y la prueba de recuperación quedaron así:
 
 - Docker Desktop 4.82.0 instalado;
 - Node.js LTS 24.18.0 instalado;
 - Supabase CLI 2.109.1 validado mediante `npx`;
-- WSL y Plataforma de máquina virtual habilitados en Windows, con reinicio pendiente;
-- CPU compatible con virtualización, pero la opción permanece desactivada en firmware;
-- asistente `scripts/crear_respaldo_supabase.ps1` creado y validado sintácticamente.
+- WSL 2, Plataforma de máquina virtual y virtualización de firmware habilitados;
+- asistente `scripts/crear_respaldo_supabase.ps1` creado, validado y ejecutado;
+- paquete externo `BeautyOS_Backup_2026-07-19_19-12-48` creado con roles, esquema, datos y hashes SHA-256;
+- restauración atómica aprobada sobre Supabase Postgres local 17.6.1.143;
+- 51 de 51 tablas comparadas sin diferencias y 17 controles de integridad con cero violaciones;
+- conteos de Auth, objetos públicos, operaciones, finanzas e inventario coincidentes con la línea base.
 
 Por tanto:
 
 - la línea base lógica y de integridad quedó documentada;
 - el SQL de auditoría repetible quedó versionado;
-- el respaldo restaurable completo **todavía no puede marcarse validado**;
-- no se aplicará el Tramo A hasta completar el procedimiento de `docs/02_operacion/RESPALDO_Y_RESTAURACION_SUPABASE.md`.
+- el respaldo restaurable completo quedó **validado**;
+- la puerta del Tramo 0 quedó cerrada y se autoriza iniciar el Tramo A de forma aditiva, revisada y reversible;
+- los próximos volcados excluirán `storage.buckets_vectors` y `storage.vector_indexes`, tal como indica la guía oficial de Supabase para restauraciones por CLI.
 
 Referencia oficial: [Database Backups](https://supabase.com/docs/guides/platform/backups).
 
 ## 8. Decisión de avance
 
-**GO condicionado para preparar archivos; NO-GO para aplicar cambios en vivo.**
+**GO técnico para iniciar el Tramo A de forma aditiva, revisada y reversible.**
 
 Se permite:
 
 - versionar esta auditoría;
 - ejecutar nuevamente `supabase/sql/103_tramo_0_audit_multisite_baseline.sql`;
-- preparar y revisar migraciones aditivas del Tramo A sin aplicarlas.
+- preparar, revisar y probar migraciones aditivas del Tramo A;
+- aplicar una migración únicamente después de revisar su SQL, repetir los controles y documentar su reversión.
 
-Se prohíbe hasta cerrar la puerta de respaldo:
+Continúa prohibido sin una migración específica y validada:
 
 - aplicar DDL multisede al proyecto vivo;
 - añadir `NOT NULL` o retirar columnas actuales;
 - cambiar firmas RPC usadas por Flutter;
 - borrar, fusionar o recalcular datos históricos.
 
-## 9. Evidencia de cierre pendiente
+## 9. Evidencia de cierre
 
-Para cerrar Tramo 0 deben existir:
+El Tramo 0 se cerró con:
 
 1. `roles.sql`, `schema.sql` y `data.sql` fuera del repositorio.
 2. Hash SHA-256 y fecha de cada archivo.
-3. Una restauración de ensayo sin errores no explicados.
-4. Reejecución de la línea base con los mismos conteos y totales.
-5. Registro de dónde se conserva la copia, sin almacenar contraseñas en Git ni en la bitácora.
+3. Una restauración de ensayo atómica, con el tratamiento documentado de dos tablas internas protegidas y vacías de Storage.
+4. Reejecución de la línea base con los mismos conteos y totales: 51 de 51 tablas coincidentes y 0 diferencias.
+5. Registro de la ubicación privada de la copia, sin almacenar contraseñas en Git ni en la bitácora.
+
+**Decisión final del Tramo 0: APROBADO.**

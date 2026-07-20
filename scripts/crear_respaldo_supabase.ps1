@@ -4,6 +4,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$supabaseCliVersion = '2.109.1'
 
 function Invoke-SupabaseDump {
   param(
@@ -14,7 +15,7 @@ function Invoke-SupabaseDump {
     [string[]]$Arguments
   )
 
-  & npx.cmd --yes supabase@latest @Arguments --db-url $DatabaseUrl
+  & npx.cmd --yes "supabase@$supabaseCliVersion" @Arguments --db-url $DatabaseUrl
   if ($LASTEXITCODE -ne 0) {
     throw "Supabase CLI termino con codigo $LASTEXITCODE."
   }
@@ -39,27 +40,20 @@ if (-not (Get-Command docker.exe -ErrorAction SilentlyContinue)) {
   throw 'Docker no esta disponible. Abre Docker Desktop y espera a que indique que el motor esta listo.'
 }
 
-$dockerCommand = (Get-Command docker.exe).Source
-$dockerCheck = Start-Job -ScriptBlock {
-  param([string]$Command)
-  & $Command info *> $null
-  $LASTEXITCODE
-} -ArgumentList $dockerCommand
-
-if (-not (Wait-Job -Job $dockerCheck -Timeout 20)) {
-  Stop-Job -Job $dockerCheck
-  Remove-Job -Job $dockerCheck -Force
-  throw 'Docker tardo demasiado en responder. Abre Docker Desktop y espera a que el motor este listo.'
-}
-
-$dockerExitCode = Receive-Job -Job $dockerCheck
-Remove-Job -Job $dockerCheck -Force
-if ($dockerExitCode -ne 0) {
+$dockerServerVersion = & docker.exe version --format '{{.Server.Version}}' 2>$null
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($dockerServerVersion)) {
   throw 'El motor de Docker aun no esta listo. Abre Docker Desktop y espera antes de reintentar.'
 }
 
-$secureUrl = Read-Host 'Pega la cadena Session pooler de beautyos-dev' -AsSecureString
-$databaseUrl = [System.Net.NetworkCredential]::new('', $secureUrl).Password
+$connectionTemplate = (Read-Host 'Pega la cadena Session pooler conservando [YOUR-PASSWORD]').Trim().Trim('"').Trim("'")
+if ($connectionTemplate -notmatch '\[YOUR-PASSWORD\]') {
+  throw 'Por seguridad, la cadena debe conservar el texto [YOUR-PASSWORD]. No pegues la contrasena dentro de la URL.'
+}
+
+$securePassword = Read-Host 'Pega la contrasena de la base (permanecera oculta)' -AsSecureString
+$plainPassword = [System.Net.NetworkCredential]::new('', $securePassword).Password
+$encodedPassword = [System.Uri]::EscapeDataString($plainPassword)
+$databaseUrl = $connectionTemplate.Replace('[YOUR-PASSWORD]', $encodedPassword)
 
 try {
   if ([string]::IsNullOrWhiteSpace($databaseUrl) -or
@@ -89,7 +83,8 @@ try {
   Write-Host '3/3 Exportando datos...' -ForegroundColor Cyan
   Invoke-SupabaseDump -DatabaseUrl $databaseUrl -Arguments @(
     'db', 'dump', '-f', $dataPath, '--use-copy', '--data-only',
-    '-x', 'storage.buckets_vectors', '-x', 'storage.vector_indexes'
+    '-x', 'storage.buckets_vectors',
+    '-x', 'storage.vector_indexes'
   )
 
   $requiredFiles = @($rolesPath, $schemaPath, $dataPath)
@@ -136,5 +131,7 @@ try {
 }
 finally {
   $databaseUrl = $null
-  $secureUrl = $null
+  $encodedPassword = $null
+  $plainPassword = $null
+  $securePassword = $null
 }
