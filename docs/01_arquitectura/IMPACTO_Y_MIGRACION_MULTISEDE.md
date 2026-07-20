@@ -1,6 +1,6 @@
 # Impacto y migración segura a multisede
 
-**Estado:** Tramos 0, A, B y C cerrados en producción; D1–D2, D3.2–D3.4 y D4.0–D4.3-pre verificados localmente/metadatos, sin modificar producción
+**Estado:** Tramos 0, A, B y C cerrados en producción; D1–D2, D3.2–D3.4 y D4.0–D4.3 verificados localmente/metadatos, sin modificar producción
 **Fecha:** 20 de julio de 2026
 **Fuente auditada:** SQL versionado `supabase/sql/001–125`, migraciones administradas y servicios Flutter actuales.
 
@@ -31,6 +31,8 @@
 **Avance D4.2 20/07/2026:** el conector Supabase identificó un único proyecto, `beautyos-dev` (`eogppgbdnwxdtcbctaol`), activo y con nombre de desarrollo. Queda seleccionado como candidato no productivo para la fotografía SQL de solo lectura, pero no se ejecutó SQL remoto ni se tocaron datos. La consulta de ramas falló por error del conector y la primera consulta SQL queda condicionada a validación explícita del usuario. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_D4_2_SELECCION_ENTORNO_NO_PRODUCTIVO_2026-07-20.md`.
 
 **Avance D4.3-pre 20/07/2026:** se preparó `supabase/sql/127_snapshot_tramo_d4_3_entorno_no_productivo.sql` para ejecutar una fotografía de solo lectura en `beautyos-dev` cuando el usuario valide explícitamente el destino. La consulta se limita a metadatos, privilegios, firmas y conteos agregados; no contiene DDL, DML, cambios de permisos ni llamadas a RPC de negocio. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_D4_3_PREPARACION_FOTOGRAFIA_SQL_2026-07-20.md`.
+
+**Avance D4.3 20/07/2026:** la fotografía remota de solo lectura en `beautyos-dev` confirmó que las tablas multisede esperadas existen y que las 15 tablas operativas tienen cero `branch_id` nulos. También detectó una brecha: las seis RPC `_v2` de D3.2 no existen y las seis RPC heredadas sustituidas conservan `EXECUTE` para `authenticated`. No se ejecutó ningún cambio remoto. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_D4_3_FOTOGRAFIA_SQL_REMOTA_2026-07-20.md`.
 
 ## 1. Objetivo
 
@@ -139,7 +141,7 @@ Cada RPC operativa seguirá la secuencia: autenticar → resolver sede → compr
 
 **Puerta:** flujo integral funciona en dos sedes de ensayo y los resultados coinciden.
 
-**Cierre Tramo C 20/07/2026:** el contexto efectivo, las RPC `_v2`, Flutter por sede, reservas, tickets, agendas, pagos, caja, reportes e inventario fueron aprobados en ensayo y producción. D0 verificó después cero filas operativas sin sede y 15 puentes temporales activos. D1 retiró localmente la dependencia Flutter heredada, D2 verificó en ensayo la obligatoriedad de sede, D3.0 clasificó la compatibilidad restante, D3.1 aprobó el diseño de los seis reemplazos pendientes, D3.2 los implementó localmente, D3.3 confirmó la ausencia de consumidores internos, D3.4 cerró localmente su acceso externo, D4.0 probó su reversibilidad con un cliente heredado, D4.1 preparó la matriz de conexión segura, D4.2 seleccionó `beautyos-dev` como candidato no productivo conectable y D4.3-pre dejó listo el SQL de fotografía. La siguiente microcompuerta es D4.3: ejecutar la fotografía SQL de solo lectura, previa validación explícita del usuario sobre el carácter no productivo del destino.
+**Cierre Tramo C 20/07/2026:** el contexto efectivo, las RPC `_v2`, Flutter por sede, reservas, tickets, agendas, pagos, caja, reportes e inventario fueron aprobados en ensayo y producción. D0 verificó después cero filas operativas sin sede y 15 puentes temporales activos. D1 retiró localmente la dependencia Flutter heredada, D2 verificó en ensayo la obligatoriedad de sede, D3.0 clasificó la compatibilidad restante, D3.1 aprobó el diseño de los seis reemplazos pendientes, D3.2 los implementó localmente, D3.3 confirmó la ausencia de consumidores internos, D3.4 cerró localmente su acceso externo, D4.0 probó su reversibilidad con un cliente heredado, D4.1 preparó la matriz de conexión segura, D4.2 seleccionó `beautyos-dev` como candidato no productivo conectable, D4.3-pre dejó listo el SQL de fotografía y D4.3 confirmó que ese entorno requiere alineación antes de repetir pruebas de cliente heredado. La siguiente microcompuerta es D4.4: decidir la alineación de `beautyos-dev` con las migraciones locales D3.2 y D3.4.
 
 ### Tramo D — Endurecimiento
 
