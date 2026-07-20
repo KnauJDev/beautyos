@@ -1,7 +1,7 @@
 # BeautyOS — Expediente técnico y plan maestro de construcción
 
 **Versión:** 1.5
-**Estado:** Rector aprobado — Fase 1 en implementación; Tramos A, B y C aprobados en producción; D1–D2 y D3.2–D4.1 verificados localmente, sin modificar producción
+**Estado:** Rector aprobado — Fase 1 en implementación; Tramos A, B y C aprobados en producción; D1–D2 y D3.2–D4.2 verificados localmente/metadatos, sin modificar producción
 **Fecha:** 20 de julio de 2026
 **Propietario del producto:** Proyecto BeautyOS  
 **Regla de uso:** este documento define la dirección del producto. Cualquier cambio de alcance, regla de negocio o arquitectura debe registrarse aquí o en una decisión asociada antes de implementarse.
@@ -546,7 +546,7 @@ Si el usuario no conoce estos campos, Codex debe proponerlos antes de cambios es
 
 ## 18. Próxima acción autorizable
 
-**Continuar con D4.2 — seleccionar un entorno Supabase no productivo conectable:** D4.1 confirmó que el repositorio no tiene configuración ni credenciales de conexión y que la pila CLI local no está disponible. La matriz de cliente heredado, privilegios y aislamiento está definida, pero no debe ejecutarse remotamente hasta identificar inequívocamente un destino no productivo y una conexión segura de solo lectura. Las alertas operativas continúan pausadas.
+**Continuar con D4.3 — fotografía SQL de solo lectura en entorno no productivo:** D4.2 seleccionó `beautyos-dev` (`eogppgbdnwxdtcbctaol`) como candidato no productivo conectable mediante metadatos del conector Supabase, sin ejecutar SQL remoto ni modificar producción. Antes de la primera consulta SQL, el usuario debe validar explícitamente que ese proyecto no es producción ni contiene datos productivos sensibles sin autorización para auditoría. Las alertas operativas continúan pausadas.
 
 Documentos de ejecución:
 
@@ -564,5 +564,6 @@ Documentos de ejecución:
 - `docs/01_arquitectura/auditorias/TRAMO_D3_4_REVOCACION_RPC_HEREDADAS_2026-07-20.md`
 - `docs/01_arquitectura/auditorias/TRAMO_D4_0_REVERSIBILIDAD_CLIENTE_HEREDADO_2026-07-20.md`
 - `docs/01_arquitectura/auditorias/TRAMO_D4_1_PREPARACION_ENTORNO_CONECTABLE_2026-07-20.md`
+- `docs/01_arquitectura/auditorias/TRAMO_D4_2_SELECCION_ENTORNO_NO_PRODUCTIVO_2026-07-20.md`
 - `docs/02_operacion/RESPALDO_Y_RESTAURACION_SUPABASE.md`
 - `docs/04_pruebas/CRITERIOS_SALIDA_FASE_1.md`
