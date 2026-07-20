@@ -1,6 +1,6 @@
 # Impacto y migración segura a multisede
 
-**Estado:** Tramos 0, A, B y C cerrados en producción; D1–D2, D3.2–D3.4, D4.0–D4.10, D5-pre.1–D5-pre.2 y D3.5.1 verificados localmente o en entorno no productivo; Tramo D completo en NO-GO
+**Estado:** Tramos 0, A, B y C cerrados en producción; D1–D2, D3.2–D3.4, D4.0–D4.10, D5-pre.1–D5-pre.2 y D3.5.1–D3.5.2 verificados localmente o en entorno no productivo; Tramo D completo en NO-GO
 **Fecha:** 20 de julio de 2026
 **Fuente auditada:** SQL versionado `supabase/sql/001–125`, migraciones administradas y servicios Flutter actuales.
 
@@ -53,6 +53,8 @@
 **Avance D5-pre.2 20/07/2026:** la auditoría local confirmó Flutter estricto, D2 y el subconjunto D3.2/D3.4, pero detectó que ocho triggers mantienen fallback de sede principal, 46 RPC heredadas clasificadas en D3.0 no tienen cierre versionado y la autorización basada en `user_profiles` sigue pendiente. El paquete D5 actual no satisface la puerta completa del Tramo D. Se vuelve a D3.5 para corregir por micro-pasos antes de producción. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_D5_PRE_2_AUDITORIA_NO_CONFORMIDADES_2026-07-20.md`.
 
 **Avance D3.5.1 20/07/2026:** se eliminó localmente la selección implícita de Sede principal en el helper privado usado por seis triggers raíz y dos opcionales. Una sede nula, omitida o ajena falla; los siete triggers derivados desde ticket o compra conservan integridad. La migración fue reaplicada, las pruebas transaccionales terminaron en `ROLLBACK` y las verificaciones D2, D3.2/D3.4 y C4 conservaron sus invariantes. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_D3_5_1_ENDURECIMIENTO_TRIGGERS_SEDE_2026-07-20.md`.
+
+**Avance D3.5.2 20/07/2026:** se reconciliaron localmente los privilegios de las 46 RPC heredadas restantes. `anon` quedó cerrado en todas; `authenticated` quedó cerrado en 24 rutas retirables y seis implementaciones internas, pero se conservó en 13 funciones tenant/catálogo y tres helpers para no romper Flutter ni dependencias heredadas. La migración fue reaplicada, la matriz de privilegios no tuvo desajustes, D2, D3.2/D3.4, D3.5.1 y C4 conservaron sus invariantes. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_D3_5_2_RECONCILIACION_RPC_HEREDADAS_2026-07-20.md`.
 
 ## 1. Objetivo
 
@@ -161,7 +163,7 @@ Cada RPC operativa seguirá la secuencia: autenticar → resolver sede → compr
 
 **Puerta:** flujo integral funciona en dos sedes de ensayo y los resultados coinciden.
 
-**Cierre Tramo C 20/07/2026:** el contexto efectivo, las RPC `_v2`, Flutter por sede, reservas, tickets, agendas, pagos, caja, reportes e inventario fueron aprobados en ensayo y producción. D0 verificó después cero filas operativas sin sede y 15 puentes temporales activos. D1 retiró localmente la dependencia Flutter heredada, D2 verificó en ensayo la obligatoriedad de sede, D3.0 clasificó la compatibilidad restante, D3.1–D3.4 resolvieron seis reemplazos de lectura, D4 ensayó ese subconjunto y D5-pre.1 detectó una contradicción en la clasificación del proyecto. D5-pre.2 auditó el alcance completo y D3.5.1 cerró localmente los ocho fallbacks de triggers. La siguiente microcompuerta es D3.5.2: reconciliar privilegios de las 46 RPC heredadas restantes; después seguirá la decisión sobre autorización basada en `user_profiles`.
+**Cierre Tramo C 20/07/2026:** el contexto efectivo, las RPC `_v2`, Flutter por sede, reservas, tickets, agendas, pagos, caja, reportes e inventario fueron aprobados en ensayo y producción. D0 verificó después cero filas operativas sin sede y 15 puentes temporales activos. D1 retiró localmente la dependencia Flutter heredada, D2 verificó en ensayo la obligatoriedad de sede, D3.0 clasificó la compatibilidad restante, D3.1–D3.4 resolvieron seis reemplazos de lectura, D4 ensayó ese subconjunto y D5-pre.1 detectó una contradicción en la clasificación del proyecto. D5-pre.2 auditó el alcance completo, D3.5.1 cerró localmente los ocho fallbacks de triggers y D3.5.2 reconcilió privilegios de las 46 RPC heredadas restantes. La siguiente microcompuerta es D3.5.3: decidir el tratamiento de la autorización basada en `user_profiles`.
 
 ### Tramo D — Endurecimiento
 

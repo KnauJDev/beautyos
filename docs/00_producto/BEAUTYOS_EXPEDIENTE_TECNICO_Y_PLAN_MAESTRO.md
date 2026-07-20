@@ -1,7 +1,7 @@
 # BeautyOS — Expediente técnico y plan maestro de construcción
 
 **Versión:** 1.5
-**Estado:** Rector aprobado — Fase 1 en implementación; Tramos A, B y C aprobados en producción; D1–D2, D3.2–D4.10, D5-pre.1–D5-pre.2 y D3.5.1 verificados localmente o en entorno no productivo; Tramo D completo en NO-GO por no conformidades pendientes
+**Estado:** Rector aprobado — Fase 1 en implementación; Tramos A, B y C aprobados en producción; D1–D2, D3.2–D4.10, D5-pre.1–D5-pre.2 y D3.5.1–D3.5.2 verificados localmente o en entorno no productivo; Tramo D completo en NO-GO por no conformidades pendientes
 **Fecha:** 20 de julio de 2026
 **Propietario del producto:** Proyecto BeautyOS  
 **Regla de uso:** este documento define la dirección del producto. Cualquier cambio de alcance, regla de negocio o arquitectura debe registrarse aquí o en una decisión asociada antes de implementarse.
@@ -546,7 +546,7 @@ Si el usuario no conoce estos campos, Codex debe proponerlos antes de cambios es
 
 ## 18. Próxima acción autorizable
 
-**Continuar con D3.5.2 — cierre mínimo de privilegios heredados:** D3.5.1 eliminó y verificó localmente el fallback de sede principal para los ocho triggers correspondientes, preservando los siete derivados de integridad. El siguiente micro-paso debe reconciliar las 46 RPC heredadas restantes según D3.0 y preparar el cierre mínimo de `PUBLIC`, `anon` y `authenticated` sin eliminar funciones con consumidores o dependencias. D5 permanece en NO-GO y las alertas operativas continúan pausadas.
+**Continuar con D3.5.3 — decisión de autorización heredada:** D3.5.1 eliminó y verificó localmente el fallback de sede principal para los ocho triggers correspondientes, preservando los siete derivados de integridad. D3.5.2 reconcilió localmente privilegios de las 46 RPC heredadas restantes: cerró `anon` en todas, cerró `authenticated` en 24 rutas retirables y seis implementaciones internas, y conservó `authenticated` solo en 13 funciones tenant/catálogo y tres helpers. El siguiente micro-paso debe decidir si la autorización basada en `user_profiles` se migra a memberships dentro del cierre D o se reubica formalmente como deuda posterior. D5 permanece en NO-GO y las alertas operativas continúan pausadas.
 
 Documentos de ejecución:
 
@@ -577,5 +577,6 @@ Documentos de ejecución:
 - `docs/01_arquitectura/auditorias/TRAMO_D5_PRE_1_RECONCILIACION_IDENTIDAD_PRODUCTIVA_2026-07-20.md`
 - `docs/01_arquitectura/auditorias/TRAMO_D5_PRE_2_AUDITORIA_NO_CONFORMIDADES_2026-07-20.md`
 - `docs/01_arquitectura/auditorias/TRAMO_D3_5_1_ENDURECIMIENTO_TRIGGERS_SEDE_2026-07-20.md`
+- `docs/01_arquitectura/auditorias/TRAMO_D3_5_2_RECONCILIACION_RPC_HEREDADAS_2026-07-20.md`
 - `docs/02_operacion/RESPALDO_Y_RESTAURACION_SUPABASE.md`
 - `docs/04_pruebas/CRITERIOS_SALIDA_FASE_1.md`
