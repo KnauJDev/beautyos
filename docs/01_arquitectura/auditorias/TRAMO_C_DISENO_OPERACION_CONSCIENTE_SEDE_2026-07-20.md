@@ -1,7 +1,7 @@
 # Tramo C — diseño de operación consciente de sede
 
 **Fecha:** 20 de julio de 2026  
-**Estado:** diseño cerrado; C1 implementado y aprobado en ensayo aislado; producción no autorizada  
+**Estado:** diseño cerrado; C1 y backend C2 implementados y aprobados en ensayo aislado; conexión Flutter pendiente; producción no autorizada
 **Antecedentes:** Tramos A y B aplicados y auditados en producción
 
 ## 1. Objetivo
@@ -93,6 +93,15 @@ Solo `tenant_owner` tendrá una ruta consolidada futura; no se representará la 
 - Aprobados: Owner A con A1/A2, bloqueo de Tenant B, Admin A1 sin A2, Stylist A1 condicionado por `branch_memberships` y `branch_stylists`, pérdida inmediata por desactivación y llamada pública como rol `authenticated`.
 - El helper privado conserva `SECURITY DEFINER`, `search_path=pg_catalog` y no concede ejecución a `anon` ni `authenticated`.
 - `flutter analyze` y `flutter test` aprobaron. Flutter todavía no invoca C1 porque las pantallas siguen consumiendo RPC heredadas del proyecto productivo; se conectará por módulos junto con C2 para mantener compatibilidad.
+
+### Avance verificado de C2a y C2b
+
+- C2a incorporó opciones por sede, disponibilidad, creación atómica de reserva, resúmenes de tickets y agendas administrativa/propia mediante seis RPC `_v2` con `p_branch_id` obligatorio.
+- Precio y duración se resuelven desde `branch_services`; los profesionales habilitados se resuelven desde `branch_stylist_services`; horarios y políticas se consultan por sede y zona horaria.
+- C2b incorporó trece RPC `_v2` para administrar servicios de tickets, reprogramar, cambiar estados, corregir finalizaciones y registrar/anular pagos.
+- La barrera final `enforce_stylist_schedule_conflict()` ahora serializa y detecta cruces dentro de la misma sede. El mismo profesional puede tener la misma franja en dos sedes distintas si la configuración del negocio lo permite, pero no dos citas superpuestas dentro de una sede.
+- Las pruebas reversibles `113` y `115` aprobaron A1/A2, Tenant B, operaciones completas y casos negativos. Las auditorías `114` y `116` confirmaron `SECURITY DEFINER`, `search_path=pg_catalog`, ausencia de ejecución anónima y grants mínimos.
+- Ningún objeto de C2 fue aplicado a producción. La siguiente compuerta es incorporar el contexto de sede a Flutter y sustituir Tickets/Agenda por las firmas `_v2` sin retirar las heredadas.
 
 ## 5. Contratos técnicos
 
