@@ -1,7 +1,7 @@
 # BeautyOS — Expediente técnico y plan maestro de construcción
 
 **Versión:** 1.5
-**Estado:** Rector aprobado — Fase 1 en implementación; Tramos A, B y C aprobados en producción; D1–D2 cerrados localmente y D3.2–D3.4 verificados, sin modificar producción
+**Estado:** Rector aprobado — Fase 1 en implementación; Tramos A, B y C aprobados en producción; D1–D2 y D3.2–D4.0 verificados localmente, sin modificar producción
 **Fecha:** 20 de julio de 2026
 **Propietario del producto:** Proyecto BeautyOS  
 **Regla de uso:** este documento define la dirección del producto. Cualquier cambio de alcance, regla de negocio o arquitectura debe registrarse aquí o en una decisión asociada antes de implementarse.
@@ -546,7 +546,7 @@ Si el usuario no conoce estos campos, Codex debe proponerlos antes de cambios es
 
 ## 18. Próxima acción autorizable
 
-**Continuar con D4 — ampliar el ensayo de seguridad, reversión y compatibilidad:** D3.4 revocó y verificó localmente el acceso de `PUBLIC`, `anon` y `authenticated` a las seis RPC heredadas, conservando las firmas y `service_role` para una reversión separada. El siguiente micro-paso debe definir las pruebas faltantes de reversión y de cliente desactualizado, además de la comprobación sobre un entorno Supabase conectable, sin proponer aún producción. Las alertas operativas continúan pausadas.
+**Continuar con D4.1 — preparar la comprobación conectable y la matriz de clientes desactualizados:** D4.0 confirmó localmente que un cliente autenticado heredado queda bloqueado, que el permiso puede reotorgarse dentro de una reversión y que los seis `_v2` no cambian. El siguiente micro-paso debe trasladar esa matriz a un entorno Supabase conectable y documentar la fotografía de solo lectura del esquema vivo, sin aplicar migraciones ni proponer producción. Las alertas operativas continúan pausadas.
 
 Documentos de ejecución:
 
@@ -562,5 +562,6 @@ Documentos de ejecución:
 - `docs/01_arquitectura/auditorias/TRAMO_D3_2_IMPLEMENTACION_REEMPLAZOS_SEDE_2026-07-20.md`
 - `docs/01_arquitectura/auditorias/TRAMO_D3_3_INVENTARIO_FINAL_RETIRO_RPC_2026-07-20.md`
 - `docs/01_arquitectura/auditorias/TRAMO_D3_4_REVOCACION_RPC_HEREDADAS_2026-07-20.md`
+- `docs/01_arquitectura/auditorias/TRAMO_D4_0_REVERSIBILIDAD_CLIENTE_HEREDADO_2026-07-20.md`
 - `docs/02_operacion/RESPALDO_Y_RESTAURACION_SUPABASE.md`
 - `docs/04_pruebas/CRITERIOS_SALIDA_FASE_1.md`
