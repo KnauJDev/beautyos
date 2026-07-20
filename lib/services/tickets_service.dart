@@ -8,10 +8,15 @@ import '../models/ticket_payment.dart';
 import '../models/ticket_summary.dart';
 
 class TicketsService {
-  const TicketsService();
+  const TicketsService({required this.branchId});
+
+  final String? branchId;
 
   Future<List<TicketSummary>> getTicketsSummary() async {
-    final response = await Supabase.instance.client.rpc('get_tickets_summary');
+    final response = await Supabase.instance.client.rpc(
+      branchId == null ? 'get_tickets_summary' : 'get_tickets_summary_v2',
+      params: {if (branchId != null) 'p_branch_id': branchId},
+    );
 
     return response
         .map<TicketSummary>((item) => TicketSummary.fromMap(item))
@@ -20,7 +25,10 @@ class TicketsService {
 
   Future<List<TicketServiceOption>> getTicketServiceOptions() async {
     final response = await Supabase.instance.client.rpc(
-      'get_ticket_service_options',
+      branchId == null
+          ? 'get_ticket_service_options'
+          : 'get_ticket_service_options_v2',
+      params: {if (branchId != null) 'p_branch_id': branchId},
     );
 
     return response
@@ -34,8 +42,9 @@ class TicketsService {
     String? stylistId,
   }) async {
     final response = await Supabase.instance.client.rpc(
-      'add_ticket_service',
+      branchId == null ? 'add_ticket_service' : 'add_ticket_service_v2',
       params: {
+        if (branchId != null) 'p_branch_id': branchId,
         'p_ticket_id': ticketId,
         'p_service_id': serviceId,
         'p_stylist_id': stylistId,
@@ -54,8 +63,11 @@ class TicketsService {
     String? notes,
   }) async {
     final response = await Supabase.instance.client.rpc(
-      'create_scheduled_ticket_with_service',
+      branchId == null
+          ? 'create_scheduled_ticket_with_service'
+          : 'create_scheduled_ticket_with_service_v2',
       params: {
+        if (branchId != null) 'p_branch_id': branchId,
         'p_client_id': clientId,
         'p_service_id': serviceId,
         'p_stylist_id': stylistId,
@@ -75,8 +87,11 @@ class TicketsService {
   }) async {
     final day = DateTime(date.year, date.month, date.day);
     final response = await Supabase.instance.client.rpc(
-      'get_available_appointment_slots',
+      branchId == null
+          ? 'get_available_appointment_slots'
+          : 'get_available_appointment_slots_v2',
       params: {
+        if (branchId != null) 'p_branch_id': branchId,
         'p_service_id': serviceId,
         'p_stylist_id': stylistId,
         'p_date': day.toIso8601String().substring(0, 10),
@@ -96,8 +111,13 @@ class TicketsService {
     String ticketId,
   ) async {
     final response = await Supabase.instance.client.rpc(
-      'get_ticket_services_for_management',
-      params: {'p_ticket_id': ticketId},
+      branchId == null
+          ? 'get_ticket_services_for_management'
+          : 'get_ticket_services_for_management_v2',
+      params: {
+        if (branchId != null) 'p_branch_id': branchId,
+        'p_ticket_id': ticketId,
+      },
     );
 
     return (response as List<dynamic>)
@@ -116,8 +136,11 @@ class TicketsService {
     required String reason,
   }) async {
     final response = await Supabase.instance.client.rpc(
-      'update_ticket_service_assignment',
+      branchId == null
+          ? 'update_ticket_service_assignment'
+          : 'update_ticket_service_assignment_v2',
       params: {
+        if (branchId != null) 'p_branch_id': branchId,
         'p_ticket_service_id': ticketServiceId,
         'p_service_id': serviceId,
         'p_stylist_id': stylistId,
@@ -133,8 +156,14 @@ class TicketsService {
     required String reason,
   }) async {
     final response = await Supabase.instance.client.rpc(
-      'remove_ticket_service',
-      params: {'p_ticket_service_id': ticketServiceId, 'p_reason': reason},
+      branchId == null
+          ? 'remove_ticket_service'
+          : 'remove_ticket_service_v2',
+      params: {
+        if (branchId != null) 'p_branch_id': branchId,
+        'p_ticket_service_id': ticketServiceId,
+        'p_reason': reason,
+      },
     );
 
     return (response as List<dynamic>).isNotEmpty;
@@ -146,8 +175,9 @@ class TicketsService {
     required String reason,
   }) async {
     final response = await Supabase.instance.client.rpc(
-      'reschedule_ticket',
+      branchId == null ? 'reschedule_ticket' : 'reschedule_ticket_v2',
       params: {
+        if (branchId != null) 'p_branch_id': branchId,
         'p_ticket_id': ticketId,
         'p_new_scheduled_at': newScheduledAt.toUtc().toIso8601String(),
         'p_reason': reason,
@@ -163,8 +193,9 @@ class TicketsService {
     String? reason,
   }) async {
     final response = await Supabase.instance.client.rpc(
-      'change_ticket_status',
+      branchId == null ? 'change_ticket_status' : 'change_ticket_status_v2',
       params: {
+        if (branchId != null) 'p_branch_id': branchId,
         'p_ticket_id': ticketId,
         'p_new_status': newStatus,
         'p_reason': reason,
@@ -178,8 +209,13 @@ class TicketsService {
     String ticketId,
   ) async {
     final response = await Supabase.instance.client.rpc(
-      'get_ticket_services_for_correction',
-      params: {'p_ticket_id': ticketId},
+      branchId == null
+          ? 'get_ticket_services_for_correction'
+          : 'get_ticket_services_for_correction_v2',
+      params: {
+        if (branchId != null) 'p_branch_id': branchId,
+        'p_ticket_id': ticketId,
+      },
     );
 
     return (response as List<dynamic>)
@@ -196,8 +232,14 @@ class TicketsService {
     required String reason,
   }) async {
     final response = await Supabase.instance.client.rpc(
-      'reopen_finished_ticket_service',
-      params: {'p_ticket_service_id': ticketServiceId, 'p_reason': reason},
+      branchId == null
+          ? 'reopen_finished_ticket_service'
+          : 'reopen_finished_ticket_service_v2',
+      params: {
+        if (branchId != null) 'p_branch_id': branchId,
+        'p_ticket_service_id': ticketServiceId,
+        'p_reason': reason,
+      },
     );
 
     return (response as List<dynamic>).isNotEmpty;
@@ -205,8 +247,13 @@ class TicketsService {
 
   Future<TicketPaymentSummary> getTicketPaymentSummary(String ticketId) async {
     final response = await Supabase.instance.client.rpc(
-      'get_ticket_payment_summary',
-      params: {'p_ticket_id': ticketId},
+      branchId == null
+          ? 'get_ticket_payment_summary'
+          : 'get_ticket_payment_summary_v2',
+      params: {
+        if (branchId != null) 'p_branch_id': branchId,
+        'p_ticket_id': ticketId,
+      },
     );
     final rows = response as List<dynamic>;
 
@@ -221,8 +268,11 @@ class TicketsService {
 
   Future<List<TicketPaymentRecord>> getTicketPayments(String ticketId) async {
     final response = await Supabase.instance.client.rpc(
-      'get_ticket_payments',
-      params: {'p_ticket_id': ticketId},
+      branchId == null ? 'get_ticket_payments' : 'get_ticket_payments_v2',
+      params: {
+        if (branchId != null) 'p_branch_id': branchId,
+        'p_ticket_id': ticketId,
+      },
     );
 
     return (response as List<dynamic>)
@@ -242,8 +292,11 @@ class TicketsService {
     String? notes,
   }) async {
     final response = await Supabase.instance.client.rpc(
-      'register_ticket_payment',
+      branchId == null
+          ? 'register_ticket_payment'
+          : 'register_ticket_payment_v2',
       params: {
+        if (branchId != null) 'p_branch_id': branchId,
         'p_ticket_id': ticketId,
         'p_amount': amount,
         'p_method': method,
@@ -260,8 +313,14 @@ class TicketsService {
     required String reason,
   }) async {
     final response = await Supabase.instance.client.rpc(
-      'void_ticket_payment',
-      params: {'p_payment_id': paymentId, 'p_reason': reason},
+      branchId == null
+          ? 'void_ticket_payment'
+          : 'void_ticket_payment_v2',
+      params: {
+        if (branchId != null) 'p_branch_id': branchId,
+        'p_payment_id': paymentId,
+        'p_reason': reason,
+      },
     );
 
     return (response as List<dynamic>).isNotEmpty;

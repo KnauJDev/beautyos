@@ -5,14 +5,16 @@ import '../services/my_stylist_agenda_service.dart';
 import '../widgets/app_widgets.dart';
 
 class MyStylistAgendaPage extends StatefulWidget {
-  const MyStylistAgendaPage({super.key});
+  const MyStylistAgendaPage({super.key, required this.branchId});
+
+  final String? branchId;
 
   @override
   State<MyStylistAgendaPage> createState() => _MyStylistAgendaPageState();
 }
 
 class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
-  final MyStylistAgendaService agendaService = const MyStylistAgendaService();
+  late final MyStylistAgendaService agendaService;
 
   late DateTime selectedDate;
   late Future<List<MyStylistAgendaItem>> agendaFuture;
@@ -20,6 +22,7 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
   @override
   void initState() {
     super.initState();
+    agendaService = MyStylistAgendaService(branchId: widget.branchId);
     selectedDate = DateUtils.dateOnly(DateTime.now());
     agendaFuture = agendaService.getMyStylistAgenda(selectedDate);
   }

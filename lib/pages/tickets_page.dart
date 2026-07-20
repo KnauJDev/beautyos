@@ -13,7 +13,9 @@ import '../services/tickets_service.dart';
 import '../widgets/app_widgets.dart';
 
 class TicketsPage extends StatefulWidget {
-  const TicketsPage({super.key});
+  const TicketsPage({super.key, required this.branchId});
+
+  final String? branchId;
 
   @override
   State<TicketsPage> createState() => _TicketsPageState();
@@ -21,12 +23,13 @@ class TicketsPage extends StatefulWidget {
 
 class _TicketsPageState extends State<TicketsPage> {
   final ClientsService clientsService = const ClientsService();
-  final TicketsService ticketsService = const TicketsService();
+  late final TicketsService ticketsService;
   late Future<List<TicketSummary>> ticketsFuture;
 
   @override
   void initState() {
     super.initState();
+    ticketsService = TicketsService(branchId: widget.branchId);
     ticketsFuture = ticketsService.getTicketsSummary();
   }
 

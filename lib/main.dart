@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'models/my_profile.dart';
+import 'models/branch_context.dart';
+import 'services/branch_context_service.dart';
 import 'services/my_profile_service.dart';
 
 import 'pages/auth_gate.dart';
@@ -63,20 +65,39 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
   int selectedIndex = 0;
 
   final MyProfileService myProfileService = const MyProfileService();
+  final BranchContextService branchContextService =
+      const BranchContextService();
 
-  late final Future<MyProfile?> profileFuture;
+  late final Future<_HomeContextData> homeContextFuture;
+  BranchContext? selectedBranch;
 
   @override
   void initState() {
     super.initState();
-    profileFuture = myProfileService.getMyProfile();
+    homeContextFuture = _loadHomeContext();
+  }
+
+  Future<_HomeContextData> _loadHomeContext() async {
+    final profile = await myProfileService.getMyProfile();
+
+    if (profile == null) {
+      return const _HomeContextData(profile: null, branches: []);
+    }
+
+    final branches = await branchContextService.getAccessibleBranches(
+      profile: profile,
+    );
+    return _HomeContextData(profile: profile, branches: branches);
   }
 
   Future<void> signOut() async {
     await Supabase.instance.client.auth.signOut();
   }
 
-  List<BeautyModule> _modulesForProfile(MyProfile? profile) {
+  List<BeautyModule> _modulesForProfile(
+    MyProfile? profile,
+    BranchContext branch,
+  ) {
     final role = profile?.role ?? 'client';
 
     final modules = <BeautyModule>[
@@ -85,20 +106,29 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         page: DashboardPage(),
         allowedRoles: <String>{'owner', 'admin'},
       ),
-      const BeautyModule(
-        section: BeautySection('Mi agenda', Icons.event_available_outlined),
-        page: MyStylistAgendaPage(),
-        allowedRoles: <String>{'stylist'},
+      BeautyModule(
+        section: const BeautySection(
+          'Mi agenda',
+          Icons.event_available_outlined,
+        ),
+        page: MyStylistAgendaPage(
+          key: ValueKey('my-agenda-${branch.branchId ?? 'legacy'}'),
+          branchId: branch.branchId,
+        ),
+        allowedRoles: const <String>{'stylist'},
       ),
       const BeautyModule(
         section: BeautySection('Mis fotos', Icons.photo_library_outlined),
         page: MyStylistWorkPhotosPage(),
         allowedRoles: <String>{'stylist'},
       ),
-      const BeautyModule(
-        section: BeautySection('Agenda', Icons.calendar_month_outlined),
-        page: AgendaPage(),
-        allowedRoles: <String>{'owner', 'admin'},
+      BeautyModule(
+        section: const BeautySection('Agenda', Icons.calendar_month_outlined),
+        page: AgendaPage(
+          key: ValueKey('agenda-${branch.branchId ?? 'legacy'}'),
+          branchId: branch.branchId,
+        ),
+        allowedRoles: const <String>{'owner', 'admin'},
       ),
       const BeautyModule(
         section: BeautySection('Servicios', Icons.content_cut_outlined),
@@ -126,10 +156,16 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         page: ClientesPage(),
         allowedRoles: <String>{'owner', 'admin'},
       ),
-      const BeautyModule(
-        section: BeautySection('Tickets', Icons.confirmation_number_outlined),
-        page: TicketsPage(),
-        allowedRoles: <String>{'owner', 'admin'},
+      BeautyModule(
+        section: const BeautySection(
+          'Tickets',
+          Icons.confirmation_number_outlined,
+        ),
+        page: TicketsPage(
+          key: ValueKey('tickets-${branch.branchId ?? 'legacy'}'),
+          branchId: branch.branchId,
+        ),
+        allowedRoles: const <String>{'owner', 'admin'},
       ),
       const BeautyModule(
         section: BeautySection('Reportes', Icons.bar_chart_outlined),
@@ -178,8 +214,8 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<MyProfile?>(
-      future: profileFuture,
+    return FutureBuilder<_HomeContextData>(
+      future: homeContextFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
@@ -187,7 +223,58 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           );
         }
 
-        final modules = _modulesForProfile(snapshot.data);
+        if (snapshot.hasError) {
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('BeautyOS'),
+              backgroundColor: const Color(0xFF7C3AED),
+              foregroundColor: Colors.white,
+              actions: [
+                IconButton(
+                  tooltip: 'Cerrar sesión',
+                  onPressed: signOut,
+                  icon: const Icon(Icons.logout_outlined),
+                ),
+              ],
+            ),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'No pudimos cargar las sedes autorizadas.\n${snapshot.error}',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          );
+        }
+
+        final homeContext = snapshot.data;
+        final profile = homeContext?.profile;
+        final branches = homeContext?.branches ?? const <BranchContext>[];
+
+        if (profile == null || branches.isEmpty) {
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('BeautyOS'),
+              backgroundColor: const Color(0xFF7C3AED),
+              foregroundColor: Colors.white,
+              actions: [
+                IconButton(
+                  tooltip: 'Cerrar sesión',
+                  onPressed: signOut,
+                  icon: const Icon(Icons.logout_outlined),
+                ),
+              ],
+            ),
+            body: const Center(
+              child: Text('Tu usuario no tiene una sede operativa asignada.'),
+            ),
+          );
+        }
+
+        final branch = selectedBranch ?? _initialBranch(branches);
+        final modules = _modulesForProfile(profile, branch);
 
         if (modules.isEmpty) {
           return Scaffold(
@@ -245,6 +332,21 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                     ),
                   ),
                   const SizedBox(width: 12),
+                  _BranchSelector(
+                    branches: branches,
+                    selectedBranch: branch,
+                    compact: !isWide,
+                    onSelected: (value) {
+                      if (value.branchId == branch.branchId) {
+                        return;
+                      }
+
+                      setState(() {
+                        selectedBranch = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(width: 12),
                   const SessionBadge(),
                   const SizedBox(width: 8),
                   IconButton(
@@ -296,6 +398,111 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
       },
     );
   }
+
+  BranchContext _initialBranch(List<BranchContext> branches) {
+    for (final branch in branches) {
+      if (branch.isPrimary) {
+        return branch;
+      }
+    }
+
+    return branches.first;
+  }
+}
+
+class _BranchSelector extends StatelessWidget {
+  const _BranchSelector({
+    required this.branches,
+    required this.selectedBranch,
+    required this.compact,
+    required this.onSelected,
+  });
+
+  final List<BranchContext> branches;
+  final BranchContext selectedBranch;
+  final bool compact;
+  final ValueChanged<BranchContext> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    if (branches.length == 1) {
+      return Tooltip(
+        message: selectedBranch.branchName,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.storefront_outlined, size: 20),
+            if (!compact) ...[
+              const SizedBox(width: 6),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 150),
+                child: Text(
+                  selectedBranch.branchName,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
+    return PopupMenuButton<BranchContext>(
+      tooltip: 'Cambiar sede',
+      initialValue: selectedBranch,
+      onSelected: onSelected,
+      itemBuilder: (context) => branches
+          .map(
+            (branch) => PopupMenuItem<BranchContext>(
+              value: branch,
+              child: Row(
+                children: [
+                  Icon(
+                    branch.branchId == selectedBranch.branchId
+                        ? Icons.check_circle_outline
+                        : Icons.storefront_outlined,
+                    color: const Color(0xFF7C3AED),
+                  ),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Text(
+                      branch.branchName,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+          .toList(growable: false),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.storefront_outlined, size: 20),
+          if (!compact) ...[
+            const SizedBox(width: 6),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 150),
+              child: Text(
+                selectedBranch.branchName,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+          const Icon(Icons.arrow_drop_down),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeContextData {
+  const _HomeContextData({required this.profile, required this.branches});
+
+  final MyProfile? profile;
+  final List<BranchContext> branches;
 }
 
 class _SideMenu extends StatelessWidget {

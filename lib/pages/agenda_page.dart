@@ -5,19 +5,22 @@ import '../services/agenda_service.dart';
 import '../widgets/app_widgets.dart';
 
 class AgendaPage extends StatefulWidget {
-  const AgendaPage({super.key});
+  const AgendaPage({super.key, required this.branchId});
+
+  final String? branchId;
 
   @override
   State<AgendaPage> createState() => _AgendaPageState();
 }
 
 class _AgendaPageState extends State<AgendaPage> {
-  final AgendaService agendaService = const AgendaService();
+  late final AgendaService agendaService;
   late Future<List<AgendaSummary>> agendaFuture;
 
   @override
   void initState() {
     super.initState();
+    agendaService = AgendaService(branchId: widget.branchId);
     agendaFuture = agendaService.getAgendaSummary();
   }
 
