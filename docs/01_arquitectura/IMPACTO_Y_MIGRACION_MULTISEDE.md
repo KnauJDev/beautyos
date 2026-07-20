@@ -1,8 +1,8 @@
 # Impacto y migración segura a multisede
 
-**Estado:** Tramos 0, A, B y C cerrados en producción; D1–D2, D3.2 y D3.3 verificados localmente, sin modificar producción
+**Estado:** Tramos 0, A, B y C cerrados en producción; D1–D2 y D3.2–D3.4 verificados localmente, sin modificar producción
 **Fecha:** 20 de julio de 2026
-**Fuente auditada:** SQL versionado `supabase/sql/001–124`, migraciones administradas y servicios Flutter actuales.
+**Fuente auditada:** SQL versionado `supabase/sql/001–125`, migraciones administradas y servicios Flutter actuales.
 
 > Antes de aplicar cambios se realizará una fotografía del esquema vivo de Supabase. Este documento identifica el impacto desde el repositorio, pero no reemplaza esa comprobación.
 
@@ -21,6 +21,8 @@
 **Avance D3.2 20/07/2026:** los seis reemplazos `_v2` fueron creados y aplicados dos veces en la restauración aislada. Flutter exige sede en dashboard, configuración, fotos administrativas, reseñas y fotos propias del estilista. Las pruebas A1/A2/Tenant B confirmaron aislamiento, roles, tipos de respuesta, permisos, sesión ausente y sedes inválidas; `flutter test`, `flutter analyze`, D2, C4 y asesores locales pasaron sin errores nuevos. Las seis firmas heredadas continúan para reversión. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_D3_2_IMPLEMENTACION_REEMPLAZOS_SEDE_2026-07-20.md`.
 
 **Avance D3.3 20/07/2026:** el inventario final no encontró consumidores Flutter, migraciones administradas ni dependencias activas de funciones, vistas, políticas o triggers hacia las seis firmas heredadas sustituidas. En el ensayo local aún conservan `EXECUTE` para `anon`, `authenticated` y `service_role`; por ello el siguiente paso será una revocación local y reversible de acceso externo, sin eliminar funciones ni tocar producción. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_D3_3_INVENTARIO_FINAL_RETIRO_RPC_2026-07-20.md`.
+
+**Avance D3.4 20/07/2026:** las seis firmas heredadas conservan su definición, pero el ensayo aislado revocó idempotentemente `EXECUTE` para `PUBLIC`, `anon` y `authenticated`; solo `service_role` mantiene permiso temporal. Las invocaciones reales de `anon` y `authenticated` fueron denegadas y la prueba integral posterior confirmó que los seis `_v2` continúan funcionando por sede y rol. No hubo cambios en producción. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_D3_4_REVOCACION_RPC_HEREDADAS_2026-07-20.md`.
 
 ## 1. Objetivo
 
@@ -129,7 +131,7 @@ Cada RPC operativa seguirá la secuencia: autenticar → resolver sede → compr
 
 **Puerta:** flujo integral funciona en dos sedes de ensayo y los resultados coinciden.
 
-**Cierre Tramo C 20/07/2026:** el contexto efectivo, las RPC `_v2`, Flutter por sede, reservas, tickets, agendas, pagos, caja, reportes e inventario fueron aprobados en ensayo y producción. D0 verificó después cero filas operativas sin sede y 15 puentes temporales activos. D1 retiró localmente la dependencia Flutter heredada, D2 verificó en ensayo la obligatoriedad de sede, D3.0 clasificó la compatibilidad restante, D3.1 aprobó el diseño de los seis reemplazos pendientes, D3.2 los implementó localmente y D3.3 confirmó la ausencia de consumidores internos de las seis firmas heredadas. La siguiente microcompuerta es D3.4: ensayar la revocación local reversible de su acceso externo, sin eliminarlas ni tocar producción.
+**Cierre Tramo C 20/07/2026:** el contexto efectivo, las RPC `_v2`, Flutter por sede, reservas, tickets, agendas, pagos, caja, reportes e inventario fueron aprobados en ensayo y producción. D0 verificó después cero filas operativas sin sede y 15 puentes temporales activos. D1 retiró localmente la dependencia Flutter heredada, D2 verificó en ensayo la obligatoriedad de sede, D3.0 clasificó la compatibilidad restante, D3.1 aprobó el diseño de los seis reemplazos pendientes, D3.2 los implementó localmente, D3.3 confirmó la ausencia de consumidores internos y D3.4 cerró localmente su acceso externo con reversión por permisos. La siguiente microcompuerta es D4: ampliar el ensayo de seguridad y compatibilidad antes de proponer producción.
 
 ### Tramo D — Endurecimiento
 

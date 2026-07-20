@@ -1,4 +1,4 @@
--- BeautyOS - Verificacion estructural y de privilegios del Tramo D3.2.
+-- BeautyOS - Verificacion estructural y de privilegios de D3.2 y D3.4.
 
 do $$
 declare
@@ -87,8 +87,31 @@ begin
     'public.get_work_photos_summary()'
   ] loop
     if to_regprocedure(v_signature) is null then
-      raise exception 'D3.2: se retiro antes de tiempo la firma heredada %.',
+      raise exception 'D3.4: se retiro antes de tiempo la firma heredada %.',
         v_signature;
+    end if;
+    if has_function_privilege('anon', v_signature, 'EXECUTE') then
+      raise exception 'D3.4: anon conserva EXECUTE sobre %.', v_signature;
+    end if;
+    if has_function_privilege('authenticated', v_signature, 'EXECUTE') then
+      raise exception 'D3.4: authenticated conserva EXECUTE sobre %.', v_signature;
+    end if;
+    if not has_function_privilege('service_role', v_signature, 'EXECUTE') then
+      raise exception 'D3.4: service_role no conserva EXECUTE sobre %.', v_signature;
+    end if;
+
+    select exists (
+      select 1
+      from pg_proc p
+      cross join lateral aclexplode(
+        coalesce(p.proacl, acldefault('f', p.proowner))
+      ) acl
+      where p.oid = to_regprocedure(v_signature)
+        and acl.grantee = 0
+        and acl.privilege_type = 'EXECUTE'
+    ) into v_public_execute;
+    if v_public_execute then
+      raise exception 'D3.4: PUBLIC conserva EXECUTE sobre %.', v_signature;
     end if;
   end loop;
 end;
