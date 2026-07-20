@@ -1,6 +1,6 @@
 # Impacto y migración segura a multisede
 
-**Estado:** Tramos 0, A, B y C cerrados en producción; D1–D2, D3.2–D3.4 y D4.0–D4.9 verificados localmente o en entorno no productivo, sin modificar producción
+**Estado:** Tramos 0, A, B y C cerrados en producción; D1–D2, D3.2–D3.4 y D4.0–D4.10 verificados localmente o en entorno no productivo, sin modificar producción
 **Fecha:** 20 de julio de 2026
 **Fuente auditada:** SQL versionado `supabase/sql/001–125`, migraciones administradas y servicios Flutter actuales.
 
@@ -45,6 +45,8 @@
 **Avance D4.8 20/07/2026:** se decidió no preparar D5 directamente con evidencia fragmentada. Antes de cualquier acción productiva se hará D4.9: fotografía completa de salida no productiva, read-only, posterior a D4.6/D4.7, con historial, permisos, conteos, cero nulos, asesores y deuda conocida. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_D4_8_DECISION_SALIDA_ENSAYO_NO_PRODUCTIVO_2026-07-20.md`.
 
 **Avance D4.9 20/07/2026:** se ejecutó la fotografía completa de salida no productiva en `beautyos-dev`, solo lectura y sin modificar producción. La evidencia confirma historial remoto alineado hasta D3.4, seis RPC heredadas sustituidas cerradas para `PUBLIC`, `anon` y `authenticated`, seis RPC `_v2` por sede disponibles para `authenticated`, cero `branch_id` nulos en las 15 tablas operativas y deuda de asesores registrada. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_D4_9_FOTOGRAFIA_SALIDA_NO_PRODUCTIVA_2026-07-20.md`.
+
+**Avance D4.10 20/07/2026:** se preparó el paquete de autorización para D5 sin ejecutar producción. El paquete fija alcance, orden recomendado, migraciones candidatas, criterios GO/NO-GO, reversión y verificaciones de salida. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_D4_10_PAQUETE_AUTORIZACION_D5_2026-07-20.md`.
 
 ## 1. Objetivo
 
@@ -153,7 +155,7 @@ Cada RPC operativa seguirá la secuencia: autenticar → resolver sede → compr
 
 **Puerta:** flujo integral funciona en dos sedes de ensayo y los resultados coinciden.
 
-**Cierre Tramo C 20/07/2026:** el contexto efectivo, las RPC `_v2`, Flutter por sede, reservas, tickets, agendas, pagos, caja, reportes e inventario fueron aprobados en ensayo y producción. D0 verificó después cero filas operativas sin sede y 15 puentes temporales activos. D1 retiró localmente la dependencia Flutter heredada, D2 verificó en ensayo la obligatoriedad de sede, D3.0 clasificó la compatibilidad restante, D3.1 aprobó el diseño de los seis reemplazos pendientes, D3.2 los implementó localmente, D3.3 confirmó la ausencia de consumidores internos, D3.4 cerró localmente su acceso externo, D4.0 probó su reversibilidad con un cliente heredado, D4.1 preparó la matriz de conexión segura, D4.2 seleccionó `beautyos-dev` como candidato no productivo conectable, D4.3-pre dejó listo el SQL de fotografía, D4.3 confirmó que ese entorno requiere alineación, D4.4 decidió que la alineación debe preservar historial, D4.5 seleccionó el mecanismo MCP de migraciones, D4.6 alineó `beautyos-dev`, D4.7 validó reversibilidad en ese entorno, D4.8 decidió exigir fotografía final consolidada y D4.9 la completó. La siguiente microcompuerta es D4.10: paquete de autorización para D5, sin ejecutar producción.
+**Cierre Tramo C 20/07/2026:** el contexto efectivo, las RPC `_v2`, Flutter por sede, reservas, tickets, agendas, pagos, caja, reportes e inventario fueron aprobados en ensayo y producción. D0 verificó después cero filas operativas sin sede y 15 puentes temporales activos. D1 retiró localmente la dependencia Flutter heredada, D2 verificó en ensayo la obligatoriedad de sede, D3.0 clasificó la compatibilidad restante, D3.1 aprobó el diseño de los seis reemplazos pendientes, D3.2 los implementó localmente, D3.3 confirmó la ausencia de consumidores internos, D3.4 cerró localmente su acceso externo, D4.0 probó su reversibilidad con un cliente heredado, D4.1 preparó la matriz de conexión segura, D4.2 seleccionó `beautyos-dev` como candidato no productivo conectable, D4.3-pre dejó listo el SQL de fotografía, D4.3 confirmó que ese entorno requiere alineación, D4.4 decidió que la alineación debe preservar historial, D4.5 seleccionó el mecanismo MCP de migraciones, D4.6 alineó `beautyos-dev`, D4.7 validó reversibilidad en ese entorno, D4.8 decidió exigir fotografía final consolidada, D4.9 la completó y D4.10 preparó el paquete de autorización. La siguiente microcompuerta es D5-pre: confirmar proyecto productivo, respaldo y ventana antes de cualquier acción productiva.
 
 ### Tramo D — Endurecimiento
 

@@ -1,7 +1,7 @@
 # BeautyOS — Expediente técnico y plan maestro de construcción
 
 **Versión:** 1.5
-**Estado:** Rector aprobado — Fase 1 en implementación; Tramos A, B y C aprobados en producción; D1–D2 y D3.2–D4.9 verificados localmente o en entorno no productivo, sin modificar producción
+**Estado:** Rector aprobado — Fase 1 en implementación; Tramos A, B y C aprobados en producción; D1–D2 y D3.2–D4.10 verificados localmente o en entorno no productivo, sin modificar producción
 **Fecha:** 20 de julio de 2026
 **Propietario del producto:** Proyecto BeautyOS  
 **Regla de uso:** este documento define la dirección del producto. Cualquier cambio de alcance, regla de negocio o arquitectura debe registrarse aquí o en una decisión asociada antes de implementarse.
@@ -546,7 +546,7 @@ Si el usuario no conoce estos campos, Codex debe proponerlos antes de cambios es
 
 ## 18. Próxima acción autorizable
 
-**Continuar con D4.10 — paquete de autorización D5:** D4.9 consolidó una fotografía final read-only en `beautyos-dev`, posterior a D4.6/D4.7, con historial, permisos, conteos, cero nulos, asesores y deuda conocida. El siguiente paso debe preparar el paquete de autorización para D5: respaldo, vista previa exacta, alcance productivo, plan de reversión y criterio explícito de parada. Producción no debe modificarse y D5 sigue no autorizado. Las alertas operativas continúan pausadas.
+**Continuar con D5-pre — confirmación productiva previa:** D4.10 preparó el paquete de autorización para D5 sin ejecutar producción. El siguiente paso debe confirmar proyecto productivo exacto, modalidad de respaldo fresco, restauración de ensayo y ventana de ejecución antes de cualquier consulta o cambio productivo. D5 sigue no autorizado hasta aprobación explícita. Las alertas operativas continúan pausadas.
 
 Documentos de ejecución:
 
@@ -573,5 +573,6 @@ Documentos de ejecución:
 - `docs/01_arquitectura/auditorias/TRAMO_D4_7_REVERSIBILIDAD_DEV_CLIENTE_HEREDADO_2026-07-20.md`
 - `docs/01_arquitectura/auditorias/TRAMO_D4_8_DECISION_SALIDA_ENSAYO_NO_PRODUCTIVO_2026-07-20.md`
 - `docs/01_arquitectura/auditorias/TRAMO_D4_9_FOTOGRAFIA_SALIDA_NO_PRODUCTIVA_2026-07-20.md`
+- `docs/01_arquitectura/auditorias/TRAMO_D4_10_PAQUETE_AUTORIZACION_D5_2026-07-20.md`
 - `docs/02_operacion/RESPALDO_Y_RESTAURACION_SUPABASE.md`
 - `docs/04_pruebas/CRITERIOS_SALIDA_FASE_1.md`
