@@ -1,7 +1,7 @@
 # BeautyOS — Expediente técnico y plan maestro de construcción
 
 **Versión:** 1.5
-**Estado:** Rector aprobado — Fase 1 en implementación; Tramos A, B y C aprobados en producción; D1 cerrado localmente y D2 verificado en ensayo, ambos sin modificar producción
+**Estado:** Rector aprobado — Fase 1 en implementación; Tramos A, B y C aprobados en producción; D1–D2 cerrados localmente y clasificación D3.0 aprobada, sin modificar producción
 **Fecha:** 20 de julio de 2026
 **Propietario del producto:** Proyecto BeautyOS  
 **Regla de uso:** este documento define la dirección del producto. Cualquier cambio de alcance, regla de negocio o arquitectura debe registrarse aquí o en una decisión asociada antes de implementarse.
@@ -546,7 +546,7 @@ Si el usuario no conoce estos campos, Codex debe proponerlos antes de cambios es
 
 ## 18. Próxima acción autorizable
 
-**Continuar con D3 — clasificación y retiro controlado:** D1 eliminó localmente el fallback Flutter en el commit `a912394` y D2 dejó preparada y verificada en ensayo la obligatoriedad de `branch_id` para las 15 tablas operativas. Ninguno de los dos cambios fue desplegado a producción. D3 deberá clasificar individualmente triggers y RPC heredadas antes de proponer cualquier retiro; las reglas de integridad necesarias deben conservarse. Las alertas operativas continúan pausadas.
+**Continuar con D3.1 — reemplazos conscientes de sede:** D3.0 clasificó los 15 triggers y las 52 RPC heredadas. Antes de cualquier retiro deben diseñarse seis reemplazos para políticas de agenda, horarios, dashboard, fotos propias del estilista, reseñas y fotos administrativas. Todos usarán la sede seleccionada por defecto y la autorizarán nuevamente en backend; cualquier consolidado será explícito y limitado al owner. No se aplicarán cambios a producción. Las alertas operativas continúan pausadas.
 
 Documentos de ejecución:
 
@@ -557,5 +557,6 @@ Documentos de ejecución:
 - `docs/01_arquitectura/auditorias/TRAMO_C_DESPLIEGUE_PRODUCTIVO_2026-07-20.md`
 - `docs/01_arquitectura/auditorias/TRAMO_D0_INVENTARIO_RETIRO_COMPATIBILIDAD_2026-07-20.md`
 - `docs/01_arquitectura/auditorias/TRAMO_D2_OBLIGATORIEDAD_BRANCH_ID_2026-07-20.md`
+- `docs/01_arquitectura/auditorias/TRAMO_D3_INVENTARIO_CLASIFICACION_COMPATIBILIDAD_2026-07-20.md`
 - `docs/02_operacion/RESPALDO_Y_RESTAURACION_SUPABASE.md`
 - `docs/04_pruebas/CRITERIOS_SALIDA_FASE_1.md`
