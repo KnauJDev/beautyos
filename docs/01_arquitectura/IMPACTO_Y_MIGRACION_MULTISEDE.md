@@ -1,6 +1,6 @@
 # Impacto y migración segura a multisede
 
-**Estado:** Tramo 0 cerrado; Tramo A aplicado y verificado en producción
+**Estado:** Tramo 0 cerrado; Tramo A aplicado y verificado en producción; Tramo B diseñado
 **Fecha:** 20 de julio de 2026
 **Fuente auditada:** SQL versionado `supabase/sql/001–106`, migración administrada y servicios Flutter actuales.
 
@@ -9,6 +9,8 @@
 **Avance 19/07/2026:** la fotografía lógica, los conteos, los totales y las comprobaciones de integridad quedaron registrados en `docs/01_arquitectura/auditorias/TRAMO_0_LINEA_BASE_2026-07-19.md`. El respaldo externo fue creado y restaurado en un entorno local aislado.
 
 **Avance 20/07/2026:** el Tramo A fue creado como migración aditiva, aplicado dos veces sobre la restauración, sometido a pruebas negativas entre tenants y revertido de forma controlada. Después se aplicó al proyecto Supabase vivo mediante dos migraciones administradas: estructura y optimización de claves foráneas. Los datos operativos, financieros y de inventario permanecieron invariantes. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_A_ESTRUCTURA_MULTISEDE_2026-07-20.md`.
+
+**Diseño Tramo B 20/07/2026:** se delimitó el backfill a 15 tablas y 139 filas, se definió herencia de sede, claves compuestas, índices, invariantes y un puente temporal para que las RPC heredadas sigan escribiendo en la Sede principal hasta el Tramo C. No se mutó producción. Evidencia: `docs/01_arquitectura/auditorias/TRAMO_B_DISENO_BACKFILL_OPERACIONAL_2026-07-20.md`.
 
 ## 1. Objetivo
 
@@ -104,6 +106,8 @@ Cada RPC operativa seguirá la secuencia: autenticar → resolver sede → compr
 5. Crear claves foráneas e índices compatibles con datos ya validados.
 
 **Puerta:** cero registros operativos sin sede y conteos financieros invariantes.
+
+**Diseño cerrado:** el alcance exacto comprende `business_hours`, `appointment_policies`, `tickets`, `ticket_services`, los tres historiales de ticket/servicio, `ticket_payments`, `stylist_commissions`, `inventory_movements`, `purchases`, `purchase_items`, `expenses`, `work_photos` y `reviews`. La implementación queda pendiente de respaldo fresco, restauración y pruebas en ensayo.
 
 ### Tramo C — Compatibilidad y doble validación
 

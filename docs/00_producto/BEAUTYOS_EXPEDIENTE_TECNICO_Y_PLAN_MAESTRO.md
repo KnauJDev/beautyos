@@ -1,7 +1,7 @@
 # BeautyOS — Expediente técnico y plan maestro de construcción
 
 **Versión:** 1.3
-**Estado:** Rector aprobado — Fase 1 en implementación; Tramo A aprobado en producción
+**Estado:** Rector aprobado — Fase 1 en implementación; Tramo A aprobado en producción; Tramo B diseñado
 **Fecha:** 20 de julio de 2026
 **Propietario del producto:** Proyecto BeautyOS  
 **Regla de uso:** este documento define la dirección del producto. Cualquier cambio de alcance, regla de negocio o arquitectura debe registrarse aquí o en una decisión asociada antes de implementarse.
@@ -406,8 +406,8 @@ Los datos de clientes, teléfono, documento, fotos y reseñas deberán respetar 
 | Prioridad | Entregable | Dependencia | Estado |
 |---|---|---|---|
 | P0 | Aprobar este expediente y decisiones fundacionales | Producto | Aprobado; versión 1.1 |
-| P0 | Diagrama de dominio multisede y roles | Fase 1 | Diseñado; implementación pendiente |
-| P0 | Auditoría de impacto de `branch_id` en esquema actual | Fase 1 | Auditada en repositorio; falta contrastar esquema vivo |
+| P0 | Diagrama de dominio multisede y roles | Fase 1 | Diseñado; Tramo A aplicado y Tramo B diseñado |
+| P0 | Auditoría de impacto de `branch_id` en esquema actual | Fase 1 | Contrastada con esquema vivo; backfill diseñado |
 | P0 | Especificación de suscripción/entitlements | Fase 1 | Diseñada; proveedor pendiente |
 | P1 | Flujo de cuenta de cliente y reserva pública | Fase 2 | Pendiente |
 | P1 | Política de cancelación/no-show | Fase 3 | Pendiente |
@@ -546,12 +546,13 @@ Si el usuario no conoce estos campos, Codex debe proponerlos antes de cambios es
 
 ## 18. Próxima acción autorizable
 
-**Diseñar en detalle el Tramo B — contexto operacional por sede:** el Tramo A ya fue aplicado y verificado en producción. El siguiente bloque debe especificar, antes de ejecutar, cómo incorporar `branch_id` a horarios, tickets, servicios de ticket, pagos, comisiones, compras, gastos, inventario y demás entidades operativas; incluir backfill, invariantes, índices, compatibilidad temporal, pruebas negativas y reversión. No se modificará Flutter ni se retirará el modelo heredado dentro de la misma compuerta.
+**Implementar el Tramo B primero en ensayo:** el diseño de contexto operacional por sede ya fue cerrado, sin cambios en producción. El siguiente bloque autorizado deberá crear la migración, auditoría y reversión protegida; restaurar un respaldo fresco posterior al Tramo A; aplicar, probar, revertir y reaplicar el Tramo B. Solo tras conservar los 139 registros objetivo y todas las invariantes podrá proponerse su despliegue al proyecto vivo. No se modificará Flutter ni se retirará el modelo heredado dentro de esta compuerta.
 
 Documentos de ejecución:
 
 - `docs/01_arquitectura/IMPACTO_Y_MIGRACION_MULTISEDE.md`
 - `docs/01_arquitectura/auditorias/TRAMO_0_LINEA_BASE_2026-07-19.md`
 - `docs/01_arquitectura/auditorias/TRAMO_A_ESTRUCTURA_MULTISEDE_2026-07-20.md`
+- `docs/01_arquitectura/auditorias/TRAMO_B_DISENO_BACKFILL_OPERACIONAL_2026-07-20.md`
 - `docs/02_operacion/RESPALDO_Y_RESTAURACION_SUPABASE.md`
 - `docs/04_pruebas/CRITERIOS_SALIDA_FASE_1.md`
