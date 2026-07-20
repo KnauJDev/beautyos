@@ -1,6 +1,6 @@
 # Criterios de salida — Fase 1
 
-**Estado:** lista de aceptación en implementación; Tramos A y B aprobados en producción; Tramo C completo en ensayo aislado y pendiente de autorización productiva
+**Estado:** lista de aceptación en implementación; Tramos A, B y C aprobados en producción; siguientes tramos de la Fase 1 pendientes
 **Propósito:** no declarar multisede, roles o suscripción terminados solo porque la interfaz se vea bien.
 
 ## 1. Entregables documentales
@@ -77,6 +77,18 @@ Estas comprobaciones no cierran todavía los criterios globales de los Tramos B�
 - [x] Reservas, tickets y agendas `_v2` aprobados en dos sedes.
 - [x] Caja, reportes e inventario separados por sede.
 - [x] Flutter transmite sede y recarga módulos al cambiarla.
+
+### Evidencia productiva del Tramo C
+
+- [x] Respaldo fresco de roles, estructura y datos creado y verificado antes del despliegue.
+- [x] Historial remoto confirmó A y B aplicados y únicamente cuatro migraciones C pendientes.
+- [x] `db push --dry-run` mostró exclusivamente C1, C2a, C2b y C3.
+- [x] Las cuatro migraciones C quedaron aplicadas y registradas por Supabase.
+- [x] Auditorías 112, 114, 116, 118 y 120 terminaron sin excepciones en producción.
+- [x] Prueba reversible 119 confirmó paridad de once familias en la Sede principal.
+- [x] Producción conserva un tenant y una sede activos, 12 tickets, pagos vigentes por 250.000, comisiones vigentes por 100.000 y stock agregado por 2.530.
+- [x] Asesores oficiales ejecutados sin alertas de nivel `ERROR`; recomendaciones no bloqueantes registradas en el dictamen productivo.
+- [x] `flutter analyze` sin hallazgos y `flutter test` con 3 pruebas aprobadas después del despliegue.
 
 ## 3. Aislamiento obligatorio
 

@@ -1,7 +1,7 @@
 # Tramo C — validación local de operación por sede
 
 **Fecha:** 20 de julio de 2026  
-**Estado:** aprobado en ensayo aislado; pendiente de autorización productiva  
+**Estado:** aprobado en ensayo aislado y posteriormente desplegado y verificado en producción
 **Base de ensayo:** restauración de `BeautyOS_Backup_2026-07-20_06-57-21`  
 **Entorno:** contenedor PostgreSQL desechable `beautyos-tramo-c-test`  
 
@@ -11,7 +11,7 @@ Los componentes C1–C4 cumplen el objetivo local del Tramo C: el cliente Flutte
 
 La ruta heredada sigue disponible durante la ventana de compatibilidad. En la Sede principal restaurada, once familias heredadas y sus equivalentes por sede devolvieron resultados idénticos.
 
-Este dictamen no autoriza producción, no elimina contratos antiguos, no convierte todavía `branch_id` a `NOT NULL` y no declara terminada la Fase 1 completa.
+Este dictamen local sirvió como puerta previa al despliegue productivo. El Tramo C ya fue aplicado con autorización expresa; no elimina contratos antiguos, no convierte todavía `branch_id` a `NOT NULL` y no declara terminada la Fase 1 completa. La evidencia remota está en `TRAMO_C_DESPLIEGUE_PRODUCTIVO_2026-07-20.md`.
 
 ## 2. Componentes verificados
 
@@ -112,9 +112,9 @@ Antes de comparar, la prueba exige que los datos heredados del tenant estén en 
 - Las alertas operativas continúan pausadas por decisión del propietario.
 - No se retirarán funciones heredadas ni triggers puente en el mismo despliegue de C.
 
-## 8. Puerta productiva siguiente
+## 8. Puerta productiva ejecutada
 
-Antes de proponer producción se requiere, en una autorización separada:
+La compuerta productiva se ejecutó posteriormente en una autorización separada:
 
 1. verificar que el repositorio siga limpio y sincronizado;
 2. crear un respaldo fresco y verificar sus tres archivos;
@@ -125,6 +125,8 @@ Antes de proponer producción se requiere, en una autorización separada:
 7. repetir auditorías de solo lectura y pruebas Flutter;
 8. conservar la reversión compatible mediante la versión anterior de la aplicación.
 
+Todos estos puntos quedaron cumplidos y documentados en el dictamen productivo.
+
 ## 9. Historial local
 
 - `08b98d1` — contexto seguro de sede C1.
@@ -133,4 +135,4 @@ Antes de proponer producción se requiere, en una autorización separada:
 - `eca3cfe` — caja, reportes e inventario C3.
 - `9360f6e` — compatibilidad y criterios de salida C4.
 
-No se ejecutó `supabase db push`, no se modificó Supabase productivo y no se hizo `git push` durante el Tramo C.
+Durante la validación local original no se modificó producción. El despliegue autorizado posterior aplicó las cuatro migraciones y repitió las auditorías de solo lectura.

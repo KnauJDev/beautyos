@@ -1,6 +1,6 @@
 # Fase 1 — Modelo rector multi-tenant y multisede
 
-**Estado:** diseño completado; pendiente de implementación técnica y pruebas  
+**Estado:** implementación en curso; Tramos A, B y C aprobados en producción, siguientes tramos pendientes
 **Fecha:** 19 de julio de 2026  
 **Alcance:** estructura organizacional, sedes, catálogos, operación y aislamiento.
 
