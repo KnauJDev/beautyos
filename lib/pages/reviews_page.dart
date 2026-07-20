@@ -1,18 +1,20 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../models/review_summary.dart';
 import '../services/reviews_service.dart';
 import '../widgets/app_widgets.dart';
 
 class ResenasPage extends StatefulWidget {
-  const ResenasPage({super.key});
+  const ResenasPage({super.key, required this.branchId});
+
+  final String branchId;
 
   @override
   State<ResenasPage> createState() => _ResenasPageState();
 }
 
 class _ResenasPageState extends State<ResenasPage> {
-  final ReviewsService _reviewsService = const ReviewsService();
+  late final ReviewsService _reviewsService;
 
   late Future<List<ReviewSummary>> _reviewsFuture;
   String _selectedFilter = 'all';
@@ -20,6 +22,7 @@ class _ResenasPageState extends State<ResenasPage> {
   @override
   void initState() {
     super.initState();
+    _reviewsService = ReviewsService(branchId: widget.branchId);
     _reviewsFuture = _reviewsService.getReviewsSummary();
   }
 
@@ -46,9 +49,7 @@ class _ResenasPageState extends State<ResenasPage> {
       future: _reviewsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return const Center(child: CircularProgressIndicator());
         }
 
         if (snapshot.hasError) {
@@ -93,8 +94,9 @@ class _ReviewsContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final totalReviews = allReviews.length;
-    final publicReviews =
-        allReviews.where((review) => review.visibleToPublic).length;
+    final publicReviews = allReviews
+        .where((review) => review.visibleToPublic)
+        .length;
     final approvedReviews = allReviews
         .where((review) => review.moderationStatus == 'approved')
         .length;
@@ -105,11 +107,12 @@ class _ReviewsContent extends StatelessWidget {
     final averageRating = totalReviews == 0
         ? 0
         : allReviews.map((review) => review.rating).reduce((a, b) => a + b) /
-            totalReviews;
+              totalReviews;
 
     return AppPage(
       title: 'Reseñas',
-      subtitle: 'Calificaciones, comentarios y moderación de opiniones de clientes.',
+      subtitle:
+          'Calificaciones, comentarios y moderación de opiniones de clientes.',
       children: [
         const InfoPanel(
           icon: Icons.rate_review_outlined,
@@ -240,9 +243,7 @@ class _FilterChipButton extends StatelessWidget {
 class _ReviewsList extends StatelessWidget {
   final List<ReviewSummary> reviews;
 
-  const _ReviewsList({
-    required this.reviews,
-  });
+  const _ReviewsList({required this.reviews});
 
   @override
   Widget build(BuildContext context) {
@@ -268,9 +269,7 @@ class _ReviewsList extends StatelessWidget {
 class _ReviewCard extends StatelessWidget {
   final ReviewSummary review;
 
-  const _ReviewCard({
-    required this.review,
-  });
+  const _ReviewCard({required this.review});
 
   @override
   Widget build(BuildContext context) {
@@ -311,34 +310,22 @@ class _ReviewCard extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               'Cliente: ${review.clientName}',
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF374151),
-              ),
+              style: const TextStyle(fontSize: 14, color: Color(0xFF374151)),
             ),
             const SizedBox(height: 4),
             Text(
               'Estilista: ${review.stylistName}',
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF374151),
-              ),
+              style: const TextStyle(fontSize: 14, color: Color(0xFF374151)),
             ),
             const SizedBox(height: 4),
             Text(
               'Servicio: ${review.serviceName}',
-              style: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF374151),
-              ),
+              style: const TextStyle(fontSize: 14, color: Color(0xFF374151)),
             ),
             const SizedBox(height: 4),
             Text(
               'Fecha: ${review.createdDateText}',
-              style: const TextStyle(
-                fontSize: 13,
-                color: Color(0xFF6B7280),
-              ),
+              style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
             ),
           ],
         ),
@@ -350,16 +337,10 @@ class _ReviewCard extends StatelessWidget {
 class _StatusChip extends StatelessWidget {
   final String text;
 
-  const _StatusChip({
-    required this.text,
-  });
+  const _StatusChip({required this.text});
 
   @override
   Widget build(BuildContext context) {
-    return Chip(
-      label: Text(text),
-      visualDensity: VisualDensity.compact,
-    );
+    return Chip(label: Text(text), visualDensity: VisualDensity.compact);
   }
 }
-

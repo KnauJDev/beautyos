@@ -1,7 +1,7 @@
 # BeautyOS — Expediente técnico y plan maestro de construcción
 
 **Versión:** 1.5
-**Estado:** Rector aprobado — Fase 1 en implementación; Tramos A, B y C aprobados en producción; D1–D2 cerrados localmente y diseño D3.1 aprobado, sin modificar producción
+**Estado:** Rector aprobado — Fase 1 en implementación; Tramos A, B y C aprobados en producción; D1–D2 cerrados localmente y D3.2 verificado, sin modificar producción
 **Fecha:** 20 de julio de 2026
 **Propietario del producto:** Proyecto BeautyOS  
 **Regla de uso:** este documento define la dirección del producto. Cualquier cambio de alcance, regla de negocio o arquitectura debe registrarse aquí o en una decisión asociada antes de implementarse.
@@ -546,7 +546,7 @@ Si el usuario no conoce estos campos, Codex debe proponerlos antes de cambios es
 
 ## 18. Próxima acción autorizable
 
-**Continuar con D3.2 — implementar localmente los seis reemplazos conscientes de sede:** D3.1 cerró sus contratos, roles, semántica, permisos, adaptación Flutter y pruebas exigidas. El siguiente micro-paso creará las RPC `_v2`, actualizará sus cinco superficies Flutter y verificará aislamiento y privilegios en un entorno local. Las seis RPC heredadas permanecerán temporalmente intactas para conservar reversibilidad. No se aplicarán cambios a producción. Las alertas operativas continúan pausadas.
+**Continuar con D3.3 — preparar el retiro local de seis RPC heredadas sustituidas:** D3.2 creó y verificó los seis reemplazos `_v2`, actualizó Flutter y mantuvo los contratos antiguos para reversibilidad. El siguiente micro-paso deberá confirmar que no quedan consumidores Flutter ni dependencias SQL externas antes de diseñar la revocación o retiro local, sin tocar producción. Las alertas operativas continúan pausadas.
 
 Documentos de ejecución:
 
@@ -559,5 +559,6 @@ Documentos de ejecución:
 - `docs/01_arquitectura/auditorias/TRAMO_D2_OBLIGATORIEDAD_BRANCH_ID_2026-07-20.md`
 - `docs/01_arquitectura/auditorias/TRAMO_D3_INVENTARIO_CLASIFICACION_COMPATIBILIDAD_2026-07-20.md`
 - `docs/01_arquitectura/auditorias/TRAMO_D3_1_DISENO_REEMPLAZOS_SEDE_2026-07-20.md`
+- `docs/01_arquitectura/auditorias/TRAMO_D3_2_IMPLEMENTACION_REEMPLAZOS_SEDE_2026-07-20.md`
 - `docs/02_operacion/RESPALDO_Y_RESTAURACION_SUPABASE.md`
 - `docs/04_pruebas/CRITERIOS_SALIDA_FASE_1.md`

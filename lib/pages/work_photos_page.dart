@@ -1,18 +1,20 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../models/work_photo_summary.dart';
 import '../services/work_photos_service.dart';
 import '../widgets/app_widgets.dart';
 
 class FotosTrabajosPage extends StatefulWidget {
-  const FotosTrabajosPage({super.key});
+  const FotosTrabajosPage({super.key, required this.branchId});
+
+  final String branchId;
 
   @override
   State<FotosTrabajosPage> createState() => _FotosTrabajosPageState();
 }
 
 class _FotosTrabajosPageState extends State<FotosTrabajosPage> {
-  final WorkPhotosService _workPhotosService = const WorkPhotosService();
+  late final WorkPhotosService _workPhotosService;
 
   late Future<List<WorkPhotoSummary>> _workPhotosFuture;
   String _selectedFilter = 'all';
@@ -20,6 +22,7 @@ class _FotosTrabajosPageState extends State<FotosTrabajosPage> {
   @override
   void initState() {
     super.initState();
+    _workPhotosService = WorkPhotosService(branchId: widget.branchId);
     _workPhotosFuture = _workPhotosService.getWorkPhotosSummary();
   }
 
@@ -42,9 +45,7 @@ class _FotosTrabajosPageState extends State<FotosTrabajosPage> {
       future: _workPhotosFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
+          return const Center(child: CircularProgressIndicator());
         }
 
         if (snapshot.hasError) {
@@ -89,16 +90,20 @@ class _WorkPhotosContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final totalPhotos = allPhotos.length;
-    final visiblePhotos =
-        allPhotos.where((photo) => photo.visibleToCustomer).length;
-    final portfolioPhotos =
-        allPhotos.where((photo) => photo.approvedForPortfolio).length;
-    final pendingAiPhotos =
-        allPhotos.where((photo) => photo.aiStatus == 'pending').length;
+    final visiblePhotos = allPhotos
+        .where((photo) => photo.visibleToCustomer)
+        .length;
+    final portfolioPhotos = allPhotos
+        .where((photo) => photo.approvedForPortfolio)
+        .length;
+    final pendingAiPhotos = allPhotos
+        .where((photo) => photo.aiStatus == 'pending')
+        .length;
 
     return AppPage(
       title: 'Fotos de trabajos',
-      subtitle: 'Portafolio visual, evidencia de servicios y futuras mejoras con IA.',
+      subtitle:
+          'Portafolio visual, evidencia de servicios y futuras mejoras con IA.',
       children: [
         const InfoPanel(
           icon: Icons.photo_library_outlined,
@@ -223,9 +228,7 @@ class _FilterChipButton extends StatelessWidget {
 class _WorkPhotosGrid extends StatelessWidget {
   final List<WorkPhotoSummary> photos;
 
-  const _WorkPhotosGrid({
-    required this.photos,
-  });
+  const _WorkPhotosGrid({required this.photos});
 
   @override
   Widget build(BuildContext context) {
@@ -242,10 +245,7 @@ class _WorkPhotosGrid extends StatelessWidget {
       runSpacing: 16,
       children: [
         for (final photo in photos)
-          SizedBox(
-            width: 280,
-            child: _WorkPhotoCard(photo: photo),
-          ),
+          SizedBox(width: 280, child: _WorkPhotoCard(photo: photo)),
       ],
     );
   }
@@ -254,9 +254,7 @@ class _WorkPhotosGrid extends StatelessWidget {
 class _WorkPhotoCard extends StatelessWidget {
   final WorkPhotoSummary photo;
 
-  const _WorkPhotoCard({
-    required this.photo,
-  });
+  const _WorkPhotoCard({required this.photo});
 
   @override
   Widget build(BuildContext context) {
@@ -355,15 +353,10 @@ class _WorkPhotoCard extends StatelessWidget {
 class _PhotoTypeBadge extends StatelessWidget {
   final String text;
 
-  const _PhotoTypeBadge({
-    required this.text,
-  });
+  const _PhotoTypeBadge({required this.text});
 
   @override
   Widget build(BuildContext context) {
-    return Chip(
-      label: Text(text),
-      visualDensity: VisualDensity.compact,
-    );
+    return Chip(label: Text(text), visualDensity: VisualDensity.compact);
   }
 }

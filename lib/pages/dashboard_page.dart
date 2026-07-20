@@ -1,23 +1,26 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../models/dashboard_metrics.dart';
 import '../services/dashboard_service.dart';
 import '../widgets/app_widgets.dart';
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key});
+  const DashboardPage({super.key, required this.branchId});
+
+  final String branchId;
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  final DashboardService dashboardService = const DashboardService();
+  late final DashboardService dashboardService;
   late final Future<DashboardMetrics> dashboardMetricsFuture;
 
   @override
   void initState() {
     super.initState();
+    dashboardService = DashboardService(branchId: widget.branchId);
     dashboardMetricsFuture = dashboardService.getMetrics();
   }
 
@@ -25,7 +28,7 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     return AppPage(
       title: 'Dashboard',
-      subtitle: 'Resumen general del centro de est\u00e9tica.',
+      subtitle: 'Resumen operativo de la sede seleccionada.',
       children: [
         FutureBuilder<DashboardMetrics>(
           future: dashboardMetricsFuture,
@@ -65,7 +68,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
                 MetricCard(
                   icon: Icons.people_alt_outlined,
-                  title: 'Clientes',
+                  title: 'Clientes del negocio',
                   value: hasError
                       ? 'Error'
                       : isLoading
@@ -73,7 +76,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       : metrics!.clientsCount.toString(),
                   description: hasError
                       ? 'No se pudo consultar Supabase.'
-                      : 'Clientes registrados activos.',
+                      : 'Catálogo activo de todo el negocio.',
                 ),
                 MetricCard(
                   icon: Icons.spa_outlined,
@@ -119,9 +122,9 @@ class _DashboardPageState extends State<DashboardPage> {
         const SectionTitle('Actividad reciente'),
         const InfoPanel(
           icon: Icons.analytics_outlined,
-          title: 'Dashboard leyendo funci\u00f3n segura',
+          title: 'Dashboard autorizado por sede',
           description:
-              'Las m\u00e9tricas principales ahora vienen desde la funci\u00f3n get_dashboard_metrics de Supabase, incluyendo estilistas y servicios asignados.',
+              'Las métricas operativas corresponden a la sede seleccionada; clientes conserva alcance de catálogo del negocio.',
         ),
       ],
     );

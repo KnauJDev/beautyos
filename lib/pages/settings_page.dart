@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../models/appointment_policy.dart';
 import '../models/business_hour.dart';
@@ -11,7 +11,9 @@ import '../services/commission_policy_service.dart';
 import '../widgets/app_widgets.dart';
 
 class ConfiguracionPage extends StatefulWidget {
-  const ConfiguracionPage({super.key});
+  const ConfiguracionPage({super.key, required this.branchId});
+
+  final String branchId;
 
   @override
   State<ConfiguracionPage> createState() => _ConfiguracionPageState();
@@ -21,11 +23,9 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
   final BusinessSettingsService businessSettingsService =
       const BusinessSettingsService();
 
-  final BusinessHoursService businessHoursService =
-      const BusinessHoursService();
+  late final BusinessHoursService businessHoursService;
 
-  final AppointmentPolicyService appointmentPolicyService =
-      const AppointmentPolicyService();
+  late final AppointmentPolicyService appointmentPolicyService;
 
   final CommissionPolicyService commissionPolicyService =
       const CommissionPolicyService();
@@ -38,6 +38,10 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
   @override
   void initState() {
     super.initState();
+    businessHoursService = BusinessHoursService(branchId: widget.branchId);
+    appointmentPolicyService = AppointmentPolicyService(
+      branchId: widget.branchId,
+    );
     businessSettingsFuture = businessSettingsService.getBusinessSettings();
     businessHoursFuture = businessHoursService.getBusinessHours();
     appointmentPolicyFuture = appointmentPolicyService.getAppointmentPolicy();
@@ -110,7 +114,7 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
                 icon: Icons.error_outline,
                 title: 'No se pudieron cargar los horarios',
                 description:
-                    'Revisa la conexión con Supabase o la función get_business_hours.',
+                    'Revisa la conexión con Supabase o el acceso a la sede seleccionada.',
               );
             }
 
@@ -147,7 +151,7 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
                 icon: Icons.error_outline,
                 title: 'No se pudieron cargar las políticas',
                 description:
-                    'Revisa la conexión con Supabase o la función get_appointment_policy.',
+                    'Revisa la conexión con Supabase o el acceso a la sede seleccionada.',
               );
             }
 
@@ -206,10 +210,7 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
 class BusinessSettingsCard extends StatelessWidget {
   final BusinessSettings settings;
 
-  const BusinessSettingsCard({
-    super.key,
-    required this.settings,
-  });
+  const BusinessSettingsCard({super.key, required this.settings});
 
   @override
   Widget build(BuildContext context) {
@@ -219,12 +220,12 @@ class BusinessSettingsCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              settings.name,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text(settings.name, style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 12),
-            _SettingsLine(label: 'Tipo de negocio', value: settings.businessType),
+            _SettingsLine(
+              label: 'Tipo de negocio',
+              value: settings.businessType,
+            ),
             _SettingsLine(label: 'Correo', value: settings.contactEmail),
             _SettingsLine(label: 'Teléfono', value: settings.contactPhone),
             _SettingsLine(label: 'WhatsApp', value: settings.whatsapp),
@@ -240,10 +241,7 @@ class BusinessSettingsCard extends StatelessWidget {
 class BusinessHoursCard extends StatelessWidget {
   final List<BusinessHour> hours;
 
-  const BusinessHoursCard({
-    super.key,
-    required this.hours,
-  });
+  const BusinessHoursCard({super.key, required this.hours});
 
   @override
   Widget build(BuildContext context) {
@@ -251,9 +249,7 @@ class BusinessHoursCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          children: [
-            for (final hour in hours) _BusinessHourRow(hour: hour),
-          ],
+          children: [for (final hour in hours) _BusinessHourRow(hour: hour)],
         ),
       ),
     );
@@ -263,10 +259,7 @@ class BusinessHoursCard extends StatelessWidget {
 class AppointmentPolicyCard extends StatelessWidget {
   final AppointmentPolicy policy;
 
-  const AppointmentPolicyCard({
-    super.key,
-    required this.policy,
-  });
+  const AppointmentPolicyCard({super.key, required this.policy});
 
   @override
   Widget build(BuildContext context) {
@@ -278,7 +271,10 @@ class AppointmentPolicyCard extends StatelessWidget {
           children: [
             _SettingsLine(label: 'Anticipo', value: policy.depositText),
             _SettingsLine(label: 'Cancelación', value: policy.cancellationText),
-            _SettingsLine(label: 'Reagendamiento', value: policy.rescheduleText),
+            _SettingsLine(
+              label: 'Reagendamiento',
+              value: policy.rescheduleText,
+            ),
             _SettingsLine(
               label: 'Confirmación',
               value: policy.manualConfirmationText,
@@ -297,10 +293,7 @@ class AppointmentPolicyCard extends StatelessWidget {
 class CommissionPolicyCard extends StatelessWidget {
   final CommissionPolicy policy;
 
-  const CommissionPolicyCard({
-    super.key,
-    required this.policy,
-  });
+  const CommissionPolicyCard({super.key, required this.policy});
 
   @override
   Widget build(BuildContext context) {
@@ -324,9 +317,7 @@ class CommissionPolicyCard extends StatelessWidget {
 class _BusinessHourRow extends StatelessWidget {
   final BusinessHour hour;
 
-  const _BusinessHourRow({
-    required this.hour,
-  });
+  const _BusinessHourRow({required this.hour});
 
   @override
   Widget build(BuildContext context) {
@@ -341,9 +332,7 @@ class _BusinessHourRow extends StatelessWidget {
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
-          Expanded(
-            child: Text(hour.scheduleText),
-          ),
+          Expanded(child: Text(hour.scheduleText)),
         ],
       ),
     );
@@ -354,10 +343,7 @@ class _SettingsLine extends StatelessWidget {
   final String label;
   final String value;
 
-  const _SettingsLine({
-    required this.label,
-    required this.value,
-  });
+  const _SettingsLine({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {

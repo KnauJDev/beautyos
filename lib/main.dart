@@ -99,10 +99,13 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
     final role = profile?.role ?? 'client';
 
     final modules = <BeautyModule>[
-      const BeautyModule(
-        section: BeautySection('Dashboard', Icons.dashboard_outlined),
-        page: DashboardPage(),
-        allowedRoles: <String>{'owner', 'admin'},
+      BeautyModule(
+        section: const BeautySection('Dashboard', Icons.dashboard_outlined),
+        page: DashboardPage(
+          key: ValueKey('dashboard-${branch.branchId}'),
+          branchId: branch.branchId,
+        ),
+        allowedRoles: const <String>{'owner', 'admin'},
       ),
       BeautyModule(
         section: const BeautySection(
@@ -115,10 +118,13 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         ),
         allowedRoles: const <String>{'stylist'},
       ),
-      const BeautyModule(
-        section: BeautySection('Mis fotos', Icons.photo_library_outlined),
-        page: MyStylistWorkPhotosPage(),
-        allowedRoles: <String>{'stylist'},
+      BeautyModule(
+        section: const BeautySection('Mis fotos', Icons.photo_library_outlined),
+        page: MyStylistWorkPhotosPage(
+          key: ValueKey('my-photos-${branch.branchId}'),
+          branchId: branch.branchId,
+        ),
+        allowedRoles: const <String>{'stylist'},
       ),
       BeautyModule(
         section: const BeautySection('Agenda', Icons.calendar_month_outlined),
@@ -189,18 +195,27 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         ),
         allowedRoles: const <String>{'owner', 'admin'},
       ),
-      const BeautyModule(
-        section: BeautySection(
+      BeautyModule(
+        section: const BeautySection(
           'Fotos de trabajos',
           Icons.photo_library_outlined,
         ),
-        page: FotosTrabajosPage(),
-        allowedRoles: <String>{'owner', 'admin'},
+        page: FotosTrabajosPage(
+          key: ValueKey('work-photos-${branch.branchId}'),
+          branchId: branch.branchId,
+        ),
+        allowedRoles: const <String>{'owner', 'admin'},
       ),
-      const BeautyModule(
-        section: BeautySection('Rese\u00f1as', Icons.rate_review_outlined),
-        page: ResenasPage(),
-        allowedRoles: <String>{'owner', 'admin'},
+      BeautyModule(
+        section: const BeautySection(
+          'Rese\u00f1as',
+          Icons.rate_review_outlined,
+        ),
+        page: ResenasPage(
+          key: ValueKey('reviews-${branch.branchId}'),
+          branchId: branch.branchId,
+        ),
+        allowedRoles: const <String>{'owner', 'admin'},
       ),
       BeautyModule(
         section: const BeautySection('Inventario', Icons.inventory_2_outlined),
@@ -210,10 +225,16 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         ),
         allowedRoles: const <String>{'owner', 'admin'},
       ),
-      const BeautyModule(
-        section: BeautySection('Configuraci\u00f3n', Icons.settings_outlined),
-        page: ConfiguracionPage(),
-        allowedRoles: <String>{'owner', 'admin'},
+      BeautyModule(
+        section: const BeautySection(
+          'Configuraci\u00f3n',
+          Icons.settings_outlined,
+        ),
+        page: ConfiguracionPage(
+          key: ValueKey('settings-${branch.branchId}'),
+          branchId: branch.branchId,
+        ),
+        allowedRoles: const <String>{'owner', 'admin'},
       ),
     ];
 

@@ -1,11 +1,13 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../models/my_stylist_work_photo.dart';
 import '../services/my_stylist_work_photos_service.dart';
 import '../widgets/app_widgets.dart';
 
 class MyStylistWorkPhotosPage extends StatefulWidget {
-  const MyStylistWorkPhotosPage({super.key});
+  const MyStylistWorkPhotosPage({super.key, required this.branchId});
+
+  final String branchId;
 
   @override
   State<MyStylistWorkPhotosPage> createState() =>
@@ -13,14 +15,14 @@ class MyStylistWorkPhotosPage extends StatefulWidget {
 }
 
 class _MyStylistWorkPhotosPageState extends State<MyStylistWorkPhotosPage> {
-  final MyStylistWorkPhotosService photosService =
-      const MyStylistWorkPhotosService();
+  late final MyStylistWorkPhotosService photosService;
 
   late final Future<List<MyStylistWorkPhoto>> photosFuture;
 
   @override
   void initState() {
     super.initState();
+    photosService = MyStylistWorkPhotosService(branchId: widget.branchId);
     photosFuture = photosService.getMyStylistWorkPhotos();
   }
 
@@ -34,9 +36,7 @@ class _MyStylistWorkPhotosPageState extends State<MyStylistWorkPhotosPage> {
           future: photosFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
+              return const Center(child: CircularProgressIndicator());
             }
 
             if (snapshot.hasError) {
@@ -53,16 +53,20 @@ class _MyStylistWorkPhotosPageState extends State<MyStylistWorkPhotosPage> {
               return const InfoPanel(
                 icon: Icons.photo_library_outlined,
                 title: 'Sin fotos asignadas',
-                description: 'Cuando subas fotos de tus trabajos, apareceran aqui.',
+                description:
+                    'Cuando subas fotos de tus trabajos, apareceran aqui.',
               );
             }
 
-            final visibleCount =
-                photos.where((photo) => photo.visibleToCustomer).length;
-            final portfolioCount =
-                photos.where((photo) => photo.approvedForPortfolio).length;
-            final pendingAiCount =
-                photos.where((photo) => photo.aiStatus == 'pending').length;
+            final visibleCount = photos
+                .where((photo) => photo.visibleToCustomer)
+                .length;
+            final portfolioCount = photos
+                .where((photo) => photo.approvedForPortfolio)
+                .length;
+            final pendingAiCount = photos
+                .where((photo) => photo.aiStatus == 'pending')
+                .length;
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,11 +124,7 @@ class _PhotosGrid extends StatelessWidget {
     return Wrap(
       spacing: 16,
       runSpacing: 16,
-      children: photos
-          .map(
-            (photo) => _PhotoCard(photo: photo),
-          )
-          .toList(),
+      children: photos.map((photo) => _PhotoCard(photo: photo)).toList(),
     );
   }
 }
@@ -234,10 +234,7 @@ class _PhotoBadge extends StatelessWidget {
 }
 
 class _PhotoLine extends StatelessWidget {
-  const _PhotoLine({
-    required this.icon,
-    required this.text,
-  });
+  const _PhotoLine({required this.icon, required this.text});
 
   final IconData icon;
   final String text;
@@ -248,19 +245,12 @@ class _PhotoLine extends StatelessWidget {
       padding: const EdgeInsets.only(top: 6),
       child: Row(
         children: [
-          Icon(
-            icon,
-            size: 16,
-            color: const Color(0xFF6B7280),
-          ),
+          Icon(icon, size: 16, color: const Color(0xFF6B7280)),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
-                fontSize: 13,
-                color: Color(0xFF374151),
-              ),
+              style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
             ),
           ),
         ],
