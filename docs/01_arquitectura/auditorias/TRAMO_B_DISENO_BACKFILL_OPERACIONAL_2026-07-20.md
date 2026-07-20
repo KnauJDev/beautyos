@@ -1,13 +1,13 @@
-# Tramo B — diseño del backfill operacional por sede
+# Tramo B — diseño e implementación del contexto operacional por sede
 
 **Fecha:** 20 de julio de 2026  
-**Estado:** diseñado; pendiente de implementación y validación en ensayo  
+**Estado:** implementado, revertido y reaplicado satisfactoriamente en ensayo; producción pendiente
 **Tipo de cambio:** aditivo, compatible y reversible por compuertas  
 **Mutación de producción en este bloque:** ninguna
 
 ## 1. Decisión ejecutiva
 
-El Tramo B incorporará `branch_id` a la operación histórica de BeautyOS y asignará todos los registros existentes a la **Sede principal** creada en el Tramo A. La aplicación actual seguirá funcionando mientras se preparan las RPC y pantallas conscientes de sede en el Tramo C.
+El Tramo B incorpora `branch_id` a la operación histórica de BeautyOS y asigna todos los registros existentes a la **Sede principal** creada en el Tramo A. La aplicación actual sigue funcionando mientras se preparan las RPC y pantallas conscientes de sede en el Tramo C.
 
 Este tramo no crea una segunda sede operativa, no modifica Flutter, no cambia RLS, no retira rutas heredadas y no hace todavía `branch_id NOT NULL`. Tampoco recalcula pagos, comisiones, stock, compras ni gastos.
 
@@ -261,13 +261,34 @@ El script retirará triggers, helpers, claves, índices y columnas creados por e
 - **Compensación:** salario fijo, porcentaje o valor fijo con vigencia se diseñará como libro financiero separado; no se improvisará dentro del backfill.
 - **Alertas operativas:** continúan pausadas por decisión del producto.
 
-## 14. Puerta para comenzar implementación
+## 14. Puerta de despliegue a producción
 
-El diseño queda aprobado técnicamente cuando el propietario del producto autorice crear, sin aplicar a producción:
+La implementación de ensayo quedó aprobada técnicamente mediante:
 
-1. la migración administrada del Tramo B;
-2. el script de auditoría antes/después;
-3. el script de reversión protegido para ensayo;
-4. las pruebas negativas de aislamiento y coherencia.
+1. la migración administrada `20260720111110_tramo_b_contexto_operacional_sede.sql`;
+2. auditoría estructural y de datos en `107_verify_tramo_b_branch_context.sql`;
+3. pruebas negativas y de compatibilidad en `108_test_tramo_b_compatibility_and_isolation.sql`;
+4. reversión protegida en `109_rollback_tramo_b_test_only.sql`;
+5. pruebas de RPC heredadas en `110_test_tramo_b_legacy_rpcs.sql`.
 
-Hasta esa autorización, el estado correcto es **diseñado, no implementado**.
+El despliegue al proyecto vivo exige una autorización separada, un respaldo fresco posterior al Tramo A, aplicación controlada y auditoría posterior. Hasta entonces el estado correcto es **validado en ensayo, no aplicado en producción**.
+
+## 15. Resultado verificado de la implementación en ensayo
+
+La base del respaldo del 19/07/2026 se restauró en PostgreSQL aislado. El Tramo A y el Tramo B se aplicaron de forma ordenada; el Tramo B fue revertido y reaplicado dos veces sin pérdida de datos. La copia local del respaldo no contenía `auth.users`, por lo que la carga de ensayo del Tramo A necesitó omitir únicamente esa referencia privada de Auth durante la restauración. Esta limitación pertenece al artefacto local de ensayo y no modifica la migración ni la base viva.
+
+Resultados finales:
+
+- 15 tablas operativas recibieron `branch_id` y quedaron con cero valores nulos;
+- las 139 filas históricas conservaron su tenant, sede y relaciones padre-hijo;
+- pagos vigentes: **$250.000**; pagos anulados: **$115.000**;
+- comisiones vigentes: **$100.000**; comisiones anuladas: **$36.000**;
+- stock derivado: **2.530 unidades**;
+- cruces de tenant, sede, servicio, estilista, ticket, compra y producto: cero;
+- intentos de forzar datos de otro tenant o sede: rechazados;
+- las RPC heredadas de creación, servicios, resumen y disponibilidad siguieron operando;
+- 15 triggers de compatibilidad quedaron instalados y los helpers privados no son ejecutables por clientes;
+- todas las claves foráneas nuevas quedaron validadas y con índice de apoyo; deuda detectada: cero;
+- `flutter analyze`: sin hallazgos; `flutter test`: todas las pruebas aprobadas.
+
+No se modificó Flutter, no se aplicó nada en producción y no se retiró el puente heredado.

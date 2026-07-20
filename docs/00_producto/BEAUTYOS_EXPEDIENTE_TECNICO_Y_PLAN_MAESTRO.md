@@ -1,7 +1,7 @@
 # BeautyOS — Expediente técnico y plan maestro de construcción
 
-**Versión:** 1.3
-**Estado:** Rector aprobado — Fase 1 en implementación; Tramo A aprobado en producción; Tramo B diseñado
+**Versión:** 1.4
+**Estado:** Rector aprobado — Fase 1 en implementación; Tramo A aprobado en producción; Tramo B validado en ensayo y pendiente de producción
 **Fecha:** 20 de julio de 2026
 **Propietario del producto:** Proyecto BeautyOS  
 **Regla de uso:** este documento define la dirección del producto. Cualquier cambio de alcance, regla de negocio o arquitectura debe registrarse aquí o en una decisión asociada antes de implementarse.
@@ -406,8 +406,8 @@ Los datos de clientes, teléfono, documento, fotos y reseñas deberán respetar 
 | Prioridad | Entregable | Dependencia | Estado |
 |---|---|---|---|
 | P0 | Aprobar este expediente y decisiones fundacionales | Producto | Aprobado; versión 1.1 |
-| P0 | Diagrama de dominio multisede y roles | Fase 1 | Diseñado; Tramo A aplicado y Tramo B diseñado |
-| P0 | Auditoría de impacto de `branch_id` en esquema actual | Fase 1 | Contrastada con esquema vivo; backfill diseñado |
+| P0 | Diagrama de dominio multisede y roles | Fase 1 | Diseñado; Tramo A aplicado y Tramo B validado en ensayo |
+| P0 | Auditoría de impacto de `branch_id` en esquema actual | Fase 1 | Contrastada; backfill aplicado, revertido y reaplicado en ensayo |
 | P0 | Especificación de suscripción/entitlements | Fase 1 | Diseñada; proveedor pendiente |
 | P1 | Flujo de cuenta de cliente y reserva pública | Fase 2 | Pendiente |
 | P1 | Política de cancelación/no-show | Fase 3 | Pendiente |
@@ -546,7 +546,7 @@ Si el usuario no conoce estos campos, Codex debe proponerlos antes de cambios es
 
 ## 18. Próxima acción autorizable
 
-**Implementar el Tramo B primero en ensayo:** el diseño de contexto operacional por sede ya fue cerrado, sin cambios en producción. El siguiente bloque autorizado deberá crear la migración, auditoría y reversión protegida; restaurar un respaldo fresco posterior al Tramo A; aplicar, probar, revertir y reaplicar el Tramo B. Solo tras conservar los 139 registros objetivo y todas las invariantes podrá proponerse su despliegue al proyecto vivo. No se modificará Flutter ni se retirará el modelo heredado dentro de esta compuerta.
+**Preparar la compuerta productiva del Tramo B:** la migración, auditoría, pruebas negativas, compatibilidad heredada y reversión protegida ya fueron aplicadas, revertidas y reaplicadas en ensayo. Se conservaron los 139 registros objetivo, los totales financieros, el stock y las RPC heredadas. El siguiente bloque, solo con autorización separada, deberá crear un respaldo fresco posterior al Tramo A, revisar la vista previa de migraciones, aplicar el Tramo B al proyecto vivo y ejecutar inmediatamente las auditorías 107 y 110. No se modificará Flutter ni se retirará el puente heredado en esa compuerta.
 
 Documentos de ejecución:
 

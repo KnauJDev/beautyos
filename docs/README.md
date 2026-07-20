@@ -27,6 +27,10 @@ Esta carpeta es la fuente oficial viva de la arquitectura, producto y operación
 13. `../supabase/migrations/20260720102806_tramo_a_indexar_claves_foraneas.sql`
 14. `HANDOFF/HANDOFF_BeautyOS_pasos_1086_1115.md`
 15. `HANDOFF/HANDOFF_BeautyOS_pasos_1116_1126.md`
+16. `HANDOFF/HANDOFF_BeautyOS_pasos_1127_1134.md`
+17. `01_arquitectura/auditorias/TRAMO_B_DISENO_BACKFILL_OPERACIONAL_2026-07-20.md`
+18. `../supabase/migrations/20260720111110_tramo_b_contexto_operacional_sede.sql`
+19. `HANDOFF/HANDOFF_BeautyOS_pasos_1135_1148.md`
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión estructural. No se reescriben para ocultar el pasado: una decisión futura la reemplaza mediante otro ADR.
 

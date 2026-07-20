@@ -1,6 +1,6 @@
 # Criterios de salida — Fase 1
 
-**Estado:** lista de aceptación en implementación; Tramo A aprobado en producción; Tramo B diseñado
+**Estado:** lista de aceptación en implementación; Tramo A aprobado en producción; Tramo B validado en ensayo y pendiente de producción
 **Propósito:** no declarar multisede, roles o suscripción terminados solo porque la interfaz se vea bien.
 
 ## 1. Entregables documentales
@@ -19,11 +19,11 @@
   - [x] Inventario vivo, objetos, RLS, RPC, migraciones administradas y diferencias documentados el 19/07/2026.
   - [x] Dump completo `schema.sql` generado y conservado fuera de Git.
 - [x] Respaldo restaurable validado en entorno de prueba.
-- [ ] Migraciones de cada tramo revisadas y ejecutadas primero en ensayo.
+- [x] Migraciones de los Tramos A y B revisadas y ejecutadas primero en ensayo.
 - [x] Conteos y sumas financieras base registrados.
 - [x] Plan de reversión del Tramo A ensayado.
 
-Evidencia actual: `docs/01_arquitectura/auditorias/TRAMO_0_LINEA_BASE_2026-07-19.md`, `docs/01_arquitectura/auditorias/TRAMO_A_ESTRUCTURA_MULTISEDE_2026-07-20.md`, `docs/01_arquitectura/auditorias/TRAMO_B_DISENO_BACKFILL_OPERACIONAL_2026-07-20.md` y `supabase/sql/103–106`. El Tramo A ya fue aplicado y verificado en producción. El Tramo B está diseñado, pero todavía no tiene migración ni autorización de despliegue.
+Evidencia actual: `docs/01_arquitectura/auditorias/TRAMO_0_LINEA_BASE_2026-07-19.md`, `docs/01_arquitectura/auditorias/TRAMO_A_ESTRUCTURA_MULTISEDE_2026-07-20.md`, `docs/01_arquitectura/auditorias/TRAMO_B_DISENO_BACKFILL_OPERACIONAL_2026-07-20.md` y `supabase/sql/103–110`. El Tramo A ya fue aplicado y verificado en producción. El Tramo B fue aplicado, revertido y reaplicado en ensayo, pero todavía no tiene autorización de despliegue productivo.
 
 ### Evidencia parcial completada por el Tramo A
 
@@ -43,9 +43,18 @@ Estas comprobaciones no cierran todavía los criterios globales de los Tramos B�
 - [x] Claves compuestas, índices y controles de coherencia previstos.
 - [x] Invariantes financieras y de inventario fijadas.
 - [x] Pruebas negativas y condiciones de reversión diseñadas.
-- [ ] Migración, auditoría y reversión del Tramo B creadas.
-- [ ] Tramo B aplicado, revertido y reaplicado en ensayo.
+- [x] Migración, auditoría y reversión del Tramo B creadas.
+- [x] Tramo B aplicado, revertido y reaplicado en ensayo.
 - [ ] Tramo B aplicado y verificado en producción.
+
+### Evidencia técnica completada por el Tramo B en ensayo
+
+- [x] Las 139 filas de las 15 tablas objetivo recibieron sede coherente y sin nulos.
+- [x] Los conteos, pagos, comisiones y stock conservaron los valores de la línea base.
+- [x] Claves compuestas y triggers rechazaron cruces de tenant, sede y padres operativos.
+- [x] Las RPC heredadas principales siguieron funcionando y derivaron sede de forma segura.
+- [x] Todas las claves foráneas del esquema público quedaron con índice de apoyo.
+- [x] Flutter mantuvo análisis limpio y sus pruebas automatizadas aprobadas.
 
 ## 3. Aislamiento obligatorio
 
