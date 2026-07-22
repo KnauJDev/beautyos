@@ -1,6 +1,8 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'register_page.dart';
+
 class LoginPage extends StatefulWidget {
   const LoginPage({
     super.key,
@@ -184,13 +186,26 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     const SizedBox(height: 14),
-                    const Text(
-                      'Usa el usuario creado en Supabase Auth.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF8D6E63),
-                      ),
+                    TextButton(
+                      onPressed: isLoading
+                          ? null
+                          : () async {
+                              final registered = await Navigator.of(context)
+                                  .push<bool>(
+                                    MaterialPageRoute(
+                                      builder: (_) => RegisterPage(
+                                        onRegisterSuccess: () {
+                                          Navigator.of(context).pop(true);
+                                        },
+                                      ),
+                                    ),
+                                  );
+
+                              if (registered == true) {
+                                widget.onLoginSuccess();
+                              }
+                            },
+                      child: const Text('¿No tienes cuenta? Crea tu negocio'),
                     ),
                   ],
                 ),

@@ -117,4 +117,45 @@ create table public.branch_memberships (
   constraint branch_memberships_validity_check check (ends_at is null or ends_at > starts_at)
 );
 
+create table public.business_hours (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id),
+  branch_id uuid not null references public.branches(id),
+  day_of_week integer not null check (day_of_week between 1 and 7),
+  opens_at time,
+  closes_at time,
+  is_open boolean not null default true,
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table public.appointment_policies (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id),
+  branch_id uuid not null references public.branches(id),
+  requires_deposit boolean not null default false,
+  deposit_percentage numeric not null default 0,
+  cancellation_hours integer not null default 24,
+  reschedule_hours integer not null default 24,
+  manual_confirmation_required boolean not null default true,
+  customer_reschedule_allowed boolean not null default true,
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table public.commission_policies (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id),
+  commission_type text not null default 'percentage',
+  commission_percentage numeric not null default 40,
+  fixed_commission_amount numeric not null default 0,
+  applies_after_discount boolean not null default true,
+  notes text,
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 commit;

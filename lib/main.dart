@@ -7,6 +7,8 @@ import 'services/branch_context_service.dart';
 import 'services/my_profile_service.dart';
 
 import 'pages/auth_gate.dart';
+import 'pages/authenticated_router.dart';
+import 'pages/complete_tenant_setup_page.dart';
 import 'pages/agenda_page.dart';
 import 'pages/clients_page.dart';
 import 'pages/dashboard_page.dart';
@@ -49,7 +51,9 @@ class BeautyOSApp extends StatelessWidget {
         useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFFF8F5FF),
       ),
-      home: const AuthGate(authenticatedChild: BeautyOSHome()),
+      home: const AuthGate(
+        authenticatedChild: AuthenticatedRouter(businessApp: BeautyOSHome()),
+      ),
     );
   }
 }
@@ -284,7 +288,17 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         final profile = homeContext?.profile;
         final branches = homeContext?.branches ?? const <BranchContext>[];
 
-        if (profile == null || branches.isEmpty) {
+        if (profile == null) {
+          return CompleteTenantSetupPage(
+            onCompleted: () {
+              setState(() {
+                homeContextFuture = _loadHomeContext();
+              });
+            },
+          );
+        }
+
+        if (branches.isEmpty) {
           return Scaffold(
             appBar: AppBar(
               title: const Text('BeautyOS'),
