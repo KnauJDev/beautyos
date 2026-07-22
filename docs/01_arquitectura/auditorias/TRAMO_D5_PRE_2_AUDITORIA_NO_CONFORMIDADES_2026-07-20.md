@@ -69,3 +69,19 @@ de corrección es:
 
 El siguiente micro-paso recomendado es **D3.5.1**, exclusivamente local y sin
 modificar producción.
+
+## 6. Actualización 2026-07-22 — cierre de NC-D-01
+
+No se reescribe el dictamen original (arriba) para preservar la historia.
+Se registra aquí lo que cambió: el propietario confirmó en el panel de
+Supabase (ver `D-042` en `REGISTRO_DE_DECISIONES.md`) que la organización
+`KnauJDev` tiene un único proyecto, `beautyos-dev` (`eogppgbdnwxdtcbctaol`),
+etiquetado por Supabase como rama `main (PRODUCTION)`, en plan Free y sin
+clientes reales todavía. **No existe un segundo proyecto no productivo.**
+NC-D-01 queda cerrada con esa respuesta, no con la creación de un entorno
+nuevo. NC-D-02, NC-D-03 y NC-D-04 ya se cerraron localmente en D3.5.1, D3.5.2
+y D3.5.3. Siguen abiertas NC-D-05 y NC-D-06, y además se agrega una
+condición nueva no prevista en este dictamen original: antes de repetir D4/D5
+contra este proyecto conviene crear un segundo proyecto Supabase dedicado a
+pruebas (hoy no existe ninguno) y subir este proyecto a un plan pago antes de
+aceptar el primer cliente de pago (ver D-042).
