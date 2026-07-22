@@ -45,6 +45,8 @@ Esta carpeta es la fuente oficial viva de la arquitectura, producto y operación
 31. `../supabase/migrations/20260722184914_suscripciones_entitlements_fundacion.sql`
 32. `01_arquitectura/auditorias/REGISTRO_SELF_SERVE_TENANT_2026-07-22.md`
 33. `../supabase/migrations/20260722190130_registro_self_serve_tenant.sql`
+34. `01_arquitectura/auditorias/PANEL_PLATAFORMA_FUNDACION_2026-07-22.md`
+35. `../supabase/migrations/20260722220616_panel_plataforma_fundacion.sql`
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión estructural. No se reescriben para ocultar el pasado: una decisión futura la reemplaza mediante otro ADR.
 
