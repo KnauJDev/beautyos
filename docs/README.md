@@ -36,6 +36,10 @@ Esta carpeta es la fuente oficial viva de la arquitectura, producto y operación
 22. `01_arquitectura/auditorias/TRAMO_C_DISENO_OPERACION_CONSCIENTE_SEDE_2026-07-20.md`
 23. `../supabase/migrations/20260720123813_tramo_c1_contexto_sede_efectiva.sql`
 24. `HANDOFF/HANDOFF_BeautyOS_pasos_1161_1172.md`
+25. `01_arquitectura/auditorias/TRAMO_D5_PRE_2_AUDITORIA_NO_CONFORMIDADES_2026-07-20.md` (no conformidades bloqueantes del Tramo D, incluye NC-D-01 abierta)
+26. `01_arquitectura/auditorias/TRAMO_D3_5_3_AUTORIZACION_MEMBRESIAS_2026-07-22.md`
+27. `../supabase/migrations/20260722175530_tramo_d3_5_3_autorizacion_memberships.sql`
+28. `HANDOFF/HANDOFF_BeautyOS_Tramo_D3_5_3_2026-07-22.md`
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión estructural. No se reescriben para ocultar el pasado: una decisión futura la reemplaza mediante otro ADR.
 
