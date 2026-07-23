@@ -12,6 +12,7 @@ import 'pages/accept_invitation_page.dart';
 import 'pages/auth_gate.dart';
 import 'pages/authenticated_router.dart';
 import 'pages/complete_tenant_setup_page.dart';
+import 'pages/public_booking_page.dart';
 import 'pages/agenda_page.dart';
 import 'pages/clients_page.dart';
 import 'pages/dashboard_page.dart';
@@ -46,6 +47,11 @@ class BeautyOSApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Reserva publica (D-005): enlace sin sesion, ej. "?reservar=<branch_id>".
+    // Se resuelve antes de AuthGate a proposito: un cliente anonimo nunca
+    // debe pasar por la pantalla de login para reservar.
+    final publicBranchId = Uri.base.queryParameters['reservar'];
+
     return MaterialApp(
       title: 'BeautyOS',
       debugShowCheckedModeBanner: false,
@@ -54,9 +60,13 @@ class BeautyOSApp extends StatelessWidget {
         useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFFF8F5FF),
       ),
-      home: const AuthGate(
-        authenticatedChild: AuthenticatedRouter(businessApp: BeautyOSHome()),
-      ),
+      home: publicBranchId != null && publicBranchId.trim().isNotEmpty
+          ? PublicBookingPage(branchId: publicBranchId.trim())
+          : const AuthGate(
+              authenticatedChild: AuthenticatedRouter(
+                businessApp: BeautyOSHome(),
+              ),
+            ),
     );
   }
 }

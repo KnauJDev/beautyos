@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/appointment_policy.dart';
@@ -154,6 +155,9 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
           },
         ),
         const SizedBox(height: 16),
+        const SectionTitle('Reserva pública'),
+        PublicBookingLinkCard(branchId: widget.branchId),
+        const SizedBox(height: 16),
         const SectionTitle('Horarios de atención'),
         FutureBuilder<List<BusinessHour>>(
           future: businessHoursFuture,
@@ -298,6 +302,71 @@ class BusinessSettingsCard extends StatelessWidget {
             _SettingsLine(label: 'WhatsApp', value: settings.whatsapp),
             _SettingsLine(label: 'Instagram', value: settings.instagram),
             _SettingsLine(label: 'Facebook', value: settings.facebook),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class PublicBookingLinkCard extends StatelessWidget {
+  const PublicBookingLinkCard({super.key, required this.branchId});
+
+  final String branchId;
+
+  String get _link => '${Uri.base.origin}/?reservar=$branchId';
+
+  Future<void> _copyLink(BuildContext context) async {
+    await Clipboard.setData(ClipboardData(text: _link));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Enlace copiado.')));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Comparte este enlace por WhatsApp, redes o un código QR '
+              'generado a partir de él. Tus clientes reservan sin crear '
+              'cuenta ni contraseña; la reserva queda pendiente de tu '
+              'confirmación.',
+              style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FAFB),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _link,
+                      style: const TextStyle(fontSize: 14),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Copiar enlace',
+                    icon: const Icon(Icons.copy_outlined),
+                    onPressed: () => _copyLink(context),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

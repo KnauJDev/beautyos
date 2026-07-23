@@ -59,7 +59,9 @@ Esta carpeta es la fuente oficial viva de la arquitectura, producto y operación
 45. `../supabase/migrations/20260723175921_editar_y_desactivar_catalogo.sql`
 46. `01_arquitectura/auditorias/EDITAR_HORARIO_Y_POLITICAS_2026-07-23.md`
 47. `../supabase/migrations/20260723185020_editar_horario_y_politicas.sql`
-48. `00_producto/PROMPT_MAESTRO_IA.md` (prompt para arrancar cualquier chat nuevo de IA en este proyecto)
+48. `01_arquitectura/auditorias/RESERVA_PUBLICA_CLIENTE_2026-07-23.md`
+49. `../supabase/migrations/20260723200000_reserva_publica_cliente.sql`
+50. `00_producto/PROMPT_MAESTRO_IA.md` (prompt para arrancar cualquier chat nuevo de IA en este proyecto)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión estructural. No se reescriben para ocultar el pasado: una decisión futura la reemplaza mediante otro ADR.
 
