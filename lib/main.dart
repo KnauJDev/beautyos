@@ -3,9 +3,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'models/my_profile.dart';
 import 'models/branch_context.dart';
+import 'models/pending_invitation.dart';
 import 'services/branch_context_service.dart';
 import 'services/my_profile_service.dart';
+import 'services/team_invitations_service.dart';
 
+import 'pages/accept_invitation_page.dart';
 import 'pages/auth_gate.dart';
 import 'pages/authenticated_router.dart';
 import 'pages/complete_tenant_setup_page.dart';
@@ -71,6 +74,8 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
   final MyProfileService myProfileService = const MyProfileService();
   final BranchContextService branchContextService =
       const BranchContextService();
+  final TeamInvitationsService teamInvitationsService =
+      const TeamInvitationsService();
 
   late Future<_HomeContextData> homeContextFuture;
   BranchContext? selectedBranch;
@@ -85,7 +90,13 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
     final profile = await myProfileService.getMyProfile();
 
     if (profile == null) {
-      return const _HomeContextData(profile: null, branches: []);
+      final pendingInvitation = await teamInvitationsService
+          .getMyPendingInvitation();
+      return _HomeContextData(
+        profile: null,
+        branches: const [],
+        pendingInvitation: pendingInvitation,
+      );
     }
 
     final branches = await branchContextService.getAccessibleBranches();
@@ -160,10 +171,16 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         ),
         allowedRoles: const <String>{'owner', 'admin'},
       ),
-      const BeautyModule(
-        section: BeautySection('Usuarios', Icons.manage_accounts_outlined),
-        page: UsuariosPage(),
-        allowedRoles: <String>{'owner'},
+      BeautyModule(
+        section: const BeautySection(
+          'Usuarios',
+          Icons.manage_accounts_outlined,
+        ),
+        page: UsuariosPage(
+          key: ValueKey('users-${branch.branchId}'),
+          branchId: branch.branchId,
+        ),
+        allowedRoles: const <String>{'owner'},
       ),
       const BeautyModule(
         section: BeautySection('Clientes', Icons.people_outline),
@@ -295,6 +312,19 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         final branches = homeContext?.branches ?? const <BranchContext>[];
 
         if (profile == null) {
+          final pendingInvitation = homeContext?.pendingInvitation;
+
+          if (pendingInvitation != null) {
+            return AcceptInvitationPage(
+              invitation: pendingInvitation,
+              onAccepted: () {
+                setState(() {
+                  homeContextFuture = _loadHomeContext();
+                });
+              },
+            );
+          }
+
           return CompleteTenantSetupPage(
             onCompleted: () {
               setState(() {
@@ -550,10 +580,15 @@ class _BranchSelector extends StatelessWidget {
 }
 
 class _HomeContextData {
-  const _HomeContextData({required this.profile, required this.branches});
+  const _HomeContextData({
+    required this.profile,
+    required this.branches,
+    this.pendingInvitation,
+  });
 
   final MyProfile? profile;
   final List<BranchContext> branches;
+  final PendingInvitation? pendingInvitation;
 }
 
 class _SideMenu extends StatelessWidget {

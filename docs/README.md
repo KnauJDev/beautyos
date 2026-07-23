@@ -53,6 +53,8 @@ Esta carpeta es la fuente oficial viva de la arquitectura, producto y operación
 39. `../supabase/migrations/20260723152713_crear_servicio_y_estilista.sql`
 40. `01_arquitectura/auditorias/SINCRONIZAR_BRANCH_STYLIST_SERVICES_2026-07-23.md`
 41. `../supabase/migrations/20260723163835_sincronizar_branch_stylist_services.sql`
+42. `01_arquitectura/auditorias/INVITAR_USUARIOS_DEL_NEGOCIO_2026-07-23.md`
+43. `../supabase/migrations/20260723173701_invitar_usuarios_del_negocio.sql`
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión estructural. No se reescriben para ocultar el pasado: una decisión futura la reemplaza mediante otro ADR.
 

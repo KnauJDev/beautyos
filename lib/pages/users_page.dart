@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/stylist_summary.dart';
+import '../models/team_invitation.dart';
 import '../models/tenant_user.dart';
+import '../services/stylists_service.dart';
+import '../services/team_invitations_service.dart';
 import '../services/tenant_users_service.dart';
 import '../widgets/app_widgets.dart';
 
 class UsuariosPage extends StatefulWidget {
-  const UsuariosPage({super.key});
+  const UsuariosPage({super.key, required this.branchId});
+
+  final String branchId;
 
   @override
   State<UsuariosPage> createState() => _UsuariosPageState();
@@ -13,17 +20,28 @@ class UsuariosPage extends StatefulWidget {
 
 class _UsuariosPageState extends State<UsuariosPage> {
   final TenantUsersService _usersService = const TenantUsersService();
+  final TeamInvitationsService _invitationsService =
+      const TeamInvitationsService();
+  final StylistsService _stylistsService = const StylistsService();
+
   late Future<List<TenantUser>> _usersFuture;
+  late Future<List<TeamInvitation>> _invitationsFuture;
 
   @override
   void initState() {
     super.initState();
     _usersFuture = _usersService.getTenantUsers();
+    _invitationsFuture = _invitationsService.listInvitations(
+      widget.branchId,
+    );
   }
 
   void _refresh() {
     setState(() {
       _usersFuture = _usersService.getTenantUsers();
+      _invitationsFuture = _invitationsService.listInvitations(
+        widget.branchId,
+      );
     });
   }
 
@@ -42,6 +60,47 @@ class _UsuariosPageState extends State<UsuariosPage> {
     );
   }
 
+  Future<void> _openInviteDialog() async {
+    final stylists = await _stylistsService.getStylistsSummary();
+    if (!mounted) return;
+
+    final invited = await showDialog<bool>(
+      context: context,
+      builder: (context) => _InviteUserDialog(
+        branchId: widget.branchId,
+        stylists: stylists,
+        invitationsService: _invitationsService,
+      ),
+    );
+
+    if (invited == true) {
+      _refresh();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Invitación creada. Avísale a la persona que se registre en '
+            'BeautyOS con ese mismo correo para unirse automáticamente.',
+          ),
+          duration: Duration(seconds: 6),
+        ),
+      );
+    }
+  }
+
+  Future<void> _cancelInvitation(TeamInvitation invitation) async {
+    try {
+      await _invitationsService.cancelInvitation(invitation.id);
+      _refresh();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo cancelar: $error')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppPage(
@@ -55,12 +114,59 @@ class _UsuariosPageState extends State<UsuariosPage> {
               'Solo el propietario puede activar, desactivar o cambiar el rol de cuentas existentes. Las contraseñas no se muestran ni se modifican aquí.',
         ),
         const SizedBox(height: 16),
-        OutlinedButton.icon(
-          onPressed: _refresh,
-          icon: const Icon(Icons.refresh_outlined),
-          label: const Text('Actualizar usuarios'),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            FilledButton.icon(
+              onPressed: _openInviteDialog,
+              icon: const Icon(Icons.person_add_alt_outlined),
+              label: const Text('Invitar usuario'),
+            ),
+            OutlinedButton.icon(
+              onPressed: _refresh,
+              icon: const Icon(Icons.refresh_outlined),
+              label: const Text('Actualizar'),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
+        FutureBuilder<List<TeamInvitation>>(
+          future: _invitationsFuture,
+          builder: (context, snapshot) {
+            final invitations = (snapshot.data ?? const <TeamInvitation>[])
+                .where((invitation) => invitation.status == 'pending')
+                .toList();
+
+            if (invitations.isEmpty) {
+              return const SizedBox.shrink();
+            }
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: Card(
+                elevation: 1,
+                color: Colors.white,
+                child: Padding(
+                  padding: const EdgeInsets.all(22),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SectionTitle('Invitaciones pendientes'),
+                      const SizedBox(height: 12),
+                      ...invitations.map(
+                        (invitation) => _InvitationRow(
+                          invitation: invitation,
+                          onCancel: () => _cancelInvitation(invitation),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
         FutureBuilder<List<TenantUser>>(
           future: _usersFuture,
           builder: (context, snapshot) {
@@ -93,6 +199,206 @@ class _UsuariosPageState extends State<UsuariosPage> {
 
             return _UsersContent(users: users, onManage: _manageUser);
           },
+        ),
+      ],
+    );
+  }
+}
+
+class _InvitationRow extends StatelessWidget {
+  const _InvitationRow({required this.invitation, required this.onCancel});
+
+  final TeamInvitation invitation;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          const Icon(Icons.mail_outline, size: 20, color: Color(0xFF7C3AED)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  invitation.email,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                Text(
+                  invitation.stylistName != null
+                      ? '${invitation.roleText} · ${invitation.stylistName}'
+                      : invitation.roleText,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton(onPressed: onCancel, child: const Text('Cancelar')),
+        ],
+      ),
+    );
+  }
+}
+
+class _InviteUserDialog extends StatefulWidget {
+  const _InviteUserDialog({
+    required this.branchId,
+    required this.stylists,
+    required this.invitationsService,
+  });
+
+  final String branchId;
+  final List<StylistSummary> stylists;
+  final TeamInvitationsService invitationsService;
+
+  @override
+  State<_InviteUserDialog> createState() => _InviteUserDialogState();
+}
+
+class _InviteUserDialogState extends State<_InviteUserDialog> {
+  final emailController = TextEditingController();
+  String role = 'assistant';
+  String? stylistId;
+  bool isSaving = false;
+  String? errorMessage;
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    super.dispose();
+  }
+
+  Future<void> save() async {
+    final email = emailController.text.trim();
+
+    if (email.isEmpty) {
+      setState(() => errorMessage = 'El correo es obligatorio.');
+      return;
+    }
+    if (role == 'stylist' && stylistId == null) {
+      setState(
+        () => errorMessage = 'Selecciona a qué estilista corresponde.',
+      );
+      return;
+    }
+
+    setState(() {
+      isSaving = true;
+      errorMessage = null;
+    });
+
+    try {
+      await widget.invitationsService.createInvitation(
+        branchId: widget.branchId,
+        email: email,
+        role: role,
+        stylistId: role == 'stylist' ? stylistId : null,
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } on PostgrestException catch (error) {
+      setState(() => errorMessage = error.message);
+    } catch (error) {
+      setState(() => errorMessage = 'Ocurrió un error inesperado: $error');
+    } finally {
+      if (mounted) {
+        setState(() => isSaving = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Invitar usuario'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(labelText: 'Correo'),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              initialValue: role,
+              decoration: const InputDecoration(labelText: 'Rol'),
+              items: const [
+                DropdownMenuItem(value: 'assistant', child: Text('Asistente')),
+                DropdownMenuItem(
+                  value: 'admin',
+                  child: Text('Administrador'),
+                ),
+                DropdownMenuItem(value: 'stylist', child: Text('Estilista')),
+              ],
+              onChanged: isSaving
+                  ? null
+                  : (value) {
+                      if (value != null) {
+                        setState(() {
+                          role = value;
+                          if (role != 'stylist') stylistId = null;
+                        });
+                      }
+                    },
+            ),
+            if (role == 'stylist') ...[
+              const SizedBox(height: 12),
+              if (widget.stylists.isEmpty)
+                const Text(
+                  'No hay estilistas en el catálogo todavía. Créalo primero '
+                  'en "Estilistas".',
+                  style: TextStyle(color: Color(0xFFB45309)),
+                )
+              else
+                DropdownButtonFormField<String>(
+                  initialValue: stylistId,
+                  decoration: const InputDecoration(
+                    labelText: 'Estilista del catálogo',
+                  ),
+                  items: widget.stylists
+                      .map(
+                        (stylist) => DropdownMenuItem(
+                          value: stylist.id,
+                          child: Text(stylist.name),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: isSaving
+                      ? null
+                      : (value) => setState(() => stylistId = value),
+                ),
+            ],
+            if (errorMessage != null) ...[
+              const SizedBox(height: 12),
+              Text(errorMessage!, style: const TextStyle(color: Colors.red)),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: isSaving ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: isSaving ? null : save,
+          child: isSaving
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Enviar invitación'),
         ),
       ],
     );
