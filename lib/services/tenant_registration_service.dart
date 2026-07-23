@@ -41,7 +41,25 @@ class TenantRegistrationService {
       },
     );
 
-    final row = (response as List).first;
-    return TenantRegistrationResult.fromMap(Map<String, dynamic>.from(row));
+    // register_tenant() es "returns table" de una sola fila; se acepta
+    // tanto una lista (forma habitual de un RPC de conjunto) como un mapa
+    // suelto, para no depender de una unica forma de respuesta sin
+    // evidencia directa de cual entrega el cliente en este caso.
+    final Map<String, dynamic> row;
+    if (response is List) {
+      if (response.isEmpty) {
+        throw StateError(
+          'register_tenant no devolvió ninguna fila (el negocio pudo '
+          'haberse creado igual; revisa tu perfil antes de reintentar).',
+        );
+      }
+      row = Map<String, dynamic>.from(response.first as Map);
+    } else if (response is Map) {
+      row = Map<String, dynamic>.from(response);
+    } else {
+      throw StateError('Respuesta inesperada de register_tenant: $response');
+    }
+
+    return TenantRegistrationResult.fromMap(row);
   }
 }
