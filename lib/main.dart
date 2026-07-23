@@ -138,10 +138,13 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         ),
         allowedRoles: const <String>{'owner', 'admin'},
       ),
-      const BeautyModule(
-        section: BeautySection('Servicios', Icons.content_cut_outlined),
-        page: ServiciosPage(),
-        allowedRoles: <String>{
+      BeautyModule(
+        section: const BeautySection('Servicios', Icons.content_cut_outlined),
+        page: ServiciosPage(
+          key: ValueKey('services-${branch.branchId}'),
+          branchId: branch.branchId,
+        ),
+        allowedRoles: const <String>{
           'owner',
           'admin',
           'stylist',
@@ -149,10 +152,13 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           'client',
         },
       ),
-      const BeautyModule(
-        section: BeautySection('Estilistas', Icons.badge_outlined),
-        page: EstilistasPage(),
-        allowedRoles: <String>{'owner', 'admin'},
+      BeautyModule(
+        section: const BeautySection('Estilistas', Icons.badge_outlined),
+        page: EstilistasPage(
+          key: ValueKey('stylists-${branch.branchId}'),
+          branchId: branch.branchId,
+        ),
+        allowedRoles: const <String>{'owner', 'admin'},
       ),
       const BeautyModule(
         section: BeautySection('Usuarios', Icons.manage_accounts_outlined),

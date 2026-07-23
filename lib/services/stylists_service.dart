@@ -13,4 +13,21 @@ class StylistsService {
         .map<StylistSummary>((item) => StylistSummary.fromMap(item))
         .toList();
   }
+
+  Future<void> createStylist({
+    required String branchId,
+    required String name,
+    String? phone,
+    String? specialty,
+  }) async {
+    await Supabase.instance.client.rpc(
+      'create_stylist',
+      params: {
+        'p_branch_id': branchId,
+        'p_name': name,
+        'p_phone': phone,
+        'p_specialty': specialty,
+      },
+    );
+  }
 }

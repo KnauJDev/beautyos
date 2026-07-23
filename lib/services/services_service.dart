@@ -17,4 +17,25 @@ class ServicesService {
         .map<BeautyService>((item) => BeautyService.fromMap(item))
         .toList();
   }
+
+  Future<void> createService({
+    required String branchId,
+    required String name,
+    required String category,
+    required int durationMinutes,
+    required num price,
+    bool visibleToCustomer = true,
+  }) async {
+    await Supabase.instance.client.rpc(
+      'create_service',
+      params: {
+        'p_branch_id': branchId,
+        'p_name': name,
+        'p_category': category,
+        'p_duration_minutes': durationMinutes,
+        'p_price': price,
+        'p_visible_to_customer': visibleToCustomer,
+      },
+    );
+  }
 }

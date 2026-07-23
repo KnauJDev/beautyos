@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/stylist_service_option.dart';
 import '../models/stylist_service_summary.dart';
@@ -8,7 +9,9 @@ import '../services/stylists_service.dart';
 import '../widgets/app_widgets.dart';
 
 class EstilistasPage extends StatefulWidget {
-  const EstilistasPage({super.key});
+  const EstilistasPage({super.key, required this.branchId});
+
+  final String branchId;
 
   @override
   State<EstilistasPage> createState() => _EstilistasPageState();
@@ -43,6 +46,20 @@ class _EstilistasPageState extends State<EstilistasPage> {
       pageDataFuture = _loadPageData();
     });
     await pageDataFuture;
+  }
+
+  Future<void> _openCreateStylistDialog() async {
+    final created = await showDialog<bool>(
+      context: context,
+      builder: (_) => _CreateStylistDialog(
+        branchId: widget.branchId,
+        stylistsService: stylistsService,
+      ),
+    );
+
+    if (created == true) {
+      await _refreshPage();
+    }
   }
 
   Future<void> _manageStylistServices(StylistSummary stylist) async {
@@ -97,6 +114,15 @@ class _EstilistasPageState extends State<EstilistasPage> {
               'Consulta el equipo y administra de forma segura los servicios que puede realizar cada estilista.',
         ),
         const SizedBox(height: 16),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: FilledButton.icon(
+            onPressed: _openCreateStylistDialog,
+            icon: const Icon(Icons.add_outlined),
+            label: const Text('Agregar estilista'),
+          ),
+        ),
+        const SizedBox(height: 16),
         FutureBuilder<_StylistsPageData>(
           future: pageDataFuture,
           builder: (context, snapshot) {
@@ -134,7 +160,7 @@ class _EstilistasPageState extends State<EstilistasPage> {
                 icon: Icons.info_outline,
                 title: 'Sin estilistas disponibles',
                 description:
-                    'No hay estilistas activos para mostrar en este momento.',
+                    'No hay estilistas activos para mostrar en este momento. Usa "Agregar estilista" para crear el primero.',
               );
             }
 
@@ -408,6 +434,122 @@ class _ManageStylistServicesDialogState
                 ).pop(selectedServiceIds.toList(growable: false)),
           icon: const Icon(Icons.save_outlined),
           label: const Text('Guardar servicios'),
+        ),
+      ],
+    );
+  }
+}
+
+class _CreateStylistDialog extends StatefulWidget {
+  const _CreateStylistDialog({
+    required this.branchId,
+    required this.stylistsService,
+  });
+
+  final String branchId;
+  final StylistsService stylistsService;
+
+  @override
+  State<_CreateStylistDialog> createState() => _CreateStylistDialogState();
+}
+
+class _CreateStylistDialogState extends State<_CreateStylistDialog> {
+  final nameController = TextEditingController();
+  final phoneController = TextEditingController();
+  final specialtyController = TextEditingController();
+  bool isSaving = false;
+  String? errorMessage;
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    phoneController.dispose();
+    specialtyController.dispose();
+    super.dispose();
+  }
+
+  Future<void> save() async {
+    final name = nameController.text.trim();
+
+    if (name.isEmpty) {
+      setState(() => errorMessage = 'El nombre es obligatorio.');
+      return;
+    }
+
+    setState(() {
+      isSaving = true;
+      errorMessage = null;
+    });
+
+    try {
+      await widget.stylistsService.createStylist(
+        branchId: widget.branchId,
+        name: name,
+        phone: phoneController.text.trim().isEmpty
+            ? null
+            : phoneController.text.trim(),
+        specialty: specialtyController.text.trim().isEmpty
+            ? null
+            : specialtyController.text.trim(),
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } on PostgrestException catch (error) {
+      setState(() => errorMessage = error.message);
+    } catch (error) {
+      setState(() => errorMessage = 'Ocurrió un error inesperado: $error');
+    } finally {
+      if (mounted) {
+        setState(() => isSaving = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Agregar estilista'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: 'Nombre'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(labelText: 'Teléfono'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: specialtyController,
+              decoration: const InputDecoration(labelText: 'Especialidad'),
+            ),
+            if (errorMessage != null) ...[
+              const SizedBox(height: 8),
+              Text(errorMessage!, style: const TextStyle(color: Colors.red)),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: isSaving ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: isSaving ? null : save,
+          child: isSaving
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Guardar'),
         ),
       ],
     );

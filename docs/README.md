@@ -49,6 +49,8 @@ Esta carpeta es la fuente oficial viva de la arquitectura, producto y operación
 35. `../supabase/migrations/20260722220616_panel_plataforma_fundacion.sql`
 36. `01_arquitectura/auditorias/FLUTTER_REGISTRO_Y_PANEL_PLATAFORMA_2026-07-22.md`
 37. `../supabase/migrations/20260722232511_registro_self_serve_datos_base.sql`
+38. `01_arquitectura/auditorias/CREAR_SERVICIOS_Y_ESTILISTAS_2026-07-23.md`
+39. `../supabase/migrations/20260723152713_crear_servicio_y_estilista.sql`
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión estructural. No se reescriben para ocultar el pasado: una decisión futura la reemplaza mediante otro ADR.
 
