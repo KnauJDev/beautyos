@@ -99,22 +99,56 @@ conceptos básicos de Flutter/SQL salvo que se pida explícitamente.
 ## 6. Plantilla para pedir cada bloque
 
 Antes de pedir código, completa esto (entre más completo, menos tokens se
-gastan en preguntas de ida y vuelta):
+gastan en preguntas de ida y vuelta). Ya viene rellenada con el siguiente
+bloque acordado (inventario/compras/gastos editables) — verificado contra
+el esquema real el 2026-07-23; revísalo igual antes de escribir código por
+si algo cambió:
 
 ```
 CONTEXTO
-- Módulo/pantalla: [nombre]
-- Archivo(s) real(es) involucrado(s): [pega el contenido actual o la ruta exacta]
-- Tabla(s)/RPC involucradas: [nombres exactos, o "no sé, revísalo primero"]
+- Módulo/pantalla: Inventario, Compras y Gastos.
+  Páginas: lib/pages/inventory_page.dart, lib/pages/purchases_page.dart,
+  lib/pages/expenses_page.dart.
+- Archivo(s) real(es) involucrado(s):
+  - lib/services/products_service.dart, lib/models/product_summary.dart
+  - lib/services/inventory_movements_service.dart,
+    lib/models/inventory_movement_summary.dart
+  - lib/services/purchases_service.dart, lib/models/purchase_summary.dart
+  - lib/services/purchase_items_service.dart,
+    lib/models/purchase_item_summary.dart
+  - lib/services/expenses_service.dart, lib/models/expense_summary.dart
+- Tabla(s)/RPC involucradas: hoy las tres pantallas son de solo lectura,
+  vía get_products_summary_v2, get_inventory_movements_summary_v2,
+  get_purchases_summary_v2, get_purchase_items_summary_v2 y
+  get_expenses_summary_v2. No existe ninguna RPC de escritura
+  (crear/editar/desactivar) para products, branch_products, purchases,
+  purchase_items, expenses ni inventory_movements. Tablas reales
+  confirmadas (todas con tenant_id y branch_id): products, branch_products,
+  purchases, purchase_items, expenses, inventory_movements.
 
 TAREA
-- [una sola cosa concreta, no una lista de 5 cosas]
+- Dar de alta lo mínimo para que este módulo quede editable, con el mismo
+  patrón ya usado en servicios/estilistas (crear + editar + desactivar, sin
+  borrado físico). Dividir en sub-bloques y confirmar antes de cada uno:
+  (1) productos, (2) compras + sus items + el movimiento de inventario que
+  generan, (3) gastos.
 
 RESTRICCIONES
-- [ej. "no cambies el modelo X", "debe funcionar igual para multi-sede"]
+- `products` es catálogo del tenant; `branch_products` es la fila
+  operativa de sede (stock, costo promedio, precio de venta). Toda
+  escritura debe sincronizar ambas tablas — ya hubo un bug real por
+  olvidar este mismo patrón con servicios/estilistas (ver D-049,
+  `SINCRONIZAR_BRANCH_STYLIST_SERVICES_2026-07-23.md`).
+- No borrado físico, solo `active = false` (coherente con el resto del
+  proyecto: servicios, estilistas, etc.).
+- RPC `SECURITY DEFINER`, autorización por rol y sede con el mismo patrón
+  ya usado (`beautyos_resolve_branch_access` o equivalente).
+- Antes de tocar el modelo, revisar si `branch_products.sale_price` ya se
+  consume desde tickets/ventas en algún punto del código actual.
 
 FORMATO ESPERADO
-- [ej. "solo el RPC SQL", "RPC + servicio Dart + UI", "solo un plan, sin código todavía"]
+- Empezar por un plan (sin código todavía), dividido en los tres
+  sub-bloques de arriba, con una recomendación de por cuál empezar.
 ```
 
 ## 7. Ejemplo de arranque de chat nuevo
