@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../models/beauty_service.dart';
+import '../models/service_management_item.dart';
 import '../services/services_service.dart';
 import '../widgets/app_widgets.dart';
 
@@ -16,31 +16,63 @@ class ServiciosPage extends StatefulWidget {
 
 class _ServiciosPageState extends State<ServiciosPage> {
   final ServicesService servicesService = const ServicesService();
-  late Future<List<BeautyService>> servicesFuture;
+  late Future<List<ServiceManagementItem>> servicesFuture;
 
   @override
   void initState() {
     super.initState();
-    servicesFuture = servicesService.getActiveVisibleServices();
+    servicesFuture = servicesService.getServicesForManagement(
+      widget.branchId,
+    );
   }
 
   void reload() {
     setState(() {
-      servicesFuture = servicesService.getActiveVisibleServices();
+      servicesFuture = servicesService.getServicesForManagement(
+        widget.branchId,
+      );
     });
   }
 
   Future<void> openCreateServiceDialog() async {
-    final created = await showDialog<bool>(
+    final saved = await showDialog<bool>(
       context: context,
-      builder: (_) => _CreateServiceDialog(
+      builder: (_) => _ServiceFormDialog(
         branchId: widget.branchId,
         servicesService: servicesService,
+        existing: null,
       ),
     );
 
-    if (created == true) {
+    if (saved == true) reload();
+  }
+
+  Future<void> openEditServiceDialog(ServiceManagementItem service) async {
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => _ServiceFormDialog(
+        branchId: widget.branchId,
+        servicesService: servicesService,
+        existing: service,
+      ),
+    );
+
+    if (saved == true) reload();
+  }
+
+  Future<void> toggleActive(ServiceManagementItem service) async {
+    try {
+      await servicesService.setServiceActive(
+        branchId: widget.branchId,
+        serviceId: service.id,
+        active: !service.active,
+      );
       reload();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('No se pudo actualizar: $error')));
     }
   }
 
@@ -54,7 +86,7 @@ class _ServiciosPageState extends State<ServiciosPage> {
           icon: Icons.cloud_done_outlined,
           title: 'Conexión activa con Supabase',
           description:
-              'Este módulo ya consulta la tabla services y muestra los servicios activos y visibles para el cliente.',
+              'Crea, edita o desactiva los servicios de tu negocio. Los inactivos desaparecen de la agenda pero quedan aquí para reactivarlos.',
         ),
         const SizedBox(height: 16),
         Align(
@@ -66,7 +98,7 @@ class _ServiciosPageState extends State<ServiciosPage> {
           ),
         ),
         const SizedBox(height: 16),
-        FutureBuilder<List<BeautyService>>(
+        FutureBuilder<List<ServiceManagementItem>>(
           future: servicesFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
@@ -101,7 +133,7 @@ class _ServiciosPageState extends State<ServiciosPage> {
                 icon: Icons.info_outline,
                 title: 'Sin servicios disponibles',
                 description:
-                    'No hay servicios activos y visibles para mostrar en este momento. Usa "Agregar servicio" para crear el primero.',
+                    'No hay servicios para mostrar. Usa "Agregar servicio" para crear el primero.',
               );
             }
 
@@ -115,7 +147,13 @@ class _ServiciosPageState extends State<ServiciosPage> {
                   children: [
                     const SectionTitle('Servicios desde Supabase'),
                     const SizedBox(height: 14),
-                    ...services.map((service) => ServiceRow(service: service)),
+                    ...services.map(
+                      (service) => ServiceRow(
+                        service: service,
+                        onEdit: () => openEditServiceDialog(service),
+                        onToggleActive: () => toggleActive(service),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -127,27 +165,39 @@ class _ServiciosPageState extends State<ServiciosPage> {
   }
 }
 
-class _CreateServiceDialog extends StatefulWidget {
-  const _CreateServiceDialog({
+class _ServiceFormDialog extends StatefulWidget {
+  const _ServiceFormDialog({
     required this.branchId,
     required this.servicesService,
+    required this.existing,
   });
 
   final String branchId;
   final ServicesService servicesService;
+  final ServiceManagementItem? existing;
 
   @override
-  State<_CreateServiceDialog> createState() => _CreateServiceDialogState();
+  State<_ServiceFormDialog> createState() => _ServiceFormDialogState();
 }
 
-class _CreateServiceDialogState extends State<_CreateServiceDialog> {
-  final nameController = TextEditingController();
-  final categoryController = TextEditingController();
-  final durationController = TextEditingController(text: '30');
-  final priceController = TextEditingController();
-  bool visibleToCustomer = true;
+class _ServiceFormDialogState extends State<_ServiceFormDialog> {
+  late final nameController = TextEditingController(
+    text: widget.existing?.name ?? '',
+  );
+  late final categoryController = TextEditingController(
+    text: widget.existing?.category ?? '',
+  );
+  late final durationController = TextEditingController(
+    text: (widget.existing?.durationMinutes ?? 30).toString(),
+  );
+  late final priceController = TextEditingController(
+    text: widget.existing?.price.toString() ?? '',
+  );
+  late bool visibleToCustomer = widget.existing?.visibleToCustomer ?? true;
   bool isSaving = false;
   String? errorMessage;
+
+  bool get isEditing => widget.existing != null;
 
   @override
   void dispose() {
@@ -185,14 +235,26 @@ class _CreateServiceDialogState extends State<_CreateServiceDialog> {
     });
 
     try {
-      await widget.servicesService.createService(
-        branchId: widget.branchId,
-        name: name,
-        category: category,
-        durationMinutes: duration,
-        price: price,
-        visibleToCustomer: visibleToCustomer,
-      );
+      if (isEditing) {
+        await widget.servicesService.updateService(
+          branchId: widget.branchId,
+          serviceId: widget.existing!.id,
+          name: name,
+          category: category,
+          durationMinutes: duration,
+          price: price,
+          visibleToCustomer: visibleToCustomer,
+        );
+      } else {
+        await widget.servicesService.createService(
+          branchId: widget.branchId,
+          name: name,
+          category: category,
+          durationMinutes: duration,
+          price: price,
+          visibleToCustomer: visibleToCustomer,
+        );
+      }
 
       if (!mounted) return;
       Navigator.of(context).pop(true);
@@ -210,7 +272,7 @@ class _CreateServiceDialogState extends State<_CreateServiceDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Agregar servicio'),
+      title: Text(isEditing ? 'Editar servicio' : 'Agregar servicio'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -273,9 +335,16 @@ class _CreateServiceDialogState extends State<_CreateServiceDialog> {
 }
 
 class ServiceRow extends StatelessWidget {
-  final BeautyService service;
+  final ServiceManagementItem service;
+  final VoidCallback onEdit;
+  final VoidCallback onToggleActive;
 
-  const ServiceRow({super.key, required this.service});
+  const ServiceRow({
+    super.key,
+    required this.service,
+    required this.onEdit,
+    required this.onToggleActive,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -284,10 +353,12 @@ class ServiceRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
-            Icons.check_circle_outline,
+          Icon(
+            service.active ? Icons.check_circle_outline : Icons.pause_circle_outline,
             size: 22,
-            color: Color(0xFF7C3AED),
+            color: service.active
+                ? const Color(0xFF7C3AED)
+                : const Color(0xFF9CA3AF),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -296,21 +367,41 @@ class ServiceRow extends StatelessWidget {
               children: [
                 Text(
                   service.name,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF2D1B69),
+                    color: service.active
+                        ? const Color(0xFF2D1B69)
+                        : const Color(0xFF9CA3AF),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${service.category} · ${service.durationMinutes} min · ${service.formattedPrice}',
+                  '${service.category} · ${service.durationMinutes} min · ${service.formattedPrice}'
+                  '${service.active ? '' : ' · inactivo'}',
                   style: const TextStyle(
                     fontSize: 15,
                     color: Color(0xFF6B7280),
                   ),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            tooltip: 'Editar',
+            onPressed: onEdit,
+            icon: const Icon(Icons.edit_outlined, size: 20),
+          ),
+          IconButton(
+            tooltip: service.active ? 'Desactivar' : 'Reactivar',
+            onPressed: onToggleActive,
+            icon: Icon(
+              service.active
+                  ? Icons.pause_circle_outline
+                  : Icons.play_circle_outline,
+              size: 20,
+              color: service.active ? const Color(0xFFB91C1C) : const Color(0xFF2E7D32),
             ),
           ),
         ],

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/stylist_management_item.dart';
 import '../models/stylist_service_option.dart';
 import '../models/stylist_service_summary.dart';
-import '../models/stylist_summary.dart';
 import '../services/stylist_services_service.dart';
 import '../services/stylists_service.dart';
 import '../widgets/app_widgets.dart';
@@ -31,7 +31,9 @@ class _EstilistasPageState extends State<EstilistasPage> {
   }
 
   Future<_StylistsPageData> _loadPageData() async {
-    final stylists = await stylistsService.getStylistsSummary();
+    final stylists = await stylistsService.getStylistsForManagement(
+      widget.branchId,
+    );
     final stylistServices = await stylistServicesService
         .getStylistServicesSummary();
 
@@ -49,20 +51,52 @@ class _EstilistasPageState extends State<EstilistasPage> {
   }
 
   Future<void> _openCreateStylistDialog() async {
-    final created = await showDialog<bool>(
+    final saved = await showDialog<bool>(
       context: context,
-      builder: (_) => _CreateStylistDialog(
+      builder: (_) => _StylistFormDialog(
         branchId: widget.branchId,
         stylistsService: stylistsService,
+        existing: null,
       ),
     );
 
-    if (created == true) {
+    if (saved == true) {
       await _refreshPage();
     }
   }
 
-  Future<void> _manageStylistServices(StylistSummary stylist) async {
+  Future<void> _openEditStylistDialog(StylistManagementItem stylist) async {
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => _StylistFormDialog(
+        branchId: widget.branchId,
+        stylistsService: stylistsService,
+        existing: stylist,
+      ),
+    );
+
+    if (saved == true) {
+      await _refreshPage();
+    }
+  }
+
+  Future<void> _toggleActive(StylistManagementItem stylist) async {
+    try {
+      await stylistsService.setStylistActive(
+        branchId: widget.branchId,
+        stylistId: stylist.id,
+        active: !stylist.active,
+      );
+      await _refreshPage();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('No se pudo actualizar: $error')));
+    }
+  }
+
+  Future<void> _manageStylistServices(StylistManagementItem stylist) async {
     try {
       final options = await stylistServicesService.getStylistServiceOptions(
         stylist.id,
@@ -111,7 +145,7 @@ class _EstilistasPageState extends State<EstilistasPage> {
           icon: Icons.badge_outlined,
           title: 'Estilistas conectados con Supabase',
           description:
-              'Consulta el equipo y administra de forma segura los servicios que puede realizar cada estilista.',
+              'Crea, edita o desactiva estilistas y administra los servicios que puede realizar cada uno.',
         ),
         const SizedBox(height: 16),
         Align(
@@ -160,7 +194,7 @@ class _EstilistasPageState extends State<EstilistasPage> {
                 icon: Icons.info_outline,
                 title: 'Sin estilistas disponibles',
                 description:
-                    'No hay estilistas activos para mostrar en este momento. Usa "Agregar estilista" para crear el primero.',
+                    'No hay estilistas para mostrar. Usa "Agregar estilista" para crear el primero.',
               );
             }
 
@@ -185,6 +219,8 @@ class _EstilistasPageState extends State<EstilistasPage> {
                         stylist: stylist,
                         services: services,
                         onManageServices: () => _manageStylistServices(stylist),
+                        onEdit: () => _openEditStylistDialog(stylist),
+                        onToggleActive: () => _toggleActive(stylist),
                       );
                     }),
                   ],
@@ -199,15 +235,19 @@ class _EstilistasPageState extends State<EstilistasPage> {
 }
 
 class StylistCard extends StatelessWidget {
-  final StylistSummary stylist;
+  final StylistManagementItem stylist;
   final List<StylistServiceSummary> services;
   final VoidCallback onManageServices;
+  final VoidCallback onEdit;
+  final VoidCallback onToggleActive;
 
   const StylistCard({
     super.key,
     required this.stylist,
     required this.services,
     required this.onManageServices,
+    required this.onEdit,
+    required this.onToggleActive,
   });
 
   @override
@@ -223,23 +263,41 @@ class StylistCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
+          Icon(
             Icons.face_retouching_natural_outlined,
             size: 30,
-            color: Color(0xFF7C3AED),
+            color: stylist.active
+                ? const Color(0xFF7C3AED)
+                : const Color(0xFF9CA3AF),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  stylist.name,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2D1B69),
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      stylist.name,
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.bold,
+                        color: stylist.active
+                            ? const Color(0xFF2D1B69)
+                            : const Color(0xFF9CA3AF),
+                      ),
+                    ),
+                    if (!stylist.active) ...[
+                      const SizedBox(width: 8),
+                      const Text(
+                        '· inactivo',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF9CA3AF),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -254,14 +312,6 @@ class StylistCard extends StatelessWidget {
                   stylist.phone,
                   style: const TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF6B7280),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Registrado: ${stylist.createdDateText}',
-                  style: const TextStyle(
-                    fontSize: 13,
                     color: Color(0xFF6B7280),
                   ),
                 ),
@@ -292,10 +342,39 @@ class StylistCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          OutlinedButton.icon(
-            onPressed: onManageServices,
-            icon: const Icon(Icons.tune_outlined, size: 18),
-            label: const Text('Gestionar servicios'),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              OutlinedButton.icon(
+                onPressed: onManageServices,
+                icon: const Icon(Icons.tune_outlined, size: 18),
+                label: const Text('Gestionar servicios'),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: 'Editar',
+                    onPressed: onEdit,
+                    icon: const Icon(Icons.edit_outlined, size: 20),
+                  ),
+                  IconButton(
+                    tooltip: stylist.active ? 'Desactivar' : 'Reactivar',
+                    onPressed: onToggleActive,
+                    icon: Icon(
+                      stylist.active
+                          ? Icons.pause_circle_outline
+                          : Icons.play_circle_outline,
+                      size: 20,
+                      color: stylist.active
+                          ? const Color(0xFFB91C1C)
+                          : const Color(0xFF2E7D32),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
@@ -317,7 +396,7 @@ class StylistServiceChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
-        '${service.serviceName} \u00b7 ${service.formattedPrice} \u00b7 ${service.durationMinutes} min',
+        '${service.serviceName} · ${service.formattedPrice} · ${service.durationMinutes} min',
         style: const TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w700,
@@ -334,7 +413,7 @@ class _ManageStylistServicesDialog extends StatefulWidget {
     required this.options,
   });
 
-  final StylistSummary stylist;
+  final StylistManagementItem stylist;
   final List<StylistServiceOption> options;
 
   @override
@@ -440,25 +519,40 @@ class _ManageStylistServicesDialogState
   }
 }
 
-class _CreateStylistDialog extends StatefulWidget {
-  const _CreateStylistDialog({
+class _StylistFormDialog extends StatefulWidget {
+  const _StylistFormDialog({
     required this.branchId,
     required this.stylistsService,
+    required this.existing,
   });
 
   final String branchId;
   final StylistsService stylistsService;
+  final StylistManagementItem? existing;
 
   @override
-  State<_CreateStylistDialog> createState() => _CreateStylistDialogState();
+  State<_StylistFormDialog> createState() => _StylistFormDialogState();
 }
 
-class _CreateStylistDialogState extends State<_CreateStylistDialog> {
-  final nameController = TextEditingController();
-  final phoneController = TextEditingController();
-  final specialtyController = TextEditingController();
+class _StylistFormDialogState extends State<_StylistFormDialog> {
+  late final nameController = TextEditingController(
+    text: widget.existing?.name ?? '',
+  );
+  late final phoneController = TextEditingController(
+    text: widget.existing != null && widget.existing!.phone != 'Sin teléfono'
+        ? widget.existing!.phone
+        : '',
+  );
+  late final specialtyController = TextEditingController(
+    text:
+        widget.existing != null && widget.existing!.specialty != 'Sin especialidad'
+        ? widget.existing!.specialty
+        : '',
+  );
   bool isSaving = false;
   String? errorMessage;
+
+  bool get isEditing => widget.existing != null;
 
   @override
   void dispose() {
@@ -482,16 +576,29 @@ class _CreateStylistDialogState extends State<_CreateStylistDialog> {
     });
 
     try {
-      await widget.stylistsService.createStylist(
-        branchId: widget.branchId,
-        name: name,
-        phone: phoneController.text.trim().isEmpty
-            ? null
-            : phoneController.text.trim(),
-        specialty: specialtyController.text.trim().isEmpty
-            ? null
-            : specialtyController.text.trim(),
-      );
+      final phone = phoneController.text.trim().isEmpty
+          ? null
+          : phoneController.text.trim();
+      final specialty = specialtyController.text.trim().isEmpty
+          ? null
+          : specialtyController.text.trim();
+
+      if (isEditing) {
+        await widget.stylistsService.updateStylist(
+          branchId: widget.branchId,
+          stylistId: widget.existing!.id,
+          name: name,
+          phone: phone,
+          specialty: specialty,
+        );
+      } else {
+        await widget.stylistsService.createStylist(
+          branchId: widget.branchId,
+          name: name,
+          phone: phone,
+          specialty: specialty,
+        );
+      }
 
       if (!mounted) return;
       Navigator.of(context).pop(true);
@@ -509,7 +616,7 @@ class _CreateStylistDialogState extends State<_CreateStylistDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Agregar estilista'),
+      title: Text(isEditing ? 'Editar estilista' : 'Agregar estilista'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -557,7 +664,7 @@ class _CreateStylistDialogState extends State<_CreateStylistDialog> {
 }
 
 class _StylistsPageData {
-  final List<StylistSummary> stylists;
+  final List<StylistManagementItem> stylists;
   final List<StylistServiceSummary> stylistServices;
 
   const _StylistsPageData({
