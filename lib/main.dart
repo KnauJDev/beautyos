@@ -72,7 +72,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
   final BranchContextService branchContextService =
       const BranchContextService();
 
-  late final Future<_HomeContextData> homeContextFuture;
+  late Future<_HomeContextData> homeContextFuture;
   BranchContext? selectedBranch;
 
   @override
