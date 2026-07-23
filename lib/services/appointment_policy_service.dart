@@ -14,4 +14,26 @@ class AppointmentPolicyService {
 
     return AppointmentPolicy.fromMap(Map<String, dynamic>.from(response));
   }
+
+  Future<void> updateAppointmentPolicy({
+    required bool requiresDeposit,
+    required num depositPercentage,
+    required int cancellationHours,
+    required int rescheduleHours,
+    required bool manualConfirmationRequired,
+    required bool customerRescheduleAllowed,
+  }) async {
+    await Supabase.instance.client.rpc(
+      'update_appointment_policy',
+      params: {
+        'p_branch_id': branchId,
+        'p_requires_deposit': requiresDeposit,
+        'p_deposit_percentage': depositPercentage,
+        'p_cancellation_hours': cancellationHours,
+        'p_reschedule_hours': rescheduleHours,
+        'p_manual_confirmation_required': manualConfirmationRequired,
+        'p_customer_reschedule_allowed': customerRescheduleAllowed,
+      },
+    );
+  }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/appointment_policy.dart';
 import '../models/business_hour.dart';
@@ -24,16 +25,13 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
       const BusinessSettingsService();
 
   late final BusinessHoursService businessHoursService;
-
   late final AppointmentPolicyService appointmentPolicyService;
-
-  final CommissionPolicyService commissionPolicyService =
-      const CommissionPolicyService();
+  late final CommissionPolicyService commissionPolicyService;
 
   late final Future<BusinessSettings> businessSettingsFuture;
-  late final Future<List<BusinessHour>> businessHoursFuture;
-  late final Future<AppointmentPolicy> appointmentPolicyFuture;
-  late final Future<CommissionPolicy> commissionPolicyFuture;
+  late Future<List<BusinessHour>> businessHoursFuture;
+  late Future<AppointmentPolicy> appointmentPolicyFuture;
+  late Future<CommissionPolicy> commissionPolicyFuture;
 
   @override
   void initState() {
@@ -42,10 +40,70 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
     appointmentPolicyService = AppointmentPolicyService(
       branchId: widget.branchId,
     );
+    commissionPolicyService = CommissionPolicyService(
+      branchId: widget.branchId,
+    );
     businessSettingsFuture = businessSettingsService.getBusinessSettings();
     businessHoursFuture = businessHoursService.getBusinessHours();
     appointmentPolicyFuture = appointmentPolicyService.getAppointmentPolicy();
     commissionPolicyFuture = commissionPolicyService.getCommissionPolicy();
+  }
+
+  void _reloadHours() {
+    setState(() {
+      businessHoursFuture = businessHoursService.getBusinessHours();
+    });
+  }
+
+  void _reloadAppointmentPolicy() {
+    setState(() {
+      appointmentPolicyFuture = appointmentPolicyService
+          .getAppointmentPolicy();
+    });
+  }
+
+  void _reloadCommissionPolicy() {
+    setState(() {
+      commissionPolicyFuture = commissionPolicyService.getCommissionPolicy();
+    });
+  }
+
+  Future<void> _openEditHoursDialog(List<BusinessHour> hours) async {
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => _EditBusinessHoursDialog(
+        hours: hours,
+        businessHoursService: businessHoursService,
+      ),
+    );
+
+    if (saved == true) _reloadHours();
+  }
+
+  Future<void> _openEditAppointmentPolicyDialog(
+    AppointmentPolicy policy,
+  ) async {
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => _EditAppointmentPolicyDialog(
+        policy: policy,
+        appointmentPolicyService: appointmentPolicyService,
+      ),
+    );
+
+    if (saved == true) _reloadAppointmentPolicy();
+  }
+
+  Future<void> _openEditCommissionPolicyDialog(CommissionPolicy policy) async {
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => _EditCommissionPolicyDialog(
+        policy: policy,
+        commissionPolicyService: commissionPolicyService,
+      ),
+    );
+
+    if (saved == true) _reloadCommissionPolicy();
   }
 
   @override
@@ -129,7 +187,10 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
               );
             }
 
-            return BusinessHoursCard(hours: hours);
+            return BusinessHoursCard(
+              hours: hours,
+              onEdit: () => _openEditHoursDialog(hours),
+            );
           },
         ),
         const SizedBox(height: 16),
@@ -164,7 +225,10 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
               );
             }
 
-            return AppointmentPolicyCard(policy: snapshot.data!);
+            return AppointmentPolicyCard(
+              policy: snapshot.data!,
+              onEdit: () => _openEditAppointmentPolicyDialog(snapshot.data!),
+            );
           },
         ),
         const SizedBox(height: 16),
@@ -199,7 +263,10 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
               );
             }
 
-            return CommissionPolicyCard(policy: snapshot.data!);
+            return CommissionPolicyCard(
+              policy: snapshot.data!,
+              onEdit: () => _openEditCommissionPolicyDialog(snapshot.data!),
+            );
           },
         ),
       ],
@@ -240,8 +307,9 @@ class BusinessSettingsCard extends StatelessWidget {
 
 class BusinessHoursCard extends StatelessWidget {
   final List<BusinessHour> hours;
+  final VoidCallback onEdit;
 
-  const BusinessHoursCard({super.key, required this.hours});
+  const BusinessHoursCard({super.key, required this.hours, required this.onEdit});
 
   @override
   Widget build(BuildContext context) {
@@ -249,7 +317,19 @@ class BusinessHoursCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          children: [for (final hour in hours) _BusinessHourRow(hour: hour)],
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final hour in hours) _BusinessHourRow(hour: hour),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: OutlinedButton.icon(
+                onPressed: onEdit,
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: const Text('Editar horario'),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -258,8 +338,13 @@ class BusinessHoursCard extends StatelessWidget {
 
 class AppointmentPolicyCard extends StatelessWidget {
   final AppointmentPolicy policy;
+  final VoidCallback onEdit;
 
-  const AppointmentPolicyCard({super.key, required this.policy});
+  const AppointmentPolicyCard({
+    super.key,
+    required this.policy,
+    required this.onEdit,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -267,7 +352,7 @@ class AppointmentPolicyCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _SettingsLine(label: 'Anticipo', value: policy.depositText),
             _SettingsLine(label: 'Cancelación', value: policy.cancellationText),
@@ -283,6 +368,15 @@ class AppointmentPolicyCard extends StatelessWidget {
               label: 'Cliente',
               value: policy.customerRescheduleText,
             ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: OutlinedButton.icon(
+                onPressed: onEdit,
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: const Text('Editar política'),
+              ),
+            ),
           ],
         ),
       ),
@@ -292,8 +386,13 @@ class AppointmentPolicyCard extends StatelessWidget {
 
 class CommissionPolicyCard extends StatelessWidget {
   final CommissionPolicy policy;
+  final VoidCallback onEdit;
 
-  const CommissionPolicyCard({super.key, required this.policy});
+  const CommissionPolicyCard({
+    super.key,
+    required this.policy,
+    required this.onEdit,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -301,15 +400,556 @@ class CommissionPolicyCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _SettingsLine(label: 'Tipo', value: policy.commissionTypeText),
             _SettingsLine(label: 'Comisión', value: policy.commissionValueText),
             _SettingsLine(label: 'Descuentos', value: policy.discountText),
             _SettingsLine(label: 'Notas', value: policy.notes),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: OutlinedButton.icon(
+                onPressed: onEdit,
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: const Text('Editar comisión'),
+              ),
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _EditBusinessHoursDialog extends StatefulWidget {
+  const _EditBusinessHoursDialog({
+    required this.hours,
+    required this.businessHoursService,
+  });
+
+  final List<BusinessHour> hours;
+  final BusinessHoursService businessHoursService;
+
+  @override
+  State<_EditBusinessHoursDialog> createState() =>
+      _EditBusinessHoursDialogState();
+}
+
+class _EditBusinessHoursDialogState extends State<_EditBusinessHoursDialog> {
+  late final List<_EditableDay> days = widget.hours
+      .map((hour) => _EditableDay.fromBusinessHour(hour))
+      .toList()
+    ..sort((a, b) => a.dayOfWeek.compareTo(b.dayOfWeek));
+
+  bool isSaving = false;
+  String? errorMessage;
+
+  Future<void> _pickTime(_EditableDay day, {required bool isOpening}) async {
+    final initial = isOpening ? day.opensAt : day.closesAt;
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: initial ?? const TimeOfDay(hour: 9, minute: 0),
+    );
+
+    if (picked == null) return;
+
+    setState(() {
+      if (isOpening) {
+        day.opensAt = picked;
+      } else {
+        day.closesAt = picked;
+      }
+    });
+  }
+
+  Future<void> save() async {
+    setState(() {
+      isSaving = true;
+      errorMessage = null;
+    });
+
+    try {
+      final updated = days
+          .map(
+            (day) => BusinessHour(
+              id: day.id,
+              dayOfWeek: day.dayOfWeek,
+              opensAt: day.isOpen ? _formatTime(day.opensAt) : null,
+              closesAt: day.isOpen ? _formatTime(day.closesAt) : null,
+              isOpen: day.isOpen,
+            ),
+          )
+          .toList();
+
+      await widget.businessHoursService.updateBusinessHours(updated);
+
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } on PostgrestException catch (error) {
+      setState(() => errorMessage = error.message);
+    } catch (error) {
+      setState(() => errorMessage = 'Ocurrió un error inesperado: $error');
+    } finally {
+      if (mounted) {
+        setState(() => isSaving = false);
+      }
+    }
+  }
+
+  static String? _formatTime(TimeOfDay? time) {
+    if (time == null) return null;
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Editar horario de atención'),
+      content: SizedBox(
+        width: 480,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final day in days) _DayRow(day: day, onPickTime: _pickTime),
+              if (errorMessage != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  errorMessage!,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: isSaving ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: isSaving ? null : save,
+          child: isSaving
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Guardar'),
+        ),
+      ],
+    );
+  }
+}
+
+class _DayRow extends StatelessWidget {
+  const _DayRow({required this.day, required this.onPickTime});
+
+  final _EditableDay day;
+  final void Function(_EditableDay day, {required bool isOpening}) onPickTime;
+
+  @override
+  Widget build(BuildContext context) {
+    return StatefulBuilder(
+      builder: (context, setLocalState) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            children: [
+              SizedBox(width: 90, child: Text(day.dayName)),
+              Switch(
+                value: day.isOpen,
+                onChanged: (value) => setLocalState(() => day.isOpen = value),
+              ),
+              if (day.isOpen) ...[
+                Expanded(
+                  child: TextButton(
+                    onPressed: () async {
+                      onPickTime(day, isOpening: true);
+                    },
+                    child: Text(day.opensAt?.format(context) ?? 'Apertura'),
+                  ),
+                ),
+                Expanded(
+                  child: TextButton(
+                    onPressed: () async {
+                      onPickTime(day, isOpening: false);
+                    },
+                    child: Text(day.closesAt?.format(context) ?? 'Cierre'),
+                  ),
+                ),
+              ] else
+                const Expanded(
+                  child: Text(
+                    'Cerrado',
+                    style: TextStyle(color: Color(0xFF6B7280)),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _EditableDay {
+  _EditableDay({
+    required this.id,
+    required this.dayOfWeek,
+    required this.dayName,
+    required this.isOpen,
+    this.opensAt,
+    this.closesAt,
+  });
+
+  final String id;
+  final int dayOfWeek;
+  final String dayName;
+  bool isOpen;
+  TimeOfDay? opensAt;
+  TimeOfDay? closesAt;
+
+  factory _EditableDay.fromBusinessHour(BusinessHour hour) {
+    return _EditableDay(
+      id: hour.id,
+      dayOfWeek: hour.dayOfWeek,
+      dayName: hour.dayName,
+      isOpen: hour.isOpen,
+      opensAt: _parseTime(hour.opensAt),
+      closesAt: _parseTime(hour.closesAt),
+    );
+  }
+
+  static TimeOfDay? _parseTime(String? value) {
+    if (value == null || value.length < 5) return null;
+    final hour = int.tryParse(value.substring(0, 2));
+    final minute = int.tryParse(value.substring(3, 5));
+    if (hour == null || minute == null) return null;
+    return TimeOfDay(hour: hour, minute: minute);
+  }
+}
+
+class _EditAppointmentPolicyDialog extends StatefulWidget {
+  const _EditAppointmentPolicyDialog({
+    required this.policy,
+    required this.appointmentPolicyService,
+  });
+
+  final AppointmentPolicy policy;
+  final AppointmentPolicyService appointmentPolicyService;
+
+  @override
+  State<_EditAppointmentPolicyDialog> createState() =>
+      _EditAppointmentPolicyDialogState();
+}
+
+class _EditAppointmentPolicyDialogState
+    extends State<_EditAppointmentPolicyDialog> {
+  late bool requiresDeposit = widget.policy.requiresDeposit;
+  late final depositController = TextEditingController(
+    text: widget.policy.depositPercentage.toStringAsFixed(0),
+  );
+  late final cancellationController = TextEditingController(
+    text: widget.policy.cancellationHours.toString(),
+  );
+  late final rescheduleController = TextEditingController(
+    text: widget.policy.rescheduleHours.toString(),
+  );
+  late bool manualConfirmationRequired =
+      widget.policy.manualConfirmationRequired;
+  late bool customerRescheduleAllowed =
+      widget.policy.customerRescheduleAllowed;
+  bool isSaving = false;
+  String? errorMessage;
+
+  @override
+  void dispose() {
+    depositController.dispose();
+    cancellationController.dispose();
+    rescheduleController.dispose();
+    super.dispose();
+  }
+
+  Future<void> save() async {
+    final deposit = num.tryParse(depositController.text.trim());
+    final cancellation = int.tryParse(cancellationController.text.trim());
+    final reschedule = int.tryParse(rescheduleController.text.trim());
+
+    if (deposit == null || deposit < 0 || deposit > 100) {
+      setState(() => errorMessage = 'El anticipo debe ser entre 0 y 100.');
+      return;
+    }
+    if (cancellation == null || cancellation < 0) {
+      setState(() => errorMessage = 'Las horas de cancelación no son válidas.');
+      return;
+    }
+    if (reschedule == null || reschedule < 0) {
+      setState(
+        () => errorMessage = 'Las horas de reagendamiento no son válidas.',
+      );
+      return;
+    }
+
+    setState(() {
+      isSaving = true;
+      errorMessage = null;
+    });
+
+    try {
+      await widget.appointmentPolicyService.updateAppointmentPolicy(
+        requiresDeposit: requiresDeposit,
+        depositPercentage: deposit,
+        cancellationHours: cancellation,
+        rescheduleHours: reschedule,
+        manualConfirmationRequired: manualConfirmationRequired,
+        customerRescheduleAllowed: customerRescheduleAllowed,
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } on PostgrestException catch (error) {
+      setState(() => errorMessage = error.message);
+    } catch (error) {
+      setState(() => errorMessage = 'Ocurrió un error inesperado: $error');
+    } finally {
+      if (mounted) {
+        setState(() => isSaving = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Editar política de citas'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Requiere anticipo'),
+              value: requiresDeposit,
+              onChanged: (value) => setState(() => requiresDeposit = value),
+            ),
+            if (requiresDeposit)
+              TextField(
+                controller: depositController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Anticipo (%)'),
+              ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: cancellationController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Horas mínimas para cancelar',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: rescheduleController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Horas mínimas para reagendar',
+              ),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Requiere confirmación manual'),
+              value: manualConfirmationRequired,
+              onChanged: (value) =>
+                  setState(() => manualConfirmationRequired = value),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('El cliente puede reagendar'),
+              value: customerRescheduleAllowed,
+              onChanged: (value) =>
+                  setState(() => customerRescheduleAllowed = value),
+            ),
+            if (errorMessage != null) ...[
+              const SizedBox(height: 8),
+              Text(errorMessage!, style: const TextStyle(color: Colors.red)),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: isSaving ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: isSaving ? null : save,
+          child: isSaving
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Guardar'),
+        ),
+      ],
+    );
+  }
+}
+
+class _EditCommissionPolicyDialog extends StatefulWidget {
+  const _EditCommissionPolicyDialog({
+    required this.policy,
+    required this.commissionPolicyService,
+  });
+
+  final CommissionPolicy policy;
+  final CommissionPolicyService commissionPolicyService;
+
+  @override
+  State<_EditCommissionPolicyDialog> createState() =>
+      _EditCommissionPolicyDialogState();
+}
+
+class _EditCommissionPolicyDialogState
+    extends State<_EditCommissionPolicyDialog> {
+  late String commissionType = widget.policy.commissionType;
+  late final percentageController = TextEditingController(
+    text: widget.policy.commissionPercentage.toStringAsFixed(0),
+  );
+  late final fixedController = TextEditingController(
+    text: widget.policy.fixedCommissionAmount.toStringAsFixed(0),
+  );
+  late bool appliesAfterDiscount = widget.policy.appliesAfterDiscount;
+  late final notesController = TextEditingController(
+    text: widget.policy.notes == 'Sin notas' ? '' : widget.policy.notes,
+  );
+  bool isSaving = false;
+  String? errorMessage;
+
+  @override
+  void dispose() {
+    percentageController.dispose();
+    fixedController.dispose();
+    notesController.dispose();
+    super.dispose();
+  }
+
+  Future<void> save() async {
+    final percentage = num.tryParse(percentageController.text.trim());
+    final fixed = num.tryParse(fixedController.text.trim());
+
+    if (percentage == null || percentage < 0 || percentage > 100) {
+      setState(() => errorMessage = 'El porcentaje debe ser entre 0 y 100.');
+      return;
+    }
+    if (fixed == null || fixed < 0) {
+      setState(() => errorMessage = 'El valor fijo no es válido.');
+      return;
+    }
+
+    setState(() {
+      isSaving = true;
+      errorMessage = null;
+    });
+
+    try {
+      await widget.commissionPolicyService.updateCommissionPolicy(
+        commissionType: commissionType,
+        commissionPercentage: percentage,
+        fixedCommissionAmount: fixed,
+        appliesAfterDiscount: appliesAfterDiscount,
+        notes: notesController.text.trim(),
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } on PostgrestException catch (error) {
+      setState(() => errorMessage = error.message);
+    } catch (error) {
+      setState(() => errorMessage = 'Ocurrió un error inesperado: $error');
+    } finally {
+      if (mounted) {
+        setState(() => isSaving = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Editar política de comisión'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DropdownButtonFormField<String>(
+              initialValue: commissionType,
+              decoration: const InputDecoration(labelText: 'Tipo'),
+              items: const [
+                DropdownMenuItem(value: 'percentage', child: Text('Porcentaje')),
+                DropdownMenuItem(value: 'fixed', child: Text('Valor fijo')),
+              ],
+              onChanged: (value) {
+                if (value != null) setState(() => commissionType = value);
+              },
+            ),
+            const SizedBox(height: 12),
+            if (commissionType == 'percentage')
+              TextField(
+                controller: percentageController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Porcentaje de comisión (%)',
+                ),
+              )
+            else
+              TextField(
+                controller: fixedController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Valor fijo por servicio (COP)',
+                ),
+              ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Calcular después de descuentos'),
+              value: appliesAfterDiscount,
+              onChanged: (value) =>
+                  setState(() => appliesAfterDiscount = value),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: notesController,
+              decoration: const InputDecoration(labelText: 'Notas'),
+              maxLines: 2,
+            ),
+            if (errorMessage != null) ...[
+              const SizedBox(height: 8),
+              Text(errorMessage!, style: const TextStyle(color: Colors.red)),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: isSaving ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: isSaving ? null : save,
+          child: isSaving
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Guardar'),
+        ),
+      ],
     );
   }
 }

@@ -17,4 +17,23 @@ class BusinessHoursService {
         .map<BusinessHour>((item) => BusinessHour.fromMap(item))
         .toList();
   }
+
+  Future<void> updateBusinessHours(List<BusinessHour> hours) async {
+    await Supabase.instance.client.rpc(
+      'update_business_hours',
+      params: {
+        'p_branch_id': branchId,
+        'p_hours': hours
+            .map(
+              (hour) => {
+                'day_of_week': hour.dayOfWeek,
+                'opens_at': hour.opensAt,
+                'closes_at': hour.closesAt,
+                'is_open': hour.isOpen,
+              },
+            )
+            .toList(),
+      },
+    );
+  }
 }
