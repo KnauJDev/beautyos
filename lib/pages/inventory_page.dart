@@ -27,7 +27,7 @@ class _InventarioPageState extends State<InventarioPage> {
   late final InventoryMovementsService movementsService;
 
   late Future<List<ProductManagementItem>> productsFuture;
-  late final Future<List<InventoryMovementSummary>> movementsFuture;
+  late Future<List<InventoryMovementSummary>> movementsFuture;
 
   @override
   void initState() {
@@ -42,6 +42,25 @@ class _InventarioPageState extends State<InventarioPage> {
     setState(() {
       productsFuture = productsService.getProductsForManagement();
     });
+  }
+
+  void reloadProductsAndMovements() {
+    setState(() {
+      productsFuture = productsService.getProductsForManagement();
+      movementsFuture = movementsService.getInventoryMovementsSummary();
+    });
+  }
+
+  Future<void> openConsumeStockDialog(ProductManagementItem product) async {
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => _StockConsumptionDialog(
+        movementsService: movementsService,
+        product: product,
+      ),
+    );
+
+    if (saved == true) reloadProductsAndMovements();
   }
 
   Future<void> openCreateProductDialog() async {
@@ -93,7 +112,7 @@ class _InventarioPageState extends State<InventarioPage> {
           icon: Icons.inventory_2_outlined,
           title: 'Inventario conectado a Supabase',
           description:
-              'Crea, edita o desactiva productos para venta e insumos internos. El stock solo cambia al registrar compras (próximo bloque); aquí se ajustan nombre, categoría, precios y mínimos.',
+              'Crea, edita o desactiva productos para venta e insumos internos. El stock sube al registrar una compra y baja al registrar un consumo interno; aquí se ajustan nombre, categoría, precios y mínimos.',
         ),
         const SizedBox(height: 16),
         Align(
@@ -131,6 +150,7 @@ class _InventarioPageState extends State<InventarioPage> {
               products: products,
               onEdit: openEditProductDialog,
               onToggleActive: toggleActive,
+              onConsume: openConsumeStockDialog,
             );
           },
         ),
@@ -169,11 +189,13 @@ class _ProductsSection extends StatelessWidget {
   final List<ProductManagementItem> products;
   final void Function(ProductManagementItem) onEdit;
   final void Function(ProductManagementItem) onToggleActive;
+  final void Function(ProductManagementItem) onConsume;
 
   const _ProductsSection({
     required this.products,
     required this.onEdit,
     required this.onToggleActive,
+    required this.onConsume,
   });
 
   @override
@@ -223,6 +245,7 @@ class _ProductsSection extends StatelessWidget {
                     product: product,
                     onEdit: () => onEdit(product),
                     onToggleActive: () => onToggleActive(product),
+                    onConsume: () => onConsume(product),
                   ),
                 ),
               ],
@@ -238,12 +261,14 @@ class ProductRow extends StatelessWidget {
   final ProductManagementItem product;
   final VoidCallback onEdit;
   final VoidCallback onToggleActive;
+  final VoidCallback onConsume;
 
   const ProductRow({
     super.key,
     required this.product,
     required this.onEdit,
     required this.onToggleActive,
+    required this.onConsume,
   });
 
   @override
@@ -296,6 +321,12 @@ class ProductRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
+          if (product.active)
+            IconButton(
+              tooltip: 'Registrar consumo interno',
+              onPressed: product.currentStock > 0 ? onConsume : null,
+              icon: const Icon(Icons.remove_shopping_cart_outlined, size: 20),
+            ),
           IconButton(
             tooltip: 'Editar',
             onPressed: onEdit,
@@ -651,6 +682,130 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
         ),
         FilledButton(
           onPressed: isSaving ? null : save,
+          child: isSaving
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Guardar'),
+        ),
+      ],
+    );
+  }
+}
+
+class _StockConsumptionDialog extends StatefulWidget {
+  const _StockConsumptionDialog({
+    required this.movementsService,
+    required this.product,
+  });
+
+  final InventoryMovementsService movementsService;
+  final ProductManagementItem product;
+
+  @override
+  State<_StockConsumptionDialog> createState() =>
+      _StockConsumptionDialogState();
+}
+
+class _StockConsumptionDialogState extends State<_StockConsumptionDialog> {
+  final quantityController = TextEditingController();
+  final notesController = TextEditingController();
+  bool isSaving = false;
+  String? errorMessage;
+
+  @override
+  void dispose() {
+    quantityController.dispose();
+    notesController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final quantity = num.tryParse(quantityController.text.trim());
+
+    if (quantity == null || quantity <= 0) {
+      setState(() => errorMessage = 'La cantidad debe ser mayor a cero.');
+      return;
+    }
+
+    setState(() {
+      isSaving = true;
+      errorMessage = null;
+    });
+
+    try {
+      await widget.movementsService.createStockConsumption(
+        productId: widget.product.id,
+        quantity: quantity,
+        notes: notesController.text.trim().isEmpty
+            ? null
+            : notesController.text.trim(),
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } on PostgrestException catch (error) {
+      setState(() => errorMessage = error.message);
+    } catch (error) {
+      setState(() => errorMessage = 'Ocurrió un error inesperado: $error');
+    } finally {
+      if (mounted) {
+        setState(() => isSaving = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Registrar consumo interno'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${widget.product.name} · disponible: ${widget.product.stockText}',
+              style: const TextStyle(color: Color(0xFF6B7280)),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: quantityController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Cantidad a descontar (${widget.product.unit})',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: notesController,
+              decoration: const InputDecoration(
+                labelText: 'Motivo (opcional)',
+              ),
+              maxLines: 2,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Esto solo descuenta el stock y queda en el historial de '
+              'movimientos. No afecta el reporte financiero.',
+              style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+            ),
+            if (errorMessage != null) ...[
+              const SizedBox(height: 8),
+              Text(errorMessage!, style: const TextStyle(color: Colors.red)),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: isSaving ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: isSaving ? null : _save,
           child: isSaving
               ? const SizedBox(
                   width: 18,

@@ -19,4 +19,20 @@ class InventoryMovementsService {
         )
         .toList();
   }
+
+  Future<void> createStockConsumption({
+    required String productId,
+    required num quantity,
+    String? notes,
+  }) async {
+    await Supabase.instance.client.rpc(
+      'create_stock_consumption',
+      params: {
+        'p_branch_id': branchId,
+        'p_product_id': productId,
+        'p_quantity': quantity,
+        'p_notes': notes,
+      },
+    );
+  }
 }

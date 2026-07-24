@@ -68,6 +68,8 @@ Esta carpeta es la fuente oficial viva de la arquitectura, producto y operación
 54. `../supabase/migrations/20260724130000_registrar_compras.sql`
 55. `01_arquitectura/auditorias/EDITAR_GASTOS_2026-07-24.md`
 56. `../supabase/migrations/20260724150000_editar_gastos.sql`
+57. `01_arquitectura/auditorias/CONSUMO_INTERNO_2026-07-24.md`
+58. `../supabase/migrations/20260724170000_registrar_consumo_interno.sql`
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión estructural. No se reescriben para ocultar el pasado: una decisión futura la reemplaza mediante otro ADR.
 
