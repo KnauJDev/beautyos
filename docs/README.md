@@ -62,6 +62,8 @@ Esta carpeta es la fuente oficial viva de la arquitectura, producto y operación
 48. `01_arquitectura/auditorias/RESERVA_PUBLICA_CLIENTE_2026-07-23.md`
 49. `../supabase/migrations/20260723200000_reserva_publica_cliente.sql`
 50. `00_producto/PROMPT_MAESTRO_IA.md` (prompt para arrancar cualquier chat nuevo de IA en este proyecto)
+51. `01_arquitectura/auditorias/EDITAR_PRODUCTOS_INVENTARIO_2026-07-23.md`
+52. `../supabase/migrations/20260723210000_editar_productos_inventario.sql`
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión estructural. No se reescriben para ocultar el pasado: una decisión futura la reemplaza mediante otro ADR.
 

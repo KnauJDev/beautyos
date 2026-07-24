@@ -100,55 +100,62 @@ conceptos básicos de Flutter/SQL salvo que se pida explícitamente.
 
 Antes de pedir código, completa esto (entre más completo, menos tokens se
 gastan en preguntas de ida y vuelta). Ya viene rellenada con el siguiente
-bloque acordado (inventario/compras/gastos editables) — verificado contra
-el esquema real el 2026-07-23; revísalo igual antes de escribir código por
-si algo cambió:
+bloque acordado (sub-bloque 2 de inventario/compras/gastos: Compras) —
+verificado contra el esquema real el 2026-07-23; revísalo igual antes de
+escribir código por si algo cambió:
 
 ```
 CONTEXTO
-- Módulo/pantalla: Inventario, Compras y Gastos.
-  Páginas: lib/pages/inventory_page.dart, lib/pages/purchases_page.dart,
-  lib/pages/expenses_page.dart.
+- Módulo/pantalla: Compras. Página: lib/pages/purchases_page.dart (hoy de
+  solo lectura, vía get_purchases_summary_v2 y
+  get_purchase_items_summary_v2).
 - Archivo(s) real(es) involucrado(s):
-  - lib/services/products_service.dart, lib/models/product_summary.dart
-  - lib/services/inventory_movements_service.dart,
-    lib/models/inventory_movement_summary.dart
   - lib/services/purchases_service.dart, lib/models/purchase_summary.dart
   - lib/services/purchase_items_service.dart,
     lib/models/purchase_item_summary.dart
-  - lib/services/expenses_service.dart, lib/models/expense_summary.dart
-- Tabla(s)/RPC involucradas: hoy las tres pantallas son de solo lectura,
-  vía get_products_summary_v2, get_inventory_movements_summary_v2,
-  get_purchases_summary_v2, get_purchase_items_summary_v2 y
-  get_expenses_summary_v2. No existe ninguna RPC de escritura
-  (crear/editar/desactivar) para products, branch_products, purchases,
-  purchase_items, expenses ni inventory_movements. Tablas reales
-  confirmadas (todas con tenant_id y branch_id): products, branch_products,
-  purchases, purchase_items, expenses, inventory_movements.
+  - lib/services/inventory_movements_service.dart,
+    lib/models/inventory_movement_summary.dart (para refrescar el listado
+    de movimientos en InventarioPage tras registrar una compra)
+- Sub-bloque 1 (Productos) ya está resuelto y desplegado: create_product,
+  update_product, set_product_active, get_products_for_management. Ver
+  D-054 y `EDITAR_PRODUCTOS_INVENTARIO_2026-07-23.md`.
+- Tabla(s)/RPC involucradas: purchases, purchase_items, inventory_movements,
+  branch_products (todas con tenant_id y branch_id). No existe ninguna RPC
+  de escritura para estas tres tablas todavía. Constraints reales
+  confirmados: inventory_movements.movement_type en ('purchase',
+  'consumption', 'sale', 'gift', 'package', 'adjustment');
+  purchases.payment_method y expenses.payment_method en ('cash',
+  'transfer', 'card', 'credit', 'other'); quantity > 0 en purchase_items e
+  inventory_movements; unit_cost/purchase_price/etc >= 0.
+- **No existe ningún trigger** que actualice stock o costo cuando se
+  inserta en inventory_movements — la RPC de compra debe hacerlo a mano.
 
 TAREA
-- Dar de alta lo mínimo para que este módulo quede editable, con el mismo
-  patrón ya usado en servicios/estilistas (crear + editar + desactivar, sin
-  borrado físico). Dividir en sub-bloques y confirmar antes de cada uno:
-  (1) productos, (2) compras + sus items + el movimiento de inventario que
-  generan, (3) gastos.
+- create_purchase: en una sola transacción, crear la fila en `purchases`,
+  sus N filas en `purchase_items`, un `inventory_movements` por ítem
+  (movement_type = 'purchase') y actualizar `branch_products.current_stock`
+  (sumar cantidad) y `average_cost` (costo promedio ponderado) por cada
+  producto comprado. Dar de alta también get_purchases_for_management /
+  edición mínima si aplica, siguiendo el mismo patrón de no borrado físico
+  (solo `active = false`) ya usado en productos/servicios/estilistas.
 
 RESTRICCIONES
-- `products` es catálogo del tenant; `branch_products` es la fila
-  operativa de sede (stock, costo promedio, precio de venta). Toda
-  escritura debe sincronizar ambas tablas — ya hubo un bug real por
-  olvidar este mismo patrón con servicios/estilistas (ver D-049,
-  `SINCRONIZAR_BRANCH_STYLIST_SERVICES_2026-07-23.md`).
-- No borrado físico, solo `active = false` (coherente con el resto del
-  proyecto: servicios, estilistas, etc.).
-- RPC `SECURITY DEFINER`, autorización por rol y sede con el mismo patrón
-  ya usado (`beautyos_resolve_branch_access` o equivalente).
-- Antes de tocar el modelo, revisar si `branch_products.sale_price` ya se
-  consume desde tickets/ventas en algún punto del código actual.
+- Costo promedio ponderado: nuevo promedio = (stock_actual * costo_actual +
+  cantidad_comprada * costo_compra) / (stock_actual + cantidad_comprada).
+  Verificar fórmula con el propietario si hay dudas de redondeo en COP
+  (enteros, sin floats).
+- RPC `SECURITY DEFINER`, autorización con `beautyos_resolve_branch_access`,
+  mismo patrón que create_product.
+- No borrado físico.
+- Antes de escribir código, probar con `begin;...rollback;` contra el único
+  proyecto real (bootstrapear un tenant desechable con register_tenant()
+  si no hay uno de prueba disponible), y desplegar con
+  `supabase db push --linked` solo después de confirmación explícita.
 
 FORMATO ESPERADO
-- Empezar por un plan (sin código todavía), dividido en los tres
-  sub-bloques de arriba, con una recomendación de por cuál empezar.
+- Empezar por un plan corto (sin código todavía) confirmando la fórmula de
+  costo promedio y el alcance exacto (¿se permite editar/anular una compra
+  ya registrada, o solo crear?) antes de escribir la migración.
 ```
 
 ## 7. Ejemplo de arranque de chat nuevo
