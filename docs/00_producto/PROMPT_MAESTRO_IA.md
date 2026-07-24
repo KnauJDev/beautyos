@@ -98,17 +98,40 @@ conceptos básicos de Flutter/SQL salvo que se pida explícitamente.
 
 ## 6. Plantilla para pedir cada bloque
 
-La ruta de bloques que veníamos siguiendo (invitar usuarios → editar
-catálogo → configuración editable → reserva pública → inventario/compras/
-gastos editables) quedó **completa** el 2026-07-24 (D-050 a D-056). No
-hay un siguiente bloque prellenado todavía — antes de escribir código,
-pregúntale al propietario cuál sigue. Candidatos ya identificados en
-conversaciones previas (sin verificar contra el esquema real todavía):
+La ruta original de bloques (invitar usuarios → editar catálogo →
+configuración editable → reserva pública → inventario/compras/gastos
+editables) quedó **completa** el 2026-07-24 (D-050 a D-057, incluye
+consumo interno de stock que no estaba en la ruta original). El
+2026-07-24 también se hizo una auditoría completa de los 5 roles del
+producto contra el código real -- ver D-058 y
+`01_arquitectura/auditorias/AUDITORIA_ROLES_Y_BRECHAS_2026-07-24.md`
+(léela completa antes de tocar cualquiera de estos puntos, ya trae la
+verificación hecha).
 
-- Reseñas/fotos de trabajo (cosmético, complementa la reserva pública ya
-  construida).
-- Pasarela de pago con Wompi (bloqueado hasta que el propietario tenga la
-  cuenta comercial lista — trámite presencial pendiente, ver D-046).
+No hay un siguiente bloque prellenado -- pregúntale al propietario cuál
+sigue de esta lista (cada uno es su propio chat/bloque):
+
+1. **Envío automático del correo de invitación de equipo** (brecha
+   conocida desde D-050). Riesgo bajo, no toca datos financieros.
+2. **Reseñas y fotos de trabajo de punta a punta** (crear + moderar/
+   publicar). Confirmado en D-058: hoy es 100% de solo lectura en toda
+   la app (`reviews_service.dart`, `work_photos_service.dart`,
+   `my_stylist_work_photos_service.dart` solo tienen métodos `get*`).
+   Es más grande de lo que se pensó antes ("cosmético") -- es un módulo
+   completo sin construir. Punto 6 del plan original.
+3. **Crear sedes adicionales** para `tenant_owner` (`create_branch` no
+   existe todavía; hoy solo existe la sede principal de
+   `register_tenant`).
+4. **Bloquear agenda del estilista** (ausencias/no disponibilidad; sin
+   tabla ni RPC todavía).
+5. **Reconfirmar el alcance de `platform_owner`** frente a D-009 -- hoy
+   sin acceso implícito a los datos privados de cada tenant (solo
+   control comercial: plan, suspender, prueba gratis). Es una decisión
+   de producto/privacidad, no una migración; conviene resolverla antes
+   de tocar los puntos 2-4 si cambia algo de fondo.
+6. **Pasarela de pago con Wompi** (bloqueado hasta que el propietario
+   tenga la cuenta comercial lista -- trámite presencial pendiente, ver
+   D-046). Punto 7 del plan original.
 
 Cuando el propietario confirme cuál sigue, completa esta plantilla igual
 que en los bloques anteriores (entre más completo, menos tokens se gastan
