@@ -98,64 +98,41 @@ conceptos básicos de Flutter/SQL salvo que se pida explícitamente.
 
 ## 6. Plantilla para pedir cada bloque
 
-Antes de pedir código, completa esto (entre más completo, menos tokens se
-gastan en preguntas de ida y vuelta). Ya viene rellenada con el siguiente
-bloque acordado (sub-bloque 2 de inventario/compras/gastos: Compras) —
-verificado contra el esquema real el 2026-07-23; revísalo igual antes de
-escribir código por si algo cambió:
+La ruta de bloques que veníamos siguiendo (invitar usuarios → editar
+catálogo → configuración editable → reserva pública → inventario/compras/
+gastos editables) quedó **completa** el 2026-07-24 (D-050 a D-056). No
+hay un siguiente bloque prellenado todavía — antes de escribir código,
+pregúntale al propietario cuál sigue. Candidatos ya identificados en
+conversaciones previas (sin verificar contra el esquema real todavía):
+
+- Reseñas/fotos de trabajo (cosmético, complementa la reserva pública ya
+  construida).
+- Pasarela de pago con Wompi (bloqueado hasta que el propietario tenga la
+  cuenta comercial lista — trámite presencial pendiente, ver D-046).
+
+Cuando el propietario confirme cuál sigue, completa esta plantilla igual
+que en los bloques anteriores (entre más completo, menos tokens se gastan
+en preguntas de ida y vuelta):
 
 ```
 CONTEXTO
-- Módulo/pantalla: Compras. Página: lib/pages/purchases_page.dart (hoy de
-  solo lectura, vía get_purchases_summary_v2 y
-  get_purchase_items_summary_v2).
+- Módulo/pantalla:
 - Archivo(s) real(es) involucrado(s):
-  - lib/services/purchases_service.dart, lib/models/purchase_summary.dart
-  - lib/services/purchase_items_service.dart,
-    lib/models/purchase_item_summary.dart
-  - lib/services/inventory_movements_service.dart,
-    lib/models/inventory_movement_summary.dart (para refrescar el listado
-    de movimientos en InventarioPage tras registrar una compra)
-- Sub-bloque 1 (Productos) ya está resuelto y desplegado: create_product,
-  update_product, set_product_active, get_products_for_management. Ver
-  D-054 y `EDITAR_PRODUCTOS_INVENTARIO_2026-07-23.md`.
-- Tabla(s)/RPC involucradas: purchases, purchase_items, inventory_movements,
-  branch_products (todas con tenant_id y branch_id). No existe ninguna RPC
-  de escritura para estas tres tablas todavía. Constraints reales
-  confirmados: inventory_movements.movement_type en ('purchase',
-  'consumption', 'sale', 'gift', 'package', 'adjustment');
-  purchases.payment_method y expenses.payment_method en ('cash',
-  'transfer', 'card', 'credit', 'other'); quantity > 0 en purchase_items e
-  inventory_movements; unit_cost/purchase_price/etc >= 0.
-- **No existe ningún trigger** que actualice stock o costo cuando se
-  inserta en inventory_movements — la RPC de compra debe hacerlo a mano.
+- Tabla(s)/RPC involucradas (verificar contra el esquema real, no asumir):
 
 TAREA
-- create_purchase: en una sola transacción, crear la fila en `purchases`,
-  sus N filas en `purchase_items`, un `inventory_movements` por ítem
-  (movement_type = 'purchase') y actualizar `branch_products.current_stock`
-  (sumar cantidad) y `average_cost` (costo promedio ponderado) por cada
-  producto comprado. Dar de alta también get_purchases_for_management /
-  edición mínima si aplica, siguiendo el mismo patrón de no borrado físico
-  (solo `active = false`) ya usado en productos/servicios/estilistas.
+-
 
 RESTRICCIONES
-- Costo promedio ponderado: nuevo promedio = (stock_actual * costo_actual +
-  cantidad_comprada * costo_compra) / (stock_actual + cantidad_comprada).
-  Verificar fórmula con el propietario si hay dudas de redondeo en COP
-  (enteros, sin floats).
-- RPC `SECURITY DEFINER`, autorización con `beautyos_resolve_branch_access`,
-  mismo patrón que create_product.
-- No borrado físico.
+- RPC `SECURITY DEFINER`, autorización con `beautyos_resolve_branch_access`.
+- No borrado físico, solo `active = false`.
 - Antes de escribir código, probar con `begin;...rollback;` contra el único
-  proyecto real (bootstrapear un tenant desechable con register_tenant()
-  si no hay uno de prueba disponible), y desplegar con
-  `supabase db push --linked` solo después de confirmación explícita.
+  proyecto real, y desplegar con `supabase db push --linked` solo después
+  de confirmación explícita.
 
 FORMATO ESPERADO
-- Empezar por un plan corto (sin código todavía) confirmando la fórmula de
-  costo promedio y el alcance exacto (¿se permite editar/anular una compra
-  ya registrada, o solo crear?) antes de escribir la migración.
+- Empezar por un plan corto (sin código todavía) antes de escribir la
+  migración.
 ```
 
 ## 7. Ejemplo de arranque de chat nuevo

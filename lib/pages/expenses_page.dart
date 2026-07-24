@@ -1,8 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../models/expense_summary.dart';
+import '../models/expense_management_item.dart';
 import '../services/expenses_service.dart';
+import '../services/my_profile_service.dart';
 import '../widgets/app_widgets.dart';
+
+const List<String> kExpensePaymentMethods = [
+  'cash',
+  'transfer',
+  'card',
+  'credit',
+  'other',
+];
+
+String expensePaymentMethodLabel(String value) {
+  switch (value) {
+    case 'cash':
+      return 'Efectivo';
+    case 'transfer':
+      return 'Transferencia';
+    case 'card':
+      return 'Tarjeta';
+    case 'credit':
+      return 'Crédito';
+    case 'other':
+      return 'Otro';
+    default:
+      return value;
+  }
+}
 
 class GastosPage extends StatefulWidget {
   const GastosPage({super.key, required this.branchId});
@@ -15,19 +42,80 @@ class GastosPage extends StatefulWidget {
 
 class _GastosPageState extends State<GastosPage> {
   late final ExpensesService _expensesService;
+  final MyProfileService _myProfileService = const MyProfileService();
 
-  late Future<List<ExpenseSummary>> _expensesFuture;
+  late Future<_ExpensesPageData> _expensesFuture;
 
   @override
   void initState() {
     super.initState();
     _expensesService = ExpensesService(branchId: widget.branchId);
-    _expensesFuture = _expensesService.getExpensesSummary();
+    _expensesFuture = _loadExpensesData();
+  }
+
+  Future<_ExpensesPageData> _loadExpensesData() async {
+    final expenses = await _expensesService.getExpensesForManagement();
+    final profile = await _myProfileService.getMyProfile();
+
+    return _ExpensesPageData(
+      expenses: expenses,
+      isOwner: profile?.role == 'owner',
+    );
+  }
+
+  void _reload() {
+    setState(() {
+      _expensesFuture = _loadExpensesData();
+    });
+  }
+
+  Future<void> _openCreateDialog() async {
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => _ExpenseFormDialog(
+        expensesService: _expensesService,
+        existing: null,
+      ),
+    );
+
+    if (saved == true) _reload();
+  }
+
+  Future<void> _openEditDialog(ExpenseManagementItem expense) async {
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => _ExpenseFormDialog(
+        expensesService: _expensesService,
+        existing: expense,
+      ),
+    );
+
+    if (saved == true) _reload();
+  }
+
+  Future<void> _toggleActive(ExpenseManagementItem expense) async {
+    try {
+      await _expensesService.setExpenseActive(
+        expenseId: expense.id,
+        active: !expense.active,
+      );
+      _reload();
+    } on PostgrestException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('No se pudo actualizar: $error')));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<ExpenseSummary>>(
+    return FutureBuilder<_ExpensesPageData>(
       future: _expensesFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -42,34 +130,47 @@ class _GastosPageState extends State<GastosPage> {
           );
         }
 
-        final expenses = snapshot.data ?? [];
+        final data =
+            snapshot.data ?? const _ExpensesPageData(expenses: [], isOwner: false);
 
-        return _ExpensesContent(expenses: expenses);
+        return _ExpensesContent(
+          data: data,
+          onCreate: _openCreateDialog,
+          onEdit: _openEditDialog,
+          onToggleActive: _toggleActive,
+        );
       },
     );
   }
 }
 
 class _ExpensesContent extends StatelessWidget {
-  final List<ExpenseSummary> expenses;
+  final _ExpensesPageData data;
+  final VoidCallback onCreate;
+  final void Function(ExpenseManagementItem) onEdit;
+  final void Function(ExpenseManagementItem) onToggleActive;
 
-  const _ExpensesContent({required this.expenses});
+  const _ExpensesContent({
+    required this.data,
+    required this.onCreate,
+    required this.onEdit,
+    required this.onToggleActive,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final totalExpenses = expenses.length;
-    final totalAmount = expenses.fold<double>(
+    final expenses = data.expenses;
+    final activeExpenses = expenses.where((e) => e.active);
+
+    final totalExpenses = activeExpenses.length;
+    final totalAmount = activeExpenses.fold<num>(
       0,
       (sum, expense) => sum + expense.amount,
     );
 
-    final categories = expenses
-        .map((expense) => expense.category)
-        .toSet()
-        .length;
-
-    final paymentMethods = expenses
-        .map((expense) => expense.paymentMethod)
+    final categories = activeExpenses.map((e) => e.category).toSet().length;
+    final paymentMethods = activeExpenses
+        .map((e) => e.paymentMethod)
         .toSet()
         .length;
 
@@ -81,7 +182,16 @@ class _ExpensesContent extends StatelessWidget {
           icon: Icons.payments_outlined,
           title: 'Gastos del negocio',
           description:
-              'Aqui se registran los gastos que afectan la utilidad real del centro de belleza.',
+              'Registra los gastos que afectan la utilidad real del centro. Solo el propietario puede editar o anular un gasto ya guardado.',
+        ),
+        const SizedBox(height: 16),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: FilledButton.icon(
+            onPressed: onCreate,
+            icon: const Icon(Icons.add_outlined),
+            label: const Text('Registrar gasto'),
+          ),
         ),
         const SizedBox(height: 16),
         _ExpensesSummaryCard(
@@ -93,7 +203,12 @@ class _ExpensesContent extends StatelessWidget {
         const SizedBox(height: 16),
         const SectionTitle('Gastos registrados'),
         const SizedBox(height: 12),
-        _ExpensesTable(expenses: expenses),
+        _ExpensesTable(
+          expenses: expenses,
+          isOwner: data.isOwner,
+          onEdit: onEdit,
+          onToggleActive: onToggleActive,
+        ),
       ],
     );
   }
@@ -101,7 +216,7 @@ class _ExpensesContent extends StatelessWidget {
 
 class _ExpensesSummaryCard extends StatelessWidget {
   final int totalExpenses;
-  final double totalAmount;
+  final num totalAmount;
   final int categories;
   final int paymentMethods;
 
@@ -121,13 +236,13 @@ class _ExpensesSummaryCard extends StatelessWidget {
         MetricCard(
           title: 'Gastos',
           value: '$totalExpenses',
-          description: 'Registros cargados',
+          description: 'Registros activos',
           icon: Icons.receipt_long_outlined,
         ),
         MetricCard(
           title: 'Total gastos',
           value: '\$${totalAmount.toStringAsFixed(0)}',
-          description: 'Valor total registrado',
+          description: 'Valor total activo',
           icon: Icons.attach_money,
         ),
         MetricCard(
@@ -148,9 +263,17 @@ class _ExpensesSummaryCard extends StatelessWidget {
 }
 
 class _ExpensesTable extends StatelessWidget {
-  final List<ExpenseSummary> expenses;
+  final List<ExpenseManagementItem> expenses;
+  final bool isOwner;
+  final void Function(ExpenseManagementItem) onEdit;
+  final void Function(ExpenseManagementItem) onToggleActive;
 
-  const _ExpensesTable({required this.expenses});
+  const _ExpensesTable({
+    required this.expenses,
+    required this.isOwner,
+    required this.onEdit,
+    required this.onToggleActive,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -168,38 +291,302 @@ class _ExpensesTable extends StatelessWidget {
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(
-            columns: const [
-              DataColumn(label: Text('Fecha')),
-              DataColumn(label: Text('Categoria')),
-              DataColumn(label: Text('Descripcion')),
-              DataColumn(label: Text('Valor')),
-              DataColumn(label: Text('Pago')),
-              DataColumn(label: Text('Notas')),
+            columns: [
+              const DataColumn(label: Text('Fecha')),
+              const DataColumn(label: Text('Categoria')),
+              const DataColumn(label: Text('Descripcion')),
+              const DataColumn(label: Text('Valor')),
+              const DataColumn(label: Text('Pago')),
+              const DataColumn(label: Text('Notas')),
+              const DataColumn(label: Text('Estado')),
+              if (isOwner) const DataColumn(label: Text('Acciones')),
             ],
             rows: [
               for (final expense in expenses)
                 DataRow(
                   cells: [
-                    DataCell(Text(expense.expenseDate)),
+                    DataCell(Text(expense.expenseDateText)),
                     DataCell(Text(expense.category)),
-                    DataCell(Text(expense.description)),
+                    DataCell(
+                      SizedBox(
+                        width: 220,
+                        child: Text(
+                          expense.description,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: expense.active
+                                ? null
+                                : const Color(0xFF9CA3AF),
+                          ),
+                        ),
+                      ),
+                    ),
                     DataCell(Text(expense.formattedAmount)),
                     DataCell(Text(expense.paymentMethodText)),
                     DataCell(
                       SizedBox(
-                        width: 320,
+                        width: 220,
                         child: Text(
                           expense.notesText,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ),
+                    DataCell(
+                      expense.active
+                          ? const Text('Activo')
+                          : const Text(
+                              'Anulado',
+                              style: TextStyle(color: Color(0xFFB91C1C)),
+                            ),
+                    ),
+                    if (isOwner)
+                      DataCell(
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              tooltip: 'Editar',
+                              onPressed: () => onEdit(expense),
+                              icon: const Icon(
+                                Icons.edit_outlined,
+                                size: 20,
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: expense.active
+                                  ? 'Anular'
+                                  : 'Reactivar',
+                              onPressed: () => onToggleActive(expense),
+                              icon: Icon(
+                                expense.active
+                                    ? Icons.block_outlined
+                                    : Icons.play_circle_outline,
+                                size: 20,
+                                color: expense.active
+                                    ? const Color(0xFFB91C1C)
+                                    : const Color(0xFF2E7D32),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ExpensesPageData {
+  final List<ExpenseManagementItem> expenses;
+  final bool isOwner;
+
+  const _ExpensesPageData({required this.expenses, required this.isOwner});
+}
+
+class _ExpenseFormDialog extends StatefulWidget {
+  const _ExpenseFormDialog({
+    required this.expensesService,
+    required this.existing,
+  });
+
+  final ExpensesService expensesService;
+  final ExpenseManagementItem? existing;
+
+  @override
+  State<_ExpenseFormDialog> createState() => _ExpenseFormDialogState();
+}
+
+class _ExpenseFormDialogState extends State<_ExpenseFormDialog> {
+  late final categoryController = TextEditingController(
+    text: widget.existing?.category ?? '',
+  );
+  late final descriptionController = TextEditingController(
+    text: widget.existing?.description ?? '',
+  );
+  late final amountController = TextEditingController(
+    text: widget.existing?.amount.toString() ?? '',
+  );
+  late final notesController = TextEditingController(
+    text: widget.existing?.notes ?? '',
+  );
+  late DateTime expenseDate = widget.existing != null
+      ? (DateTime.tryParse(widget.existing!.expenseDate) ?? DateTime.now())
+      : DateTime.now();
+  late String paymentMethod = widget.existing?.paymentMethod ?? 'cash';
+  bool isSaving = false;
+  String? errorMessage;
+
+  bool get isEditing => widget.existing != null;
+
+  @override
+  void dispose() {
+    categoryController.dispose();
+    descriptionController.dispose();
+    amountController.dispose();
+    notesController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: expenseDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked != null) {
+      setState(() => expenseDate = picked);
+    }
+  }
+
+  Future<void> _save() async {
+    final category = categoryController.text.trim();
+    final description = descriptionController.text.trim();
+    final amount = num.tryParse(amountController.text.trim());
+
+    if (category.isEmpty) {
+      setState(() => errorMessage = 'La categoría es obligatoria.');
+      return;
+    }
+    if (description.isEmpty) {
+      setState(() => errorMessage = 'La descripción es obligatoria.');
+      return;
+    }
+    if (amount == null || amount < 0) {
+      setState(() => errorMessage = 'El valor debe ser un número válido.');
+      return;
+    }
+
+    setState(() {
+      isSaving = true;
+      errorMessage = null;
+    });
+
+    try {
+      if (isEditing) {
+        await widget.expensesService.updateExpense(
+          expenseId: widget.existing!.id,
+          category: category,
+          description: description,
+          amount: amount,
+          expenseDate: expenseDate,
+          paymentMethod: paymentMethod,
+          notes: notesController.text.trim().isEmpty
+              ? null
+              : notesController.text.trim(),
+        );
+      } else {
+        await widget.expensesService.createExpense(
+          category: category,
+          description: description,
+          amount: amount,
+          expenseDate: expenseDate,
+          paymentMethod: paymentMethod,
+          notes: notesController.text.trim().isEmpty
+              ? null
+              : notesController.text.trim(),
+        );
+      }
+
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } on PostgrestException catch (error) {
+      setState(() => errorMessage = error.message);
+    } catch (error) {
+      setState(() => errorMessage = 'Ocurrió un error inesperado: $error');
+    } finally {
+      if (mounted) {
+        setState(() => isSaving = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(isEditing ? 'Editar gasto' : 'Registrar gasto'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: categoryController,
+              decoration: const InputDecoration(labelText: 'Categoría'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: descriptionController,
+              decoration: const InputDecoration(labelText: 'Descripción'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: amountController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Valor (COP)'),
+            ),
+            const SizedBox(height: 12),
+            InkWell(
+              onTap: _pickDate,
+              child: InputDecorator(
+                decoration: const InputDecoration(labelText: 'Fecha'),
+                child: Text(
+                  '${expenseDate.day.toString().padLeft(2, '0')}/'
+                  '${expenseDate.month.toString().padLeft(2, '0')}/'
+                  '${expenseDate.year}',
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              initialValue: paymentMethod,
+              decoration: const InputDecoration(labelText: 'Forma de pago'),
+              items: kExpensePaymentMethods
+                  .map(
+                    (value) => DropdownMenuItem(
+                      value: value,
+                      child: Text(expensePaymentMethodLabel(value)),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                if (value != null) setState(() => paymentMethod = value);
+              },
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: notesController,
+              decoration: const InputDecoration(labelText: 'Notas (opcional)'),
+              maxLines: 2,
+            ),
+            if (errorMessage != null) ...[
+              const SizedBox(height: 8),
+              Text(errorMessage!, style: const TextStyle(color: Colors.red)),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: isSaving ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: isSaving ? null : _save,
+          child: isSaving
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Guardar'),
+        ),
+      ],
     );
   }
 }

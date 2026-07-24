@@ -1,10 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/product_management_item.dart';
 import '../models/purchase_item_summary.dart';
-import '../models/purchase_summary.dart';
+import '../models/purchase_management_item.dart';
+import '../services/my_profile_service.dart';
+import '../services/products_service.dart';
 import '../services/purchase_items_service.dart';
 import '../services/purchases_service.dart';
 import '../widgets/app_widgets.dart';
+
+const List<String> kPaymentMethods = ['cash', 'transfer', 'card', 'credit', 'other'];
+
+String paymentMethodLabel(String value) {
+  switch (value) {
+    case 'cash':
+      return 'Efectivo';
+    case 'transfer':
+      return 'Transferencia';
+    case 'card':
+      return 'Tarjeta';
+    case 'credit':
+      return 'Crédito';
+    case 'other':
+      return 'Otro';
+    default:
+      return value;
+  }
+}
 
 class ComprasPage extends StatefulWidget {
   const ComprasPage({super.key, required this.branchId});
@@ -18,6 +41,8 @@ class ComprasPage extends StatefulWidget {
 class _ComprasPageState extends State<ComprasPage> {
   late final PurchasesService _purchasesService;
   late final PurchaseItemsService _purchaseItemsService;
+  late final ProductsService _productsService;
+  final MyProfileService _myProfileService = const MyProfileService();
 
   late Future<_PurchasesPageData> _purchasesFuture;
 
@@ -26,14 +51,107 @@ class _ComprasPageState extends State<ComprasPage> {
     super.initState();
     _purchasesService = PurchasesService(branchId: widget.branchId);
     _purchaseItemsService = PurchaseItemsService(branchId: widget.branchId);
+    _productsService = ProductsService(branchId: widget.branchId);
     _purchasesFuture = _loadPurchasesData();
   }
 
   Future<_PurchasesPageData> _loadPurchasesData() async {
-    final purchases = await _purchasesService.getPurchasesSummary();
+    final purchases = await _purchasesService.getPurchasesForManagement();
     final items = await _purchaseItemsService.getPurchaseItemsSummary();
+    final profile = await _myProfileService.getMyProfile();
 
-    return _PurchasesPageData(purchases: purchases, items: items);
+    return _PurchasesPageData(
+      purchases: purchases,
+      items: items,
+      isOwner: profile?.role == 'owner',
+    );
+  }
+
+  void _reload() {
+    setState(() {
+      _purchasesFuture = _loadPurchasesData();
+    });
+  }
+
+  Future<void> _openCreatePurchaseDialog() async {
+    final products = await _productsService.getProductsForManagement();
+    final activeProducts = products.where((p) => p.active).toList();
+
+    if (!mounted) return;
+
+    if (activeProducts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Primero crea al menos un producto activo en Inventario.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => _PurchaseFormDialog(
+        purchasesService: _purchasesService,
+        products: activeProducts,
+      ),
+    );
+
+    if (saved == true) _reload();
+  }
+
+  Future<void> _openEditHeaderDialog(PurchaseManagementItem purchase) async {
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => _PurchaseHeaderDialog(
+        purchasesService: _purchasesService,
+        existing: purchase,
+      ),
+    );
+
+    if (saved == true) _reload();
+  }
+
+  Future<void> _voidPurchase(PurchaseManagementItem purchase) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Anular compra'),
+        content: Text(
+          'Se anulará la compra de "${purchase.supplierName}" y se revertirá '
+          'el stock y el costo promedio que generó. Esta acción no se puede '
+          'deshacer. ¿Continuar?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Anular'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await _purchasesService.voidPurchase(purchaseId: purchase.id);
+      _reload();
+    } on PostgrestException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('No se pudo anular: $error')));
+    }
   }
 
   @override
@@ -54,9 +172,15 @@ class _ComprasPageState extends State<ComprasPage> {
         }
 
         final data =
-            snapshot.data ?? const _PurchasesPageData(purchases: [], items: []);
+            snapshot.data ??
+            const _PurchasesPageData(purchases: [], items: [], isOwner: false);
 
-        return _PurchasesContent(data: data);
+        return _PurchasesContent(
+          data: data,
+          onCreatePurchase: _openCreatePurchaseDialog,
+          onEditHeader: _openEditHeaderDialog,
+          onVoidPurchase: _voidPurchase,
+        );
       },
     );
   }
@@ -64,21 +188,30 @@ class _ComprasPageState extends State<ComprasPage> {
 
 class _PurchasesContent extends StatelessWidget {
   final _PurchasesPageData data;
+  final VoidCallback onCreatePurchase;
+  final void Function(PurchaseManagementItem) onEditHeader;
+  final void Function(PurchaseManagementItem) onVoidPurchase;
 
-  const _PurchasesContent({required this.data});
+  const _PurchasesContent({
+    required this.data,
+    required this.onCreatePurchase,
+    required this.onEditHeader,
+    required this.onVoidPurchase,
+  });
 
   @override
   Widget build(BuildContext context) {
     final purchases = data.purchases;
     final items = data.items;
 
-    final totalPurchases = purchases.length;
-    final totalAmount = purchases.fold<double>(
+    final activePurchases = purchases.where((p) => p.active);
+    final totalPurchases = activePurchases.length;
+    final totalAmount = activePurchases.fold<num>(
       0,
       (sum, purchase) => sum + purchase.totalAmount,
     );
 
-    final suppliers = purchases
+    final suppliers = activePurchases
         .map((purchase) => purchase.supplierName)
         .toSet()
         .length;
@@ -91,7 +224,16 @@ class _PurchasesContent extends StatelessWidget {
           icon: Icons.shopping_cart_outlined,
           title: 'Compras del negocio',
           description:
-              'Aqui se muestran las compras registradas para alimentar inventario y controlar proveedores.',
+              'Registra compras para alimentar el stock y el costo promedio de tus productos. Solo el propietario puede editar el encabezado o anular una compra.',
+        ),
+        const SizedBox(height: 16),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: FilledButton.icon(
+            onPressed: onCreatePurchase,
+            icon: const Icon(Icons.add_outlined),
+            label: const Text('Registrar compra'),
+          ),
         ),
         const SizedBox(height: 16),
         _PurchasesSummaryCard(
@@ -103,7 +245,12 @@ class _PurchasesContent extends StatelessWidget {
         const SizedBox(height: 16),
         const SectionTitle('Compras registradas'),
         const SizedBox(height: 12),
-        _PurchasesTable(purchases: purchases),
+        _PurchasesTable(
+          purchases: purchases,
+          isOwner: data.isOwner,
+          onEditHeader: onEditHeader,
+          onVoidPurchase: onVoidPurchase,
+        ),
         const SizedBox(height: 24),
         const SectionTitle('Detalle de productos comprados'),
         const SizedBox(height: 12),
@@ -115,7 +262,7 @@ class _PurchasesContent extends StatelessWidget {
 
 class _PurchasesSummaryCard extends StatelessWidget {
   final int totalPurchases;
-  final double totalAmount;
+  final num totalAmount;
   final int suppliers;
   final int itemLines;
 
@@ -135,13 +282,13 @@ class _PurchasesSummaryCard extends StatelessWidget {
         MetricCard(
           title: 'Compras',
           value: '$totalPurchases',
-          description: 'Facturas registradas',
+          description: 'Facturas activas',
           icon: Icons.receipt_long_outlined,
         ),
         MetricCard(
           title: 'Total comprado',
           value: '\$${totalAmount.toStringAsFixed(0)}',
-          description: 'Valor total registrado',
+          description: 'Valor total activo',
           icon: Icons.attach_money,
         ),
         MetricCard(
@@ -162,9 +309,17 @@ class _PurchasesSummaryCard extends StatelessWidget {
 }
 
 class _PurchasesTable extends StatelessWidget {
-  final List<PurchaseSummary> purchases;
+  final List<PurchaseManagementItem> purchases;
+  final bool isOwner;
+  final void Function(PurchaseManagementItem) onEditHeader;
+  final void Function(PurchaseManagementItem) onVoidPurchase;
 
-  const _PurchasesTable({required this.purchases});
+  const _PurchasesTable({
+    required this.purchases,
+    required this.isOwner,
+    required this.onEditHeader,
+    required this.onVoidPurchase,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -182,32 +337,78 @@ class _PurchasesTable extends StatelessWidget {
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(
-            columns: const [
-              DataColumn(label: Text('Fecha')),
-              DataColumn(label: Text('Proveedor')),
-              DataColumn(label: Text('Factura')),
-              DataColumn(label: Text('Total')),
-              DataColumn(label: Text('Pago')),
-              DataColumn(label: Text('Notas')),
+            columns: [
+              const DataColumn(label: Text('Fecha')),
+              const DataColumn(label: Text('Proveedor')),
+              const DataColumn(label: Text('Factura')),
+              const DataColumn(label: Text('Total')),
+              const DataColumn(label: Text('Pago')),
+              const DataColumn(label: Text('Notas')),
+              const DataColumn(label: Text('Estado')),
+              if (isOwner) const DataColumn(label: Text('Acciones')),
             ],
             rows: [
               for (final purchase in purchases)
                 DataRow(
                   cells: [
-                    DataCell(Text(purchase.purchaseDate)),
-                    DataCell(Text(purchase.supplierName)),
+                    DataCell(Text(purchase.purchaseDateText)),
+                    DataCell(
+                      Text(
+                        purchase.supplierName,
+                        style: TextStyle(
+                          color: purchase.active
+                              ? null
+                              : const Color(0xFF9CA3AF),
+                        ),
+                      ),
+                    ),
                     DataCell(Text(purchase.invoiceText)),
                     DataCell(Text(purchase.formattedTotalAmount)),
                     DataCell(Text(purchase.paymentMethodText)),
                     DataCell(
                       SizedBox(
-                        width: 280,
+                        width: 220,
                         child: Text(
                           purchase.notesText,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ),
+                    DataCell(
+                      purchase.active
+                          ? const Text('Activa')
+                          : const Text(
+                              'Anulada',
+                              style: TextStyle(color: Color(0xFFB91C1C)),
+                            ),
+                    ),
+                    if (isOwner)
+                      DataCell(
+                        purchase.active
+                            ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    tooltip: 'Editar encabezado',
+                                    onPressed: () => onEditHeader(purchase),
+                                    icon: const Icon(
+                                      Icons.edit_outlined,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    tooltip: 'Anular',
+                                    onPressed: () => onVoidPurchase(purchase),
+                                    icon: const Icon(
+                                      Icons.block_outlined,
+                                      size: 20,
+                                      color: Color(0xFFB91C1C),
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : const SizedBox.shrink(),
+                      ),
                   ],
                 ),
             ],
@@ -283,8 +484,518 @@ class _PurchaseItemsTable extends StatelessWidget {
 }
 
 class _PurchasesPageData {
-  final List<PurchaseSummary> purchases;
+  final List<PurchaseManagementItem> purchases;
   final List<PurchaseItemSummary> items;
+  final bool isOwner;
 
-  const _PurchasesPageData({required this.purchases, required this.items});
+  const _PurchasesPageData({
+    required this.purchases,
+    required this.items,
+    required this.isOwner,
+  });
+}
+
+class _PurchaseHeaderDialog extends StatefulWidget {
+  const _PurchaseHeaderDialog({
+    required this.purchasesService,
+    required this.existing,
+  });
+
+  final PurchasesService purchasesService;
+  final PurchaseManagementItem existing;
+
+  @override
+  State<_PurchaseHeaderDialog> createState() => _PurchaseHeaderDialogState();
+}
+
+class _PurchaseHeaderDialogState extends State<_PurchaseHeaderDialog> {
+  late final supplierController = TextEditingController(
+    text: widget.existing.supplierName,
+  );
+  late final invoiceController = TextEditingController(
+    text: widget.existing.invoiceNumber ?? '',
+  );
+  late final notesController = TextEditingController(
+    text: widget.existing.notes ?? '',
+  );
+  late DateTime purchaseDate =
+      DateTime.tryParse(widget.existing.purchaseDate) ?? DateTime.now();
+  late String paymentMethod = widget.existing.paymentMethod;
+  bool isSaving = false;
+  String? errorMessage;
+
+  @override
+  void dispose() {
+    supplierController.dispose();
+    invoiceController.dispose();
+    notesController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: purchaseDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked != null) {
+      setState(() => purchaseDate = picked);
+    }
+  }
+
+  Future<void> _save() async {
+    final supplier = supplierController.text.trim();
+
+    if (supplier.isEmpty) {
+      setState(() => errorMessage = 'El proveedor es obligatorio.');
+      return;
+    }
+
+    setState(() {
+      isSaving = true;
+      errorMessage = null;
+    });
+
+    try {
+      await widget.purchasesService.updatePurchaseHeader(
+        purchaseId: widget.existing.id,
+        supplierName: supplier,
+        purchaseDate: purchaseDate,
+        invoiceNumber: invoiceController.text.trim().isEmpty
+            ? null
+            : invoiceController.text.trim(),
+        paymentMethod: paymentMethod,
+        notes: notesController.text.trim().isEmpty
+            ? null
+            : notesController.text.trim(),
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } on PostgrestException catch (error) {
+      setState(() => errorMessage = error.message);
+    } catch (error) {
+      setState(() => errorMessage = 'Ocurrió un error inesperado: $error');
+    } finally {
+      if (mounted) {
+        setState(() => isSaving = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Editar encabezado de compra'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: supplierController,
+              decoration: const InputDecoration(labelText: 'Proveedor'),
+            ),
+            const SizedBox(height: 12),
+            InkWell(
+              onTap: _pickDate,
+              child: InputDecorator(
+                decoration: const InputDecoration(labelText: 'Fecha'),
+                child: Text(
+                  '${purchaseDate.day.toString().padLeft(2, '0')}/'
+                  '${purchaseDate.month.toString().padLeft(2, '0')}/'
+                  '${purchaseDate.year}',
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: invoiceController,
+              decoration: const InputDecoration(
+                labelText: 'Número de factura (opcional)',
+              ),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              initialValue: paymentMethod,
+              decoration: const InputDecoration(labelText: 'Forma de pago'),
+              items: kPaymentMethods
+                  .map(
+                    (value) => DropdownMenuItem(
+                      value: value,
+                      child: Text(paymentMethodLabel(value)),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                if (value != null) setState(() => paymentMethod = value);
+              },
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: notesController,
+              decoration: const InputDecoration(labelText: 'Notas (opcional)'),
+              maxLines: 2,
+            ),
+            if (errorMessage != null) ...[
+              const SizedBox(height: 8),
+              Text(errorMessage!, style: const TextStyle(color: Colors.red)),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: isSaving ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: isSaving ? null : _save,
+          child: isSaving
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Guardar'),
+        ),
+      ],
+    );
+  }
+}
+
+class _PurchaseItemForm {
+  _PurchaseItemForm({this.productId})
+    : quantityController = TextEditingController(),
+      unitCostController = TextEditingController();
+
+  String? productId;
+  final TextEditingController quantityController;
+  final TextEditingController unitCostController;
+
+  void dispose() {
+    quantityController.dispose();
+    unitCostController.dispose();
+  }
+}
+
+class _PurchaseFormDialog extends StatefulWidget {
+  const _PurchaseFormDialog({
+    required this.purchasesService,
+    required this.products,
+  });
+
+  final PurchasesService purchasesService;
+  final List<ProductManagementItem> products;
+
+  @override
+  State<_PurchaseFormDialog> createState() => _PurchaseFormDialogState();
+}
+
+class _PurchaseFormDialogState extends State<_PurchaseFormDialog> {
+  final supplierController = TextEditingController();
+  final invoiceController = TextEditingController();
+  final notesController = TextEditingController();
+  DateTime purchaseDate = DateTime.now();
+  String paymentMethod = 'cash';
+  final List<_PurchaseItemForm> lineItems = [
+    _PurchaseItemForm(),
+  ];
+  bool isSaving = false;
+  String? errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    lineItems.first.productId = widget.products.first.id;
+  }
+
+  @override
+  void dispose() {
+    supplierController.dispose();
+    invoiceController.dispose();
+    notesController.dispose();
+    for (final item in lineItems) {
+      item.dispose();
+    }
+    super.dispose();
+  }
+
+  void _addLineItem() {
+    setState(() {
+      lineItems.add(
+        _PurchaseItemForm(productId: widget.products.first.id),
+      );
+    });
+  }
+
+  void _removeLineItem(int index) {
+    setState(() {
+      lineItems[index].dispose();
+      lineItems.removeAt(index);
+    });
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: purchaseDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked != null) {
+      setState(() => purchaseDate = picked);
+    }
+  }
+
+  Future<void> _save() async {
+    final supplier = supplierController.text.trim();
+
+    if (supplier.isEmpty) {
+      setState(() => errorMessage = 'El proveedor es obligatorio.');
+      return;
+    }
+
+    final items = <Map<String, dynamic>>[];
+
+    for (final line in lineItems) {
+      final quantity = num.tryParse(line.quantityController.text.trim());
+      final unitCost = num.tryParse(line.unitCostController.text.trim());
+
+      if (line.productId == null) {
+        setState(() => errorMessage = 'Selecciona un producto en cada línea.');
+        return;
+      }
+      if (quantity == null || quantity <= 0) {
+        setState(
+          () => errorMessage = 'La cantidad debe ser un número mayor a cero.',
+        );
+        return;
+      }
+      if (unitCost == null || unitCost < 0) {
+        setState(
+          () => errorMessage = 'El costo unitario debe ser un número válido.',
+        );
+        return;
+      }
+
+      items.add({
+        'product_id': line.productId,
+        'quantity': quantity,
+        'unit_cost': unitCost,
+      });
+    }
+
+    setState(() {
+      isSaving = true;
+      errorMessage = null;
+    });
+
+    try {
+      await widget.purchasesService.createPurchase(
+        supplierName: supplier,
+        items: items,
+        purchaseDate: purchaseDate,
+        invoiceNumber: invoiceController.text.trim().isEmpty
+            ? null
+            : invoiceController.text.trim(),
+        paymentMethod: paymentMethod,
+        notes: notesController.text.trim().isEmpty
+            ? null
+            : notesController.text.trim(),
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } on PostgrestException catch (error) {
+      setState(() => errorMessage = error.message);
+    } catch (error) {
+      setState(() => errorMessage = 'Ocurrió un error inesperado: $error');
+    } finally {
+      if (mounted) {
+        setState(() => isSaving = false);
+      }
+    }
+  }
+
+  num get _estimatedTotal {
+    num total = 0;
+    for (final line in lineItems) {
+      final quantity = num.tryParse(line.quantityController.text.trim()) ?? 0;
+      final unitCost = num.tryParse(line.unitCostController.text.trim()) ?? 0;
+      total += quantity * unitCost;
+    }
+    return total;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Registrar compra'),
+      content: SizedBox(
+        width: 520,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: supplierController,
+                decoration: const InputDecoration(labelText: 'Proveedor'),
+              ),
+              const SizedBox(height: 12),
+              InkWell(
+                onTap: _pickDate,
+                child: InputDecorator(
+                  decoration: const InputDecoration(labelText: 'Fecha'),
+                  child: Text(
+                    '${purchaseDate.day.toString().padLeft(2, '0')}/'
+                    '${purchaseDate.month.toString().padLeft(2, '0')}/'
+                    '${purchaseDate.year}',
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: invoiceController,
+                decoration: const InputDecoration(
+                  labelText: 'Número de factura (opcional)',
+                ),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: paymentMethod,
+                decoration: const InputDecoration(labelText: 'Forma de pago'),
+                items: kPaymentMethods
+                    .map(
+                      (value) => DropdownMenuItem(
+                        value: value,
+                        child: Text(paymentMethodLabel(value)),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) setState(() => paymentMethod = value);
+                },
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: notesController,
+                decoration: const InputDecoration(
+                  labelText: 'Notas (opcional)',
+                ),
+                maxLines: 2,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Productos comprados',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              for (int i = 0; i < lineItems.length; i++)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: DropdownButtonFormField<String>(
+                          initialValue: lineItems[i].productId,
+                          decoration: const InputDecoration(
+                            labelText: 'Producto',
+                          ),
+                          items: widget.products
+                              .map(
+                                (product) => DropdownMenuItem(
+                                  value: product.id,
+                                  child: Text(
+                                    product.name,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) {
+                            setState(() => lineItems[i].productId = value);
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        flex: 2,
+                        child: TextField(
+                          controller: lineItems[i].quantityController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Cantidad',
+                          ),
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        flex: 2,
+                        child: TextField(
+                          controller: lineItems[i].unitCostController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Costo unit.',
+                          ),
+                          onChanged: (_) => setState(() {}),
+                        ),
+                      ),
+                      if (lineItems.length > 1)
+                        IconButton(
+                          tooltip: 'Quitar',
+                          onPressed: () => _removeLineItem(i),
+                          icon: const Icon(Icons.close, size: 18),
+                        ),
+                    ],
+                  ),
+                ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: _addLineItem,
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Agregar producto'),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Total estimado: \$${_estimatedTotal.toStringAsFixed(0)}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              if (errorMessage != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  errorMessage!,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: isSaving ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: isSaving ? null : _save,
+          child: isSaving
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Guardar'),
+        ),
+      ],
+    );
+  }
 }
