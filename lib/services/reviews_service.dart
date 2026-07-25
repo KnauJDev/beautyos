@@ -20,4 +20,32 @@ class ReviewsService {
         )
         .toList();
   }
+
+  Future<void> moderateReview({
+    required String reviewId,
+    required bool approve,
+  }) async {
+    await Supabase.instance.client.rpc(
+      'moderate_review',
+      params: {
+        'p_branch_id': branchId,
+        'p_review_id': reviewId,
+        'p_approve': approve,
+      },
+    );
+  }
+
+  Future<void> setReviewVisibility({
+    required String reviewId,
+    required bool visible,
+  }) async {
+    await Supabase.instance.client.rpc(
+      'set_review_visibility',
+      params: {
+        'p_branch_id': branchId,
+        'p_review_id': reviewId,
+        'p_visible': visible,
+      },
+    );
+  }
 }

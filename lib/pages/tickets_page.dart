@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/client_summary.dart';
@@ -531,6 +532,19 @@ class _TicketsPageState extends State<TicketsPage> {
     return {'finalizado', 'cerrado'}.contains(ticket.status);
   }
 
+  bool _canCopyReviewLink(TicketSummary ticket) {
+    return {'finalizado', 'cerrado'}.contains(ticket.status);
+  }
+
+  Future<void> _copyReviewLink(TicketSummary ticket) async {
+    final link = '${Uri.base.origin}/?resena=${ticket.id}';
+    await Clipboard.setData(ClipboardData(text: link));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Enlace de reseña copiado.')),
+    );
+  }
+
   static List<String> _availableNextStatuses(String currentStatus) {
     switch (currentStatus) {
       case 'solicitado':
@@ -647,6 +661,9 @@ class _TicketsPageState extends State<TicketsPage> {
                             : null,
                         onManagePayments: _canManagePayments(ticket)
                             ? () => _openPaymentsDialog(ticket)
+                            : null,
+                        onCopyReviewLink: _canCopyReviewLink(ticket)
+                            ? () => _copyReviewLink(ticket)
                             : null,
                       ),
                     ),
@@ -3238,6 +3255,7 @@ class TicketRow extends StatelessWidget {
   final VoidCallback? onChangeStatus;
   final VoidCallback? onCorrectCompletion;
   final VoidCallback? onManagePayments;
+  final VoidCallback? onCopyReviewLink;
 
   const TicketRow({
     super.key,
@@ -3248,6 +3266,7 @@ class TicketRow extends StatelessWidget {
     required this.onChangeStatus,
     required this.onCorrectCompletion,
     required this.onManagePayments,
+    required this.onCopyReviewLink,
   });
 
   @override
@@ -3333,7 +3352,8 @@ class TicketRow extends StatelessWidget {
                     onReschedule != null ||
                     onChangeStatus != null ||
                     onCorrectCompletion != null ||
-                    onManagePayments != null) ...[
+                    onManagePayments != null ||
+                    onCopyReviewLink != null) ...[
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 10,
@@ -3378,6 +3398,12 @@ class TicketRow extends StatelessWidget {
                                 ? 'Ver pagos'
                                 : 'Pagos y saldo',
                           ),
+                        ),
+                      if (onCopyReviewLink != null)
+                        OutlinedButton.icon(
+                          onPressed: onCopyReviewLink,
+                          icon: const Icon(Icons.link_outlined),
+                          label: const Text('Copiar enlace de reseña'),
                         ),
                     ],
                   ),

@@ -13,6 +13,7 @@ import 'pages/auth_gate.dart';
 import 'pages/authenticated_router.dart';
 import 'pages/complete_tenant_setup_page.dart';
 import 'pages/public_booking_page.dart';
+import 'pages/public_review_page.dart';
 import 'pages/agenda_page.dart';
 import 'pages/clients_page.dart';
 import 'pages/dashboard_page.dart';
@@ -51,6 +52,21 @@ class BeautyOSApp extends StatelessWidget {
     // Se resuelve antes de AuthGate a proposito: un cliente anonimo nunca
     // debe pasar por la pantalla de login para reservar.
     final publicBranchId = Uri.base.queryParameters['reservar'];
+    // Resena publica (D-058): enlace sin sesion, ej. "?resena=<ticket_id>".
+    // Mismo motivo: un cliente anonimo nunca debe pasar por login.
+    final publicReviewTicketId = Uri.base.queryParameters['resena'];
+
+    Widget home;
+    if (publicBranchId != null && publicBranchId.trim().isNotEmpty) {
+      home = PublicBookingPage(branchId: publicBranchId.trim());
+    } else if (publicReviewTicketId != null &&
+        publicReviewTicketId.trim().isNotEmpty) {
+      home = PublicReviewPage(ticketId: publicReviewTicketId.trim());
+    } else {
+      home = const AuthGate(
+        authenticatedChild: AuthenticatedRouter(businessApp: BeautyOSHome()),
+      );
+    }
 
     return MaterialApp(
       title: 'BeautyOS',
@@ -60,13 +76,7 @@ class BeautyOSApp extends StatelessWidget {
         useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFFF8F5FF),
       ),
-      home: publicBranchId != null && publicBranchId.trim().isNotEmpty
-          ? PublicBookingPage(branchId: publicBranchId.trim())
-          : const AuthGate(
-              authenticatedChild: AuthenticatedRouter(
-                businessApp: BeautyOSHome(),
-              ),
-            ),
+      home: home,
     );
   }
 }

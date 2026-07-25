@@ -104,34 +104,51 @@ editables) quedó **completa** el 2026-07-24 (D-050 a D-057, incluye
 consumo interno de stock que no estaba en la ruta original). El
 2026-07-24 también se hizo una auditoría completa de los 5 roles del
 producto contra el código real -- ver D-058 y
-`01_arquitectura/auditorias/AUDITORIA_ROLES_Y_BRECHAS_2026-07-24.md`
-(léela completa antes de tocar cualquiera de estos puntos, ya trae la
-verificación hecha).
+`01_arquitectura/auditorias/AUDITORIA_ROLES_Y_BRECHAS_2026-07-24.md`.
 
-No hay un siguiente bloque prellenado -- pregúntale al propietario cuál
-sigue de esta lista (cada uno es su propio chat/bloque):
+Del punto 6 original ("Reseñas y fotos de trabajo de punta a punta"), el
+**sub-bloque 1 (reseñas públicas de cliente + moderación) quedó
+completo y verificado de extremo a extremo el 2026-07-25** -- ver D-059
+y `01_arquitectura/auditorias/RESENAS_PUBLICAS_Y_MODERACION_2026-07-25.md`
+(léela completa antes de tocar reseñas o fotos, ya trae el diseño y la
+verificación hechos). Quedan pendientes, dentro del mismo punto 6, en
+este orden:
+
+- **Sub-bloque 2: infraestructura de Storage para fotos de trabajo**
+  (bucket + políticas RLS + paquete Flutter de subida de imágenes que
+  funcione en Web y Mobile -- hoy no existe nada de esto en el
+  proyecto). Es el siguiente a trabajar.
+- **Sub-bloque 3: crear/aprobar fotos de trabajo** (solo las sube el
+  negocio -- estilista/admin -- nunca el cliente, ya decidido en D-059),
+  usando la infraestructura del sub-bloque 2.
+- **Corrección de fotos por IA** (bloque futuro, aparte; confirmado en
+  D-059 que sí es una función planeada, no un campo muerto -- no se
+  aborda hasta que el módulo de fotos exista).
+
+Los demás puntos de la lista original de candidatos siguen pendientes,
+sin decidir cuál sigue después de fotos (cada uno es su propio
+chat/bloque):
 
 1. **Envío automático del correo de invitación de equipo** (brecha
    conocida desde D-050). Riesgo bajo, no toca datos financieros.
-2. **Reseñas y fotos de trabajo de punta a punta** (crear + moderar/
-   publicar). Confirmado en D-058: hoy es 100% de solo lectura en toda
-   la app (`reviews_service.dart`, `work_photos_service.dart`,
-   `my_stylist_work_photos_service.dart` solo tienen métodos `get*`).
-   Es más grande de lo que se pensó antes ("cosmético") -- es un módulo
-   completo sin construir. Punto 6 del plan original.
-3. **Crear sedes adicionales** para `tenant_owner` (`create_branch` no
+2. **Crear sedes adicionales** para `tenant_owner` (`create_branch` no
    existe todavía; hoy solo existe la sede principal de
    `register_tenant`).
-4. **Bloquear agenda del estilista** (ausencias/no disponibilidad; sin
+3. **Bloquear agenda del estilista** (ausencias/no disponibilidad; sin
    tabla ni RPC todavía).
-5. **Reconfirmar el alcance de `platform_owner`** frente a D-009 -- hoy
+4. **Reconfirmar el alcance de `platform_owner`** frente a D-009 -- hoy
    sin acceso implícito a los datos privados de cada tenant (solo
    control comercial: plan, suspender, prueba gratis). Es una decisión
-   de producto/privacidad, no una migración; conviene resolverla antes
-   de tocar los puntos 2-4 si cambia algo de fondo.
-6. **Pasarela de pago con Wompi** (bloqueado hasta que el propietario
+   de producto/privacidad, no una migración.
+5. **Pasarela de pago con Wompi** (bloqueado hasta que el propietario
    tenga la cuenta comercial lista -- trámite presencial pendiente, ver
    D-046). Punto 7 del plan original.
+
+Nota sobre datos de prueba: el tenant "Naguara de Uñas" en el único
+proyecto real es el propio ambiente de pruebas del propietario (aún sin
+clientes reales onboarded) -- crear ahí clientes/tickets/reseñas de
+prueba para verificación de extremo a extremo no requiere la misma
+cautela que tocar el negocio de un cliente real.
 
 Cuando el propietario confirme cuál sigue, completa esta plantilla igual
 que en los bloques anteriores (entre más completo, menos tokens se gastan

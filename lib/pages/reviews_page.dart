@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/review_summary.dart';
 import '../services/reviews_service.dart';
@@ -24,6 +25,64 @@ class _ResenasPageState extends State<ResenasPage> {
     super.initState();
     _reviewsService = ReviewsService(branchId: widget.branchId);
     _reviewsFuture = _reviewsService.getReviewsSummary();
+  }
+
+  void _refreshReviews() {
+    setState(() {
+      _reviewsFuture = _reviewsService.getReviewsSummary();
+    });
+  }
+
+  Future<void> _moderateReview(ReviewSummary review, bool approve) async {
+    try {
+      await _reviewsService.moderateReview(
+        reviewId: review.id,
+        approve: approve,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(approve ? 'Reseña aprobada.' : 'Reseña rechazada.'),
+        ),
+      );
+      _refreshReviews();
+    } catch (error) {
+      if (!mounted) return;
+      final message = error is PostgrestException
+          ? error.message
+          : error.toString();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo moderar la reseña: $message')),
+      );
+    }
+  }
+
+  Future<void> _setReviewVisibility(ReviewSummary review, bool visible) async {
+    try {
+      await _reviewsService.setReviewVisibility(
+        reviewId: review.id,
+        visible: visible,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            visible ? 'Reseña visible al público.' : 'Reseña ocultada.',
+          ),
+        ),
+      );
+      _refreshReviews();
+    } catch (error) {
+      if (!mounted) return;
+      final message = error is PostgrestException
+          ? error.message
+          : error.toString();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo cambiar la visibilidad: $message')),
+      );
+    }
   }
 
   List<ReviewSummary> _filterReviews(List<ReviewSummary> reviews) {
@@ -72,6 +131,9 @@ class _ResenasPageState extends State<ResenasPage> {
               _selectedFilter = filter;
             });
           },
+          onModerate: _moderateReview,
+          onSetVisibility: _setReviewVisibility,
+          onRefresh: _refreshReviews,
         );
       },
     );
@@ -83,12 +145,19 @@ class _ReviewsContent extends StatelessWidget {
   final List<ReviewSummary> reviews;
   final String selectedFilter;
   final ValueChanged<String> onFilterChanged;
+  final Future<void> Function(ReviewSummary review, bool approve) onModerate;
+  final Future<void> Function(ReviewSummary review, bool visible)
+  onSetVisibility;
+  final VoidCallback onRefresh;
 
   const _ReviewsContent({
     required this.allReviews,
     required this.reviews,
     required this.selectedFilter,
     required this.onFilterChanged,
+    required this.onModerate,
+    required this.onSetVisibility,
+    required this.onRefresh,
   });
 
   @override
@@ -119,6 +188,12 @@ class _ReviewsContent extends StatelessWidget {
           title: 'Reseñas conectadas con Supabase',
           description:
               'Aqui veremos las opiniones de clientes, su calificacion, estado de moderacion y visibilidad publica.',
+        ),
+        const SizedBox(height: 16),
+        OutlinedButton.icon(
+          onPressed: onRefresh,
+          icon: const Icon(Icons.refresh_outlined),
+          label: const Text('Actualizar reseñas'),
         ),
         const SizedBox(height: 16),
         Wrap(
@@ -165,7 +240,11 @@ class _ReviewsContent extends StatelessWidget {
         const SizedBox(height: 16),
         SectionTitle('Listado de reseñas (${reviews.length})'),
         const SizedBox(height: 12),
-        _ReviewsList(reviews: reviews),
+        _ReviewsList(
+          reviews: reviews,
+          onModerate: onModerate,
+          onSetVisibility: onSetVisibility,
+        ),
       ],
     );
   }
@@ -242,8 +321,15 @@ class _FilterChipButton extends StatelessWidget {
 
 class _ReviewsList extends StatelessWidget {
   final List<ReviewSummary> reviews;
+  final Future<void> Function(ReviewSummary review, bool approve) onModerate;
+  final Future<void> Function(ReviewSummary review, bool visible)
+  onSetVisibility;
 
-  const _ReviewsList({required this.reviews});
+  const _ReviewsList({
+    required this.reviews,
+    required this.onModerate,
+    required this.onSetVisibility,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -258,7 +344,11 @@ class _ReviewsList extends StatelessWidget {
     return Column(
       children: [
         for (final review in reviews) ...[
-          _ReviewCard(review: review),
+          _ReviewCard(
+            review: review,
+            onModerate: onModerate,
+            onSetVisibility: onSetVisibility,
+          ),
           const SizedBox(height: 12),
         ],
       ],
@@ -268,8 +358,15 @@ class _ReviewsList extends StatelessWidget {
 
 class _ReviewCard extends StatelessWidget {
   final ReviewSummary review;
+  final Future<void> Function(ReviewSummary review, bool approve) onModerate;
+  final Future<void> Function(ReviewSummary review, bool visible)
+  onSetVisibility;
 
-  const _ReviewCard({required this.review});
+  const _ReviewCard({
+    required this.review,
+    required this.onModerate,
+    required this.onSetVisibility,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -327,6 +424,39 @@ class _ReviewCard extends StatelessWidget {
               'Fecha: ${review.createdDateText}',
               style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
             ),
+            if (review.moderationStatus == 'pending') ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 10,
+                runSpacing: 8,
+                children: [
+                  FilledButton.icon(
+                    onPressed: () => onModerate(review, true),
+                    icon: const Icon(Icons.check_circle_outline),
+                    label: const Text('Aprobar'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: () => onModerate(review, false),
+                    icon: const Icon(Icons.cancel_outlined),
+                    label: const Text('Rechazar'),
+                  ),
+                ],
+              ),
+            ],
+            if (review.moderationStatus == 'approved') ...[
+              const SizedBox(height: 12),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Switch(
+                    value: review.visibleToPublic,
+                    onChanged: (value) => onSetVisibility(review, value),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text('Visible al público'),
+                ],
+              ),
+            ],
           ],
         ),
       ),
