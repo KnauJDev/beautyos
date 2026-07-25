@@ -106,24 +106,30 @@ consumo interno de stock que no estaba en la ruta original). El
 producto contra el código real -- ver D-058 y
 `01_arquitectura/auditorias/AUDITORIA_ROLES_Y_BRECHAS_2026-07-24.md`.
 
-Del punto 6 original ("Reseñas y fotos de trabajo de punta a punta"), el
-**sub-bloque 1 (reseñas públicas de cliente + moderación) quedó
-completo y verificado de extremo a extremo el 2026-07-25** -- ver D-059
-y `01_arquitectura/auditorias/RESENAS_PUBLICAS_Y_MODERACION_2026-07-25.md`
-(léela completa antes de tocar reseñas o fotos, ya trae el diseño y la
-verificación hechos). Quedan pendientes, dentro del mismo punto 6, en
-este orden:
+Del punto 6 original ("Reseñas y fotos de trabajo de punta a punta"):
 
-- **Sub-bloque 2: infraestructura de Storage para fotos de trabajo**
-  (bucket + políticas RLS + paquete Flutter de subida de imágenes que
-  funcione en Web y Mobile -- hoy no existe nada de esto en el
-  proyecto). Es el siguiente a trabajar.
-- **Sub-bloque 3: crear/aprobar fotos de trabajo** (solo las sube el
-  negocio -- estilista/admin -- nunca el cliente, ya decidido en D-059),
-  usando la infraestructura del sub-bloque 2.
+- **Sub-bloque 1 (reseñas públicas de cliente + moderación): completo**
+  el 2026-07-25 -- ver D-059 y
+  `01_arquitectura/auditorias/RESENAS_PUBLICAS_Y_MODERACION_2026-07-25.md`.
+- **Sub-bloque 2 (infraestructura de Storage para fotos de trabajo):
+  completo** el 2026-07-25 -- bucket público `work-photos`, política RLS
+  y `WorkPhotosUploadService` en Flutter. Ver D-060 y
+  `01_arquitectura/auditorias/STORAGE_FOTOS_DE_TRABAJO_2026-07-25.md`.
+  No se probó la subida real de un archivo de extremo a extremo (sin
+  sesión autenticada con contraseña en este chat); queda para el
+  sub-bloque 3.
+- **Sub-bloque 3: crear/aprobar fotos de trabajo** (pendiente, es el
+  siguiente a trabajar). Solo las sube el negocio -- estilista/admin --
+  nunca el cliente (ya decidido en D-059), usando la infraestructura del
+  sub-bloque 2. Aquí sí será interactivamente verificable en el
+  navegador del propietario, igual que se hizo con reseñas.
 - **Corrección de fotos por IA** (bloque futuro, aparte; confirmado en
   D-059 que sí es una función planeada, no un campo muerto -- no se
   aborda hasta que el módulo de fotos exista).
+
+Lee `01_arquitectura/auditorias/STORAGE_FOTOS_DE_TRABAJO_2026-07-25.md`
+completo antes de tocar el sub-bloque 3, ya trae el diseño de
+autorización de Storage hecho.
 
 Los demás puntos de la lista original de candidatos siguen pendientes,
 sin decidir cuál sigue después de fotos (cada uno es su propio

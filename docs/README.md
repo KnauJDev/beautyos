@@ -74,6 +74,8 @@ Esta carpeta es la fuente oficial viva de la arquitectura, producto y operación
 60. `01_arquitectura/auditorias/RESENAS_PUBLICAS_Y_MODERACION_2026-07-25.md`
 61. `../supabase/migrations/20260724180000_resenas_publicas_y_moderacion.sql`
 62. `../supabase/migrations/20260725120000_visibilidad_resenas_desacoplada.sql`
+63. `01_arquitectura/auditorias/STORAGE_FOTOS_DE_TRABAJO_2026-07-25.md`
+64. `../supabase/migrations/20260725140000_storage_fotos_de_trabajo.sql`
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión estructural. No se reescriben para ocultar el pasado: una decisión futura la reemplaza mediante otro ADR.
 
