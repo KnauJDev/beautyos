@@ -11,6 +11,7 @@ import '../models/ticket_payment.dart';
 import '../models/ticket_summary.dart';
 import '../services/clients_service.dart';
 import '../services/tickets_service.dart';
+import '../widgets/add_work_photo_dialog.dart';
 import '../widgets/app_widgets.dart';
 
 class TicketsPage extends StatefulWidget {
@@ -545,6 +546,38 @@ class _TicketsPageState extends State<TicketsPage> {
     );
   }
 
+  bool _canAddWorkPhoto(TicketSummary ticket) {
+    return !{'cancelado', 'no_asistio'}.contains(ticket.status);
+  }
+
+  Future<void> _openAddWorkPhotoDialog(TicketSummary ticket) async {
+    List<TicketServiceManagementItem> stylistOptions;
+    try {
+      stylistOptions = await ticketsService.getTicketServicesForManagement(
+        ticket.id,
+      );
+    } catch (_) {
+      stylistOptions = const [];
+    }
+
+    if (!mounted) return;
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (context) => AddWorkPhotoDialog(
+        branchId: widget.branchId,
+        ticketId: ticket.id,
+        stylistOptions: stylistOptions,
+      ),
+    );
+
+    if (saved != true || !mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Foto agregada correctamente.')),
+    );
+  }
+
   static List<String> _availableNextStatuses(String currentStatus) {
     switch (currentStatus) {
       case 'solicitado':
@@ -664,6 +697,9 @@ class _TicketsPageState extends State<TicketsPage> {
                             : null,
                         onCopyReviewLink: _canCopyReviewLink(ticket)
                             ? () => _copyReviewLink(ticket)
+                            : null,
+                        onAddWorkPhoto: _canAddWorkPhoto(ticket)
+                            ? () => _openAddWorkPhotoDialog(ticket)
                             : null,
                       ),
                     ),
@@ -3256,6 +3292,7 @@ class TicketRow extends StatelessWidget {
   final VoidCallback? onCorrectCompletion;
   final VoidCallback? onManagePayments;
   final VoidCallback? onCopyReviewLink;
+  final VoidCallback? onAddWorkPhoto;
 
   const TicketRow({
     super.key,
@@ -3267,6 +3304,7 @@ class TicketRow extends StatelessWidget {
     required this.onCorrectCompletion,
     required this.onManagePayments,
     required this.onCopyReviewLink,
+    required this.onAddWorkPhoto,
   });
 
   @override
@@ -3353,7 +3391,8 @@ class TicketRow extends StatelessWidget {
                     onChangeStatus != null ||
                     onCorrectCompletion != null ||
                     onManagePayments != null ||
-                    onCopyReviewLink != null) ...[
+                    onCopyReviewLink != null ||
+                    onAddWorkPhoto != null) ...[
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 10,
@@ -3404,6 +3443,12 @@ class TicketRow extends StatelessWidget {
                           onPressed: onCopyReviewLink,
                           icon: const Icon(Icons.link_outlined),
                           label: const Text('Copiar enlace de reseña'),
+                        ),
+                      if (onAddWorkPhoto != null)
+                        OutlinedButton.icon(
+                          onPressed: onAddWorkPhoto,
+                          icon: const Icon(Icons.add_a_photo_outlined),
+                          label: const Text('Agregar foto'),
                         ),
                     ],
                   ),

@@ -18,13 +18,12 @@ class WorkPhotosUploadService {
   }
 
   Future<String> uploadWorkPhoto({
-    required String tenantId,
     required String branchId,
     required XFile image,
   }) async {
     final bytes = await image.readAsBytes();
     final extension = _extensionFor(image.name);
-    final path = '$tenantId/$branchId/${_uuid.v4()}.$extension';
+    final path = '$branchId/${_uuid.v4()}.$extension';
 
     await Supabase.instance.client.storage
         .from('work-photos')

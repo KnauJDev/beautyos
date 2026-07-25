@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/work_photo_summary.dart';
 import '../services/work_photos_service.dart';
@@ -39,6 +40,74 @@ class _FotosTrabajosPageState extends State<FotosTrabajosPage> {
     }
   }
 
+  void _refreshPhotos() {
+    setState(() {
+      _workPhotosFuture = _workPhotosService.getWorkPhotosSummary();
+    });
+  }
+
+  Future<void> _setCustomerVisibility(
+    WorkPhotoSummary photo,
+    bool visible,
+  ) async {
+    try {
+      await _workPhotosService.setCustomerVisibility(
+        photoId: photo.id,
+        visible: visible,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            visible ? 'Foto visible al cliente.' : 'Foto ocultada al cliente.',
+          ),
+        ),
+      );
+      _refreshPhotos();
+    } catch (error) {
+      if (!mounted) return;
+      final message = error is PostgrestException
+          ? error.message
+          : error.toString();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo cambiar la visibilidad: $message')),
+      );
+    }
+  }
+
+  Future<void> _setPortfolioApproval(
+    WorkPhotoSummary photo,
+    bool approved,
+  ) async {
+    try {
+      await _workPhotosService.setPortfolioApproval(
+        photoId: photo.id,
+        approved: approved,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            approved
+                ? 'Foto aprobada para portafolio.'
+                : 'Foto retirada del portafolio.',
+          ),
+        ),
+      );
+      _refreshPhotos();
+    } catch (error) {
+      if (!mounted) return;
+      final message = error is PostgrestException
+          ? error.message
+          : error.toString();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo aprobar la foto: $message')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<WorkPhotoSummary>>(
@@ -68,6 +137,9 @@ class _FotosTrabajosPageState extends State<FotosTrabajosPage> {
               _selectedFilter = filter;
             });
           },
+          onRefresh: _refreshPhotos,
+          onSetCustomerVisibility: _setCustomerVisibility,
+          onSetPortfolioApproval: _setPortfolioApproval,
         );
       },
     );
@@ -79,12 +151,20 @@ class _WorkPhotosContent extends StatelessWidget {
   final List<WorkPhotoSummary> photos;
   final String selectedFilter;
   final ValueChanged<String> onFilterChanged;
+  final VoidCallback onRefresh;
+  final Future<void> Function(WorkPhotoSummary photo, bool visible)
+  onSetCustomerVisibility;
+  final Future<void> Function(WorkPhotoSummary photo, bool approved)
+  onSetPortfolioApproval;
 
   const _WorkPhotosContent({
     required this.allPhotos,
     required this.photos,
     required this.selectedFilter,
     required this.onFilterChanged,
+    required this.onRefresh,
+    required this.onSetCustomerVisibility,
+    required this.onSetPortfolioApproval,
   });
 
   @override
@@ -110,6 +190,12 @@ class _WorkPhotosContent extends StatelessWidget {
           title: 'Fotos de trabajos conectadas con Supabase',
           description:
               'Aqui veremos las fotos antes, despues, finales y aprobadas para portafolio.',
+        ),
+        const SizedBox(height: 16),
+        OutlinedButton.icon(
+          onPressed: onRefresh,
+          icon: const Icon(Icons.refresh_outlined),
+          label: const Text('Actualizar fotos'),
         ),
         const SizedBox(height: 16),
         Wrap(
@@ -150,7 +236,11 @@ class _WorkPhotosContent extends StatelessWidget {
         const SizedBox(height: 16),
         SectionTitle('Galeria de trabajos (${photos.length})'),
         const SizedBox(height: 12),
-        _WorkPhotosGrid(photos: photos),
+        _WorkPhotosGrid(
+          photos: photos,
+          onSetCustomerVisibility: onSetCustomerVisibility,
+          onSetPortfolioApproval: onSetPortfolioApproval,
+        ),
       ],
     );
   }
@@ -227,8 +317,16 @@ class _FilterChipButton extends StatelessWidget {
 
 class _WorkPhotosGrid extends StatelessWidget {
   final List<WorkPhotoSummary> photos;
+  final Future<void> Function(WorkPhotoSummary photo, bool visible)
+  onSetCustomerVisibility;
+  final Future<void> Function(WorkPhotoSummary photo, bool approved)
+  onSetPortfolioApproval;
 
-  const _WorkPhotosGrid({required this.photos});
+  const _WorkPhotosGrid({
+    required this.photos,
+    required this.onSetCustomerVisibility,
+    required this.onSetPortfolioApproval,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -245,7 +343,14 @@ class _WorkPhotosGrid extends StatelessWidget {
       runSpacing: 16,
       children: [
         for (final photo in photos)
-          SizedBox(width: 280, child: _WorkPhotoCard(photo: photo)),
+          SizedBox(
+            width: 280,
+            child: _WorkPhotoCard(
+              photo: photo,
+              onSetCustomerVisibility: onSetCustomerVisibility,
+              onSetPortfolioApproval: onSetPortfolioApproval,
+            ),
+          ),
       ],
     );
   }
@@ -253,8 +358,16 @@ class _WorkPhotosGrid extends StatelessWidget {
 
 class _WorkPhotoCard extends StatelessWidget {
   final WorkPhotoSummary photo;
+  final Future<void> Function(WorkPhotoSummary photo, bool visible)
+  onSetCustomerVisibility;
+  final Future<void> Function(WorkPhotoSummary photo, bool approved)
+  onSetPortfolioApproval;
 
-  const _WorkPhotoCard({required this.photo});
+  const _WorkPhotoCard({
+    required this.photo,
+    required this.onSetCustomerVisibility,
+    required this.onSetPortfolioApproval,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -325,21 +438,38 @@ class _WorkPhotoCard extends StatelessWidget {
                     color: Color(0xFF6B7280),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  photo.visibilityText,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF6B7280),
-                  ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Switch(
+                      value: photo.visibleToCustomer,
+                      onChanged: (value) =>
+                          onSetCustomerVisibility(photo, value),
+                    ),
+                    const Expanded(
+                      child: Text(
+                        'Visible al cliente',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  photo.portfolioText,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF6B7280),
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Switch(
+                      value: photo.approvedForPortfolio,
+                      onChanged: (value) =>
+                          onSetPortfolioApproval(photo, value),
+                    ),
+                    const Expanded(
+                      child: Text(
+                        'Aprobada para portafolio',
+                        style: TextStyle(fontSize: 13),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

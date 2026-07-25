@@ -106,34 +106,22 @@ consumo interno de stock que no estaba en la ruta original). El
 producto contra el código real -- ver D-058 y
 `01_arquitectura/auditorias/AUDITORIA_ROLES_Y_BRECHAS_2026-07-24.md`.
 
-Del punto 6 original ("Reseñas y fotos de trabajo de punta a punta"):
+El punto 6 original ("Reseñas y fotos de trabajo de punta a punta")
+quedó **completo** el 2026-07-25 en sus tres sub-bloques: reseñas
+públicas + moderación (D-059), infraestructura de Storage (D-060), y
+crear/aprobar fotos (D-061) -- ver
+`01_arquitectura/auditorias/CREAR_Y_APROBAR_FOTOS_TRABAJO_2026-07-25.md`
+(léela completa antes de tocar reseñas o fotos, resume todo el diseño).
+Pendiente: verificación interactiva real de la subida de un archivo en
+el navegador del propietario (no se pudo probar en el chat que lo
+construyó, sin sesión autenticada con contraseña).
 
-- **Sub-bloque 1 (reseñas públicas de cliente + moderación): completo**
-  el 2026-07-25 -- ver D-059 y
-  `01_arquitectura/auditorias/RESENAS_PUBLICAS_Y_MODERACION_2026-07-25.md`.
-- **Sub-bloque 2 (infraestructura de Storage para fotos de trabajo):
-  completo** el 2026-07-25 -- bucket público `work-photos`, política RLS
-  y `WorkPhotosUploadService` en Flutter. Ver D-060 y
-  `01_arquitectura/auditorias/STORAGE_FOTOS_DE_TRABAJO_2026-07-25.md`.
-  No se probó la subida real de un archivo de extremo a extremo (sin
-  sesión autenticada con contraseña en este chat); queda para el
-  sub-bloque 3.
-- **Sub-bloque 3: crear/aprobar fotos de trabajo** (pendiente, es el
-  siguiente a trabajar). Solo las sube el negocio -- estilista/admin --
-  nunca el cliente (ya decidido en D-059), usando la infraestructura del
-  sub-bloque 2. Aquí sí será interactivamente verificable en el
-  navegador del propietario, igual que se hizo con reseñas.
-- **Corrección de fotos por IA** (bloque futuro, aparte; confirmado en
-  D-059 que sí es una función planeada, no un campo muerto -- no se
-  aborda hasta que el módulo de fotos exista).
+**Corrección de fotos por IA** sigue como bloque futuro aparte
+(confirmado en D-059 que sí es una función planeada, no un campo
+muerto).
 
-Lee `01_arquitectura/auditorias/STORAGE_FOTOS_DE_TRABAJO_2026-07-25.md`
-completo antes de tocar el sub-bloque 3, ya trae el diseño de
-autorización de Storage hecho.
-
-Los demás puntos de la lista original de candidatos siguen pendientes,
-sin decidir cuál sigue después de fotos (cada uno es su propio
-chat/bloque):
+No hay un siguiente bloque prellenado -- pregúntale al propietario cuál
+sigue de esta lista (cada uno es su propio chat/bloque):
 
 1. **Envío automático del correo de invitación de equipo** (brecha
    conocida desde D-050). Riesgo bajo, no toca datos financieros.

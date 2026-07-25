@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/my_stylist_agenda_item.dart';
 import '../services/my_stylist_agenda_service.dart';
+import '../widgets/add_work_photo_dialog.dart';
 import '../widgets/app_widgets.dart';
 
 class MyStylistAgendaPage extends StatefulWidget {
@@ -130,6 +131,22 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
     await _updateServiceStatus(item, newStatus);
   }
 
+  Future<void> _openAddWorkPhotoDialog(MyStylistAgendaItem item) async {
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (context) => AddWorkPhotoDialog(
+        branchId: widget.branchId,
+        ticketId: item.ticketId,
+      ),
+    );
+
+    if (saved != true || !mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Foto agregada correctamente.')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppPage(
@@ -198,6 +215,7 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
                   _AgendaTable(
                     items: requestedItems,
                     onUpdateServiceStatus: _confirmAndUpdateServiceStatus,
+                    onAddWorkPhoto: _openAddWorkPhotoDialog,
                   ),
                   const SizedBox(height: 24),
                 ],
@@ -212,6 +230,7 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
                   _AgendaTable(
                     items: confirmedItems,
                     onUpdateServiceStatus: _confirmAndUpdateServiceStatus,
+                    onAddWorkPhoto: _openAddWorkPhotoDialog,
                   ),
                 ] else
                   InfoPanel(
@@ -442,11 +461,13 @@ class _AgendaTable extends StatelessWidget {
   const _AgendaTable({
     required this.items,
     required this.onUpdateServiceStatus,
+    required this.onAddWorkPhoto,
   });
 
   final List<MyStylistAgendaItem> items;
   final Future<void> Function(MyStylistAgendaItem item, String newStatus)
   onUpdateServiceStatus;
+  final Future<void> Function(MyStylistAgendaItem item) onAddWorkPhoto;
 
   @override
   Widget build(BuildContext context) {
@@ -489,6 +510,7 @@ class _AgendaTable extends StatelessWidget {
                       _ServiceActionButton(
                         item: item,
                         onUpdateServiceStatus: onUpdateServiceStatus,
+                        onAddWorkPhoto: onAddWorkPhoto,
                       ),
                     ),
                   ],
@@ -505,11 +527,13 @@ class _ServiceActionButton extends StatelessWidget {
   const _ServiceActionButton({
     required this.item,
     required this.onUpdateServiceStatus,
+    required this.onAddWorkPhoto,
   });
 
   final MyStylistAgendaItem item;
   final Future<void> Function(MyStylistAgendaItem item, String newStatus)
   onUpdateServiceStatus;
+  final Future<void> Function(MyStylistAgendaItem item) onAddWorkPhoto;
 
   @override
   Widget build(BuildContext context) {
@@ -520,21 +544,44 @@ class _ServiceActionButton extends StatelessWidget {
       );
     }
 
+    final canAddPhoto = {
+      'en_proceso',
+      'finalizado',
+    }.contains(item.serviceStatus);
+
+    Widget statusAction;
     switch (item.serviceStatus) {
       case 'pendiente':
-        return FilledButton.icon(
+        statusAction = FilledButton.icon(
           onPressed: () => onUpdateServiceStatus(item, 'en_proceso'),
           icon: const Icon(Icons.play_arrow_outlined),
           label: const Text('Iniciar'),
         );
       case 'en_proceso':
-        return OutlinedButton.icon(
+        statusAction = OutlinedButton.icon(
           onPressed: () => onUpdateServiceStatus(item, 'finalizado'),
           icon: const Icon(Icons.task_alt_outlined),
           label: const Text('Finalizar'),
         );
       default:
-        return const Text('Sin acción');
+        statusAction = const Text('Sin acción');
     }
+
+    if (!canAddPhoto) {
+      return statusAction;
+    }
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        statusAction,
+        OutlinedButton.icon(
+          onPressed: () => onAddWorkPhoto(item),
+          icon: const Icon(Icons.add_a_photo_outlined),
+          label: const Text('Agregar foto'),
+        ),
+      ],
+    );
   }
 }
