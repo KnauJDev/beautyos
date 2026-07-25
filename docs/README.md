@@ -79,6 +79,7 @@ Esta carpeta es la fuente oficial viva de la arquitectura, producto y operación
 65. `../supabase/migrations/20260725170000_simplificar_ruta_storage_fotos.sql`
 66. `01_arquitectura/auditorias/CREAR_Y_APROBAR_FOTOS_TRABAJO_2026-07-25.md`
 67. `../supabase/migrations/20260725160000_crear_y_aprobar_fotos_trabajo.sql`
+68. `00_producto/RUTA_A_PRODUCCION_2026-07-25.md` (mapa de negocio/lanzamiento, no solo codigo)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión estructural. No se reescriben para ocultar el pasado: una decisión futura la reemplaza mediante otro ADR.
 
