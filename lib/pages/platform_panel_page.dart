@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/platform_tenant_summary.dart';
 import '../services/platform_service.dart';
+import 'platform_tenant_detail_page.dart';
 
 class PlatformPanelPage extends StatefulWidget {
   const PlatformPanelPage({super.key, required this.platformRole});
@@ -213,6 +214,16 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
                   onSuspend: handleSuspend,
                   onReactivate: handleReactivate,
                   onExtendTrial: handleExtendTrial,
+                  onViewData: (tenant) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => PlatformTenantDetailPage(
+                          tenantId: tenant.tenantId,
+                          tenantName: tenant.tenantName,
+                        ),
+                      ),
+                    );
+                  },
                 ),
           );
         },
@@ -228,6 +239,7 @@ class _TenantCard extends StatelessWidget {
     required this.onSuspend,
     required this.onReactivate,
     required this.onExtendTrial,
+    required this.onViewData,
   });
 
   final PlatformTenantSummary tenant;
@@ -235,6 +247,7 @@ class _TenantCard extends StatelessWidget {
   final ValueChanged<PlatformTenantSummary> onSuspend;
   final ValueChanged<PlatformTenantSummary> onReactivate;
   final ValueChanged<PlatformTenantSummary> onExtendTrial;
+  final ValueChanged<PlatformTenantSummary> onViewData;
 
   Color _statusColor(String? status) {
     switch (status) {
@@ -322,6 +335,18 @@ class _TenantCard extends StatelessWidget {
                   ? 'Prueba hasta: ${_formatDate(tenant.trialEndsAt)}'
                   : 'Periodo hasta: ${_formatDate(tenant.currentPeriodEnd)}',
               style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () => onViewData(tenant),
+                  icon: const Icon(Icons.visibility_outlined, size: 18),
+                  label: const Text('Ver datos (soporte)'),
+                ),
+              ],
             ),
             if (isOwner) ...[
               const SizedBox(height: 12),

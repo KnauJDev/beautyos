@@ -79,7 +79,18 @@ Esta carpeta es la fuente oficial viva de la arquitectura, producto y operación
 65. `../supabase/migrations/20260725170000_simplificar_ruta_storage_fotos.sql`
 66. `01_arquitectura/auditorias/CREAR_Y_APROBAR_FOTOS_TRABAJO_2026-07-25.md`
 67. `../supabase/migrations/20260725160000_crear_y_aprobar_fotos_trabajo.sql`
-68. `00_producto/RUTA_A_PRODUCCION_2026-07-25.md` (mapa de negocio/lanzamiento, no solo codigo)
+68. `00_producto/RUTA_A_PRODUCCION_2026-07-25.md` (mapa de negocio/lanzamiento, Fase Final, pausado)
+69. `00_producto/RUTA_GENERAL_2026-07-25.md` (mapa único vigente: fase MVP primero, orden a seguir)
+70. `../supabase/migrations/20260725180000_correo_automatico_invitacion.sql`
+71. `../supabase/functions/send-invitation-email/index.ts` (correo automático de invitación, D-062/D-065)
+72. `../supabase/migrations/20260725190000_panel_personal_estilista.sql` (Mis reseñas y Mi panel financiero, D-067)
+73. `../supabase/migrations/20260726100000_hacer_cumplir_prueba_gratis.sql` (bloqueo de compromisos nuevos con prueba vencida, D-068)
+74. `../supabase/migrations/20260726110000_hacer_cumplir_planes_por_funcionalidad.sql` (Básico no puede usar funciones de plan superior, D-069)
+75. `../supabase/migrations/20260726120000_admin_gestiona_usuarios.sql` (admin también gestiona usuarios, D-071)
+76. `../supabase/migrations/20260727100000_crear_sedes_adicionales.sql` (crear sedes adicionales, D-072)
+77. `../supabase/migrations/20260727110000_choque_agenda_entre_sedes.sql` (choque de agenda entre sedes, D-073)
+78. `../supabase/migrations/20260727120000_bloqueo_agenda_estilista.sql` (bloqueo de agenda del estilista, D-075)
+79. `../supabase/migrations/20260727130000_panel_plataforma_solo_lectura.sql` (acceso de solo lectura del dueño de plataforma, D-076)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión estructural. No se reescriben para ocultar el pasado: una decisión futura la reemplaza mediante otro ADR.
 

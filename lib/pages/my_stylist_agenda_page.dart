@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/my_stylist_agenda_item.dart';
+import '../models/stylist_time_off.dart';
 import '../services/my_stylist_agenda_service.dart';
+import '../services/stylist_time_off_service.dart';
 import '../widgets/add_work_photo_dialog.dart';
 import '../widgets/app_widgets.dart';
+import '../widgets/create_time_off_dialog.dart';
 
 class MyStylistAgendaPage extends StatefulWidget {
   const MyStylistAgendaPage({super.key, required this.branchId});
@@ -16,22 +20,63 @@ class MyStylistAgendaPage extends StatefulWidget {
 
 class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
   late final MyStylistAgendaService agendaService;
+  late final StylistTimeOffService timeOffService;
 
   late DateTime selectedDate;
   late Future<List<MyStylistAgendaItem>> agendaFuture;
+  late Future<List<StylistTimeOff>> timeOffFuture;
 
   @override
   void initState() {
     super.initState();
     agendaService = MyStylistAgendaService(branchId: widget.branchId);
+    timeOffService = StylistTimeOffService(branchId: widget.branchId);
     selectedDate = DateUtils.dateOnly(DateTime.now());
     agendaFuture = agendaService.getMyStylistAgenda(selectedDate);
+    timeOffFuture = timeOffService.getMyTimeOff();
   }
 
   void _refreshAgenda() {
     setState(() {
       agendaFuture = agendaService.getMyStylistAgenda(selectedDate);
     });
+  }
+
+  void _refreshTimeOff() {
+    setState(() {
+      timeOffFuture = timeOffService.getMyTimeOff();
+    });
+  }
+
+  Future<void> _openCreateTimeOffDialog() async {
+    final created = await showDialog<bool>(
+      context: context,
+      builder: (context) => CreateTimeOffDialog(branchId: widget.branchId),
+    );
+
+    if (created != true || !mounted) return;
+
+    _refreshTimeOff();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Bloqueo de agenda creado.')),
+    );
+  }
+
+  Future<void> _cancelTimeOff(StylistTimeOff timeOff) async {
+    try {
+      await timeOffService.cancelTimeOff(timeOff.id);
+      _refreshTimeOff();
+    } on PostgrestException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo cancelar: ${error.message}')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('No se pudo cancelar: $error')));
+    }
   }
 
   void _changeDate(DateTime date) {
@@ -153,6 +198,12 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
       title: 'Mi agenda',
       subtitle: 'Citas y servicios asignados a tu usuario estilista.',
       children: [
+        _TimeOffSection(
+          timeOffFuture: timeOffFuture,
+          onCreate: _openCreateTimeOffDialog,
+          onCancel: _cancelTimeOff,
+        ),
+        const SizedBox(height: 18),
         _AgendaDateNavigator(
           selectedDate: selectedDate,
           onPreviousDay: () =>
@@ -308,6 +359,121 @@ class _AgendaDateNavigator extends StatelessWidget {
               onPressed: onRefresh,
               icon: const Icon(Icons.refresh_outlined),
               label: const Text('Actualizar agenda'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TimeOffSection extends StatelessWidget {
+  const _TimeOffSection({
+    required this.timeOffFuture,
+    required this.onCreate,
+    required this.onCancel,
+  });
+
+  final Future<List<StylistTimeOff>> timeOffFuture;
+  final VoidCallback onCreate;
+  final void Function(StylistTimeOff timeOff) onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: const BorderSide(color: Color(0xFFE5E7EB)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Bloqueos de mi agenda',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: onCreate,
+                  icon: const Icon(Icons.event_busy_outlined),
+                  label: const Text('Bloquear agenda'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Cuando no puedas atender (vacaciones, incapacidad), bloquea '
+              'ese rango: desaparece de tus horarios disponibles en todas '
+              'tus sedes.',
+              style: TextStyle(color: Color(0xFF6B7280), fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            FutureBuilder<List<StylistTimeOff>>(
+              future: timeOffFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: LinearProgressIndicator(),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return Text(
+                    'No pudimos cargar tus bloqueos: ${snapshot.error}',
+                    style: const TextStyle(color: Colors.red),
+                  );
+                }
+
+                final items = snapshot.data ?? <StylistTimeOff>[];
+
+                if (items.isEmpty) {
+                  return const Text(
+                    'No tienes bloqueos activos.',
+                    style: TextStyle(color: Color(0xFF6B7280)),
+                  );
+                }
+
+                return Column(
+                  children: items
+                      .map(
+                        (timeOff) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.block_outlined,
+                                size: 18,
+                                color: Color(0xFF9A3412),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  '${timeOff.rangeText} · ${timeOff.reasonText}',
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () => onCancel(timeOff),
+                                child: const Text('Cancelar'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                      .toList(),
+                );
+              },
             ),
           ],
         ),

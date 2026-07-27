@@ -130,39 +130,20 @@ plan gratis de Resend sin dominio verificado, solo se pueden enviar
 correos a la cuenta propia del propietario (modo sandbox); probarlo con
 un correo real de invitado requerirá verificar un dominio más adelante.
 
-**Nota importante (D-062):** el propietario no tiene formación técnica.
+**Nota importante:** el propietario no tiene formación técnica.
 Explicar todo en lenguaje simple, con pasos explícitos para cualquier
 cosa que él deba hacer fuera del chat (crear cuentas, guardar claves,
-etc.) -- ver también `RUTA_A_PRODUCCION_2026-07-25.md`, el mapa completo
-de todo lo que falta fuera del código (hospedaje, dominio, plan pago de
-Supabase, precios, empresa constituida, términos y política de
-privacidad, pasarela de pago, marketing/soporte) para convertir BeautyOS
-en un negocio real. Ahí también quedó la decisión de marca blanca: logo
-y colores por negocio sí se construye (candidato 6 de la lista de
-abajo); un dominio 100% propio por negocio (tipo
-`www.naguaradeunas.com`) queda como función futura de pago, se empezará
-con subdominios automáticos del dominio propio de BeautyOS.
+etc.).
 
-Después de terminar el correo automático, pregúntale al propietario cuál
-sigue de esta lista (cada uno es su propio chat/bloque):
-
-1. **Crear sedes adicionales** para `tenant_owner` (`create_branch` no
-   existe todavía; hoy solo existe la sede principal de
-   `register_tenant`).
-2. **Bloquear agenda del estilista** (ausencias/no disponibilidad; sin
-   tabla ni RPC todavía).
-3. **Reconfirmar el alcance de `platform_owner`** frente a D-009 -- hoy
-   sin acceso implícito a los datos privados de cada tenant (solo
-   control comercial: plan, suspender, prueba gratis). Es una decisión
-   de producto/privacidad, no una migración.
-4. **Pasarela de pago con Wompi** (bloqueado hasta que el propietario
-   tenga la cuenta comercial lista -- trámite presencial pendiente, ver
-   D-046). Punto 7 del plan original.
-5. **Logo y colores por negocio (marca blanca)** -- cada tenant sube su
-   logo y elige su paleta de colores; reutiliza la infraestructura de
-   Supabase Storage ya construida para fotos de trabajo (D-060).
-   Decidido en D-062; el dominio propio por negocio queda fuera de
-   alcance (ver nota arriba).
+**El orden de todo lo que sigue ya no vive en este documento.** Desde el
+2026-07-25, la única fuente de "qué sigue y en qué orden" es
+`RUTA_GENERAL_2026-07-25.md` -- léelo completo antes de proponer el
+siguiente bloque. Ese documento separa dos fases: primero pulir el MVP
+(lo que falta dentro del código/producto), y al final todo lo de
+negocio/producción real (`RUTA_A_PRODUCCION_2026-07-25.md`: hosting,
+dominio, plan pago de Supabase, precios, empresa constituida,
+términos/privacidad, pasarela de pago Wompi, marketing). No propongas un
+orden distinto sin que el propietario lo pida explícitamente.
 
 Nota sobre datos de prueba: el tenant "Naguara de Uñas" en el único
 proyecto real es el propio ambiente de pruebas del propietario (aún sin

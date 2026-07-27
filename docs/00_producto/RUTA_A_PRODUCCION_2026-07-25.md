@@ -1,5 +1,11 @@
 # Ruta a producción: de app en construcción a negocio real
 
+**Nota (2026-07-25, mismo día):** este documento es ahora la **Fase
+Final** dentro de `RUTA_GENERAL_2026-07-25.md`. El propietario decidió
+concentrarse primero en pulir el MVP (ver ese documento); nada de lo
+listado aquí abajo se trabaja todavía, ni siquiera el punto 1 de la Fase
+1 original.
+
 **Fecha:** 25 de julio de 2026
 **Contexto:** el propietario no tiene formación técnica ni de programación
 y es el único responsable de la parte de negocio de BeautyOS. Este

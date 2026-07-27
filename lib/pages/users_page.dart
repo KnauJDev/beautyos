@@ -64,7 +64,7 @@ class _UsuariosPageState extends State<UsuariosPage> {
     final stylists = await _stylistsService.getStylistsSummary();
     if (!mounted) return;
 
-    final invited = await showDialog<bool>(
+    final emailSent = await showDialog<bool>(
       context: context,
       builder: (context) => _InviteUserDialog(
         branchId: widget.branchId,
@@ -73,17 +73,20 @@ class _UsuariosPageState extends State<UsuariosPage> {
       ),
     );
 
-    if (invited == true) {
+    if (emailSent != null) {
       _refresh();
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'Invitación creada. Avísale a la persona que se registre en '
-            'BeautyOS con ese mismo correo para unirse automáticamente.',
+            emailSent
+                ? 'Invitación creada y correo enviado automáticamente.'
+                : 'Invitación creada, pero no se pudo enviar el correo '
+                      'automático. Avísale tú mismo a la persona que se '
+                      'registre en BeautyOS con ese mismo correo.',
           ),
-          duration: Duration(seconds: 6),
+          duration: const Duration(seconds: 6),
         ),
       );
     }
@@ -111,7 +114,7 @@ class _UsuariosPageState extends State<UsuariosPage> {
           icon: Icons.manage_accounts_outlined,
           title: 'Administración de accesos',
           description:
-              'Solo el propietario puede activar, desactivar o cambiar el rol de cuentas existentes. Las contraseñas no se muestran ni se modifican aquí.',
+              'El propietario o un administrador pueden activar, desactivar o cambiar el rol de cuentas existentes. Las contraseñas no se muestran ni se modifican aquí.',
         ),
         const SizedBox(height: 16),
         Wrap(
@@ -294,7 +297,7 @@ class _InviteUserDialogState extends State<_InviteUserDialog> {
     });
 
     try {
-      await widget.invitationsService.createInvitation(
+      final emailSent = await widget.invitationsService.createInvitation(
         branchId: widget.branchId,
         email: email,
         role: role,
@@ -302,7 +305,7 @@ class _InviteUserDialogState extends State<_InviteUserDialog> {
       );
 
       if (!mounted) return;
-      Navigator.of(context).pop(true);
+      Navigator.of(context).pop(emailSent);
     } on PostgrestException catch (error) {
       setState(() => errorMessage = error.message);
     } catch (error) {

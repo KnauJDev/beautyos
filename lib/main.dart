@@ -4,9 +4,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'models/my_profile.dart';
 import 'models/branch_context.dart';
 import 'models/pending_invitation.dart';
+import 'models/tenant_subscription_status.dart';
 import 'services/branch_context_service.dart';
 import 'services/my_profile_service.dart';
 import 'services/team_invitations_service.dart';
+import 'services/tenant_subscription_service.dart';
 
 import 'pages/accept_invitation_page.dart';
 import 'pages/auth_gate.dart';
@@ -18,9 +20,12 @@ import 'pages/agenda_page.dart';
 import 'pages/clients_page.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/inventory_page.dart';
+import 'pages/my_commission_summary_page.dart';
 import 'pages/my_stylist_agenda_page.dart';
+import 'pages/my_stylist_reviews_page.dart';
 import 'pages/my_stylist_work_photos_page.dart';
 import 'pages/work_photos_page.dart';
+import 'widgets/create_branch_dialog.dart';
 import 'widgets/session_badge.dart';
 import 'pages/reviews_page.dart';
 import 'pages/purchases_page.dart';
@@ -127,6 +132,30 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
     await Supabase.instance.client.auth.signOut();
   }
 
+  Future<void> _openCreateBranchDialog(BuildContext context) async {
+    final created = await showDialog<bool>(
+      context: context,
+      builder: (context) => const CreateBranchDialog(),
+    );
+
+    if (created != true) return;
+
+    setState(() {
+      homeContextFuture = _loadHomeContext();
+    });
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Sede creada. Ya puedes asignarle servicios y estilistas desde '
+          'sus propias pantallas.',
+        ),
+        duration: Duration(seconds: 6),
+      ),
+    );
+  }
+
   List<BeautyModule> _modulesForProfile(
     MyProfile? profile,
     BranchContext branch,
@@ -162,6 +191,25 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         allowedRoles: const <String>{'stylist'},
       ),
       BeautyModule(
+        section: const BeautySection('Mis reseñas', Icons.star_outline),
+        page: MyStylistReviewsPage(
+          key: ValueKey('my-reviews-${branch.branchId}'),
+          branchId: branch.branchId,
+        ),
+        allowedRoles: const <String>{'stylist'},
+      ),
+      BeautyModule(
+        section: const BeautySection(
+          'Mi panel financiero',
+          Icons.payments_outlined,
+        ),
+        page: MyCommissionSummaryPage(
+          key: ValueKey('my-commissions-${branch.branchId}'),
+          branchId: branch.branchId,
+        ),
+        allowedRoles: const <String>{'stylist'},
+      ),
+      BeautyModule(
         section: const BeautySection('Agenda', Icons.calendar_month_outlined),
         page: AgendaPage(
           key: ValueKey('agenda-${branch.branchId}'),
@@ -175,13 +223,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           key: ValueKey('services-${branch.branchId}'),
           branchId: branch.branchId,
         ),
-        allowedRoles: const <String>{
-          'owner',
-          'admin',
-          'stylist',
-          'assistant',
-          'client',
-        },
+        allowedRoles: const <String>{'owner', 'admin'},
       ),
       BeautyModule(
         section: const BeautySection('Estilistas', Icons.badge_outlined),
@@ -200,7 +242,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           key: ValueKey('users-${branch.branchId}'),
           branchId: branch.branchId,
         ),
-        allowedRoles: const <String>{'owner'},
+        allowedRoles: const <String>{'owner', 'admin'},
       ),
       const BeautyModule(
         section: BeautySection('Clientes', Icons.people_outline),
@@ -447,6 +489,12 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                       });
                     },
                   ),
+                  if (profile.role == 'owner')
+                    IconButton(
+                      tooltip: 'Agregar sede',
+                      onPressed: () => _openCreateBranchDialog(context),
+                      icon: const Icon(Icons.add_business_outlined),
+                    ),
                   const SizedBox(width: 12),
                   const SessionBadge(),
                   const SizedBox(width: 8),
@@ -458,20 +506,31 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                   const SizedBox(width: 8),
                 ],
               ),
-              body: Row(
+              body: Column(
                 children: [
-                  if (isWide)
-                    _SideMenu(
-                      sections: sections,
-                      selectedIndex: currentIndex,
-                      onDestinationSelected: (index) {
-                        setState(() {
-                          selectedIndex = index;
-                        });
-                      },
-                    ),
+                  if (profile.role == 'owner' || profile.role == 'admin')
+                    const _TrialBanner(),
                   Expanded(
-                    child: IndexedStack(index: currentIndex, children: pages),
+                    child: Row(
+                      children: [
+                        if (isWide)
+                          _SideMenu(
+                            sections: sections,
+                            selectedIndex: currentIndex,
+                            onDestinationSelected: (index) {
+                              setState(() {
+                                selectedIndex = index;
+                              });
+                            },
+                          ),
+                        Expanded(
+                          child: IndexedStack(
+                            index: currentIndex,
+                            children: pages,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -595,6 +654,91 @@ class _BranchSelector extends StatelessWidget {
           const Icon(Icons.arrow_drop_down),
         ],
       ),
+    );
+  }
+}
+
+class _TrialBanner extends StatefulWidget {
+  const _TrialBanner();
+
+  @override
+  State<_TrialBanner> createState() => _TrialBannerState();
+}
+
+class _TrialBannerState extends State<_TrialBanner> {
+  final subscriptionService = const TenantSubscriptionService();
+  late Future<TenantSubscriptionStatus?> subscriptionFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    subscriptionFuture = subscriptionService.getMySubscription();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<TenantSubscriptionStatus?>(
+      future: subscriptionFuture,
+      builder: (context, snapshot) {
+        final subscription = snapshot.data;
+
+        if (subscription == null) {
+          return const SizedBox.shrink();
+        }
+
+        final daysRemaining = subscription.trialDaysRemaining;
+
+        if (daysRemaining == null || daysRemaining > 10) {
+          return const SizedBox.shrink();
+        }
+
+        final expired = daysRemaining < 0;
+        final urgent = !expired && daysRemaining <= 3;
+
+        final backgroundColor = expired
+            ? const Color(0xFFFEE2E2)
+            : urgent
+            ? const Color(0xFFFFEDD5)
+            : const Color(0xFFFEF9C3);
+        final foregroundColor = expired
+            ? const Color(0xFF991B1B)
+            : urgent
+            ? const Color(0xFF9A3412)
+            : const Color(0xFF854D0E);
+
+        final message = expired
+            ? 'Tu prueba gratis venció. No se pueden crear reservas ni '
+                  'citas nuevas hasta reactivar tu plan.'
+            : daysRemaining == 0
+            ? 'Tu prueba gratis termina hoy.'
+            : 'Tu prueba gratis termina en $daysRemaining '
+                  '${daysRemaining == 1 ? "día" : "días"}.';
+
+        return Container(
+          width: double.infinity,
+          color: backgroundColor,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            children: [
+              Icon(
+                expired ? Icons.error_outline : Icons.info_outline,
+                color: foregroundColor,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  message,
+                  style: TextStyle(
+                    color: foregroundColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

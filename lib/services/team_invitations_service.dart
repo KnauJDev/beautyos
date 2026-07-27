@@ -6,13 +6,16 @@ import '../models/team_invitation.dart';
 class TeamInvitationsService {
   const TeamInvitationsService();
 
-  Future<void> createInvitation({
+  /// Crea la invitación y trata de enviar el correo automático (D-062).
+  /// Devuelve `true` si el correo se envió; `false` si la invitación quedó
+  /// creada pero el correo falló (el propietario debe avisar por su cuenta).
+  Future<bool> createInvitation({
     required String branchId,
     required String email,
     required String role,
     String? stylistId,
   }) async {
-    await Supabase.instance.client.rpc(
+    final response = await Supabase.instance.client.rpc(
       'create_team_invitation',
       params: {
         'p_branch_id': branchId,
@@ -21,6 +24,18 @@ class TeamInvitationsService {
         'p_stylist_id': stylistId,
       },
     );
+
+    final invitationId = (response as Map)['id'] as String;
+
+    try {
+      await Supabase.instance.client.functions.invoke(
+        'send-invitation-email',
+        body: {'invitation_id': invitationId, 'app_url': Uri.base.origin},
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<List<TeamInvitation>> listInvitations(String branchId) async {
