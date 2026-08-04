@@ -186,7 +186,8 @@ orden (el más difícil primero):
      (no reserva pública). Si una fecha de la serie choca con otra cita,
      se crean las que no chocan y se avisa cuáles fallaron y por qué, en
      vez de cancelar toda la serie. Ver D-081.
-5. Ficha de cliente con saldo acumulado
+5. **Hecho (2026-08-04):** ficha de cliente con saldo acumulado, acotado
+   a solo el total (sin desglose por ticket). Ver D-083.
 6. Portada + foto/bio del profesional en reserva pública
 7. Onboarding guiado ("Primeros pasos")
 8. Inventario: marca, alarma de stock por correo
@@ -225,10 +226,17 @@ todavía no lo ha visto funcionar en el navegador):
 fácil"):**
 - Punto 2 (paquetes/membresías de sesiones) -- **pausado a propósito**,
   no se retoma hasta que un negocio real lo pida.
-- Punto 5: ficha de cliente con saldo acumulado.
 - Punto 6: portada + foto/bio del profesional en reserva pública.
 - Punto 7: onboarding guiado ("Primeros pasos").
 - Punto 8: inventario -- marca, alarma de stock por correo.
+
+**Actualización 2026-08-04:** se completó y desplegó el punto 5 (ficha
+de cliente con saldo acumulado), ver D-083. Sesión de D-078 a D-082
+confirmada en git (commit `e4919eb`, pusheado a `origin/main`) antes de
+empezar este bloque, tal como se dejó pendiente el 2026-07-28.
+Verificación visual pendiente del propietario en su navegador (el
+badge "Saldo pendiente" en la lista de clientes). Siguiente: punto 6
+(portada + foto/bio del profesional en reserva pública).
 
 **Importante -- nada de esto está en git todavía.** Toda la sesión del
 2026-07-28 (D-078 a D-082, ~30 archivos) sigue como cambios locales sin

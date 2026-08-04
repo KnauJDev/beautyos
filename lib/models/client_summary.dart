@@ -6,6 +6,7 @@ class ClientSummary {
   final String? notes;
   final bool active;
   final DateTime? createdAt;
+  final double balanceAmount;
 
   const ClientSummary({
     required this.id,
@@ -15,6 +16,7 @@ class ClientSummary {
     this.notes,
     this.active = true,
     required this.createdAt,
+    this.balanceAmount = 0,
   });
 
   factory ClientSummary.fromMap(Map<String, dynamic> map) {
@@ -28,6 +30,8 @@ class ClientSummary {
       createdAt: map['created_at'] == null
           ? null
           : DateTime.tryParse(map['created_at'].toString()),
+      balanceAmount:
+          double.tryParse(map['balance_amount']?.toString() ?? '') ?? 0,
     );
   }
 }

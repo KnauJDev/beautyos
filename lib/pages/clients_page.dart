@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/client_summary.dart';
+import '../models/ticket_payment.dart' show formatMoney;
 import '../services/clients_service.dart';
 import '../widgets/app_widgets.dart';
 
@@ -526,6 +527,17 @@ class ClientRow extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 14,
                         color: Color(0xFF6B7280),
+                      ),
+                    ),
+                  ],
+                  if (client.balanceAmount > 0) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      'Saldo pendiente: ${formatMoney(client.balanceAmount)}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFB45309),
                       ),
                     ),
                   ],
