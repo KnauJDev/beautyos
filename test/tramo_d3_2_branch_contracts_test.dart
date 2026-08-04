@@ -49,6 +49,7 @@ void main() {
       const ConfiguracionPage(
         key: ValueKey('settings-branch-a2'),
         branchId: branchId,
+        isOwner: true,
       ),
     ];
 

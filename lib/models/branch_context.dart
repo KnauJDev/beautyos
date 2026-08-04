@@ -2,6 +2,7 @@ class BranchContext {
   const BranchContext({
     required this.tenantId,
     required this.tenantName,
+    this.tenantLogoUrl,
     required this.branchId,
     required this.branchName,
     required this.branchSlug,
@@ -15,6 +16,7 @@ class BranchContext {
 
   final String tenantId;
   final String tenantName;
+  final String? tenantLogoUrl;
   final String branchId;
   final String branchName;
   final String? branchSlug;
@@ -29,6 +31,7 @@ class BranchContext {
     return BranchContext(
       tenantId: _requiredString(map, 'tenant_id'),
       tenantName: map['tenant_name']?.toString() ?? 'Negocio BeautyOS',
+      tenantLogoUrl: map['tenant_logo_url']?.toString(),
       branchId: _requiredString(map, 'branch_id'),
       branchName: map['branch_name']?.toString() ?? 'Sede',
       branchSlug: map['branch_slug']?.toString(),

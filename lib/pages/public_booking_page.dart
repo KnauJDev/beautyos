@@ -292,6 +292,22 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (info.logoUrl != null) ...[
+              Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.network(
+                    info.logoUrl!,
+                    width: 72,
+                    height: 72,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        const SizedBox.shrink(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             Text(
               info.businessName,
               textAlign: TextAlign.center,

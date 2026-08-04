@@ -21,6 +21,9 @@ class _CreateTimeOffDialogState extends State<CreateTimeOffDialog> {
 
   DateTime? _startsAt;
   DateTime? _endsAt;
+  bool _repeats = false;
+  String _repeatFrequency = 'daily';
+  DateTime? _repeatUntil;
   bool _isSaving = false;
   String? _error;
 
@@ -73,6 +76,21 @@ class _CreateTimeOffDialogState extends State<CreateTimeOffDialog> {
     }
   }
 
+  Future<void> _pickRepeatUntil() async {
+    final now = DateTime.now();
+    final base = _startsAt ?? now;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _repeatUntil ?? base,
+      firstDate: base,
+      lastDate: base.add(const Duration(days: 180)),
+    );
+
+    if (picked != null) {
+      setState(() => _repeatUntil = picked);
+    }
+  }
+
   Future<void> _save() async {
     final startsAt = _startsAt;
     final endsAt = _endsAt;
@@ -84,6 +102,11 @@ class _CreateTimeOffDialogState extends State<CreateTimeOffDialog> {
 
     if (!endsAt.isAfter(startsAt)) {
       setState(() => _error = 'El fin debe ser posterior al inicio.');
+      return;
+    }
+
+    if (_repeats && _repeatUntil == null) {
+      setState(() => _error = 'Selecciona hasta qué fecha se repite.');
       return;
     }
 
@@ -99,6 +122,8 @@ class _CreateTimeOffDialogState extends State<CreateTimeOffDialog> {
         reason: _reasonController.text.trim().isEmpty
             ? null
             : _reasonController.text.trim(),
+        repeatFrequency: _repeats ? _repeatFrequency : null,
+        repeatUntil: _repeats ? _repeatUntil : null,
       );
 
       if (!mounted) return;
@@ -156,6 +181,44 @@ class _CreateTimeOffDialogState extends State<CreateTimeOffDialog> {
                 labelText: 'Motivo (opcional)',
               ),
             ),
+            const SizedBox(height: 8),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Repetir este bloqueo'),
+              value: _repeats,
+              onChanged: _isSaving
+                  ? null
+                  : (value) => setState(() => _repeats = value),
+            ),
+            if (_repeats) ...[
+              DropdownButtonFormField<String>(
+                initialValue: _repeatFrequency,
+                decoration: const InputDecoration(labelText: 'Frecuencia'),
+                items: const [
+                  DropdownMenuItem(value: 'daily', child: Text('Diariamente')),
+                  DropdownMenuItem(
+                    value: 'weekly',
+                    child: Text('Semanalmente'),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => _repeatFrequency = value);
+                  }
+                },
+              ),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: _isSaving ? null : _pickRepeatUntil,
+                icon: const Icon(Icons.event_repeat_outlined),
+                label: Text('Hasta el: ${_formatPicked(_repeatUntil)}'),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Máximo 180 días de repetición.',
+                style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+              ),
+            ],
             if (_error != null) ...[
               const SizedBox(height: 16),
               Text(

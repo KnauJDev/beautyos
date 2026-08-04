@@ -26,6 +26,7 @@ import 'pages/my_stylist_reviews_page.dart';
 import 'pages/my_stylist_work_photos_page.dart';
 import 'pages/work_photos_page.dart';
 import 'widgets/create_branch_dialog.dart';
+import 'widgets/security_settings_dialog.dart';
 import 'widgets/session_badge.dart';
 import 'pages/reviews_page.dart';
 import 'pages/purchases_page.dart';
@@ -322,6 +323,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         page: ConfiguracionPage(
           key: ValueKey('settings-${branch.branchId}'),
           branchId: branch.branchId,
+          isOwner: role == 'owner',
         ),
         allowedRoles: const <String>{'owner', 'admin'},
       ),
@@ -458,9 +460,28 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
 
             return Scaffold(
               appBar: AppBar(
-                title: const Text(
-                  'BeautyOS',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                title: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (branch.tenantLogoUrl != null) ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: Image.network(
+                          branch.tenantLogoUrl!,
+                          width: 28,
+                          height: 28,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const SizedBox.shrink(),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    const Text(
+                      'BeautyOS',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
                 backgroundColor: const Color(0xFF7C3AED),
                 foregroundColor: Colors.white,
@@ -498,6 +519,15 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                   const SizedBox(width: 12),
                   const SessionBadge(),
                   const SizedBox(width: 8),
+                  IconButton(
+                    tooltip: 'Seguridad de tu cuenta',
+                    onPressed: () => showDialog(
+                      context: context,
+                      builder: (_) => const SecuritySettingsDialog(),
+                    ),
+                    icon: const Icon(Icons.security_outlined),
+                  ),
+                  const SizedBox(width: 4),
                   IconButton(
                     tooltip: 'Cerrar sesi\u00f3n',
                     onPressed: signOut,

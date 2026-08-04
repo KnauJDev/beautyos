@@ -79,6 +79,26 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
     }
   }
 
+  Future<void> _cancelTimeOffSeries(StylistTimeOff timeOff) async {
+    final recurrenceGroupId = timeOff.recurrenceGroupId;
+    if (recurrenceGroupId == null) return;
+
+    try {
+      await timeOffService.cancelTimeOffSeries(recurrenceGroupId);
+      _refreshTimeOff();
+    } on PostgrestException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo cancelar la serie: ${error.message}')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo cancelar la serie: $error')),
+      );
+    }
+  }
+
   void _changeDate(DateTime date) {
     setState(() {
       selectedDate = DateUtils.dateOnly(date);
@@ -202,6 +222,7 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
           timeOffFuture: timeOffFuture,
           onCreate: _openCreateTimeOffDialog,
           onCancel: _cancelTimeOff,
+          onCancelSeries: _cancelTimeOffSeries,
         ),
         const SizedBox(height: 18),
         _AgendaDateNavigator(
@@ -372,11 +393,13 @@ class _TimeOffSection extends StatelessWidget {
     required this.timeOffFuture,
     required this.onCreate,
     required this.onCancel,
+    required this.onCancelSeries,
   });
 
   final Future<List<StylistTimeOff>> timeOffFuture;
   final VoidCallback onCreate;
   final void Function(StylistTimeOff timeOff) onCancel;
+  final void Function(StylistTimeOff timeOff) onCancelSeries;
 
   @override
   Widget build(BuildContext context) {
@@ -452,17 +475,26 @@ class _TimeOffSection extends StatelessWidget {
                           padding: const EdgeInsets.only(bottom: 8),
                           child: Row(
                             children: [
-                              const Icon(
-                                Icons.block_outlined,
+                              Icon(
+                                timeOff.isRecurring
+                                    ? Icons.event_repeat_outlined
+                                    : Icons.block_outlined,
                                 size: 18,
-                                color: Color(0xFF9A3412),
+                                color: const Color(0xFF9A3412),
                               ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  '${timeOff.rangeText} · ${timeOff.reasonText}',
+                                  timeOff.isRecurring
+                                      ? '${timeOff.rangeText} · ${timeOff.reasonText} (serie)'
+                                      : '${timeOff.rangeText} · ${timeOff.reasonText}',
                                 ),
                               ),
+                              if (timeOff.isRecurring)
+                                TextButton(
+                                  onPressed: () => onCancelSeries(timeOff),
+                                  child: const Text('Cancelar serie'),
+                                ),
                               TextButton(
                                 onPressed: () => onCancel(timeOff),
                                 child: const Text('Cancelar'),
@@ -647,6 +679,8 @@ class _AgendaTable extends StatelessWidget {
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: DataTable(
+          dataRowMinHeight: 56,
+          dataRowMaxHeight: 108,
           columns: const [
             DataColumn(label: Text('Fecha')),
             DataColumn(label: Text('Hora')),
@@ -737,11 +771,12 @@ class _ServiceActionButton extends StatelessWidget {
       return statusAction;
     }
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         statusAction,
+        const SizedBox(height: 6),
         OutlinedButton.icon(
           onPressed: () => onAddWorkPhoto(item),
           icon: const Icon(Icons.add_a_photo_outlined),

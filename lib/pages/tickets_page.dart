@@ -748,6 +748,9 @@ class _CreateAppointmentDialogState extends State<_CreateAppointmentDialog> {
   bool isSaving = false;
   String? bookingError;
   String? slotsError;
+  bool repeats = false;
+  String repeatFrequency = 'daily';
+  DateTime? repeatUntil;
 
   @override
   void initState() {
@@ -977,10 +980,24 @@ class _CreateAppointmentDialogState extends State<_CreateAppointmentDialog> {
       return;
     }
 
+    if (repeats && repeatUntil == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Selecciona hasta qué fecha se repite la cita.'),
+        ),
+      );
+      return;
+    }
+
     setState(() {
       isSaving = true;
       bookingError = null;
     });
+
+    if (repeats) {
+      await _submitRecurring();
+      return;
+    }
 
     try {
       final created = await widget.ticketsService
@@ -1020,6 +1037,99 @@ class _CreateAppointmentDialogState extends State<_CreateAppointmentDialog> {
         });
       }
     }
+  }
+
+  Future<void> _submitRecurring() async {
+    try {
+      final results = await widget.ticketsService
+          .createRecurringScheduledTicketWithService(
+            clientId: selectedClientId!,
+            serviceId: selectedServiceId!,
+            stylistId: selectedStylistId!,
+            scheduledAt: scheduledAt!,
+            repeatFrequency: repeatFrequency,
+            repeatUntil: repeatUntil!,
+            notes: notesController.text.trim().isEmpty
+                ? null
+                : notesController.text.trim(),
+          );
+
+      if (!mounted) {
+        return;
+      }
+
+      final succeeded = results.where((r) => r.success).length;
+      final failed = results.where((r) => !r.success).toList();
+
+      Navigator.of(context).pop(true);
+
+      await showDialog<void>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Serie de citas creada'),
+          content: SizedBox(
+            width: 420,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$succeeded de ${results.length} citas se crearon '
+                    'correctamente.',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  if (failed.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    const Text(
+                      'No se pudieron crear:',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 6),
+                    for (final item in failed)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Text(
+                          '${_formatDateTime(item.scheduledAt)}: '
+                          '${item.errorMessage ?? "Error desconocido"}',
+                          style: const TextStyle(color: Color(0xFFB91C1C)),
+                        ),
+                      ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cerrar'),
+            ),
+          ],
+        ),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        bookingError = _friendlyError(error);
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          isSaving = false;
+        });
+      }
+    }
+  }
+
+  String _formatDateTime(DateTime value) {
+    final day = value.day.toString().padLeft(2, '0');
+    final month = value.month.toString().padLeft(2, '0');
+    final hour = value.hour.toString().padLeft(2, '0');
+    final minute = value.minute.toString().padLeft(2, '0');
+    return '$day/$month · $hour:$minute';
   }
 
   @override
@@ -1246,6 +1356,69 @@ class _CreateAppointmentDialogState extends State<_CreateAppointmentDialog> {
                   minLines: 2,
                   maxLines: 3,
                 ),
+                const SizedBox(height: 4),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Repetir esta cita'),
+                  subtitle: const Text(
+                    'Crea una serie con el mismo cliente, servicio, '
+                    'estilista y hora. Solo agenda interna.',
+                  ),
+                  value: repeats,
+                  onChanged: isSaving
+                      ? null
+                      : (value) => setState(() => repeats = value),
+                ),
+                if (repeats) ...[
+                  DropdownButtonFormField<String>(
+                    initialValue: repeatFrequency,
+                    decoration: const InputDecoration(labelText: 'Frecuencia'),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'daily',
+                        child: Text('Diariamente'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'weekly',
+                        child: Text('Semanalmente'),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() => repeatFrequency = value);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    onPressed: isSaving
+                        ? null
+                        : () async {
+                            final base = scheduledAt ?? DateTime.now();
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: repeatUntil ?? base,
+                              firstDate: base,
+                              lastDate: base.add(const Duration(days: 180)),
+                            );
+                            if (picked != null) {
+                              setState(() => repeatUntil = picked);
+                            }
+                          },
+                    icon: const Icon(Icons.event_repeat_outlined),
+                    label: Text(
+                      repeatUntil == null
+                          ? 'Hasta: seleccionar'
+                          : 'Hasta: ${_formatDateTime(repeatUntil!)}',
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Si una fecha choca con otra cita, se avisa cuál y se '
+                    'crean las demás. Máximo 180 días.',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+                  ),
+                ],
                 if (service != null &&
                     stylist != null &&
                     scheduledAt != null) ...[
@@ -3457,7 +3630,7 @@ class TicketRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          TicketStatusBadge(label: ticket.statusLabel),
+          TicketStatusBadge(status: ticket.status, label: ticket.statusLabel),
         ],
       ),
     );
@@ -3465,24 +3638,61 @@ class TicketRow extends StatelessWidget {
 }
 
 class TicketStatusBadge extends StatelessWidget {
+  final String status;
   final String label;
 
-  const TicketStatusBadge({super.key, required this.label});
+  const TicketStatusBadge({
+    super.key,
+    required this.status,
+    required this.label,
+  });
+
+  /// Benchmarking 2026-07-28 (AgendaPro), punto 5: un color distinto por
+  /// cada uno de los 10 estados de ticket (antes todos usaban el mismo
+  /// morado). Devuelve (fondo, texto).
+  (Color, Color) get _colors {
+    switch (status.toLowerCase()) {
+      case 'solicitado':
+        return (const Color(0xFFFEF9C3), const Color(0xFF854D0E));
+      case 'cotizado':
+        return (const Color(0xFFE0F2FE), const Color(0xFF075985));
+      case 'apartado':
+        return (const Color(0xFFDBEAFE), const Color(0xFF1D4ED8));
+      case 'confirmado':
+        return (const Color(0xFFCCFBF1), const Color(0xFF0F766E));
+      case 'en_espera':
+        return (const Color(0xFFFFEDD5), const Color(0xFF9A3412));
+      case 'en_proceso':
+        return (const Color(0xFFEDE9FE), const Color(0xFF6D28D9));
+      case 'finalizado':
+        return (const Color(0xFFCFFAFE), const Color(0xFF0E7490));
+      case 'cerrado':
+        return (const Color(0xFFD1FAE5), const Color(0xFF047857));
+      case 'cancelado':
+        return (const Color(0xFFFEE2E2), const Color(0xFFB91C1C));
+      case 'no_asistio':
+        return (const Color(0xFFE5E7EB), const Color(0xFF4B5563));
+      default:
+        return (const Color(0xFFEDE9FE), const Color(0xFF6D28D9));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final (background, foreground) = _colors;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFEDE9FE),
+        color: background,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.bold,
-          color: Color(0xFF6D28D9),
+          color: foreground,
         ),
       ),
     );

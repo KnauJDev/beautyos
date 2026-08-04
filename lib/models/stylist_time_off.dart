@@ -4,12 +4,16 @@ class StylistTimeOff {
     required this.startsAt,
     required this.endsAt,
     required this.reason,
+    this.recurrenceGroupId,
   });
 
   final String id;
   final DateTime startsAt;
   final DateTime endsAt;
   final String? reason;
+  final String? recurrenceGroupId;
+
+  bool get isRecurring => recurrenceGroupId != null;
 
   factory StylistTimeOff.fromMap(Map<String, dynamic> map) {
     return StylistTimeOff(
@@ -17,6 +21,7 @@ class StylistTimeOff {
       startsAt: DateTime.parse(map['starts_at'].toString()).toLocal(),
       endsAt: DateTime.parse(map['ends_at'].toString()).toLocal(),
       reason: map['reason']?.toString(),
+      recurrenceGroupId: map['recurrence_group_id']?.toString(),
     );
   }
 

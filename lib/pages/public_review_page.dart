@@ -177,6 +177,22 @@ class _PublicReviewPageState extends State<PublicReviewPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (loadedTicket.logoUrl != null) ...[
+              Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Image.network(
+                    loadedTicket.logoUrl!,
+                    width: 64,
+                    height: 64,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        const SizedBox.shrink(),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             Text(
               loadedTicket.branchName,
               style: const TextStyle(

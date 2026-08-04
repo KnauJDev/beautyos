@@ -9,6 +9,7 @@ class PublicBranchInfo {
     required this.whatsapp,
     required this.timezone,
     required this.currencyCode,
+    this.logoUrl,
   });
 
   final String branchId;
@@ -20,6 +21,7 @@ class PublicBranchInfo {
   final String? whatsapp;
   final String timezone;
   final String currencyCode;
+  final String? logoUrl;
 
   factory PublicBranchInfo.fromMap(Map<String, dynamic> map) {
     return PublicBranchInfo(
@@ -32,6 +34,7 @@ class PublicBranchInfo {
       whatsapp: map['whatsapp']?.toString(),
       timezone: map['timezone']?.toString() ?? 'America/Bogota',
       currencyCode: map['currency_code']?.toString() ?? 'COP',
+      logoUrl: map['logo_url']?.toString(),
     );
   }
 }

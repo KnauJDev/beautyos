@@ -1,21 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/appointment_policy.dart';
 import '../models/business_hour.dart';
 import '../models/business_settings.dart';
 import '../models/commission_policy.dart';
+import '../models/stylist_commission_override.dart';
+import '../models/stylist_management_item.dart';
 import '../services/appointment_policy_service.dart';
 import '../services/business_hours_service.dart';
 import '../services/business_settings_service.dart';
 import '../services/commission_policy_service.dart';
+import '../services/stylists_service.dart';
+import '../services/tenant_logo_upload_service.dart';
 import '../widgets/app_widgets.dart';
 
 class ConfiguracionPage extends StatefulWidget {
-  const ConfiguracionPage({super.key, required this.branchId});
+  const ConfiguracionPage({
+    super.key,
+    required this.branchId,
+    required this.isOwner,
+  });
 
   final String branchId;
+  final bool isOwner;
 
   @override
   State<ConfiguracionPage> createState() => _ConfiguracionPageState();
@@ -28,11 +38,13 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
   late final BusinessHoursService businessHoursService;
   late final AppointmentPolicyService appointmentPolicyService;
   late final CommissionPolicyService commissionPolicyService;
+  final StylistsService stylistsService = const StylistsService();
 
-  late final Future<BusinessSettings> businessSettingsFuture;
+  late Future<BusinessSettings> businessSettingsFuture;
   late Future<List<BusinessHour>> businessHoursFuture;
   late Future<AppointmentPolicy> appointmentPolicyFuture;
   late Future<CommissionPolicy> commissionPolicyFuture;
+  late Future<List<StylistManagementItem>> stylistsFuture;
 
   @override
   void initState() {
@@ -48,6 +60,15 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
     businessHoursFuture = businessHoursService.getBusinessHours();
     appointmentPolicyFuture = appointmentPolicyService.getAppointmentPolicy();
     commissionPolicyFuture = commissionPolicyService.getCommissionPolicy();
+    stylistsFuture = stylistsService.getStylistsForManagement(
+      widget.branchId,
+    );
+  }
+
+  void _reloadBusinessSettings() {
+    setState(() {
+      businessSettingsFuture = businessSettingsService.getBusinessSettings();
+    });
   }
 
   void _reloadHours() {
@@ -151,7 +172,12 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
               );
             }
 
-            return BusinessSettingsCard(settings: snapshot.data!);
+            return BusinessSettingsCard(
+              settings: snapshot.data!,
+              isOwner: widget.isOwner,
+              businessSettingsService: businessSettingsService,
+              onLogoChanged: _reloadBusinessSettings,
+            );
           },
         ),
         const SizedBox(height: 16),
@@ -273,6 +299,48 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
             );
           },
         ),
+        const SizedBox(height: 16),
+        const SectionTitle('Excepciones de comisión por estilista'),
+        FutureBuilder<List<StylistManagementItem>>(
+          future: stylistsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Card(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              );
+            }
+
+            if (snapshot.hasError) {
+              return const InfoPanel(
+                icon: Icons.error_outline,
+                title: 'No se pudieron cargar los estilistas',
+                description:
+                    'Revisa la conexión con Supabase o el acceso a la sede seleccionada.',
+              );
+            }
+
+            final stylists = (snapshot.data ?? [])
+                .where((stylist) => stylist.active)
+                .toList();
+
+            if (stylists.isEmpty) {
+              return const InfoPanel(
+                icon: Icons.info_outline,
+                title: 'Sin estilistas activos',
+                description:
+                    'Crea estilistas en "Estilistas" para poder fijarles una comisión distinta a la del negocio.',
+              );
+            }
+
+            return StylistCommissionExceptionsCard(
+              stylists: stylists,
+              commissionPolicyService: commissionPolicyService,
+            );
+          },
+        ),
       ],
     );
   }
@@ -280,8 +348,17 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
 
 class BusinessSettingsCard extends StatelessWidget {
   final BusinessSettings settings;
+  final bool isOwner;
+  final BusinessSettingsService businessSettingsService;
+  final VoidCallback onLogoChanged;
 
-  const BusinessSettingsCard({super.key, required this.settings});
+  const BusinessSettingsCard({
+    super.key,
+    required this.settings,
+    required this.isOwner,
+    required this.businessSettingsService,
+    required this.onLogoChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -291,7 +368,28 @@ class BusinessSettingsCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(settings.name, style: Theme.of(context).textTheme.titleLarge),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _TenantLogoPreview(logoUrl: settings.logoUrl),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    settings.name,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+              ],
+            ),
+            if (isOwner) ...[
+              const SizedBox(height: 10),
+              _LogoUploadButton(
+                tenantId: settings.id,
+                hasLogo: settings.logoUrl != null,
+                businessSettingsService: businessSettingsService,
+                onChanged: onLogoChanged,
+              ),
+            ],
             const SizedBox(height: 12),
             _SettingsLine(
               label: 'Tipo de negocio',
@@ -305,6 +403,118 @@ class BusinessSettingsCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _TenantLogoPreview extends StatelessWidget {
+  const _TenantLogoPreview({required this.logoUrl});
+
+  final String? logoUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = logoUrl;
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        color: const Color(0xFFEEE6FF),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: url == null
+          ? const Icon(Icons.storefront_outlined, color: Color(0xFF7C3AED))
+          : Image.network(
+              url,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => const Icon(
+                Icons.broken_image_outlined,
+                color: Color(0xFF7C3AED),
+              ),
+            ),
+    );
+  }
+}
+
+class _LogoUploadButton extends StatefulWidget {
+  const _LogoUploadButton({
+    required this.tenantId,
+    required this.hasLogo,
+    required this.businessSettingsService,
+    required this.onChanged,
+  });
+
+  final String tenantId;
+  final bool hasLogo;
+  final BusinessSettingsService businessSettingsService;
+  final VoidCallback onChanged;
+
+  @override
+  State<_LogoUploadButton> createState() => _LogoUploadButtonState();
+}
+
+class _LogoUploadButtonState extends State<_LogoUploadButton> {
+  final _uploadService = const TenantLogoUploadService();
+  bool _isUploading = false;
+  String? _error;
+
+  Future<void> _pickAndUpload() async {
+    final XFile? image = await _uploadService.pickImage();
+    if (image == null) return;
+
+    setState(() {
+      _isUploading = true;
+      _error = null;
+    });
+
+    try {
+      final logoUrl = await _uploadService.uploadTenantLogo(
+        tenantId: widget.tenantId,
+        image: image,
+      );
+      await widget.businessSettingsService.updateTenantLogo(logoUrl);
+
+      if (!mounted) return;
+      widget.onChanged();
+    } catch (error) {
+      if (!mounted) return;
+      final message = error is PostgrestException
+          ? error.message
+          : 'No se pudo subir el logo: $error';
+      setState(() => _error = message);
+    } finally {
+      if (mounted) {
+        setState(() => _isUploading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        OutlinedButton.icon(
+          onPressed: _isUploading ? null : _pickAndUpload,
+          icon: _isUploading
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.image_outlined, size: 18),
+          label: Text(
+            _isUploading
+                ? 'Subiendo...'
+                : (widget.hasLogo ? 'Cambiar logo' : 'Subir logo'),
+          ),
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: 6),
+          Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+        ],
+      ],
     );
   }
 }
@@ -486,6 +696,345 @@ class CommissionPolicyCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class StylistCommissionExceptionsCard extends StatelessWidget {
+  const StylistCommissionExceptionsCard({
+    super.key,
+    required this.stylists,
+    required this.commissionPolicyService,
+  });
+
+  final List<StylistManagementItem> stylists;
+  final CommissionPolicyService commissionPolicyService;
+
+  Future<void> _openDialog(BuildContext context, StylistManagementItem stylist) {
+    return showDialog(
+      context: context,
+      builder: (_) => _StylistCommissionOverridesDialog(
+        stylist: stylist,
+        commissionPolicyService: commissionPolicyService,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Fija una comisión distinta a la general del negocio para un '
+              'estilista en un servicio específico. Sin excepciones, se usa '
+              'la comisión general de arriba.',
+              style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+            ),
+            const SizedBox(height: 12),
+            for (final stylist in stylists)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        stylist.name,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => _openDialog(context, stylist),
+                      icon: const Icon(Icons.percent_outlined, size: 18),
+                      label: const Text('Editar excepciones'),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StylistCommissionOverridesDialog extends StatefulWidget {
+  const _StylistCommissionOverridesDialog({
+    required this.stylist,
+    required this.commissionPolicyService,
+  });
+
+  final StylistManagementItem stylist;
+  final CommissionPolicyService commissionPolicyService;
+
+  @override
+  State<_StylistCommissionOverridesDialog> createState() =>
+      _StylistCommissionOverridesDialogState();
+}
+
+class _StylistCommissionOverridesDialogState
+    extends State<_StylistCommissionOverridesDialog> {
+  late Future<List<StylistCommissionOverride>> overridesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    overridesFuture = widget.commissionPolicyService
+        .getStylistCommissionOverrides(widget.stylist.id);
+  }
+
+  void _reload() {
+    setState(() {
+      overridesFuture = widget.commissionPolicyService
+          .getStylistCommissionOverrides(widget.stylist.id);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Comisiones de ${widget.stylist.name}'),
+      content: SizedBox(
+        width: 480,
+        child: FutureBuilder<List<StylistCommissionOverride>>(
+          future: overridesFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const SizedBox(
+                height: 120,
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            if (snapshot.hasError) {
+              return Text(
+                'No se pudieron cargar los servicios: ${snapshot.error}',
+                style: const TextStyle(color: Colors.red),
+              );
+            }
+
+            final overrides = snapshot.data ?? [];
+
+            if (overrides.isEmpty) {
+              return const Text(
+                'Este estilista no tiene servicios asignados en esta sede '
+                'todavía.',
+              );
+            }
+
+            return SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final override in overrides)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _ServiceCommissionRow(
+                        stylistId: widget.stylist.id,
+                        commissionOverride: override,
+                        commissionPolicyService: widget.commissionPolicyService,
+                        onChanged: _reload,
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cerrar'),
+        ),
+      ],
+    );
+  }
+}
+
+class _ServiceCommissionRow extends StatefulWidget {
+  const _ServiceCommissionRow({
+    required this.stylistId,
+    required this.commissionOverride,
+    required this.commissionPolicyService,
+    required this.onChanged,
+  });
+
+  final String stylistId;
+  final StylistCommissionOverride commissionOverride;
+  final CommissionPolicyService commissionPolicyService;
+  final VoidCallback onChanged;
+
+  @override
+  State<_ServiceCommissionRow> createState() => _ServiceCommissionRowState();
+}
+
+class _ServiceCommissionRowState extends State<_ServiceCommissionRow> {
+  late bool hasException = widget.commissionOverride.hasOverride;
+  late String commissionType =
+      widget.commissionOverride.commissionType ?? 'percentage';
+  late final percentageController = TextEditingController(
+    text: (widget.commissionOverride.commissionPercentage ?? 0).toString(),
+  );
+  late final fixedController = TextEditingController(
+    text: (widget.commissionOverride.fixedCommissionAmount ?? 0).toString(),
+  );
+  bool isSaving = false;
+  String? error;
+
+  @override
+  void dispose() {
+    percentageController.dispose();
+    fixedController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      isSaving = true;
+      error = null;
+    });
+
+    try {
+      if (hasException) {
+        final percentage = num.tryParse(percentageController.text.trim());
+        final fixed = num.tryParse(fixedController.text.trim());
+
+        if (percentage == null || percentage < 0 || percentage > 100) {
+          setState(() {
+            error = 'El porcentaje debe ser entre 0 y 100.';
+            isSaving = false;
+          });
+          return;
+        }
+        if (fixed == null || fixed < 0) {
+          setState(() {
+            error = 'El valor fijo no puede ser negativo.';
+            isSaving = false;
+          });
+          return;
+        }
+
+        await widget.commissionPolicyService.setStylistServiceCommission(
+          stylistId: widget.stylistId,
+          serviceId: widget.commissionOverride.serviceId,
+          commissionType: commissionType,
+          commissionPercentage: percentage,
+          fixedCommissionAmount: fixed,
+        );
+      } else if (widget.commissionOverride.hasOverride) {
+        await widget.commissionPolicyService
+            .removeStylistServiceCommissionOverride(
+          stylistId: widget.stylistId,
+          serviceId: widget.commissionOverride.serviceId,
+        );
+      }
+
+      widget.onChanged();
+    } on PostgrestException catch (e) {
+      setState(() => error = e.message);
+    } catch (e) {
+      setState(() => error = 'Ocurrió un error inesperado: $e');
+    } finally {
+      if (mounted) {
+        setState(() => isSaving = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  widget.commissionOverride.serviceName,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              Switch(
+                value: hasException,
+                onChanged: (value) => setState(() => hasException = value),
+              ),
+            ],
+          ),
+          if (!hasException)
+            const Text(
+              'Usa la comisión general del negocio.',
+              style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+            )
+          else ...[
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    initialValue: commissionType,
+                    decoration: const InputDecoration(labelText: 'Tipo'),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'percentage',
+                        child: Text('Porcentaje'),
+                      ),
+                      DropdownMenuItem(value: 'fixed', child: Text('Valor fijo')),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) setState(() => commissionType = value);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: commissionType == 'percentage'
+                        ? percentageController
+                        : fixedController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: commissionType == 'percentage'
+                          ? 'Porcentaje (%)'
+                          : 'Valor fijo (COP)',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          if (error != null) ...[
+            const SizedBox(height: 6),
+            Text(error!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+          ],
+          const SizedBox(height: 6),
+          Align(
+            alignment: Alignment.centerRight,
+            child: FilledButton(
+              onPressed: isSaving ? null : _save,
+              child: isSaving
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Text('Guardar'),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -37,6 +37,7 @@ class PublicReviewTicket {
     required this.reviewable,
     required this.alreadyReviewed,
     required this.services,
+    this.logoUrl,
   });
 
   final String ticketId;
@@ -46,6 +47,7 @@ class PublicReviewTicket {
   final bool reviewable;
   final bool alreadyReviewed;
   final List<PublicReviewServiceOption> services;
+  final String? logoUrl;
 
   factory PublicReviewTicket.fromMap(Map<String, dynamic> map) {
     final rawServices = map['services'] as List<dynamic>? ?? [];
@@ -57,6 +59,7 @@ class PublicReviewTicket {
       ticketStatus: map['ticket_status'] as String? ?? '',
       reviewable: map['reviewable'] as bool? ?? false,
       alreadyReviewed: map['already_reviewed'] as bool? ?? false,
+      logoUrl: map['logo_url'] as String?,
       services: rawServices
           .map(
             (item) => PublicReviewServiceOption.fromMap(

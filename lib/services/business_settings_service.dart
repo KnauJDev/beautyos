@@ -14,4 +14,11 @@ class BusinessSettingsService {
       Map<String, dynamic>.from(response),
     );
   }
+
+  Future<void> updateTenantLogo(String logoUrl) async {
+    await Supabase.instance.client.rpc(
+      'update_tenant_logo',
+      params: {'p_logo_url': logoUrl},
+    );
+  }
 }

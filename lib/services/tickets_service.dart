@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/ticket_service_option.dart';
 import '../models/available_appointment_slot.dart';
+import '../models/recurring_booking_result.dart';
 import '../models/ticket_service_management_item.dart';
 import '../models/ticket_service_correction_option.dart';
 import '../models/ticket_payment.dart';
@@ -74,6 +75,43 @@ class TicketsService {
     );
 
     return (response as List<dynamic>).isNotEmpty;
+  }
+
+  Future<List<RecurringBookingResult>> createRecurringScheduledTicketWithService({
+    required String clientId,
+    required String serviceId,
+    required String stylistId,
+    required DateTime scheduledAt,
+    required String repeatFrequency,
+    required DateTime repeatUntil,
+    String channel = 'manual',
+    String? notes,
+  }) async {
+    final response = await Supabase.instance.client.rpc(
+      'create_recurring_scheduled_tickets_v2',
+      params: {
+        'p_branch_id': branchId,
+        'p_client_id': clientId,
+        'p_service_id': serviceId,
+        'p_stylist_id': stylistId,
+        'p_scheduled_at': scheduledAt.toUtc().toIso8601String(),
+        'p_repeat_frequency': repeatFrequency,
+        'p_repeat_until':
+            '${repeatUntil.year.toString().padLeft(4, '0')}-'
+            '${repeatUntil.month.toString().padLeft(2, '0')}-'
+            '${repeatUntil.day.toString().padLeft(2, '0')}',
+        'p_channel': channel,
+        'p_notes': notes,
+      },
+    );
+
+    return (response as List<dynamic>)
+        .map(
+          (item) => RecurringBookingResult.fromMap(
+            Map<String, dynamic>.from(item as Map),
+          ),
+        )
+        .toList();
   }
 
   Future<List<AvailableAppointmentSlot>> getAvailableAppointmentSlots({

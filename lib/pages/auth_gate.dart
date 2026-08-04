@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'login_page.dart';
+import 'mfa_challenge_page.dart';
 
 class AuthGate extends StatefulWidget {
   const AuthGate({
@@ -19,25 +20,42 @@ class AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<AuthGate> {
   late bool isAuthenticated;
+  late bool needsMfaChallenge;
   StreamSubscription<AuthState>? authSubscription;
+
+  void _refreshAuthStatus() {
+    final session = Supabase.instance.client.auth.currentSession;
+    isAuthenticated = session != null;
+
+    if (!isAuthenticated) {
+      needsMfaChallenge = false;
+      return;
+    }
+
+    // Verificacion en dos pasos (D-078 punto 3, opcional por usuario):
+    // si tiene un factor TOTP verificado, la sesion de solo
+    // correo+contraseña queda en aal1 y falta subir a aal2.
+    final aal = Supabase.instance.client.auth.mfa
+        .getAuthenticatorAssuranceLevel();
+    needsMfaChallenge =
+        aal.currentLevel != null &&
+        aal.nextLevel != null &&
+        aal.currentLevel != aal.nextLevel;
+  }
 
   @override
   void initState() {
     super.initState();
 
-    isAuthenticated = Supabase.instance.client.auth.currentSession != null;
+    _refreshAuthStatus();
 
     authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen(
       (data) {
-        final hasSession = data.session != null;
-
         if (!mounted) {
           return;
         }
 
-        setState(() {
-          isAuthenticated = hasSession;
-        });
+        setState(_refreshAuthStatus);
       },
     );
   }
@@ -53,19 +71,21 @@ class _AuthGateState extends State<AuthGate> {
       return;
     }
 
-    setState(() {
-      isAuthenticated = true;
-    });
+    setState(_refreshAuthStatus);
   }
 
   @override
   Widget build(BuildContext context) {
-    if (isAuthenticated) {
-      return widget.authenticatedChild;
+    if (!isAuthenticated) {
+      return LoginPage(
+        onLoginSuccess: handleLoginSuccess,
+      );
     }
 
-    return LoginPage(
-      onLoginSuccess: handleLoginSuccess,
-    );
+    if (needsMfaChallenge) {
+      return const MfaChallengePage();
+    }
+
+    return widget.authenticatedChild;
   }
 }

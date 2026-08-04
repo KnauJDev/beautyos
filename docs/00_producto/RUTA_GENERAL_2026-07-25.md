@@ -136,16 +136,24 @@ de cualquier negocio para dar soporte: clientes/tickets, finanzas,
 equipo, reseñas y fotos. Sin auditoría, por decisión explícita. Nuevo
 botón "Ver datos (soporte)" en el Panel de plataforma. Ver D-076.
 
-**4.4 Logo y colores por negocio (marca blanca)** -- ya decidido en D-062
-que sí se construye (reutiliza el Storage ya hecho para fotos de trabajo).
-El dominio propio por negocio queda fuera de alcance por ahora (ver Fase
-Final).
+**4.4 Hecho (2026-07-27), solo logo:** el propietario acotó el alcance
+original (logo + colores, D-062) a solo logo por ahora -- colores y
+disposición visual quedan para el benchmarking del punto 5. Solo
+`tenant_owner` puede subir/cambiar el logo; se ve en Configuración, el
+encabezado interno, la reserva pública y el enlace de reseña pública. El
+propietario probó en su propio navegador (Naguara de Uñas): subió un logo
+real y se ve correcto en Configuración. Ver D-077. El dominio propio por
+negocio sigue fuera de alcance por ahora (ver Fase Final).
 
 ### 5. Pulido general antes de dar la Fase MVP por cerrada
 
 - **Apariencia visual de la app** -- pulir lo que ya existe (esto seguía
   mencionado en `RUTA_A_PRODUCCION` como punto 1 de Fase 1, pero es trabajo
-  de producto/código, no de negocio; se reubica aquí).
+  de producto/código, no de negocio; se reubica aquí). El 2026-07-28 se hizo
+  el primer benchmarking real (cuenta de prueba en AgendaPro) con
+  priorización sugerida -- ver `BENCHMARKING_2026-07-28.md`. Nada de esto
+  implementado todavía; queda para cuando el propietario confirme cuál
+  candidato sigue.
 - **Ampliar pruebas automatizadas** -- hoy solo hay 3 archivos de prueba
   (`test/`) para unos 30 servicios de Flutter. La validación real se ha
   hecho a mano (SQL con rollback, pruebas en navegador) en cada bloque, lo
