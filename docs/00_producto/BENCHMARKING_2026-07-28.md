@@ -191,7 +191,10 @@ orden (el más difícil primero):
 6. **Hecho (2026-08-05):** portada del negocio + foto/bio del
    profesional en reserva pública, a nivel de negocio completo (no por
    sede) y editable solo por tenant_owner/admin. Ver D-084.
-7. Onboarding guiado ("Primeros pasos")
+7. Onboarding guiado ("Primeros pasos") -- **pospuesto (2026-08-05),
+   no descartado.** El propietario prefiere construirlo cuando la app
+   este visualmente terminada, para no enlazar un checklist a
+   pantallas que todavia van a cambiar. Ver D-085.
 8. Inventario: marca, alarma de stock por correo
 9. **Hecho (2026-07-28):** colores por estado de reserva -- un color
    distinto para cada uno de los 10 estados de ticket, antes todos
@@ -224,12 +227,13 @@ todavía no lo ha visto funcionar en el navegador):
 - D-080/D-081: el interruptor "Repetir" en bloqueos de agenda ("Mi
   agenda") y en crear una cita nueva (Tickets → Nueva reserva).
 
-**Sin construir todavía, en el orden acordado ("de más difícil a más
-fácil"):**
+**Sin construir todavía:**
 - Punto 2 (paquetes/membresías de sesiones) -- **pausado a propósito**,
   no se retoma hasta que un negocio real lo pida.
-- Punto 7: onboarding guiado ("Primeros pasos").
-- Punto 8: inventario -- marca, alarma de stock por correo.
+- Punto 7: onboarding guiado ("Primeros pasos") -- **pospuesto**, se
+  retoma cuando la app este visualmente terminada. Ver D-085.
+- Punto 8: inventario -- marca, alarma de stock por correo. **Siguiente
+  en la fila** tras posponer el punto 7.
 
 **Actualización 2026-08-04:** se completó y desplegó el punto 5 (ficha
 de cliente con saldo acumulado), ver D-083. Sesión de D-078 a D-082
@@ -242,8 +246,10 @@ badge "Saldo pendiente" en la lista de clientes).
 (portada del negocio + foto/bio del profesional en reserva pública),
 ver D-084. Verificación visual pendiente del propietario en su
 navegador (no se pudo completar en esta sesión porque el panel de
-vista previa no se pudo mostrar en este entorno). Siguiente: punto 7
-(onboarding guiado, "Primeros pasos").
+vista previa no se pudo mostrar en este entorno). El propietario
+decidió posponer el punto 7 (onboarding guiado) hasta que la app esté
+visualmente terminada (D-085). Siguiente: punto 8 (inventario --
+marca, alarma de stock por correo).
 
 **Importante -- nada de esto está en git todavía.** Toda la sesión del
 2026-07-28 (D-078 a D-082, ~30 archivos) sigue como cambios locales sin
