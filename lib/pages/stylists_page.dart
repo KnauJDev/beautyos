@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/stylist_management_item.dart';
 import '../models/stylist_service_option.dart';
 import '../models/stylist_service_summary.dart';
+import '../services/stylist_photo_upload_service.dart';
 import '../services/stylist_services_service.dart';
 import '../services/stylists_service.dart';
 import '../widgets/app_widgets.dart';
 
 class EstilistasPage extends StatefulWidget {
-  const EstilistasPage({super.key, required this.branchId});
+  const EstilistasPage({
+    super.key,
+    required this.branchId,
+    required this.tenantId,
+  });
 
   final String branchId;
+  final String tenantId;
 
   @override
   State<EstilistasPage> createState() => _EstilistasPageState();
@@ -55,6 +62,7 @@ class _EstilistasPageState extends State<EstilistasPage> {
       context: context,
       builder: (_) => _StylistFormDialog(
         branchId: widget.branchId,
+        tenantId: widget.tenantId,
         stylistsService: stylistsService,
         existing: null,
       ),
@@ -70,6 +78,7 @@ class _EstilistasPageState extends State<EstilistasPage> {
       context: context,
       builder: (_) => _StylistFormDialog(
         branchId: widget.branchId,
+        tenantId: widget.tenantId,
         stylistsService: stylistsService,
         existing: stylist,
       ),
@@ -263,13 +272,7 @@ class StylistCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.face_retouching_natural_outlined,
-            size: 30,
-            color: stylist.active
-                ? const Color(0xFF7C3AED)
-                : const Color(0xFF9CA3AF),
-          ),
+          _StylistAvatar(photoUrl: stylist.photoUrl, active: stylist.active),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -315,6 +318,17 @@ class StylistCard extends StatelessWidget {
                     color: Color(0xFF6B7280),
                   ),
                 ),
+                if (stylist.bio != null && stylist.bio!.trim().isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    stylist.bio!,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontStyle: FontStyle.italic,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 14),
                 const Text(
                   'Servicios asignados',
@@ -377,6 +391,39 @@ class StylistCard extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _StylistAvatar extends StatelessWidget {
+  const _StylistAvatar({required this.photoUrl, required this.active});
+
+  final String? photoUrl;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = photoUrl;
+    final color = active ? const Color(0xFF7C3AED) : const Color(0xFF9CA3AF);
+
+    if (url == null || url.trim().isEmpty) {
+      return Icon(
+        Icons.face_retouching_natural_outlined,
+        size: 30,
+        color: color,
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: Image.network(
+        url,
+        width: 44,
+        height: 44,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) =>
+            Icon(Icons.face_retouching_natural_outlined, size: 30, color: color),
       ),
     );
   }
@@ -522,11 +569,13 @@ class _ManageStylistServicesDialogState
 class _StylistFormDialog extends StatefulWidget {
   const _StylistFormDialog({
     required this.branchId,
+    required this.tenantId,
     required this.stylistsService,
     required this.existing,
   });
 
   final String branchId;
+  final String tenantId;
   final StylistsService stylistsService;
   final StylistManagementItem? existing;
 
@@ -535,6 +584,8 @@ class _StylistFormDialog extends StatefulWidget {
 }
 
 class _StylistFormDialogState extends State<_StylistFormDialog> {
+  final _photoUploadService = const StylistPhotoUploadService();
+
   late final nameController = TextEditingController(
     text: widget.existing?.name ?? '',
   );
@@ -549,7 +600,12 @@ class _StylistFormDialogState extends State<_StylistFormDialog> {
         ? widget.existing!.specialty
         : '',
   );
+  late final bioController = TextEditingController(
+    text: widget.existing?.bio ?? '',
+  );
+  late String? photoUrl = widget.existing?.photoUrl;
   bool isSaving = false;
+  bool isUploadingPhoto = false;
   String? errorMessage;
 
   bool get isEditing => widget.existing != null;
@@ -559,7 +615,39 @@ class _StylistFormDialogState extends State<_StylistFormDialog> {
     nameController.dispose();
     phoneController.dispose();
     specialtyController.dispose();
+    bioController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAndUploadPhoto() async {
+    final XFile? image = await _photoUploadService.pickImage();
+    if (image == null) return;
+
+    setState(() {
+      isUploadingPhoto = true;
+      errorMessage = null;
+    });
+
+    try {
+      final uploadedUrl = await _photoUploadService.uploadStylistPhoto(
+        tenantId: widget.tenantId,
+        stylistId: widget.existing!.id,
+        image: image,
+      );
+
+      if (!mounted) return;
+      setState(() => photoUrl = uploadedUrl);
+    } catch (error) {
+      if (!mounted) return;
+      final message = error is PostgrestException
+          ? error.message
+          : 'No se pudo subir la foto: $error';
+      setState(() => errorMessage = message);
+    } finally {
+      if (mounted) {
+        setState(() => isUploadingPhoto = false);
+      }
+    }
   }
 
   Future<void> save() async {
@@ -582,6 +670,9 @@ class _StylistFormDialogState extends State<_StylistFormDialog> {
       final specialty = specialtyController.text.trim().isEmpty
           ? null
           : specialtyController.text.trim();
+      final bio = bioController.text.trim().isEmpty
+          ? null
+          : bioController.text.trim();
 
       if (isEditing) {
         await widget.stylistsService.updateStylist(
@@ -590,6 +681,8 @@ class _StylistFormDialogState extends State<_StylistFormDialog> {
           name: name,
           phone: phone,
           specialty: specialty,
+          photoUrl: photoUrl,
+          bio: bio,
         );
       } else {
         await widget.stylistsService.createStylist(
@@ -597,6 +690,7 @@ class _StylistFormDialogState extends State<_StylistFormDialog> {
           name: name,
           phone: phone,
           specialty: specialty,
+          bio: bio,
         );
       }
 
@@ -621,6 +715,26 @@ class _StylistFormDialogState extends State<_StylistFormDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (isEditing) ...[
+              _StylistAvatar(photoUrl: photoUrl, active: true),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: isUploadingPhoto ? null : _pickAndUploadPhoto,
+                icon: isUploadingPhoto
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.image_outlined, size: 18),
+                label: Text(
+                  isUploadingPhoto
+                      ? 'Subiendo...'
+                      : (photoUrl == null ? 'Subir foto' : 'Cambiar foto'),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             TextField(
               controller: nameController,
               decoration: const InputDecoration(labelText: 'Nombre'),
@@ -635,6 +749,15 @@ class _StylistFormDialogState extends State<_StylistFormDialog> {
             TextField(
               controller: specialtyController,
               decoration: const InputDecoration(labelText: 'Especialidad'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: bioController,
+              minLines: 2,
+              maxLines: 4,
+              decoration: const InputDecoration(
+                labelText: 'Biografía (visible en la reserva pública)',
+              ),
             ),
             if (errorMessage != null) ...[
               const SizedBox(height: 8),

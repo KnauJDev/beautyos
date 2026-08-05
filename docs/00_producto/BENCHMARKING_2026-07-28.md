@@ -188,7 +188,9 @@ orden (el más difícil primero):
      vez de cancelar toda la serie. Ver D-081.
 5. **Hecho (2026-08-04):** ficha de cliente con saldo acumulado, acotado
    a solo el total (sin desglose por ticket). Ver D-083.
-6. Portada + foto/bio del profesional en reserva pública
+6. **Hecho (2026-08-05):** portada del negocio + foto/bio del
+   profesional en reserva pública, a nivel de negocio completo (no por
+   sede) y editable solo por tenant_owner/admin. Ver D-084.
 7. Onboarding guiado ("Primeros pasos")
 8. Inventario: marca, alarma de stock por correo
 9. **Hecho (2026-07-28):** colores por estado de reserva -- un color
@@ -226,7 +228,6 @@ todavía no lo ha visto funcionar en el navegador):
 fácil"):**
 - Punto 2 (paquetes/membresías de sesiones) -- **pausado a propósito**,
   no se retoma hasta que un negocio real lo pida.
-- Punto 6: portada + foto/bio del profesional en reserva pública.
 - Punto 7: onboarding guiado ("Primeros pasos").
 - Punto 8: inventario -- marca, alarma de stock por correo.
 
@@ -235,8 +236,14 @@ de cliente con saldo acumulado), ver D-083. Sesión de D-078 a D-082
 confirmada en git (commit `e4919eb`, pusheado a `origin/main`) antes de
 empezar este bloque, tal como se dejó pendiente el 2026-07-28.
 Verificación visual pendiente del propietario en su navegador (el
-badge "Saldo pendiente" en la lista de clientes). Siguiente: punto 6
-(portada + foto/bio del profesional en reserva pública).
+badge "Saldo pendiente" en la lista de clientes).
+
+**Actualización 2026-08-05:** se completó y desplegó el punto 6
+(portada del negocio + foto/bio del profesional en reserva pública),
+ver D-084. Verificación visual pendiente del propietario en su
+navegador (no se pudo completar en esta sesión porque el panel de
+vista previa no se pudo mostrar en este entorno). Siguiente: punto 7
+(onboarding guiado, "Primeros pasos").
 
 **Importante -- nada de esto está en git todavía.** Toda la sesión del
 2026-07-28 (D-078 a D-082, ~30 archivos) sigue como cambios locales sin

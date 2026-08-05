@@ -14,6 +14,7 @@ import '../services/business_hours_service.dart';
 import '../services/business_settings_service.dart';
 import '../services/commission_policy_service.dart';
 import '../services/stylists_service.dart';
+import '../services/tenant_cover_upload_service.dart';
 import '../services/tenant_logo_upload_service.dart';
 import '../widgets/app_widgets.dart';
 
@@ -390,6 +391,17 @@ class BusinessSettingsCard extends StatelessWidget {
                 onChanged: onLogoChanged,
               ),
             ],
+            const SizedBox(height: 16),
+            _TenantCoverPreview(coverPhotoUrl: settings.coverPhotoUrl),
+            if (isOwner) ...[
+              const SizedBox(height: 10),
+              _CoverPhotoUploadButton(
+                tenantId: settings.id,
+                hasCoverPhoto: settings.coverPhotoUrl != null,
+                businessSettingsService: businessSettingsService,
+                onChanged: onLogoChanged,
+              ),
+            ],
             const SizedBox(height: 12),
             _SettingsLine(
               label: 'Tipo de negocio',
@@ -508,6 +520,121 @@ class _LogoUploadButtonState extends State<_LogoUploadButton> {
             _isUploading
                 ? 'Subiendo...'
                 : (widget.hasLogo ? 'Cambiar logo' : 'Subir logo'),
+          ),
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: 6),
+          Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 13)),
+        ],
+      ],
+    );
+  }
+}
+
+class _TenantCoverPreview extends StatelessWidget {
+  const _TenantCoverPreview({required this.coverPhotoUrl});
+
+  final String? coverPhotoUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = coverPhotoUrl;
+    return Container(
+      width: double.infinity,
+      height: 120,
+      decoration: BoxDecoration(
+        color: const Color(0xFFEEE6FF),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: url == null
+          ? const Icon(Icons.image_outlined, color: Color(0xFF7C3AED))
+          : Image.network(
+              url,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => const Icon(
+                Icons.broken_image_outlined,
+                color: Color(0xFF7C3AED),
+              ),
+            ),
+    );
+  }
+}
+
+class _CoverPhotoUploadButton extends StatefulWidget {
+  const _CoverPhotoUploadButton({
+    required this.tenantId,
+    required this.hasCoverPhoto,
+    required this.businessSettingsService,
+    required this.onChanged,
+  });
+
+  final String tenantId;
+  final bool hasCoverPhoto;
+  final BusinessSettingsService businessSettingsService;
+  final VoidCallback onChanged;
+
+  @override
+  State<_CoverPhotoUploadButton> createState() =>
+      _CoverPhotoUploadButtonState();
+}
+
+class _CoverPhotoUploadButtonState extends State<_CoverPhotoUploadButton> {
+  final _uploadService = const TenantCoverUploadService();
+  bool _isUploading = false;
+  String? _error;
+
+  Future<void> _pickAndUpload() async {
+    final XFile? image = await _uploadService.pickImage();
+    if (image == null) return;
+
+    setState(() {
+      _isUploading = true;
+      _error = null;
+    });
+
+    try {
+      final coverPhotoUrl = await _uploadService.uploadTenantCoverPhoto(
+        tenantId: widget.tenantId,
+        image: image,
+      );
+      await widget.businessSettingsService.updateTenantCoverPhoto(
+        coverPhotoUrl,
+      );
+
+      if (!mounted) return;
+      widget.onChanged();
+    } catch (error) {
+      if (!mounted) return;
+      final message = error is PostgrestException
+          ? error.message
+          : 'No se pudo subir la portada: $error';
+      setState(() => _error = message);
+    } finally {
+      if (mounted) {
+        setState(() => _isUploading = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        OutlinedButton.icon(
+          onPressed: _isUploading ? null : _pickAndUpload,
+          icon: _isUploading
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.image_outlined, size: 18),
+          label: Text(
+            _isUploading
+                ? 'Subiendo...'
+                : (widget.hasCoverPhoto ? 'Cambiar portada' : 'Subir portada'),
           ),
         ),
         if (_error != null) ...[

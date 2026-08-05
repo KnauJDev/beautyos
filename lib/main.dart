@@ -231,6 +231,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         page: EstilistasPage(
           key: ValueKey('stylists-${branch.branchId}'),
           branchId: branch.branchId,
+          tenantId: branch.tenantId,
         ),
         allowedRoles: const <String>{'owner', 'admin'},
       ),

@@ -287,11 +287,24 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
     return Card(
       elevation: 1,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (info.coverPhotoUrl != null)
+            Image.network(
+              info.coverPhotoUrl!,
+              height: 160,
+              width: double.infinity,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) =>
+                  const SizedBox.shrink(),
+            ),
+          Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
             if (info.logoUrl != null) ...[
               Center(
                 child: ClipRRect(
@@ -325,6 +338,7 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
                 style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
               ),
             ],
+            _buildTeamSection(),
             const SizedBox(height: 24),
             const Text(
               'Elige un servicio',
@@ -466,8 +480,111 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
                 ),
               ),
             ],
-          ],
-        ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTeamSection() {
+    final seen = <String>{};
+    final team = <PublicServiceOption>[];
+    for (final service in services) {
+      final hasProfile =
+          (service.stylistPhotoUrl?.trim().isNotEmpty ?? false) ||
+          (service.stylistBio?.trim().isNotEmpty ?? false);
+      if (hasProfile && seen.add(service.stylistId)) {
+        team.add(service);
+      }
+    }
+
+    if (team.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Conoce a nuestro equipo',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 120,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: team.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 12),
+              itemBuilder: (context, index) {
+                final stylist = team[index];
+                return SizedBox(
+                  width: 92,
+                  child: Column(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(30),
+                        child: stylist.stylistPhotoUrl == null
+                            ? Container(
+                                width: 60,
+                                height: 60,
+                                color: const Color(0xFFEEE6FF),
+                                child: const Icon(
+                                  Icons.person_outline,
+                                  color: Color(0xFF7C3AED),
+                                ),
+                              )
+                            : Image.network(
+                                stylist.stylistPhotoUrl!,
+                                width: 60,
+                                height: 60,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
+                                      width: 60,
+                                      height: 60,
+                                      color: const Color(0xFFEEE6FF),
+                                      child: const Icon(
+                                        Icons.person_outline,
+                                        color: Color(0xFF7C3AED),
+                                      ),
+                                    ),
+                              ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        stylist.stylistName,
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (stylist.stylistBio != null &&
+                          stylist.stylistBio!.trim().isNotEmpty)
+                        Text(
+                          stylist.stylistBio!,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

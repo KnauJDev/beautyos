@@ -37,6 +37,7 @@ class StylistsService {
     required String name,
     String? phone,
     String? specialty,
+    String? bio,
   }) async {
     await Supabase.instance.client.rpc(
       'create_stylist',
@@ -45,6 +46,7 @@ class StylistsService {
         'p_name': name,
         'p_phone': phone,
         'p_specialty': specialty,
+        'p_bio': bio,
       },
     );
   }
@@ -55,6 +57,8 @@ class StylistsService {
     required String name,
     String? phone,
     String? specialty,
+    String? photoUrl,
+    String? bio,
   }) async {
     await Supabase.instance.client.rpc(
       'update_stylist',
@@ -64,6 +68,8 @@ class StylistsService {
         'p_name': name,
         'p_phone': phone,
         'p_specialty': specialty,
+        'p_photo_url': photoUrl,
+        'p_bio': bio,
       },
     );
   }

@@ -5,6 +5,8 @@ class StylistManagementItem {
     required this.phone,
     required this.specialty,
     required this.active,
+    this.photoUrl,
+    this.bio,
   });
 
   final String id;
@@ -12,6 +14,8 @@ class StylistManagementItem {
   final String phone;
   final String specialty;
   final bool active;
+  final String? photoUrl;
+  final String? bio;
 
   factory StylistManagementItem.fromMap(Map<String, dynamic> map) {
     return StylistManagementItem(
@@ -20,6 +24,8 @@ class StylistManagementItem {
       phone: map['phone']?.toString() ?? 'Sin teléfono',
       specialty: map['specialty']?.toString() ?? 'Sin especialidad',
       active: map['active'] == true,
+      photoUrl: map['photo_url']?.toString(),
+      bio: map['bio']?.toString(),
     );
   }
 }

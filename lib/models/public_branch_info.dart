@@ -10,6 +10,7 @@ class PublicBranchInfo {
     required this.timezone,
     required this.currencyCode,
     this.logoUrl,
+    this.coverPhotoUrl,
   });
 
   final String branchId;
@@ -22,6 +23,7 @@ class PublicBranchInfo {
   final String timezone;
   final String currencyCode;
   final String? logoUrl;
+  final String? coverPhotoUrl;
 
   factory PublicBranchInfo.fromMap(Map<String, dynamic> map) {
     return PublicBranchInfo(
@@ -35,6 +37,7 @@ class PublicBranchInfo {
       timezone: map['timezone']?.toString() ?? 'America/Bogota',
       currencyCode: map['currency_code']?.toString() ?? 'COP',
       logoUrl: map['logo_url']?.toString(),
+      coverPhotoUrl: map['cover_photo_url']?.toString(),
     );
   }
 }

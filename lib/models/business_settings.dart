@@ -8,6 +8,7 @@
   final String instagram;
   final String facebook;
   final String? logoUrl;
+  final String? coverPhotoUrl;
 
   const BusinessSettings({
     required this.id,
@@ -19,6 +20,7 @@
     required this.instagram,
     required this.facebook,
     this.logoUrl,
+    this.coverPhotoUrl,
   });
 
   factory BusinessSettings.fromMap(Map<String, dynamic> map) {
@@ -32,6 +34,7 @@
       instagram: map['instagram']?.toString() ?? 'Sin Instagram',
       facebook: map['facebook']?.toString() ?? 'Sin Facebook',
       logoUrl: map['logo_url']?.toString(),
+      coverPhotoUrl: map['cover_photo_url']?.toString(),
     );
   }
 }

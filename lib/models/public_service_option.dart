@@ -7,6 +7,8 @@ class PublicServiceOption {
     required this.durationMinutes,
     required this.stylistId,
     required this.stylistName,
+    this.stylistPhotoUrl,
+    this.stylistBio,
   });
 
   final String serviceId;
@@ -16,6 +18,8 @@ class PublicServiceOption {
   final int durationMinutes;
   final String stylistId;
   final String stylistName;
+  final String? stylistPhotoUrl;
+  final String? stylistBio;
 
   factory PublicServiceOption.fromMap(Map<String, dynamic> map) {
     return PublicServiceOption(
@@ -26,6 +30,8 @@ class PublicServiceOption {
       durationMinutes: _readInt(map['duration_minutes']),
       stylistId: map['stylist_id'].toString(),
       stylistName: map['stylist_name']?.toString() ?? 'Sin estilista',
+      stylistPhotoUrl: map['stylist_photo_url']?.toString(),
+      stylistBio: map['stylist_bio']?.toString(),
     );
   }
 

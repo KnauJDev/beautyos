@@ -21,4 +21,11 @@ class BusinessSettingsService {
       params: {'p_logo_url': logoUrl},
     );
   }
+
+  Future<void> updateTenantCoverPhoto(String coverPhotoUrl) async {
+    await Supabase.instance.client.rpc(
+      'update_tenant_cover_photo',
+      params: {'p_cover_photo_url': coverPhotoUrl},
+    );
+  }
 }
