@@ -25,6 +25,7 @@ class ProductsService {
   Future<void> createProduct({
     required String name,
     required String category,
+    String? brand,
     required String productType,
     required String unit,
     String? sku,
@@ -46,6 +47,7 @@ class ProductsService {
         'p_purchase_price': purchasePrice,
         'p_sale_price': salePrice,
         'p_visible_for_sale': visibleForSale,
+        'p_brand': brand,
       },
     );
   }
@@ -54,6 +56,7 @@ class ProductsService {
     required String productId,
     required String name,
     required String category,
+    String? brand,
     required String productType,
     required String unit,
     String? sku,
@@ -76,6 +79,7 @@ class ProductsService {
         'p_purchase_price': purchasePrice,
         'p_sale_price': salePrice,
         'p_visible_for_sale': visibleForSale,
+        'p_brand': brand,
       },
     );
   }

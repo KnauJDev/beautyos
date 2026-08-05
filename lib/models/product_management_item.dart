@@ -3,6 +3,7 @@ class ProductManagementItem {
     required this.id,
     required this.name,
     required this.category,
+    this.brand,
     required this.productType,
     required this.unit,
     required this.sku,
@@ -17,6 +18,7 @@ class ProductManagementItem {
   final String id;
   final String name;
   final String category;
+  final String? brand;
   final String productType;
   final String unit;
   final String? sku;
@@ -32,6 +34,7 @@ class ProductManagementItem {
       id: map['product_id'].toString(),
       name: map['name']?.toString() ?? 'Sin nombre',
       category: map['category']?.toString() ?? 'Sin categoría',
+      brand: map['brand']?.toString(),
       productType: map['product_type']?.toString() ?? 'consumable',
       unit: map['unit']?.toString() ?? 'unidad',
       sku: map['sku']?.toString(),

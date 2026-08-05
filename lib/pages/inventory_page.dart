@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/inventory_movement_summary.dart';
 import '../models/product_management_item.dart';
 import '../services/inventory_movements_service.dart';
+import '../services/low_stock_alert_service.dart';
 import '../services/products_service.dart';
 import '../widgets/app_widgets.dart';
 
@@ -55,6 +58,7 @@ class _InventarioPageState extends State<InventarioPage> {
     final saved = await showDialog<bool>(
       context: context,
       builder: (_) => _StockConsumptionDialog(
+        branchId: widget.branchId,
         movementsService: movementsService,
         product: product,
       ),
@@ -297,7 +301,9 @@ class ProductRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  product.name,
+                  product.brand != null && product.brand!.trim().isNotEmpty
+                      ? '${product.name} · ${product.brand}'
+                      : product.name,
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
@@ -484,6 +490,9 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
   late final categoryController = TextEditingController(
     text: widget.existing?.category ?? '',
   );
+  late final brandController = TextEditingController(
+    text: widget.existing?.brand ?? '',
+  );
   late final unitController = TextEditingController(
     text: widget.existing?.unit ?? 'unidad',
   );
@@ -510,6 +519,7 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
   void dispose() {
     nameController.dispose();
     categoryController.dispose();
+    brandController.dispose();
     unitController.dispose();
     skuController.dispose();
     minimumStockController.dispose();
@@ -521,6 +531,7 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
   Future<void> save() async {
     final name = nameController.text.trim();
     final category = categoryController.text.trim();
+    final brand = brandController.text.trim();
     final unit = unitController.text.trim();
     final sku = skuController.text.trim();
     final minimumStock = num.tryParse(minimumStockController.text.trim());
@@ -555,6 +566,7 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
           productId: widget.existing!.id,
           name: name,
           category: category,
+          brand: brand.isEmpty ? null : brand,
           productType: productType,
           unit: unit.isEmpty ? 'unidad' : unit,
           sku: sku.isEmpty ? null : sku,
@@ -567,6 +579,7 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
         await widget.productsService.createProduct(
           name: name,
           category: category,
+          brand: brand.isEmpty ? null : brand,
           productType: productType,
           unit: unit.isEmpty ? 'unidad' : unit,
           sku: sku.isEmpty ? null : sku,
@@ -606,6 +619,11 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
             TextField(
               controller: categoryController,
               decoration: const InputDecoration(labelText: 'Categoría'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: brandController,
+              decoration: const InputDecoration(labelText: 'Marca (opcional)'),
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
@@ -697,10 +715,12 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
 
 class _StockConsumptionDialog extends StatefulWidget {
   const _StockConsumptionDialog({
+    required this.branchId,
     required this.movementsService,
     required this.product,
   });
 
+  final String branchId;
   final InventoryMovementsService movementsService;
   final ProductManagementItem product;
 
@@ -712,6 +732,7 @@ class _StockConsumptionDialog extends StatefulWidget {
 class _StockConsumptionDialogState extends State<_StockConsumptionDialog> {
   final quantityController = TextEditingController();
   final notesController = TextEditingController();
+  final lowStockAlertService = const LowStockAlertService();
   bool isSaving = false;
   String? errorMessage;
 
@@ -742,6 +763,13 @@ class _StockConsumptionDialogState extends State<_StockConsumptionDialog> {
         notes: notesController.text.trim().isEmpty
             ? null
             : notesController.text.trim(),
+      );
+
+      unawaited(
+        lowStockAlertService.maybeSendAlert(
+          branchId: widget.branchId,
+          productId: widget.product.id,
+        ),
       );
 
       if (!mounted) return;
