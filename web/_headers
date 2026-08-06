@@ -1,0 +1,37 @@
+# Cabeceras HTTP para Cloudflare Pages.
+#
+# Problema que resuelve (D-096): por defecto Cloudflare servia la app con
+# `Cache-Control: public, max-age=14400`, o sea CUATRO HORAS. Como los archivos
+# de Flutter Web no llevan huella en el nombre -- siempre se llaman
+# `main.dart.js` y `flutter_bootstrap.js` -- el navegador se quedaba con la
+# version vieja y no tenia forma de enterarse de que habia una nueva. Cerrar el
+# navegador no ayuda: la cache de disco sobrevive.
+#
+# Para un SaaS eso es inaceptable: se corrige un error y los negocios siguen
+# usando la version rota hasta cuatro horas. Y si el arreglo es de cobros o de
+# permisos, se cobra mal durante cuatro horas.
+#
+# Tampoco hay service worker que lo compense: el propio Flutter avisa en su
+# `flutter_bootstrap.js` que registrarlo por esa via esta obsoleto, y en el
+# navegador no queda ninguno registrado.
+#
+# Solucion: que TODO se revalide contra el servidor antes de usarse.
+# `max-age=0, must-revalidate` no significa "no guardar nada": el navegador
+# conserva su copia y pregunta si sigue vigente. Si lo esta, el servidor
+# responde 304 sin cuerpo y la carga es igual de rapida. Solo se descarga de
+# verdad lo que cambio.
+#
+# El costo es una consulta de validacion por archivo en cada visita, que contra
+# la red de Cloudflare son milisegundos. A cambio, un despliegue llega a todo
+# el mundo de inmediato. Para un producto por el que se paga, esa es la
+# compensacion correcta.
+#
+# Nota para cuando se suba de version de Flutter: `canvaskit/` tampoco lleva
+# huella en el nombre, asi que entra a proposito en la misma regla. Si se le
+# diera cache larga, una version nueva de `main.dart.js` podria quedar hablando
+# con un motor grafico viejo.
+
+/*
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
