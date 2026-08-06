@@ -117,19 +117,41 @@ camino se anota y se ataca cuando le toca):
 
 ### 6.1 Primero el sistema de diseño (no negociable)
 
-Hoy los colores están **escritos a mano en cada archivo**. Si rediseñamos
-módulo por módulo sin arreglar esto, hay que repintar 29 pantallas cada vez
-que cambies de opinión sobre un tono.
+Hoy los colores están **escritos a mano en cada archivo**. Medido el
+2026-08-06: **302 colores literales repartidos en 33 archivos**. Si
+rediseñamos módulo por módulo sin arreglar esto, hay que repintar todas esas
+pantallas cada vez que cambies de opinión sobre un tono.
 
 | # | Tarea | Quién |
 |---|---|---|
-| 2.1 | Definir la identidad visual: paleta, tipografía, esquinas, sombras, espaciados | 👥 JUNTOS |
-| 2.2 | Centralizar todo eso en un solo archivo de tema, y reemplazar los colores sueltos de las 29 pantallas | 🤖 YO |
-| 2.3 | Construir los componentes base reutilizables (tarjetas, botones, tablas, estados vacíos, mensajes de error) | 🤖 YO |
+| 2.1 | Definir la identidad visual: paleta, tipografía, esquinas, sombras, espaciados. **Y de paso diseñar 4 o 5 temas para tus clientes** (ver abajo) | 👥 JUNTOS |
+| 2.2 | Centralizar todo eso en un solo archivo de tema, y reemplazar los 302 colores sueltos. **Incluye arreglar la navegación en celular** (punto 6.1-bis) | 🤖 YO |
+| 2.3 | Construir los componentes base reutilizables (tarjetas, botones, tablas, estados vacíos, mensajes de error), ya leyendo el tema | 🤖 YO |
+| 2.3-bis | Selector de tema en Configuración del negocio: columna `tenants.theme_key`, desplegable y lectura al entrar | 🤖 YO |
 
 **Beneficio doble:** además de abaratar el rediseño a la mitad, esto es lo que
-hace posible la **marca blanca** (que cada negocio tenga sus colores), ya
-decidida en D-062.
+hace posible la **marca blanca**, ya decidida en D-062.
+
+#### Marca blanca: cómo queda (D-093)
+
+El **logo por negocio ya está construido** (`tenants.logo_url`, se pinta en el
+panel interno, la reserva pública y las reseñas). Falta la mitad de los
+colores, que depende de 2.2.
+
+Reglas acordadas:
+
+- **Temas predefinidos, no selector libre de colores.** Un dueño puede elegir
+  una combinación ilegible sin darse cuenta, y una interfaz no necesita "un
+  color" sino un juego de unos diez que funcionen entre sí. Caso concreto: en
+  un tema rojo y negro, el botón de **eliminar** no puede ser rojo o deja de
+  leerse como peligro.
+- **Se guarda el nombre del tema, no los códigos de color.** Así, al mejorar
+  un tema, mejoran solos todos los negocios que lo usan. Guardar los colores
+  crudos los congelaría con errores incluidos.
+- **El tema es por negocio, no por sede.** Las sedes son el mismo negocio y
+  deben mantener identidad entre sí.
+- Aplica a las dos caras: panel interno **y página pública de reservas**, que
+  para el negocio es la más valiosa porque la ven sus propios clientes.
 
 ### 6.1-bis Adaptación a celular (hallazgo del 2026-08-06, tarea 0.7)
 
