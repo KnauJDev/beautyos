@@ -15,9 +15,19 @@ import '../widgets/add_work_photo_dialog.dart';
 import '../widgets/app_widgets.dart';
 
 class TicketsPage extends StatefulWidget {
-  const TicketsPage({super.key, required this.branchId});
+  const TicketsPage({
+    super.key,
+    required this.branchId,
+    required this.isOwnerOrAdmin,
+  });
 
   final String branchId;
+
+  /// Espeja el `array['tenant_owner','admin']` del backend (D-095). Dos
+  /// acciones de esta pantalla revierten dinero ya registrado y estan
+  /// reservadas: anular un pago y corregir un servicio ya finalizado. El
+  /// asistente cobra y atiende, pero no deshace.
+  final bool isOwnerOrAdmin;
 
   @override
   State<TicketsPage> createState() => _TicketsPageState();
@@ -437,6 +447,7 @@ class _TicketsPageState extends State<TicketsPage> {
           ticket: ticket,
           summary: summary,
           payments: payments,
+          canVoid: widget.isOwnerOrAdmin,
         ),
       );
 
@@ -526,6 +537,7 @@ class _TicketsPageState extends State<TicketsPage> {
   }
 
   bool _canCorrectCompletion(TicketSummary ticket) {
+    if (!widget.isOwnerOrAdmin) return false;
     return {'en_proceso', 'finalizado'}.contains(ticket.status);
   }
 
@@ -3045,11 +3057,17 @@ class _PaymentsDialog extends StatefulWidget {
     required this.ticket,
     required this.summary,
     required this.payments,
+    required this.canVoid,
   });
 
   final TicketSummary ticket;
   final TicketPaymentSummary summary;
   final List<TicketPaymentRecord> payments;
+
+  /// Anular un pago revierte dinero, asi que `void_ticket_payment_v2` solo
+  /// admite owner y admin (D-095). El asistente cobra pero no anula. Sin esta
+  /// bandera veia el boton y recibia un error al pulsarlo.
+  final bool canVoid;
 
   @override
   State<_PaymentsDialog> createState() => _PaymentsDialogState();
@@ -3188,7 +3206,8 @@ class _PaymentsDialogState extends State<_PaymentsDialog> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(payment.status),
-                          if (payment.status == 'registrado') ...[
+                          if (widget.canVoid &&
+                              payment.status == 'registrado') ...[
                             const SizedBox(width: 6),
                             IconButton(
                               tooltip: 'Anular pago',

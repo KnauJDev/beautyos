@@ -186,7 +186,7 @@ Orden sugerido, de mayor a menor impacto visual:
 | # | Módulo | Capturas de referencia |
 |---|---|---|
 | 2.4 | **Dashboard** — el que cuenta la historia del negocio con gráficos | `reportes - resumen 1/2` |
-| 2.5 | **Agenda** — la pantalla más usada del día a día | `agenda` |
+| 2.5 | **Agenda** — la pantalla más usada del día a día. **Incluye filtrar por fecha y por rango**, que hoy no existe para ningún rol (hallazgo del 2026-08-06 al probar el rol Asistente) | `agenda` |
 | 2.6 | **Tickets / Ventas** | `ventas - caja de ventas`, `detalle de ventas`, `transacciones` |
 | 2.7 | **Clientes** | `clientes - base clientes` |
 | 2.8 | **Reportes** | `reportes - reporte de ventas 1/2`, `reporte de reservas 1/2` |

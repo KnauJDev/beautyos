@@ -262,6 +262,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         page: TicketsPage(
           key: ValueKey('tickets-${branch.branchId}'),
           branchId: branch.branchId,
+          isOwnerOrAdmin: role == 'owner' || role == 'admin',
         ),
         allowedRoles: const <String>{'owner', 'admin', 'assistant'},
       ),
