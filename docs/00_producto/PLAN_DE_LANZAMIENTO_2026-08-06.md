@@ -187,7 +187,7 @@ Orden sugerido, de mayor a menor impacto visual:
 |---|---|---|
 | 2.4 | **Dashboard** — el que cuenta la historia del negocio con gráficos | `reportes - resumen 1/2` |
 | 2.5 | **Agenda** — la pantalla más usada del día a día. **Incluye filtrar por fecha y por rango**, que hoy no existe para ningún rol (hallazgo del 2026-08-06 al probar el rol Asistente) | `agenda` |
-| 2.6 | **Tickets / Ventas** | `ventas - caja de ventas`, `detalle de ventas`, `transacciones` |
+| 2.6 | **Tickets / Ventas**. **Incluye resolver que haya que desplazarse demasiado** para encontrar un ticket abierto y cobrarlo (hallazgo 6-bis C) | `ventas - caja de ventas`, `detalle de ventas`, `transacciones` |
 | 2.7 | **Clientes** | `clientes - base clientes` |
 | 2.8 | **Reportes** | `reportes - reporte de ventas 1/2`, `reporte de reservas 1/2` |
 | 2.9 | **Inventario / Productos** | `productos - inventario`, `movimiento de stock` |
@@ -200,6 +200,40 @@ la única dependencia nueva prevista en todo el plan.
 **no tiene** (gift cards, email marketing, encuestas, consentimientos,
 recordatorios). Eso **no es parte del rediseño**: son funciones nuevas, ya
 inventariadas en `BENCHMARKING_2026-07-28.md`, y se deciden aparte.
+
+---
+
+## 6-bis. Anotado en el camino (2026-08-06)
+
+Hallazgos de las pruebas del propietario en producción que **no son fallos de
+permisos ni bloquean nada**, pero están registrados para no perderse. Regla
+acordada: lo que sale en el camino se anota y se ataca donde le corresponde.
+
+| # | Hallazgo | Dónde se ataca |
+|---|---|---|
+| A | **Las citas recurrentes solo admiten diaria y semanal.** Falta **mensual**, que es la periodicidad más común de un cliente fiel. No es solo la pantalla: el backend valida `p_repeat_frequency not in ('daily','weekly')` | Función nueva. Se decide aparte, no es rediseño |
+| B | **Crear una serie larga es lento**: 19 citas semanales hasta diciembre tardaron un buen rato antes de dejar cerrar el diálogo | Revisar junto con A |
+| C | **Hay que desplazarse demasiado** para encontrar un ticket abierto y cobrarlo | Rediseño de Tickets (2.6) |
+| D | **La sesión sobrevive al cierre del navegador.** Al volver a entrar a `salonymas.com` se entra directo, sin pedir contraseña | Ver abajo |
+
+### Sobre la sesión que no se cierra (D)
+
+Es el comportamiento por defecto de Supabase: guarda la sesión en el navegador
+para no pedir contraseña cada vez. **El riesgo real en un salón no es que se
+cierre el navegador, sino lo contrario:** la recepcionista se levanta y deja la
+sesión abierta en el computador del mostrador, donde cualquiera alcanza.
+
+Tres caminos posibles, de menos a más recomendable:
+
+1. **Sesión por pestaña** — al cerrarla se cierra la sesión. Resuelve lo que
+   preguntó el propietario, pero obliga a iniciar sesión en cada pestaña nueva
+   y no protege del caso real (equipo desatendido con la pestaña abierta).
+2. **Casilla "mantener sesión iniciada"** al entrar. Le pasa la decisión al
+   usuario; es lo que hace la banca.
+3. **Cierre por inactividad** (por ejemplo 30 minutos sin uso). **Recomendado:**
+   es el único que cubre el caso que de verdad pasa en un mostrador.
+
+Se decide cuando el propietario lo considere. No bloquea nada hoy.
 
 ---
 
