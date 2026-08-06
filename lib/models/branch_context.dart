@@ -30,7 +30,7 @@ class BranchContext {
   factory BranchContext.fromMap(Map<String, dynamic> map) {
     return BranchContext(
       tenantId: _requiredString(map, 'tenant_id'),
-      tenantName: map['tenant_name']?.toString() ?? 'Negocio BeautyOS',
+      tenantName: map['tenant_name']?.toString() ?? 'Negocio sin nombre',
       tenantLogoUrl: map['tenant_logo_url']?.toString(),
       branchId: _requiredString(map, 'branch_id'),
       branchName: map['branch_name']?.toString() ?? 'Sede',

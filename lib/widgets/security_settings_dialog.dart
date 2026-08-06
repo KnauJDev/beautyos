@@ -63,7 +63,11 @@ class _SecuritySettingsDialogState extends State<SecuritySettingsDialog> {
     try {
       final response = await Supabase.instance.client.auth.mfa.enroll(
         factorType: FactorType.totp,
-        issuer: 'BeautyOS',
+        // Nombre que la persona ve en su app de autenticacion (Google
+        // Authenticator y similares). Solo aplica a inscripciones nuevas: a
+        // quien ya tenga el 2FA activo le sigue apareciendo el nombre viejo,
+        // y eso no rompe nada porque el emisor es solo una etiqueta.
+        issuer: 'Salón y Más',
         friendlyName: 'App autenticadora',
       );
 

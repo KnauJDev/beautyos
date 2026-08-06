@@ -23,7 +23,7 @@
       tenantId: map['tenant_id']?.toString(),
       tenantName: map['tenant_name']?.toString(),
       userId: map['user_id']?.toString() ?? '',
-      fullName: map['full_name']?.toString() ?? 'Usuario BeautyOS',
+      fullName: map['full_name']?.toString() ?? 'Usuario sin nombre',
       role: map['role']?.toString() ?? 'client',
       active: map['active'] == true,
     );

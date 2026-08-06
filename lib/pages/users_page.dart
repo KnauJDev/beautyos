@@ -84,7 +84,7 @@ class _UsuariosPageState extends State<UsuariosPage> {
                 ? 'Invitación creada y correo enviado automáticamente.'
                 : 'Invitación creada, pero no se pudo enviar el correo '
                       'automático. Avísale tú mismo a la persona que se '
-                      'registre en BeautyOS con ese mismo correo.',
+                      'registre en Salón y Más con ese mismo correo.',
           ),
           duration: const Duration(seconds: 6),
         ),

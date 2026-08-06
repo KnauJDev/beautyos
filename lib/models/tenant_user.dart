@@ -25,7 +25,7 @@ class TenantUser {
     return TenantUser(
       profileId: map['profile_id']?.toString() ?? '',
       userId: map['user_id']?.toString() ?? '',
-      fullName: map['full_name']?.toString() ?? 'Usuario BeautyOS',
+      fullName: map['full_name']?.toString() ?? 'Usuario sin nombre',
       email: map['email']?.toString() ?? '',
       role: map['role']?.toString() ?? 'client',
       active: map['active'] == true,

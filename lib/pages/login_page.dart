@@ -1,4 +1,5 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'register_page.dart';
@@ -57,6 +58,11 @@ class _LoginPageState extends State<LoginPage> {
         });
         return;
       }
+
+      // Se le avisa al navegador que el login termino bien. Sin esto el
+      // contexto de autocompletado queda abierto y el gestor de contrasenas
+      // sigue preguntando si guardar mientras la persona trabaja (D-094).
+      TextInput.finishAutofillContext();
 
       if (!mounted) {
         return;
@@ -134,25 +140,42 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     const SizedBox(height: 28),
-                    TextField(
-                      controller: emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        labelText: 'Correo',
-                        prefixIcon: Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(),
+                    // Los dos campos van juntos en un AutofillGroup y declaran
+                    // que son (D-094). Sin esto el navegador ve una contrasena
+                    // suelta, sin saber cual es el usuario, y ofrece guardarla
+                    // con el nombre vacio y en momentos aleatorios.
+                    AutofillGroup(
+                      child: Column(
+                        children: [
+                          TextField(
+                            controller: emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            autofillHints: const <String>[
+                              AutofillHints.username,
+                              AutofillHints.email,
+                            ],
+                            decoration: const InputDecoration(
+                              labelText: 'Correo',
+                              prefixIcon: Icon(Icons.email_outlined),
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: passwordController,
+                            obscureText: true,
+                            autofillHints: const <String>[
+                              AutofillHints.password,
+                            ],
+                            decoration: const InputDecoration(
+                              labelText: 'Contraseña',
+                              prefixIcon: Icon(Icons.lock_outline),
+                              border: OutlineInputBorder(),
+                            ),
+                            onSubmitted: (_) => signIn(),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: passwordController,
-                      obscureText: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Contraseña',
-                        prefixIcon: Icon(Icons.lock_outline),
-                        border: OutlineInputBorder(),
-                      ),
-                      onSubmitted: (_) => signIn(),
                     ),
                     if (errorMessage != null) ...[
                       const SizedBox(height: 16),

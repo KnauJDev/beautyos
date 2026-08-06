@@ -46,7 +46,7 @@ class _AuthenticatedRouterState extends State<AuthenticatedRouter> {
         if (snapshot.hasError) {
           return Scaffold(
             appBar: AppBar(
-              title: const Text('BeautyOS'),
+              title: const Text('Salón y Más'),
               actions: [
                 IconButton(
                   tooltip: 'Cerrar sesión',

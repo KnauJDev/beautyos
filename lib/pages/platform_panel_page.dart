@@ -141,7 +141,7 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
       backgroundColor: const Color(0xFFF8F5FF),
       appBar: AppBar(
         title: const Text(
-          'Panel de plataforma BeautyOS',
+          'Panel de plataforma Salón y Más',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: const Color(0xFF2D1B69),

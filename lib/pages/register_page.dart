@@ -163,25 +163,41 @@ class _RegisterPageState extends State<RegisterPage> {
                         child: const Text('Volver a iniciar sesión'),
                       ),
                     ] else ...[
-                      TextField(
-                        controller: emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: const InputDecoration(
-                          labelText: 'Correo',
-                          prefixIcon: Icon(Icons.email_outlined),
-                          border: OutlineInputBorder(),
+                      // Mismo criterio que en el login (D-094): los dos campos
+                      // declaran que son, para que el gestor de contrasenas
+                      // guarde bien y no pregunte a destiempo.
+                      AutofillGroup(
+                        child: Column(
+                          children: [
+                            TextField(
+                              controller: emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              autofillHints: const <String>[
+                                AutofillHints.username,
+                                AutofillHints.email,
+                              ],
+                              decoration: const InputDecoration(
+                                labelText: 'Correo',
+                                prefixIcon: Icon(Icons.email_outlined),
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            TextField(
+                              controller: passwordController,
+                              obscureText: true,
+                              autofillHints: const <String>[
+                                AutofillHints.newPassword,
+                              ],
+                              decoration: const InputDecoration(
+                                labelText: 'Contraseña (mínimo 8 caracteres)',
+                                prefixIcon: Icon(Icons.lock_outline),
+                                border: OutlineInputBorder(),
+                              ),
+                              onSubmitted: (_) => register(),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: passwordController,
-                        obscureText: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Contraseña (mínimo 8 caracteres)',
-                          prefixIcon: Icon(Icons.lock_outline),
-                          border: OutlineInputBorder(),
-                        ),
-                        onSubmitted: (_) => register(),
                       ),
                       if (errorMessage != null) ...[
                         const SizedBox(height: 16),
