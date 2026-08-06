@@ -1,5 +1,23 @@
 # Ruta a producción: de app en construcción a negocio real
 
+> ## ⚠️ DOCUMENTO ARCHIVADO (2026-08-06)
+>
+> **Este documento fue reemplazado por
+> `PLAN_DE_LANZAMIENTO_2026-08-06.md`**, que es ahora el único mapa de
+> lanzamiento vigente. Se conserva solo como antecedente histórico.
+>
+> Lo que cambió (ver D-088):
+> - La pasarela de pago ya **no es Wompi** sino **ePayco**.
+> - Se decidió el hosting (**Cloudflare Pages**, gratis) y el registrador
+>   del dominio (**Cloudflare Registrar**), que aquí solo figuraban como
+>   pendientes sin definir.
+> - Se fijó el disparador para pagar Supabase Pro: el día que un negocio
+>   real distinto al propio cargue datos de verdad, no una fecha.
+> - El orden pasó de 3 fases a 5 etapas, arrancando por publicar la app
+>   en internet.
+>
+> **No uses este documento para planear.** Está desactualizado a propósito.
+
 **Nota (2026-07-25, mismo día):** este documento es ahora la **Fase
 Final** dentro de `RUTA_GENERAL_2026-07-25.md`. El propietario decidió
 concentrarse primero en pulir el MVP (ver ese documento); nada de lo

@@ -101,6 +101,7 @@ Esta carpeta es la fuente oficial viva de la arquitectura, producto y operación
 87. `../supabase/migrations/20260806100000_marca_producto_y_alarma_stock.sql` (marca de producto y alarma de stock, D-086)
 88. `../supabase/functions/send-low-stock-alert/index.ts` (correo de alarma de stock bajo, D-086)
 89. `01_arquitectura/auditorias/AUDITORIA_INTEGRAL_2026-08-06.md` (**auditoría completa del aplicativo**: arquitectura verificada, matriz de perfiles, integridad Flutter↔BD y 14 hallazgos priorizados, D-087)
+90. `00_producto/PLAN_DE_LANZAMIENTO_2026-08-06.md` (**mapa de lanzamiento vigente**: 5 etapas de proyecto a negocio, hosting/dominio/ePayco decididos, D-088 — reemplaza a `RUTA_A_PRODUCCION_2026-07-25.md`, que queda archivado)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión estructural. No se reescriben para ocultar el pasado: una decisión futura la reemplaza mediante otro ADR.
 
