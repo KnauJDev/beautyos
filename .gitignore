@@ -1,6 +1,9 @@
 # Miscellaneous
 *.class
 *.lock
+# pubspec.lock si se versiona a proposito (H-07): fija las versiones exactas de
+# los paquetes, para que Cloudflare Pages compile lo mismo que se probo aqui.
+!pubspec.lock
 *.log
 *.pyc
 *.swp
