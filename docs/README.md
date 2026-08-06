@@ -91,6 +91,16 @@ Esta carpeta es la fuente oficial viva de la arquitectura, producto y operación
 77. `../supabase/migrations/20260727110000_choque_agenda_entre_sedes.sql` (choque de agenda entre sedes, D-073)
 78. `../supabase/migrations/20260727120000_bloqueo_agenda_estilista.sql` (bloqueo de agenda del estilista, D-075)
 79. `../supabase/migrations/20260727130000_panel_plataforma_solo_lectura.sql` (acceso de solo lectura del dueño de plataforma, D-076)
+80. `../supabase/migrations/20260727140000_logo_negocio_marca_blanca.sql` (logo por negocio, D-077)
+81. `00_producto/BENCHMARKING_2026-07-28.md` (benchmarking contra AgendaPro y orden de ejecución acordado)
+82. `../supabase/migrations/20260728100000_comisiones_por_sede_estilista_servicio.sql` (excepciones de comisión, D-078)
+83. `../supabase/migrations/20260728120000_bloqueo_agenda_recurrente.sql` (bloqueos recurrentes, D-080)
+84. `../supabase/migrations/20260728130000_citas_recurrentes_agenda_interna.sql` (citas recurrentes, D-081)
+85. `../supabase/migrations/20260804100000_saldo_acumulado_cliente.sql` (saldo acumulado del cliente, D-083)
+86. `../supabase/migrations/20260805100000_portada_y_perfil_profesional.sql` (portada y foto/bio del profesional, D-084)
+87. `../supabase/migrations/20260806100000_marca_producto_y_alarma_stock.sql` (marca de producto y alarma de stock, D-086)
+88. `../supabase/functions/send-low-stock-alert/index.ts` (correo de alarma de stock bajo, D-086)
+89. `01_arquitectura/auditorias/AUDITORIA_INTEGRAL_2026-08-06.md` (**auditoría completa del aplicativo**: arquitectura verificada, matriz de perfiles, integridad Flutter↔BD y 14 hallazgos priorizados, D-087)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión estructural. No se reescriben para ocultar el pasado: una decisión futura la reemplaza mediante otro ADR.
 
