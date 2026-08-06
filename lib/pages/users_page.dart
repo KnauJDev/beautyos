@@ -266,7 +266,9 @@ class _InviteUserDialog extends StatefulWidget {
 
 class _InviteUserDialogState extends State<_InviteUserDialog> {
   final emailController = TextEditingController();
-  String role = 'assistant';
+  // Sin rol preseleccionado a proposito (D-092): invitar sin tocar el
+  // desplegable dejaba al invitado con acceso a la caja por descuido.
+  String? role;
   String? stylistId;
   bool isSaving = false;
   String? errorMessage;
@@ -282,6 +284,10 @@ class _InviteUserDialogState extends State<_InviteUserDialog> {
 
     if (email.isEmpty) {
       setState(() => errorMessage = 'El correo es obligatorio.');
+      return;
+    }
+    if (role == null) {
+      setState(() => errorMessage = 'Selecciona el rol del invitado.');
       return;
     }
     if (role == 'stylist' && stylistId == null) {
@@ -300,7 +306,7 @@ class _InviteUserDialogState extends State<_InviteUserDialog> {
       final emailSent = await widget.invitationsService.createInvitation(
         branchId: widget.branchId,
         email: email,
-        role: role,
+        role: role!,
         stylistId: role == 'stylist' ? stylistId : null,
       );
 
@@ -335,6 +341,7 @@ class _InviteUserDialogState extends State<_InviteUserDialog> {
             DropdownButtonFormField<String>(
               initialValue: role,
               decoration: const InputDecoration(labelText: 'Rol'),
+              hint: const Text('Selecciona un rol'),
               items: const [
                 DropdownMenuItem(value: 'assistant', child: Text('Asistente')),
                 DropdownMenuItem(

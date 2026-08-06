@@ -216,7 +216,10 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           key: ValueKey('agenda-${branch.branchId}'),
           branchId: branch.branchId,
         ),
-        allowedRoles: const <String>{'owner', 'admin'},
+        // El asistente es el rol de recepcion y caja: el backend ya lo autoriza
+        // a agendar, reprogramar, cobrar y crear clientes (D-092), asi que ve
+        // Agenda, Tickets y Clientes. Nada mas.
+        allowedRoles: const <String>{'owner', 'admin', 'assistant'},
       ),
       BeautyModule(
         section: const BeautySection('Servicios', Icons.content_cut_outlined),
@@ -249,7 +252,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
       const BeautyModule(
         section: BeautySection('Clientes', Icons.people_outline),
         page: ClientesPage(),
-        allowedRoles: <String>{'owner', 'admin'},
+        allowedRoles: <String>{'owner', 'admin', 'assistant'},
       ),
       BeautyModule(
         section: const BeautySection(
@@ -260,7 +263,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           key: ValueKey('tickets-${branch.branchId}'),
           branchId: branch.branchId,
         ),
-        allowedRoles: const <String>{'owner', 'admin'},
+        allowedRoles: const <String>{'owner', 'admin', 'assistant'},
       ),
       BeautyModule(
         section: const BeautySection('Reportes', Icons.bar_chart_outlined),

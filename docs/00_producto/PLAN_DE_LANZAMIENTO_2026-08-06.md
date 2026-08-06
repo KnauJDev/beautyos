@@ -81,23 +81,31 @@ lugar, con solo pasarle un enlace.
 
 ---
 
-## 5. ETAPA 1 — Que sea seguro compartirla 🔒
+## 5. ETAPA 1 — Que sea seguro compartirla 🔒 ✅ CERRADA (2026-08-06)
 
 **Objetivo:** cerrar los dos huecos que hacen peligroso repartir el enlace.
-**Duración estimada:** 1–2 sesiones.
+**Duración real:** 1 sesión.
 **Costo:** $0.
 
-| # | Tarea | Quién |
-|---|---|---|
-| 1.1 | **H-02 (bloqueante):** poner tope de reservas por celular y por día en la reserva pública | 🤖 YO |
-| 1.2 | **H-01:** decidir el rol Asistente — darle sus pantallas (Agenda, Tickets, Clientes) o quitarlo del formulario de invitación | 👤 TÚ decide, 🤖 YO ejecuto |
-| 1.3 | Actualizar el encabezado del expediente rector, que sigue diciendo que el proyecto está bloqueado (H-06) | 🤖 YO |
-| 1.4 | Versionar `pubspec.lock` para que la app compile igual en cualquier máquina (H-07) | 🤖 YO |
+| # | Tarea | Quién | Estado |
+|---|---|---|---|
+| 1.1 | **H-02 (bloqueante):** poner tope de reservas por celular y por día en la reserva pública | 🤖 YO | ✅ D-092 — máx. 4 citas futuras y 8 en 24 h, por celular |
+| 1.2 | **H-01:** decidir el rol Asistente — darle sus pantallas (Agenda, Tickets, Clientes) o quitarlo del formulario de invitación | 👤 TÚ decide, 🤖 YO ejecuto | ✅ D-092 — se conserva, con Agenda, Tickets y Clientes |
+| 1.3 | Actualizar el encabezado del expediente rector, que sigue diciendo que el proyecto está bloqueado (H-06) | 🤖 YO | ✅ v1.6 |
+| 1.4 | Versionar `pubspec.lock` para que la app compile igual en cualquier máquina (H-07) | 🤖 YO | ✅ D-091 |
 
-> **Advertencia seria:** hasta que 1.1 esté hecho, **no le des el enlace de
-> reservas a clientes reales**. Hoy cualquiera con ese enlace puede llenarte
-> la agenda de citas falsas, porque cada reserva ocupa el horario de
-> inmediato, sin que tú confirmes nada.
+> **La advertencia anterior queda levantada**, con un matiz importante: el
+> celular que escribe el cliente **nadie lo verifica**, así que los topes son
+> un freno, no una cerradura. Detienen al bromista y al doble clic accidental;
+> no a alguien decidido que cambie de número en cada intento.
+
+**Anotado para más adelante** (según el criterio acordado: lo que sale en el
+camino se anota y se ataca cuando le toca):
+
+- Verificar el celular con un código por SMS o WhatsApp antes de confirmar.
+- Que la reserva pública **no ocupe el horario** hasta que el negocio la
+  confirme. Es el arreglo estructural de fondo, pero cambia cómo funciona la
+  agenda y hay que pensarlo con calma.
 
 ---
 

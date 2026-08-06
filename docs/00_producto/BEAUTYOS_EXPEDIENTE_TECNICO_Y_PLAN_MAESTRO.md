@@ -1,9 +1,15 @@
 # BeautyOS — Expediente técnico y plan maestro de construcción
 
-**Versión:** 1.5
-**Estado:** Rector aprobado — Fase 1 en implementación; Tramos A, B y C aprobados en producción; D1–D2, D3.2–D4.10, D5-pre.1–D5-pre.2 y D3.5.1–D3.5.2 verificados localmente o en entorno no productivo; Tramo D completo en NO-GO por no conformidades pendientes
-**Fecha:** 20 de julio de 2026
-**Propietario del producto:** Proyecto BeautyOS  
+**Versión:** 1.6
+**Estado:** Rector aprobado — **Tramo D cerrado en producción** el 22-jul-2026 (D-043); núcleo operativo completo y desplegado; el producto **está publicado en internet** desde el 06-ago-2026 en `https://salonymas.com` (D-091). El plan de trabajo vigente es `PLAN_DE_LANZAMIENTO_2026-08-06.md`, hoy en la Etapa 1 (cerrar huecos de seguridad).
+**Fecha:** 6 de agosto de 2026
+**Propietario del producto:** Proyecto Salón y Más (antes BeautyOS, ver D-089)  
+
+> **Nota de nombre.** De cara al cliente el producto se llama **Salón y Más**
+> desde el 06-ago-2026 (D-089). El código interno y este expediente conservan
+> el nombre `BeautyOS` a propósito: no lo lee ningún usuario, y reescribir los
+> documentos históricos borraría el registro de lo que pasó.
+
 **Regla de uso:** este documento define la dirección del producto. Cualquier cambio de alcance, regla de negocio o arquitectura debe registrarse aquí o en una decisión asociada antes de implementarse.
 
 ---
