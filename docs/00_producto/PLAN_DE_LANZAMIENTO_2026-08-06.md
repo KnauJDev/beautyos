@@ -57,22 +57,24 @@ Faltan además: precios, pasarela de pago, dominio, hosting y el pulido visual.
 
 ---
 
-## 4. ETAPA 0 — Que exista en internet 🌍
+## 4. ETAPA 0 — Que exista en internet 🌍 ✅ CERRADA (2026-08-06)
 
 **Objetivo:** pasar de "corre en mi computador" a "tiene una dirección web
 real y se instala como app en el celular".
-**Duración estimada:** 1 sesión de trabajo.
-**Costo:** ~15 USD al año (solo el dominio).
+**Duración real:** 1 sesión.
+**Costo:** ~12 USD al año (solo el dominio).
 
-| # | Tarea | Quién |
-|---|---|---|
-| 0.1 | Elegir y **comprar el dominio** en Cloudflare Registrar | 👥 JUNTOS |
-| 0.2 | Crear cuenta gratuita en Cloudflare (si no existe) | 👤 TÚ |
-| 0.3 | Configurar la PWA de verdad: nombre real, descripción, color morado corporativo e íconos propios (hoy dice *"A new Flutter project"* con el azul por defecto de Flutter) | 🤖 YO |
-| 0.4 | Compilar la versión de producción y verificar que arranca rápido | 🤖 YO |
-| 0.5 | Conectar el repositorio de GitHub a Cloudflare Pages para que **cada `git push` publique solo** | 👥 JUNTOS |
-| 0.6 | Conectar el dominio al sitio y activar el candado HTTPS | 👥 JUNTOS |
-| 0.7 | Probar en tu celular: abrir, instalar como app, iniciar sesión | 👤 TÚ |
+| # | Tarea | Quién | Estado |
+|---|---|---|---|
+| 0.1 | Elegir y **comprar el dominio** en Cloudflare Registrar | 👥 JUNTOS | ✅ `salonymas.com` |
+| 0.2 | Crear cuenta gratuita en Cloudflare (si no existe) | 👤 TÚ | ✅ |
+| 0.3 | Configurar la PWA de verdad: nombre real, descripción, color morado corporativo e íconos propios | 🤖 YO | ✅ D-090 |
+| 0.4 | Compilar la versión de producción y verificar que arranca rápido | 🤖 YO | ✅ D-090 — **destapó que la app no arrancaba** |
+| 0.5 | Conectar el repositorio de GitHub a Cloudflare Pages para que **cada `git push` publique solo** | 👥 JUNTOS | ✅ proyecto `salonymas` |
+| 0.6 | Conectar el dominio al sitio y activar el candado HTTPS | 👥 JUNTOS | ✅ |
+| 0.7 | Probar en tu celular: abrir, instalar como app, iniciar sesión | 👤 TÚ | ✅ — con hallazgo, ver 6.2 |
+
+**Direcciones vivas:** `https://salonymas.com` y `https://salonymas.pages.dev`.
 
 **Resultado:** le puedes mostrar la app a cualquier persona, desde cualquier
 lugar, con solo pasarle un enlace.
@@ -120,6 +122,27 @@ que cambies de opinión sobre un tono.
 **Beneficio doble:** además de abaratar el rediseño a la mitad, esto es lo que
 hace posible la **marca blanca** (que cada negocio tenga sus colores), ya
 decidida en D-062.
+
+### 6.1-bis Adaptación a celular (hallazgo del 2026-08-06, tarea 0.7)
+
+Al probar la app publicada en un celular real aparecieron dos problemas de
+diseño adaptable. **No son errores de funcionamiento** — la app funciona y los
+datos se cargan bien — pero hacen que en celular se vea mal:
+
+| # | Problema | Qué se ve |
+|---|---|---|
+| 2.0a | **En vertical**, la barra superior no cabe: el logo y el nombre "Salón y Más" quedan cortados fuera de pantalla | Solo se alcanza a ver "Agenda" y los íconos de la derecha |
+| 2.0b | **En vertical**, la barra de módulos de abajo aprieta 15 pestañas en el ancho del teléfono y parte las palabras en pedazos ilegibles | "Das hbo ard", "Foto s de trab ajos" |
+| 2.0c | **En horizontal**, las dos barras se comen casi toda la altura y casi no queda espacio para el contenido | Se ven los menús, no la información |
+
+**Causa de fondo:** la navegación está pensada para pantalla ancha. En celular
+necesita otra forma — menú lateral desplegable, o barra inferior con los 4 o 5
+módulos más usados y el resto en "Más".
+
+**Cuándo se arregla:** esto entra en la Etapa 2, y conviene resolverlo **junto
+con 2.2 y 2.3** (el sistema de diseño y los componentes base), no después:
+rediseñar 29 pantallas y luego cambiarles la navegación sería hacer el trabajo
+dos veces.
 
 ### 6.2 Después, módulo por módulo con el benchmarking
 
