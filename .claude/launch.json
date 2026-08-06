@@ -2,7 +2,7 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "beautyos-web",
+      "name": "salonymas-web",
       "runtimeExecutable": "flutter",
       "runtimeArgs": ["run", "-d", "web-server", "--web-port", "8090", "--web-hostname", "0.0.0.0"],
       "port": 8090
