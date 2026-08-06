@@ -18,18 +18,36 @@
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="Agenda, clientes, cobros e inventario para salones de belleza, barberías, spas de uñas y peluquerías caninas.">
+  <meta name="theme-color" content="#7C3AED">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Salón y Más">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <!-- iOS recorta el icono el mismo; se usa la version a sangre para que no queden esquinas negras. -->
+  <link rel="apple-touch-icon" href="icons/Icon-maskable-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
   <title>Salón y Más</title>
   <link rel="manifest" href="manifest.json">
+
+  <!--
+    NO BORRAR. La app no arranca sin este archivo: sale pantalla en blanco.
+
+    `supabase_flutter` depende de `passkeys`, y su plugin web (`passkeys_web`)
+    llama a `PasskeyAuthenticator.init()` al registrarse, antes de `runApp`.
+    Si el global no existe, el registro lanza una excepcion, `main()` muere y
+    no se pinta nada. No importa que nuestro codigo nunca use passkeys.
+
+    El archivo se compilo desde el codigo fuente del propio paquete
+    (`passkeys_web-2.9.0/javascript`, `npm run build`) y se guarda aqui a
+    proposito, en vez de descargarlo de una release de GitHub en cada visita
+    como se hacia antes (D-089): asi no dependemos de un tercero en tiempo de
+    ejecucion. Al subir de version `supabase_flutter`, hay que regenerarlo.
+  -->
+  <script src="passkeys_bundle.js"></script>
 </head>
 <body>
   <!--
