@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:beautyos/pages/dashboard_page.dart';
-import 'package:beautyos/pages/my_stylist_work_photos_page.dart';
-import 'package:beautyos/pages/reviews_page.dart';
-import 'package:beautyos/pages/settings_page.dart';
-import 'package:beautyos/pages/work_photos_page.dart';
-import 'package:beautyos/services/appointment_policy_service.dart';
-import 'package:beautyos/services/business_hours_service.dart';
-import 'package:beautyos/services/dashboard_service.dart';
-import 'package:beautyos/services/my_stylist_work_photos_service.dart';
-import 'package:beautyos/services/reviews_service.dart';
-import 'package:beautyos/services/work_photos_service.dart';
+import 'package:salonymas/pages/dashboard_page.dart';
+import 'package:salonymas/pages/my_stylist_work_photos_page.dart';
+import 'package:salonymas/pages/reviews_page.dart';
+import 'package:salonymas/pages/settings_page.dart';
+import 'package:salonymas/pages/work_photos_page.dart';
+import 'package:salonymas/services/appointment_policy_service.dart';
+import 'package:salonymas/services/business_hours_service.dart';
+import 'package:salonymas/services/dashboard_service.dart';
+import 'package:salonymas/services/my_stylist_work_photos_service.dart';
+import 'package:salonymas/services/reviews_service.dart';
+import 'package:salonymas/services/work_photos_service.dart';
 
 void main() {
   const branchId = 'branch-a2';

@@ -66,7 +66,7 @@ export default {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "BeautyOS <onboarding@resend.dev>",
+        from: "Salon y Mas <onboarding@resend.dev>",
         to: [data.contact_email],
         subject: `Stock bajo: ${data.product_name} en ${data.business_name}`,
         html: `

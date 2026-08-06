@@ -117,7 +117,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 18),
                     const Text(
-                      'BeautyOS',
+                      'Salón y Más',
                       style: TextStyle(
                         fontSize: 30,
                         fontWeight: FontWeight.w800,

@@ -1,4 +1,4 @@
-import 'package:beautyos/models/branch_context.dart';
+import 'package:salonymas/models/branch_context.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

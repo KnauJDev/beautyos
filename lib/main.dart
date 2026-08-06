@@ -75,7 +75,7 @@ class BeautyOSApp extends StatelessWidget {
     }
 
     return MaterialApp(
-      title: 'BeautyOS',
+      title: 'Salón y Más',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF7C3AED)),
@@ -349,7 +349,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         if (snapshot.hasError) {
           return Scaffold(
             appBar: AppBar(
-              title: const Text('BeautyOS'),
+              title: const Text('Salón y Más'),
               backgroundColor: const Color(0xFF7C3AED),
               foregroundColor: Colors.white,
               actions: [
@@ -402,7 +402,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         if (branches.isEmpty) {
           return Scaffold(
             appBar: AppBar(
-              title: const Text('BeautyOS'),
+              title: const Text('Salón y Más'),
               backgroundColor: const Color(0xFF7C3AED),
               foregroundColor: Colors.white,
               actions: [
@@ -426,7 +426,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           return Scaffold(
             appBar: AppBar(
               title: const Text(
-                'BeautyOS',
+                'Salón y Más',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               backgroundColor: const Color(0xFF7C3AED),
@@ -479,7 +479,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                       const SizedBox(width: 8),
                     ],
                     const Text(
-                      'BeautyOS',
+                      'Salón y Más',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ],

@@ -1,11 +1,11 @@
 {
-    "name": "beautyos",
-    "short_name": "beautyos",
+    "name": "Salón y Más",
+    "short_name": "Salón y Más",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F8F5FF",
+    "theme_color": "#7C3AED",
+    "description": "Agenda, clientes, cobros e inventario para salones de belleza, barberías, spas de uñas y peluquerías caninas.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

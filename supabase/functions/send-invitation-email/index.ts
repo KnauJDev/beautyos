@@ -75,9 +75,9 @@ export default {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "BeautyOS <onboarding@resend.dev>",
+        from: "Salon y Mas <onboarding@resend.dev>",
         to: [data.email],
-        subject: `Te invitaron a unirte a ${data.tenant_name} en BeautyOS`,
+        subject: `Te invitaron a unirte a ${data.tenant_name} en Salon y Mas`,
         html: `
           <p>Te invitaron a unirte a <strong>${data.tenant_name}</strong> como <strong>${roleText}</strong> en la sede ${data.branch_name}.</p>
           <p>Para unirte, entra a <a href="${appUrl}">${appUrl}</a> y regístrate con este mismo correo (${data.email}). El sistema te va a reconocer automáticamente como invitado.</p>
