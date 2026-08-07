@@ -178,9 +178,9 @@ el trabajo dos veces.
 necesita otra forma — menú lateral desplegable, o barra inferior con los 4 o 5
 módulos más usados y el resto en "Más".
 
-### 6.4 Que la app se actualice sola
+### 6.4 Que la app se actualice sola ✅ HECHA (07-ago-2026, D-099)
 
-**Puede hacerse antes que 2.1** — no depende del diseño y beneficia a todo lo
+**Se hizo antes que 2.1** — no depende del diseño y beneficia a todo lo
 que venga después.
 
 El 06-ago costó tres rondas averiguar qué versión estaba corriendo el
@@ -189,10 +189,10 @@ corregirlo. D-096 arregló que el navegador se quedara pegado, pero **falta que
 la app avise**: quien deje la pestaña abierta toda la semana seguiría con la
 versión del lunes sin enterarse.
 
-| # | Tarea | Quién |
-|---|---|---|
-| 2.16 | Grabar el código de cada versión al compilar (`CF_PAGES_COMMIT_SHA` en Cloudflare) y mostrarlo en Configuración — el **sello de versión** | 🤖 + 👥 el ajuste en Cloudflare |
-| 2.17 | Comprobar si hay versión nueva cada pocos minutos y al volver a la pestaña, y mostrar un aviso discreto *"Hay una versión nueva · Actualizar"* | 🤖 |
+| # | Tarea | Quién | Estado |
+|---|---|---|---|
+| 2.16 | Sello de versión en Configuración | 🤖 | ✅ |
+| 2.17 | Aviso de versión nueva, cada 5 min y al volver a la pestaña | 🤖 | ✅ verificado en producción |
 
 **Por qué avisar y no recargar solo:** recargar sin permiso le borraría a la
 recepcionista el ticket que está escribiendo. El aviso lo decide la persona.
