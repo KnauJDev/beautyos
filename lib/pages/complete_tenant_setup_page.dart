@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../theme/app_theme.dart';
+
 import '../services/tenant_registration_service.dart';
 
 /// Se muestra cuando hay una sesión autenticada pero el usuario todavía no
@@ -91,10 +93,10 @@ class _CompleteTenantSetupPageState extends State<CompleteTenantSetupPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F3EF),
+      backgroundColor: AppColors.brandSurface,
       appBar: AppBar(
         title: const Text('Completa tu negocio'),
-        backgroundColor: const Color(0xFF7C3AED),
+        backgroundColor: AppColors.brand,
         foregroundColor: Colors.white,
         automaticallyImplyLeading: false,
         actions: [
@@ -128,14 +130,14 @@ class _CompleteTenantSetupPageState extends State<CompleteTenantSetupPage> {
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF3E2723),
+                        color: AppColors.brandDeep,
                       ),
                     ),
                     const SizedBox(height: 8),
                     const Text(
                       'Con esto activamos tu prueba gratis de 21 días.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: Color(0xFF795548)),
+                      style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
                     ),
                     const SizedBox(height: 24),
                     TextField(

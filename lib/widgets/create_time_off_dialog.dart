@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../theme/app_theme.dart';
+
 import '../services/stylist_time_off_service.dart';
 
 /// Dialogo para que el estilista bloquee un rango de su propia agenda
@@ -160,7 +162,7 @@ class _CreateTimeOffDialogState extends State<CreateTimeOffDialog> {
             const Text(
               'Ese rango dejará de aparecer como disponible para citas '
               'nuevas en todas tus sedes.',
-              style: TextStyle(color: Color(0xFF667085)),
+              style: TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 16),
             OutlinedButton.icon(
@@ -216,7 +218,7 @@ class _CreateTimeOffDialogState extends State<CreateTimeOffDialog> {
               const SizedBox(height: 4),
               const Text(
                 'Máximo 180 días de repetición.',
-                style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+                style: TextStyle(fontSize: 12, color: AppColors.textMuted),
               ),
             ],
             if (_error != null) ...[

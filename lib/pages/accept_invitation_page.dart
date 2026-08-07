@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/pending_invitation.dart';
 import '../services/team_invitations_service.dart';
 
@@ -70,10 +72,10 @@ class _AcceptInvitationPageState extends State<AcceptInvitationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F3EF),
+      backgroundColor: AppColors.brandSurface,
       appBar: AppBar(
         title: const Text('Unirte al equipo'),
-        backgroundColor: const Color(0xFF7C3AED),
+        backgroundColor: AppColors.brand,
         foregroundColor: Colors.white,
         automaticallyImplyLeading: false,
         actions: [
@@ -104,7 +106,7 @@ class _AcceptInvitationPageState extends State<AcceptInvitationPage> {
                     const Icon(
                       Icons.group_add_outlined,
                       size: 48,
-                      color: Color(0xFF7C3AED),
+                      color: AppColors.brand,
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -113,7 +115,7 @@ class _AcceptInvitationPageState extends State<AcceptInvitationPage> {
                       style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF3E2723),
+                        color: AppColors.brandDeep,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -122,7 +124,7 @@ class _AcceptInvitationPageState extends State<AcceptInvitationPage> {
                       '${widget.invitation.branchName}. Escribe tu nombre '
                       'para unirte.',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 14, color: Color(0xFF795548)),
+                      style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
                     ),
                     const SizedBox(height: 24),
                     TextField(

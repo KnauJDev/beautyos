@@ -2,6 +2,8 @@
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../theme/app_theme.dart';
+
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -89,7 +91,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F3EF),
+      backgroundColor: AppColors.brandSurface,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -98,10 +100,8 @@ class _LoginPageState extends State<LoginPage> {
             child: Card(
               elevation: 0,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(28),
-                side: BorderSide(
-                  color: Colors.brown.withValues(alpha: 0.12),
-                ),
+                borderRadius: BorderRadius.circular(AppRadius.card),
+                side: const BorderSide(color: AppColors.border),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(28),
@@ -112,8 +112,8 @@ class _LoginPageState extends State<LoginPage> {
                       width: 72,
                       height: 72,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF6D4C41),
-                        borderRadius: BorderRadius.circular(22),
+                        color: AppColors.brand,
+                        borderRadius: BorderRadius.circular(AppRadius.card),
                       ),
                       child: const Icon(
                         Icons.spa_outlined,
@@ -127,7 +127,7 @@ class _LoginPageState extends State<LoginPage> {
                       style: TextStyle(
                         fontSize: 30,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF3E2723),
+                        color: AppColors.brandDeep,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -136,7 +136,7 @@ class _LoginPageState extends State<LoginPage> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 15,
-                        color: Color(0xFF795548),
+                        color: AppColors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 28),

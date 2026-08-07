@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/product_management_item.dart';
 import '../models/purchase_item_summary.dart';
 import '../models/purchase_management_item.dart';
@@ -358,7 +360,7 @@ class _PurchasesTable extends StatelessWidget {
                         style: TextStyle(
                           color: purchase.active
                               ? null
-                              : const Color(0xFF9CA3AF),
+                              : AppColors.textMuted,
                         ),
                       ),
                     ),
@@ -379,7 +381,7 @@ class _PurchasesTable extends StatelessWidget {
                           ? const Text('Activa')
                           : const Text(
                               'Anulada',
-                              style: TextStyle(color: Color(0xFFB91C1C)),
+                              style: TextStyle(color: AppColors.danger),
                             ),
                     ),
                     if (isOwner)
@@ -402,7 +404,7 @@ class _PurchasesTable extends StatelessWidget {
                                     icon: const Icon(
                                       Icons.block_outlined,
                                       size: 20,
-                                      color: Color(0xFFB91C1C),
+                                      color: AppColors.danger,
                                     ),
                                   ),
                                 ],

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../theme/app_theme.dart';
+
 import '../services/branches_service.dart';
 
 /// Dialogo para crear una sede adicional (solo tenant_owner). Crea una
@@ -81,7 +83,7 @@ class _CreateBranchDialogState extends State<CreateBranchDialog> {
               'Crea una sede nueva con horario por defecto (lunes a sábado, '
               '8am-8pm). Después podrás asignarle servicios y estilistas '
               'desde sus propias pantallas.',
-              style: TextStyle(color: Color(0xFF667085)),
+              style: TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 16),
             TextField(

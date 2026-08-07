@@ -1,5 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/my_profile.dart';
 import '../services/my_profile_service.dart';
 
@@ -75,7 +77,7 @@ class _SessionBadgeState extends State<SessionBadge> {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 11,
-                    color: Color(0xFFEDE9FE),
+                    color: AppColors.brandTint,
                   ),
                 ),
               ],

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/service_management_item.dart';
 import '../services/services_service.dart';
 import '../widgets/app_widgets.dart';
@@ -357,8 +359,8 @@ class ServiceRow extends StatelessWidget {
             service.active ? Icons.check_circle_outline : Icons.pause_circle_outline,
             size: 22,
             color: service.active
-                ? const Color(0xFF7C3AED)
-                : const Color(0xFF9CA3AF),
+                ? AppColors.brand
+                : AppColors.textMuted,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -371,8 +373,8 @@ class ServiceRow extends StatelessWidget {
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
                     color: service.active
-                        ? const Color(0xFF2D1B69)
-                        : const Color(0xFF9CA3AF),
+                        ? AppColors.brandDeep
+                        : AppColors.textMuted,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -381,7 +383,7 @@ class ServiceRow extends StatelessWidget {
                   '${service.active ? '' : ' · inactivo'}',
                   style: const TextStyle(
                     fontSize: 15,
-                    color: Color(0xFF6B7280),
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -401,7 +403,7 @@ class ServiceRow extends StatelessWidget {
                   ? Icons.pause_circle_outline
                   : Icons.play_circle_outline,
               size: 20,
-              color: service.active ? const Color(0xFFB91C1C) : const Color(0xFF2E7D32),
+              color: service.active ? AppColors.danger : AppColors.success,
             ),
           ),
         ],

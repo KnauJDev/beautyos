@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../theme/app_theme.dart';
+
 /// Se muestra cuando ya hay sesion (correo+contraseña correctos) pero el
 /// usuario tiene un factor TOTP verificado y la sesion todavia esta en
 /// aal1 -- falta el segundo factor para llegar a aal2. Benchmarking
@@ -72,7 +74,7 @@ class _MfaChallengePageState extends State<MfaChallengePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F3EF),
+      backgroundColor: AppColors.brandSurface,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -93,7 +95,7 @@ class _MfaChallengePageState extends State<MfaChallengePage> {
                       width: 64,
                       height: 64,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF6D4C41),
+                        color: AppColors.brand,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: const Icon(
@@ -108,14 +110,14 @@ class _MfaChallengePageState extends State<MfaChallengePage> {
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF3E2723),
+                        color: AppColors.brandDeep,
                       ),
                     ),
                     const SizedBox(height: 8),
                     const Text(
                       'Abre tu app autenticadora e ingresa el código de 6 dígitos.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: Color(0xFF795548)),
+                      style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
                     ),
                     const SizedBox(height: 24),
                     TextField(

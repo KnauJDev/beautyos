@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../theme/app_theme.dart';
+
 /// Crea únicamente el acceso (correo/contraseña) en Supabase Auth. Los
 /// datos del negocio se piden aparte, en CompleteTenantSetupPage, una vez
 /// exista una sesión real y estable.
@@ -99,7 +101,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F3EF),
+      backgroundColor: AppColors.brandSurface,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -108,8 +110,8 @@ class _RegisterPageState extends State<RegisterPage> {
             child: Card(
               elevation: 0,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(28),
-                side: BorderSide(color: Colors.brown.withValues(alpha: 0.12)),
+                borderRadius: BorderRadius.circular(AppRadius.card),
+                side: const BorderSide(color: AppColors.border),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(28),
@@ -122,8 +124,8 @@ class _RegisterPageState extends State<RegisterPage> {
                       height: 72,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF6D4C41),
-                        borderRadius: BorderRadius.circular(22),
+                        color: AppColors.brand,
+                        borderRadius: BorderRadius.circular(AppRadius.card),
                       ),
                       child: const Icon(
                         Icons.spa_outlined,
@@ -138,14 +140,14 @@ class _RegisterPageState extends State<RegisterPage> {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF3E2723),
+                        color: AppColors.brandDeep,
                       ),
                     ),
                     const SizedBox(height: 8),
                     const Text(
                       '21 días de prueba gratis, sin tarjeta.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: Color(0xFF795548)),
+                      style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
                     ),
                     const SizedBox(height: 24),
                     if (confirmationMessage != null) ...[
@@ -153,7 +155,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         confirmationMessage!,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                          color: Color(0xFF2E7D32),
+                          color: AppColors.success,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

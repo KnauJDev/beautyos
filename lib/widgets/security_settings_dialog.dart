@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../theme/app_theme.dart';
 import '../services/app_version_service.dart';
 import 'update_banner.dart';
 
@@ -238,7 +240,7 @@ class _SecuritySettingsDialogState extends State<SecuritySettingsDialog> {
           'La verificación en dos pasos es opcional. Al activarla, además '
           'de tu contraseña se te pedirá un código de tu app autenticadora '
           '(Google Authenticator, Authy, etc.) cada vez que inicies sesión.',
-          style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
         ),
         if (error != null) ...[
           const SizedBox(height: 12),
@@ -261,7 +263,7 @@ class _SecuritySettingsDialogState extends State<SecuritySettingsDialog> {
       children: [
         Row(
           children: [
-            const Icon(Icons.verified_user_outlined, color: Color(0xFF16A34A)),
+            const Icon(Icons.verified_user_outlined, color: AppColors.success),
             const SizedBox(width: 8),
             const Expanded(
               child: Text(
@@ -301,7 +303,7 @@ class _SecuritySettingsDialogState extends State<SecuritySettingsDialog> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                border: Border.all(color: const Color(0xFFE5E7EB)),
+                border: Border.all(color: AppColors.border),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: SvgPicture.string(qrCode, width: 180, height: 180),
@@ -311,7 +313,7 @@ class _SecuritySettingsDialogState extends State<SecuritySettingsDialog> {
           const SizedBox(height: 12),
           const Text(
             '¿No puedes escanear? Ingresa este código manualmente:',
-            style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 4),
           SelectableText(
@@ -382,7 +384,7 @@ class _VersionFooter extends StatelessWidget {
             const Icon(
               Icons.info_outline,
               size: 15,
-              color: Color(0xFF9CA3AF),
+              color: AppColors.textMuted,
             ),
             const SizedBox(width: 6),
             Expanded(
@@ -390,7 +392,7 @@ class _VersionFooter extends StatelessWidget {
                 '$texto · inclúyela si reportas un problema',
                 style: const TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF6B7280),
+                  color: AppColors.textSecondary,
                 ),
               ),
             ),

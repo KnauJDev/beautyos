@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/client_summary.dart';
 import '../models/ticket_payment.dart' show formatMoney;
 import '../services/clients_service.dart';
@@ -497,7 +499,7 @@ class ClientRow extends StatelessWidget {
             const Icon(
               Icons.person_outline,
               size: 22,
-              color: Color(0xFF7C3AED),
+              color: AppColors.brand,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -509,7 +511,7 @@ class ClientRow extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF2D1B69),
+                      color: AppColors.brandDeep,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -517,7 +519,7 @@ class ClientRow extends StatelessWidget {
                     client.phone,
                     style: const TextStyle(
                       fontSize: 15,
-                      color: Color(0xFF6B7280),
+                      color: AppColors.textSecondary,
                     ),
                   ),
                   if (client.email != null) ...[
@@ -526,7 +528,7 @@ class ClientRow extends StatelessWidget {
                       client.email!,
                       style: const TextStyle(
                         fontSize: 14,
-                        color: Color(0xFF6B7280),
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -537,7 +539,7 @@ class ClientRow extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFFB45309),
+                        color: AppColors.warning,
                       ),
                     ),
                   ],
@@ -548,7 +550,7 @@ class ClientRow extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF6B7280),
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ],

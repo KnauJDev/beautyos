@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/platform_tenant_summary.dart';
 import '../services/platform_service.dart';
 import 'platform_tenant_detail_page.dart';
@@ -138,13 +140,13 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F5FF),
+      backgroundColor: AppColors.brandSurface,
       appBar: AppBar(
         title: const Text(
           'Panel de plataforma Salón y Más',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: const Color(0xFF2D1B69),
+        backgroundColor: AppColors.brandDeep,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -252,19 +254,19 @@ class _TenantCard extends StatelessWidget {
   Color _statusColor(String? status) {
     switch (status) {
       case 'trialing':
-        return const Color(0xFF0288D1);
+        return AppColors.info;
       case 'active':
-        return const Color(0xFF2E7D32);
+        return AppColors.success;
       case 'past_due':
-        return const Color(0xFFF9A825);
+        return AppColors.warning;
       case 'grace':
-        return const Color(0xFFEF6C00);
+        return AppColors.warning;
       case 'suspended':
-        return const Color(0xFFC62828);
+        return AppColors.danger;
       case 'cancelled':
-        return const Color(0xFF616161);
+        return AppColors.textStrong;
       default:
-        return const Color(0xFF9E9E9E);
+        return AppColors.textMuted;
     }
   }
 
@@ -360,7 +362,7 @@ class _TenantCard extends StatelessWidget {
                       icon: const Icon(Icons.pause_circle_outline, size: 18),
                       label: const Text('Suspender'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFFC62828),
+                        foregroundColor: AppColors.danger,
                       ),
                     ),
                   if (status == 'suspended')
@@ -372,7 +374,7 @@ class _TenantCard extends StatelessWidget {
                       ),
                       label: const Text('Reactivar'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: const Color(0xFF2E7D32),
+                        foregroundColor: AppColors.success,
                       ),
                     ),
                   if (status == 'trialing')

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/my_stylist_agenda_item.dart';
 import '../models/stylist_time_off.dart';
 import '../services/my_stylist_agenda_service.dart';
@@ -281,7 +283,7 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
                   const SizedBox(height: 6),
                   const Text(
                     'Estas solicitudes ya están asignadas a ti, pero administración todavía debe confirmarlas.',
-                    style: TextStyle(color: Color(0xFF667085)),
+                    style: TextStyle(color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 12),
                   _AgendaTable(
@@ -347,7 +349,7 @@ class _AgendaDateNavigator extends StatelessWidget {
       color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
-        side: const BorderSide(color: Color(0xFFE5E7EB)),
+        side: const BorderSide(color: AppColors.border),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
@@ -408,7 +410,7 @@ class _TimeOffSection extends StatelessWidget {
       color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
-        side: const BorderSide(color: Color(0xFFE5E7EB)),
+        side: const BorderSide(color: AppColors.border),
       ),
       child: Padding(
         padding: const EdgeInsets.all(18),
@@ -423,7 +425,7 @@ class _TimeOffSection extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF111827),
+                      color: AppColors.textPrimary,
                     ),
                   ),
                 ),
@@ -439,7 +441,7 @@ class _TimeOffSection extends StatelessWidget {
               'Cuando no puedas atender (vacaciones, incapacidad), bloquea '
               'ese rango: desaparece de tus horarios disponibles en todas '
               'tus sedes.',
-              style: TextStyle(color: Color(0xFF6B7280), fontSize: 13),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: 12),
             FutureBuilder<List<StylistTimeOff>>(
@@ -464,7 +466,7 @@ class _TimeOffSection extends StatelessWidget {
                 if (items.isEmpty) {
                   return const Text(
                     'No tienes bloqueos activos.',
-                    style: TextStyle(color: Color(0xFF6B7280)),
+                    style: TextStyle(color: AppColors.textSecondary),
                   );
                 }
 
@@ -480,7 +482,7 @@ class _TimeOffSection extends StatelessWidget {
                                     ? Icons.event_repeat_outlined
                                     : Icons.block_outlined,
                                 size: 18,
-                                color: const Color(0xFF9A3412),
+                                color: AppColors.warning,
                               ),
                               const SizedBox(width: 8),
                               Expanded(
@@ -574,7 +576,7 @@ class _AgendaSummaryState extends State<_AgendaSummary> {
           width: 260,
           child: Card(
             elevation: 0,
-            color: const Color(0xFFF5F3FF),
+            color: AppColors.brandTintSoft,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(18),
             ),
@@ -582,7 +584,7 @@ class _AgendaSummaryState extends State<_AgendaSummary> {
               padding: const EdgeInsets.all(18),
               child: Row(
                 children: [
-                  const Icon(Icons.payments_outlined, color: Color(0xFF7C3AED)),
+                  const Icon(Icons.payments_outlined, color: AppColors.brand),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
@@ -591,7 +593,7 @@ class _AgendaSummaryState extends State<_AgendaSummary> {
                         const Text(
                           'Valor servicios',
                           style: TextStyle(
-                            color: Color(0xFF6B7280),
+                            color: AppColors.textSecondary,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -601,7 +603,7 @@ class _AgendaSummaryState extends State<_AgendaSummary> {
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFF111827),
+                            color: AppColors.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -609,7 +611,7 @@ class _AgendaSummaryState extends State<_AgendaSummary> {
                           'Puedes ocultar o mostrar la cifra',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Color(0xFF6B7280),
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ],
@@ -674,7 +676,7 @@ class _AgendaTable extends StatelessWidget {
       color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
-        side: const BorderSide(color: Color(0xFFE5E7EB)),
+        side: const BorderSide(color: AppColors.border),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,

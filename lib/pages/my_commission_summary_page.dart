@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/my_commission_summary_item.dart';
 import '../services/my_commission_summary_service.dart';
 import '../widgets/app_widgets.dart';
@@ -178,7 +180,7 @@ class _RangeSelector extends StatelessWidget {
       color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
-        side: const BorderSide(color: Color(0xFFE5E7EB)),
+        side: const BorderSide(color: AppColors.border),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
@@ -225,13 +227,13 @@ class _TotalCommissionCard extends StatelessWidget {
       width: 260,
       child: Card(
         elevation: 0,
-        color: const Color(0xFFF5F3FF),
+        color: AppColors.brandTintSoft,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         child: Padding(
           padding: const EdgeInsets.all(18),
           child: Row(
             children: [
-              const Icon(Icons.payments_outlined, color: Color(0xFF7C3AED)),
+              const Icon(Icons.payments_outlined, color: AppColors.brand),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -240,7 +242,7 @@ class _TotalCommissionCard extends StatelessWidget {
                     const Text(
                       'Total comisiones',
                       style: TextStyle(
-                        color: Color(0xFF6B7280),
+                        color: AppColors.textSecondary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -250,7 +252,7 @@ class _TotalCommissionCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF111827),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   ],
@@ -303,7 +305,7 @@ class _CommissionTable extends StatelessWidget {
       color: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
-        side: const BorderSide(color: Color(0xFFE5E7EB)),
+        side: const BorderSide(color: AppColors.border),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,

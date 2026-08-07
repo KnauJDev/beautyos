@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/public_review_ticket.dart';
 import '../services/public_review_service.dart';
 
@@ -106,7 +108,7 @@ class _PublicReviewPageState extends State<PublicReviewPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F5FF),
+      backgroundColor: AppColors.brandSurface,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -145,7 +147,7 @@ class _PublicReviewPageState extends State<PublicReviewPage> {
     if (submitted) {
       return const _MessageCard(
         icon: Icons.check_circle_outline,
-        iconColor: Color(0xFF059669),
+        iconColor: AppColors.success,
         message: 'Gracias por tu opinion. Tu resena quedara publicada '
             'despues de ser revisada por el negocio.',
       );
@@ -154,7 +156,7 @@ class _PublicReviewPageState extends State<PublicReviewPage> {
     if (loadedTicket.alreadyReviewed) {
       return const _MessageCard(
         icon: Icons.info_outline,
-        iconColor: Color(0xFF6B7280),
+        iconColor: AppColors.textSecondary,
         message: 'Ya se registro una resena para esta visita. Gracias.',
       );
     }
@@ -162,7 +164,7 @@ class _PublicReviewPageState extends State<PublicReviewPage> {
     if (!loadedTicket.reviewable) {
       return const _MessageCard(
         icon: Icons.hourglass_empty_outlined,
-        iconColor: Color(0xFF6B7280),
+        iconColor: AppColors.textSecondary,
         message: 'Esta visita todavia no ha finalizado. Cuando el negocio '
             'la marque como finalizada podras dejar tu resena.',
       );
@@ -198,13 +200,13 @@ class _PublicReviewPageState extends State<PublicReviewPage> {
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF2D1B69),
+                color: AppColors.brandDeep,
               ),
             ),
             const SizedBox(height: 6),
             Text(
               'Hola ${loadedTicket.clientName}, cuentanos como te fue.',
-              style: const TextStyle(fontSize: 15, color: Color(0xFF6B7280)),
+              style: const TextStyle(fontSize: 15, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 20),
             const Text(
@@ -225,7 +227,7 @@ class _PublicReviewPageState extends State<PublicReviewPage> {
                   },
                   icon: Icon(
                     filled ? Icons.star : Icons.star_border,
-                    color: const Color(0xFFF59E0B),
+                    color: AppColors.warning,
                     size: 32,
                   ),
                 );
@@ -282,7 +284,7 @@ class _PublicReviewPageState extends State<PublicReviewPage> {
               const SizedBox(height: 16),
               Text(
                 submitError!,
-                style: const TextStyle(color: Color(0xFFB91C1C)),
+                style: const TextStyle(color: AppColors.danger),
               ),
             ],
             const SizedBox(height: 20),
@@ -335,7 +337,7 @@ class _MessageCard extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16, color: Color(0xFF374151)),
+              style: const TextStyle(fontSize: 16, color: AppColors.textStrong),
             ),
           ],
         ),

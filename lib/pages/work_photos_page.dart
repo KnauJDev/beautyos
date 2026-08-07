@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/work_photo_summary.dart';
 import '../services/work_photos_service.dart';
 import '../widgets/app_widgets.dart';
@@ -385,12 +387,12 @@ class _WorkPhotoCard extends StatelessWidget {
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
                 return const ColoredBox(
-                  color: Color(0xFFF3F4F6),
+                  color: AppColors.surfaceAlt,
                   child: Center(
                     child: Icon(
                       Icons.broken_image_outlined,
                       size: 42,
-                      color: Color(0xFF6B7280),
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 );
@@ -411,7 +413,7 @@ class _WorkPhotoCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF111827),
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -419,7 +421,7 @@ class _WorkPhotoCard extends StatelessWidget {
                   'Cliente: ${photo.clientName}',
                   style: const TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF374151),
+                    color: AppColors.textStrong,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -427,7 +429,7 @@ class _WorkPhotoCard extends StatelessWidget {
                   'Estilista: ${photo.stylistName}',
                   style: const TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF374151),
+                    color: AppColors.textStrong,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -435,7 +437,7 @@ class _WorkPhotoCard extends StatelessWidget {
                   photo.aiStatusText,
                   style: const TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF6B7280),
+                    color: AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 8),

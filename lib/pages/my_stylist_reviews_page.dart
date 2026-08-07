@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/my_stylist_review.dart';
 import '../services/my_stylist_reviews_service.dart';
 import '../widgets/app_widgets.dart';
@@ -123,7 +125,7 @@ class _ReviewCard extends StatelessWidget {
         color: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
-          side: const BorderSide(color: Color(0xFFE5E7EB)),
+          side: const BorderSide(color: AppColors.border),
         ),
         child: Padding(
           padding: const EdgeInsets.all(18),
@@ -137,7 +139,7 @@ class _ReviewCard extends StatelessWidget {
                   Text(
                     review.createdAtText,
                     style: const TextStyle(
-                      color: Color(0xFF6B7280),
+                      color: AppColors.textSecondary,
                       fontSize: 12,
                     ),
                   ),
@@ -148,13 +150,13 @@ class _ReviewCard extends StatelessWidget {
                 '${review.serviceName} · ${review.clientName}',
                 style: const TextStyle(
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF111827),
+                  color: AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 6),
               Text(
                 review.commentText,
-                style: const TextStyle(color: Color(0xFF374151)),
+                style: const TextStyle(color: AppColors.textStrong),
               ),
             ],
           ),
@@ -178,7 +180,7 @@ class _StarsRow extends StatelessWidget {
         return Icon(
           filled ? Icons.star : Icons.star_border,
           size: 18,
-          color: const Color(0xFFF59E0B),
+          color: AppColors.warning,
         );
       }),
     );

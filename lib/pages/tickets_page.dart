@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/client_summary.dart';
 import '../models/available_appointment_slot.dart';
 import '../models/ticket_service_option.dart';
@@ -1104,7 +1106,7 @@ class _CreateAppointmentDialogState extends State<_CreateAppointmentDialog> {
                         child: Text(
                           '${_formatDateTime(item.scheduledAt)}: '
                           '${item.errorMessage ?? "Error desconocido"}',
-                          style: const TextStyle(color: Color(0xFFB91C1C)),
+                          style: const TextStyle(color: AppColors.danger),
                         ),
                       ),
                   ],
@@ -1261,7 +1263,7 @@ class _CreateAppointmentDialogState extends State<_CreateAppointmentDialog> {
                               : 'Horas disponibles para $selectedDateText',
                           style: const TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF374151),
+                            color: AppColors.textStrong,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -1275,13 +1277,13 @@ class _CreateAppointmentDialogState extends State<_CreateAppointmentDialog> {
                         else if (slotsError != null)
                           Text(
                             slotsError!,
-                            style: const TextStyle(color: Color(0xFFB91C1C)),
+                            style: const TextStyle(color: AppColors.danger),
                           )
                         else if (availableSlots != null &&
                             availableSlots!.isEmpty)
                           const Text(
                             'No quedan horarios disponibles para este día. Elige otra fecha o estilista.',
-                            style: TextStyle(color: Color(0xFFB45309)),
+                            style: TextStyle(color: AppColors.warning),
                           )
                         else if (availableSlots != null)
                           Wrap(
@@ -1428,7 +1430,7 @@ class _CreateAppointmentDialogState extends State<_CreateAppointmentDialog> {
                   const Text(
                     'Si una fecha choca con otra cita, se avisa cuál y se '
                     'crean las demás. Máximo 180 días.',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
+                    style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                   ),
                 ],
                 if (service != null &&
@@ -1439,7 +1441,7 @@ class _CreateAppointmentDialogState extends State<_CreateAppointmentDialog> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF5F3FF),
+                      color: AppColors.brandTintSoft,
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Text(
@@ -1448,7 +1450,7 @@ class _CreateAppointmentDialogState extends State<_CreateAppointmentDialog> {
                       '${service.durationMinutes} min',
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF5B21B6),
+                        color: AppColors.brandDark,
                       ),
                     ),
                   ),
@@ -1459,23 +1461,23 @@ class _CreateAppointmentDialogState extends State<_CreateAppointmentDialog> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFEF2F2),
+                      color: AppColors.dangerTint,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFFCA5A5)),
+                      border: Border.all(color: AppColors.dangerTint),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Icon(
                           Icons.warning_amber_rounded,
-                          color: Color(0xFFB91C1C),
+                          color: AppColors.danger,
                         ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             bookingError!,
                             style: const TextStyle(
-                              color: Color(0xFF991B1B),
+                              color: AppColors.danger,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -2128,7 +2130,7 @@ class _AddTicketServiceDialogState extends State<_AddTicketServiceDialog> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF5F3FF),
+                      color: AppColors.brandTintSoft,
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Text(
@@ -2136,7 +2138,7 @@ class _AddTicketServiceDialogState extends State<_AddTicketServiceDialog> {
                       '${service.durationMinutes} min',
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF5B21B6),
+                        color: AppColors.brandDark,
                       ),
                     ),
                   ),
@@ -2213,16 +2215,16 @@ class _ManageTicketServicesDialog extends StatelessWidget {
               return Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF9FAFB),
+                  color: AppColors.surfaceAlt,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                  border: Border.all(color: AppColors.border),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Icon(
                       Icons.content_cut_outlined,
-                      color: Color(0xFF7C3AED),
+                      color: AppColors.brand,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -2234,20 +2236,20 @@ class _ManageTicketServicesDialog extends StatelessWidget {
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF2D1B69),
+                              color: AppColors.brandDeep,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'Estilista: ${item.stylistName ?? 'Sin asignar'}',
-                            style: const TextStyle(color: Color(0xFF6B7280)),
+                            style: const TextStyle(color: AppColors.textSecondary),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             '${item.formattedPrice} · ${item.durationMinutes} min',
                             style: const TextStyle(
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF059669),
+                              color: AppColors.success,
                             ),
                           ),
                         ],
@@ -2487,7 +2489,7 @@ class _EditTicketServiceDialogState extends State<_EditTicketServiceDialog> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF5F3FF),
+                      color: AppColors.brandTintSoft,
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Text(
@@ -2495,7 +2497,7 @@ class _EditTicketServiceDialogState extends State<_EditTicketServiceDialog> {
                       '${service.durationMinutes} min',
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF5B21B6),
+                        color: AppColors.brandDark,
                       ),
                     ),
                   ),
@@ -2580,14 +2582,14 @@ class _RemoveTicketServiceDialogState
                 style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF2D1B69),
+                  color: AppColors.brandDeep,
                 ),
               ),
               const SizedBox(height: 8),
               const Text(
                 'El servicio dejará de contar en el ticket y la agenda. '
                 'Su historial se conservará para auditoría.',
-                style: TextStyle(color: Color(0xFF6B7280)),
+                style: TextStyle(color: AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -2965,13 +2967,13 @@ class _CorrectCompletionDialogState extends State<_CorrectCompletionDialog> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFF7ED),
+                  color: AppColors.warningTint,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Text(
                   'El servicio seleccionado y su ticket volverán a '
                   '“En proceso”. La corrección quedará registrada.',
-                  style: TextStyle(color: Color(0xFF9A3412)),
+                  style: TextStyle(color: AppColors.warning),
                 ),
               ),
               const SizedBox(height: 16),
@@ -3155,7 +3157,7 @@ class _PaymentsDialogState extends State<_PaymentsDialog> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF5F3FF),
+                    color: AppColors.brandTintSoft,
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Wrap(
@@ -3330,7 +3332,7 @@ class _PaymentMetric extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Color(0xFF6B7280))),
+        Text(label, style: const TextStyle(color: AppColors.textSecondary)),
         const SizedBox(height: 4),
         Text(
           value,
@@ -3505,9 +3507,9 @@ class TicketRow extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
+        color: AppColors.surfaceAlt,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3515,7 +3517,7 @@ class TicketRow extends StatelessWidget {
           const Icon(
             Icons.receipt_long_outlined,
             size: 28,
-            color: Color(0xFF7C3AED),
+            color: AppColors.brand,
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -3527,7 +3529,7 @@ class TicketRow extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF2D1B69),
+                    color: AppColors.brandDeep,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -3535,7 +3537,7 @@ class TicketRow extends StatelessWidget {
                   ticket.serviceNames,
                   style: const TextStyle(
                     fontSize: 15,
-                    color: Color(0xFF111827),
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -3543,7 +3545,7 @@ class TicketRow extends StatelessWidget {
                   'Estilista: ${ticket.stylistNames}',
                   style: const TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF6B7280),
+                    color: AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -3551,7 +3553,7 @@ class TicketRow extends StatelessWidget {
                   'Fecha: ${ticket.scheduledAtText} \u00b7 Canal: ${ticket.channel}',
                   style: const TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF6B7280),
+                    color: AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -3560,7 +3562,7 @@ class TicketRow extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF059669),
+                    color: AppColors.success,
                   ),
                 ),
                 if (ticket.showsPaymentInfo) ...[
@@ -3572,8 +3574,8 @@ class TicketRow extends StatelessWidget {
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: ticket.balanceAmount == 0
-                          ? const Color(0xFF059669)
-                          : const Color(0xFFD97706),
+                          ? AppColors.success
+                          : AppColors.warning,
                     ),
                   ),
                 ],
@@ -3672,27 +3674,27 @@ class TicketStatusBadge extends StatelessWidget {
   (Color, Color) get _colors {
     switch (status.toLowerCase()) {
       case 'solicitado':
-        return (const Color(0xFFFEF9C3), const Color(0xFF854D0E));
+        return (AppColors.warningTint, AppColors.warning);
       case 'cotizado':
-        return (const Color(0xFFE0F2FE), const Color(0xFF075985));
+        return (AppColors.infoTint, AppColors.info);
       case 'apartado':
-        return (const Color(0xFFDBEAFE), const Color(0xFF1D4ED8));
+        return (AppColors.infoTint, AppColors.info);
       case 'confirmado':
-        return (const Color(0xFFCCFBF1), const Color(0xFF0F766E));
+        return (AppColors.successTint, AppColors.info);
       case 'en_espera':
-        return (const Color(0xFFFFEDD5), const Color(0xFF9A3412));
+        return (AppColors.warningTint, AppColors.warning);
       case 'en_proceso':
-        return (const Color(0xFFEDE9FE), const Color(0xFF6D28D9));
+        return (AppColors.brandTint, AppColors.brandDark);
       case 'finalizado':
-        return (const Color(0xFFCFFAFE), const Color(0xFF0E7490));
+        return (AppColors.infoTint, AppColors.info);
       case 'cerrado':
-        return (const Color(0xFFD1FAE5), const Color(0xFF047857));
+        return (AppColors.successTint, AppColors.success);
       case 'cancelado':
-        return (const Color(0xFFFEE2E2), const Color(0xFFB91C1C));
+        return (AppColors.dangerTint, AppColors.danger);
       case 'no_asistio':
-        return (const Color(0xFFE5E7EB), const Color(0xFF4B5563));
+        return (AppColors.border, AppColors.textStrong);
       default:
-        return (const Color(0xFFEDE9FE), const Color(0xFF6D28D9));
+        return (AppColors.brandTint, AppColors.brandDark);
     }
   }
 

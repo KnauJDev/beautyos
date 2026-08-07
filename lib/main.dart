@@ -354,7 +354,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           return Scaffold(
             appBar: AppBar(
               title: const Text('Salón y Más'),
-              backgroundColor: const Color(0xFF7C3AED),
+              backgroundColor: AppColors.brand,
               foregroundColor: Colors.white,
               actions: [
                 IconButton(
@@ -407,7 +407,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           return Scaffold(
             appBar: AppBar(
               title: const Text('Salón y Más'),
-              backgroundColor: const Color(0xFF7C3AED),
+              backgroundColor: AppColors.brand,
               foregroundColor: Colors.white,
               actions: [
                 IconButton(
@@ -433,7 +433,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                 'Salón y Más',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
-              backgroundColor: const Color(0xFF7C3AED),
+              backgroundColor: AppColors.brand,
               foregroundColor: Colors.white,
               actions: [
                 IconButton(
@@ -488,7 +488,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                     ),
                   ],
                 ),
-                backgroundColor: const Color(0xFF7C3AED),
+                backgroundColor: AppColors.brand,
                 foregroundColor: Colors.white,
                 actions: [
                   Padding(
@@ -660,7 +660,7 @@ class _BranchSelector extends StatelessWidget {
                     branch.branchId == selectedBranch.branchId
                         ? Icons.check_circle_outline
                         : Icons.storefront_outlined,
-                    color: const Color(0xFF7C3AED),
+                    color: AppColors.brand,
                   ),
                   const SizedBox(width: 10),
                   Flexible(
@@ -734,15 +734,15 @@ class _TrialBannerState extends State<_TrialBanner> {
         final urgent = !expired && daysRemaining <= 3;
 
         final backgroundColor = expired
-            ? const Color(0xFFFEE2E2)
+            ? AppColors.dangerTint
             : urgent
-            ? const Color(0xFFFFEDD5)
-            : const Color(0xFFFEF9C3);
+            ? AppColors.warningTint
+            : AppColors.warningTint;
         final foregroundColor = expired
-            ? const Color(0xFF991B1B)
+            ? AppColors.danger
             : urgent
-            ? const Color(0xFF9A3412)
-            : const Color(0xFF854D0E);
+            ? AppColors.warning
+            : AppColors.warning;
 
         final message = expired
             ? 'Tu prueba gratis venció. No se pueden crear reservas ni '
@@ -822,7 +822,7 @@ class _SideMenu extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               child: Material(
                 color: isSelected
-                    ? const Color(0xFFEEE6FF)
+                    ? AppColors.brandTint
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(24),
                 child: InkWell(
@@ -838,8 +838,8 @@ class _SideMenu extends StatelessWidget {
                         Icon(
                           section.icon,
                           color: isSelected
-                              ? const Color(0xFF7C3AED)
-                              : const Color(0xFF6B7280),
+                              ? AppColors.brand
+                              : AppColors.textSecondary,
                         ),
                         const SizedBox(width: 14),
                         Expanded(
@@ -850,8 +850,8 @@ class _SideMenu extends StatelessWidget {
                                   ? FontWeight.w700
                                   : FontWeight.w500,
                               color: isSelected
-                                  ? const Color(0xFF2D1B69)
-                                  : const Color(0xFF6B7280),
+                                  ? AppColors.brandDeep
+                                  : AppColors.textSecondary,
                             ),
                           ),
                         ),

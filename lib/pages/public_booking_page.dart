@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/available_appointment_slot.dart';
 import '../models/public_booking_result.dart';
 import '../models/public_branch_info.dart';
@@ -218,7 +220,7 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F5FF),
+      backgroundColor: AppColors.brandSurface,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -327,7 +329,7 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
               style: const TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF2D1B69),
+                color: AppColors.brandDeep,
               ),
             ),
             if (locationLine.isNotEmpty) ...[
@@ -335,7 +337,7 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
               Text(
                 locationLine,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+                style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
               ),
             ],
             _buildTeamSection(),
@@ -532,10 +534,10 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
                             ? Container(
                                 width: 60,
                                 height: 60,
-                                color: const Color(0xFFEEE6FF),
+                                color: AppColors.brandTint,
                                 child: const Icon(
                                   Icons.person_outline,
-                                  color: Color(0xFF7C3AED),
+                                  color: AppColors.brand,
                                 ),
                               )
                             : Image.network(
@@ -547,10 +549,10 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
                                     Container(
                                       width: 60,
                                       height: 60,
-                                      color: const Color(0xFFEEE6FF),
+                                      color: AppColors.brandTint,
                                       child: const Icon(
                                         Icons.person_outline,
-                                        color: Color(0xFF7C3AED),
+                                        color: AppColors.brand,
                                       ),
                                     ),
                               ),
@@ -575,7 +577,7 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 10,
-                            color: Color(0xFF6B7280),
+                            color: AppColors.textSecondary,
                           ),
                         ),
                     ],
@@ -619,7 +621,7 @@ class _BookingSuccessCard extends StatelessWidget {
             const Icon(
               Icons.event_available_outlined,
               size: 56,
-              color: Color(0xFF059669),
+              color: AppColors.success,
             ),
             const SizedBox(height: 16),
             Text(
@@ -641,7 +643,7 @@ class _BookingSuccessCard extends StatelessWidget {
               'Tu reserva quedo pendiente de confirmacion. El negocio te '
               'contactara para confirmarla.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFF6B7280)),
+              style: TextStyle(color: AppColors.textSecondary),
             ),
           ],
         ),

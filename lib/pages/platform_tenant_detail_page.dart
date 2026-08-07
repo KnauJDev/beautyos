@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/platform_tenant_detail.dart';
 import '../services/platform_tenant_detail_service.dart';
 
@@ -58,13 +60,13 @@ class _PlatformTenantDetailPageState extends State<PlatformTenantDetailPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F5FF),
+      backgroundColor: AppColors.brandSurface,
       appBar: AppBar(
         title: Text(
           widget.tenantName,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: const Color(0xFF2D1B69),
+        backgroundColor: AppColors.brandDeep,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -94,14 +96,14 @@ class _PlatformTenantDetailPageState extends State<PlatformTenantDetailPage>
         children: [
           Container(
             width: double.infinity,
-            color: const Color(0xFFEDE7F6),
+            color: AppColors.brandTint,
             padding: const EdgeInsets.all(10),
             child: const Text(
               'Solo lectura -- soporte de plataforma. No puedes editar ni '
               'borrar nada desde aquí.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Color(0xFF4527A0),
+                color: AppColors.brandDark,
                 fontWeight: FontWeight.w600,
                 fontSize: 12,
               ),

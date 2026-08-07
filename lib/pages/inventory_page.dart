@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/inventory_movement_summary.dart';
 import '../models/product_management_item.dart';
 import '../services/inventory_movements_service.dart';
@@ -278,8 +280,8 @@ class ProductRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final titleColor = product.active
-        ? const Color(0xFF2D1B69)
-        : const Color(0xFF9CA3AF);
+        ? AppColors.brandDeep
+        : AppColors.textMuted;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 9),
@@ -292,8 +294,8 @@ class ProductRow extends StatelessWidget {
                 : Icons.pause_circle_outline,
             size: 22,
             color: product.active
-                ? const Color(0xFF7C3AED)
-                : const Color(0xFF9CA3AF),
+                ? AppColors.brand
+                : AppColors.textMuted,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -315,13 +317,13 @@ class ProductRow extends StatelessWidget {
                   '${product.category} · ${product.productTypeText} · '
                   '${product.stockText} (mín. ${product.minimumStockText})'
                   '${product.active ? '' : ' · inactivo'}',
-                  style: const TextStyle(fontSize: 15, color: Color(0xFF6B7280)),
+                  style: const TextStyle(fontSize: 15, color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   'Compra ${product.formattedPurchasePrice} · Venta '
                   '${product.visibleForSale ? product.formattedSalePrice : 'no aplica'}',
-                  style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+                  style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
                 ),
               ],
             ),
@@ -347,8 +349,8 @@ class ProductRow extends StatelessWidget {
                   : Icons.play_circle_outline,
               size: 20,
               color: product.active
-                  ? const Color(0xFFB91C1C)
-                  : const Color(0xFF2E7D32),
+                  ? AppColors.danger
+                  : AppColors.success,
             ),
           ),
         ],
@@ -683,7 +685,7 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
               const Text(
                 'El producto se crea con 0 unidades en stock. El stock inicial '
                 'se carga registrando una compra (próximo bloque).',
-                style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
               ),
             ],
             if (errorMessage != null) ...[
@@ -796,7 +798,7 @@ class _StockConsumptionDialogState extends State<_StockConsumptionDialog> {
           children: [
             Text(
               '${widget.product.name} · disponible: ${widget.product.stockText}',
-              style: const TextStyle(color: Color(0xFF6B7280)),
+              style: const TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -818,7 +820,7 @@ class _StockConsumptionDialogState extends State<_StockConsumptionDialog> {
             const Text(
               'Esto solo descuenta el stock y queda en el historial de '
               'movimientos. No afecta el reporte financiero.',
-              style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
             ),
             if (errorMessage != null) ...[
               const SizedBox(height: 8),

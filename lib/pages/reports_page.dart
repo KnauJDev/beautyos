@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/financial_summary.dart';
 import '../models/commission_summary.dart';
 import '../models/daily_close_summary.dart';
@@ -308,9 +310,9 @@ class SalesReportCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
+        color: AppColors.surfaceAlt,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -318,7 +320,7 @@ class SalesReportCard extends StatelessWidget {
           const Icon(
             Icons.insights_outlined,
             size: 30,
-            color: Color(0xFF7C3AED),
+            color: AppColors.brand,
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -330,7 +332,7 @@ class SalesReportCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF2D1B69),
+                    color: AppColors.brandDeep,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -338,7 +340,7 @@ class SalesReportCard extends StatelessWidget {
                   'Estilista: ${report.stylistName}',
                   style: const TextStyle(
                     fontSize: 15,
-                    color: Color(0xFF111827),
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -346,7 +348,7 @@ class SalesReportCard extends StatelessWidget {
                   '${report.ticketsCount} ticket(s) · ${report.totalDurationMinutes} min',
                   style: const TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF6B7280),
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -358,7 +360,7 @@ class SalesReportCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF059669),
+              color: AppColors.success,
             ),
           ),
         ],
@@ -405,7 +407,7 @@ class _DailyCloseSection extends StatelessWidget {
             const SizedBox(height: 8),
             const Text(
               'Resume el dinero recibido y las obligaciones generadas durante el día.',
-              style: TextStyle(color: Color(0xFF6B7280)),
+              style: TextStyle(color: AppColors.textSecondary),
             ),
             const SizedBox(height: 16),
             Wrap(
@@ -466,7 +468,7 @@ class _DailyCloseSection extends StatelessWidget {
             if (commissions.isEmpty)
               const Text(
                 'No se generaron comisiones en esta fecha.',
-                style: TextStyle(color: Color(0xFF6B7280)),
+                style: TextStyle(color: AppColors.textSecondary),
               )
             else
               ...commissions.map(
@@ -474,15 +476,15 @@ class _DailyCloseSection extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF9FAFB),
+                    color: AppColors.surfaceAlt,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                    border: Border.all(color: AppColors.border),
                   ),
                   child: Row(
                     children: [
                       const Icon(
                         Icons.person_outline,
-                        color: Color(0xFF7C3AED),
+                        color: AppColors.brand,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -493,12 +495,12 @@ class _DailyCloseSection extends StatelessWidget {
                               commission.stylistName,
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF2D1B69),
+                                color: AppColors.brandDeep,
                               ),
                             ),
                             Text(
                               '${commission.servicesCount} servicio(s) · Ventas ${_formatMoney(commission.serviceSales)}',
-                              style: const TextStyle(color: Color(0xFF6B7280)),
+                              style: const TextStyle(color: AppColors.textSecondary),
                             ),
                           ],
                         ),
@@ -507,7 +509,7 @@ class _DailyCloseSection extends StatelessWidget {
                         _formatMoney(commission.commissionTotal),
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF059669),
+                          color: AppColors.success,
                         ),
                       ),
                     ],
@@ -534,7 +536,7 @@ class _AmountLine extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Color(0xFF6B7280))),
+          Text(label, style: const TextStyle(color: AppColors.textSecondary)),
           Text(
             _formatMoney(value),
             style: const TextStyle(fontWeight: FontWeight.w600),

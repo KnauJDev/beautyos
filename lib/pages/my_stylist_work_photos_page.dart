@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/my_stylist_work_photo.dart';
 import '../services/my_stylist_work_photos_service.dart';
 import '../widgets/app_widgets.dart';
@@ -144,7 +146,7 @@ class _PhotoCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
-          side: const BorderSide(color: Color(0xFFE5E7EB)),
+          side: const BorderSide(color: AppColors.border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -159,7 +161,7 @@ class _PhotoCard extends StatelessWidget {
                     child: Icon(
                       Icons.broken_image_outlined,
                       size: 42,
-                      color: Color(0xFF9CA3AF),
+                      color: AppColors.textMuted,
                     ),
                   );
                 },
@@ -176,7 +178,7 @@ class _PhotoCard extends StatelessWidget {
                     photo.caption,
                     style: const TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF111827),
+                      color: AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -223,9 +225,9 @@ class _PhotoBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Chip(
       label: Text(text),
-      backgroundColor: const Color(0xFFF5F3FF),
+      backgroundColor: AppColors.brandTintSoft,
       labelStyle: const TextStyle(
-        color: Color(0xFF5B21B6),
+        color: AppColors.brandDark,
         fontWeight: FontWeight.w700,
       ),
       side: BorderSide.none,
@@ -245,12 +247,12 @@ class _PhotoLine extends StatelessWidget {
       padding: const EdgeInsets.only(top: 6),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: const Color(0xFF6B7280)),
+          Icon(icon, size: 16, color: AppColors.textSecondary),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF374151)),
+              style: const TextStyle(fontSize: 13, color: AppColors.textStrong),
             ),
           ),
         ],

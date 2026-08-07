@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/ticket_service_management_item.dart';
 import '../services/work_photos_service.dart';
 import '../services/work_photos_upload_service.dart';
@@ -188,7 +190,7 @@ class _AddWorkPhotoDialogState extends State<AddWorkPhotoDialog> {
               ),
               if (_error != null) ...[
                 const SizedBox(height: 12),
-                Text(_error!, style: const TextStyle(color: Color(0xFFB91C1C))),
+                Text(_error!, style: const TextStyle(color: AppColors.danger)),
               ],
             ],
           ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/expense_management_item.dart';
 import '../services/expenses_service.dart';
 import '../services/my_profile_service.dart';
@@ -316,7 +318,7 @@ class _ExpensesTable extends StatelessWidget {
                           style: TextStyle(
                             color: expense.active
                                 ? null
-                                : const Color(0xFF9CA3AF),
+                                : AppColors.textMuted,
                           ),
                         ),
                       ),
@@ -337,7 +339,7 @@ class _ExpensesTable extends StatelessWidget {
                           ? const Text('Activo')
                           : const Text(
                               'Anulado',
-                              style: TextStyle(color: Color(0xFFB91C1C)),
+                              style: TextStyle(color: AppColors.danger),
                             ),
                     ),
                     if (isOwner)
@@ -364,8 +366,8 @@ class _ExpensesTable extends StatelessWidget {
                                     : Icons.play_circle_outline,
                                 size: 20,
                                 color: expense.active
-                                    ? const Color(0xFFB91C1C)
-                                    : const Color(0xFF2E7D32),
+                                    ? AppColors.danger
+                                    : AppColors.success,
                               ),
                             ),
                           ],

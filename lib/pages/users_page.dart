@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/stylist_summary.dart';
 import '../models/team_invitation.dart';
 import '../models/tenant_user.dart';
@@ -220,7 +222,7 @@ class _InvitationRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          const Icon(Icons.mail_outline, size: 20, color: Color(0xFF7C3AED)),
+          const Icon(Icons.mail_outline, size: 20, color: AppColors.brand),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -236,7 +238,7 @@ class _InvitationRow extends StatelessWidget {
                       : invitation.roleText,
                   style: const TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF6B7280),
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -367,7 +369,7 @@ class _InviteUserDialogState extends State<_InviteUserDialog> {
                 const Text(
                   'No hay estilistas en el catálogo todavía. Créalo primero '
                   'en "Estilistas".',
-                  style: TextStyle(color: Color(0xFFB45309)),
+                  style: TextStyle(color: AppColors.warning),
                 )
               else
                 DropdownButtonFormField<String>(
@@ -485,14 +487,14 @@ class _UserCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CircleAvatar(
-            backgroundColor: const Color(0xFFEEE6FF),
-            foregroundColor: const Color(0xFF7C3AED),
+            backgroundColor: AppColors.brandTint,
+            foregroundColor: AppColors.brand,
             child: Icon(
               user.isOwner
                   ? Icons.workspace_premium_outlined
@@ -509,14 +511,14 @@ class _UserCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF2D1B69),
+                    color: AppColors.brandDeep,
                   ),
                 ),
                 if (user.email.isNotEmpty) ...[
                   const SizedBox(height: 3),
                   Text(
                     user.email,
-                    style: const TextStyle(color: Color(0xFF6B7280)),
+                    style: const TextStyle(color: AppColors.textSecondary),
                   ),
                 ],
                 const SizedBox(height: 9),
@@ -548,7 +550,7 @@ class _UserCard extends StatelessWidget {
               'Protegido',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF6B7280),
+                color: AppColors.textSecondary,
               ),
             )
           else
@@ -574,7 +576,7 @@ class _UserTag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color: active ? const Color(0xFFEEE6FF) : const Color(0xFFFEE2E2),
+        color: active ? AppColors.brandTint : AppColors.dangerTint,
         borderRadius: BorderRadius.circular(99),
       ),
       child: Text(
@@ -582,7 +584,7 @@ class _UserTag extends StatelessWidget {
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: active ? const Color(0xFF6D28D9) : const Color(0xFFB91C1C),
+          color: active ? AppColors.brandDark : AppColors.danger,
         ),
       ),
     );
@@ -660,7 +662,7 @@ class _ManageUserDialogState extends State<_ManageUserDialog> {
                 const SizedBox(height: 4),
                 Text(
                   widget.user.email,
-                  style: const TextStyle(color: Color(0xFF6B7280)),
+                  style: const TextStyle(color: AppColors.textSecondary),
                 ),
               ],
               const SizedBox(height: 20),
@@ -700,12 +702,12 @@ class _ManageUserDialogState extends State<_ManageUserDialog> {
                 const SizedBox(height: 8),
                 const Text(
                   'El rol Estilista solo aparece cuando el usuario está vinculado a un perfil de estilista.',
-                  style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                 ),
               ],
               if (_error != null) ...[
                 const SizedBox(height: 12),
-                Text(_error!, style: const TextStyle(color: Color(0xFFB91C1C))),
+                Text(_error!, style: const TextStyle(color: AppColors.danger)),
               ],
             ],
           ),

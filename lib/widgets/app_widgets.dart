@@ -1,5 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 class AppPage extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -27,13 +29,13 @@ class AppPage extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 34,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF2D1B69),
+                  color: AppColors.brandDeep,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 subtitle,
-                style: const TextStyle(fontSize: 17, color: Color(0xFF6B7280)),
+                style: const TextStyle(fontSize: 17, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 28),
               ...children,
@@ -71,11 +73,11 @@ class MetricCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, size: 34, color: const Color(0xFF7C3AED)),
+              Icon(icon, size: 34, color: AppColors.brand),
               const SizedBox(height: 16),
               Text(
                 title,
-                style: const TextStyle(fontSize: 15, color: Color(0xFF6B7280)),
+                style: const TextStyle(fontSize: 15, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 8),
               Text(
@@ -83,7 +85,7 @@ class MetricCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF2D1B69),
+                  color: AppColors.brandDeep,
                 ),
               ),
               const SizedBox(height: 8),
@@ -92,7 +94,7 @@ class MetricCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 13,
                   height: 1.4,
-                  color: Color(0xFF6B7280),
+                  color: AppColors.textSecondary,
                 ),
               ),
             ],
@@ -115,7 +117,7 @@ class SectionTitle extends StatelessWidget {
       style: const TextStyle(
         fontSize: 22,
         fontWeight: FontWeight.bold,
-        color: Color(0xFF2D1B69),
+        color: AppColors.brandDeep,
       ),
     );
   }
@@ -143,7 +145,7 @@ class InfoPanel extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 34, color: const Color(0xFF7C3AED)),
+            Icon(icon, size: 34, color: AppColors.brand),
             const SizedBox(width: 18),
             Expanded(
               child: Column(
@@ -154,7 +156,7 @@ class InfoPanel extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 19,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF2D1B69),
+                      color: AppColors.brandDeep,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -163,7 +165,7 @@ class InfoPanel extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 15,
                       height: 1.45,
-                      color: Color(0xFF4B5563),
+                      color: AppColors.textStrong,
                     ),
                   ),
                 ],
@@ -202,7 +204,7 @@ class DemoListCard extends StatelessWidget {
                     const Icon(
                       Icons.check_circle_outline,
                       size: 20,
-                      color: Color(0xFF7C3AED),
+                      color: AppColors.brand,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -210,7 +212,7 @@ class DemoListCard extends StatelessWidget {
                         line,
                         style: const TextStyle(
                           fontSize: 15,
-                          color: Color(0xFF374151),
+                          color: AppColors.textStrong,
                         ),
                       ),
                     ),

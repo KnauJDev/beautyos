@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/review_summary.dart';
 import '../services/reviews_service.dart';
 import '../widgets/app_widgets.dart';
@@ -387,7 +389,7 @@ class _ReviewCard extends StatelessWidget {
                   review.starsText,
                   style: const TextStyle(
                     fontSize: 20,
-                    color: Color(0xFFF59E0B),
+                    color: AppColors.warning,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -400,29 +402,29 @@ class _ReviewCard extends StatelessWidget {
               review.commentText,
               style: const TextStyle(
                 fontSize: 16,
-                color: Color(0xFF111827),
+                color: AppColors.textPrimary,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 12),
             Text(
               'Cliente: ${review.clientName}',
-              style: const TextStyle(fontSize: 14, color: Color(0xFF374151)),
+              style: const TextStyle(fontSize: 14, color: AppColors.textStrong),
             ),
             const SizedBox(height: 4),
             Text(
               'Estilista: ${review.stylistName}',
-              style: const TextStyle(fontSize: 14, color: Color(0xFF374151)),
+              style: const TextStyle(fontSize: 14, color: AppColors.textStrong),
             ),
             const SizedBox(height: 4),
             Text(
               'Servicio: ${review.serviceName}',
-              style: const TextStyle(fontSize: 14, color: Color(0xFF374151)),
+              style: const TextStyle(fontSize: 14, color: AppColors.textStrong),
             ),
             const SizedBox(height: 4),
             Text(
               'Fecha: ${review.createdDateText}',
-              style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
             ),
             if (review.moderationStatus == 'pending') ...[
               const SizedBox(height: 12),

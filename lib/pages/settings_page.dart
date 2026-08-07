@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/appointment_policy.dart';
 import '../models/business_hour.dart';
 import '../models/business_settings.dart';
@@ -382,7 +384,7 @@ class _VersionStamp extends StatelessWidget {
             const SizedBox(height: 4),
             const Text(
               'Si reportas un problema, incluye este código: dice exactamente qué versión estás viendo.',
-              style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
             ),
           ],
         );
@@ -475,18 +477,18 @@ class _TenantLogoPreview extends StatelessWidget {
       width: 56,
       height: 56,
       decoration: BoxDecoration(
-        color: const Color(0xFFEEE6FF),
+        color: AppColors.brandTint,
         borderRadius: BorderRadius.circular(12),
       ),
       clipBehavior: Clip.antiAlias,
       child: url == null
-          ? const Icon(Icons.storefront_outlined, color: Color(0xFF7C3AED))
+          ? const Icon(Icons.storefront_outlined, color: AppColors.brand)
           : Image.network(
               url,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => const Icon(
                 Icons.broken_image_outlined,
-                color: Color(0xFF7C3AED),
+                color: AppColors.brand,
               ),
             ),
     );
@@ -587,18 +589,18 @@ class _TenantCoverPreview extends StatelessWidget {
       width: double.infinity,
       height: 120,
       decoration: BoxDecoration(
-        color: const Color(0xFFEEE6FF),
+        color: AppColors.brandTint,
         borderRadius: BorderRadius.circular(12),
       ),
       clipBehavior: Clip.antiAlias,
       child: url == null
-          ? const Icon(Icons.image_outlined, color: Color(0xFF7C3AED))
+          ? const Icon(Icons.image_outlined, color: AppColors.brand)
           : Image.network(
               url,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => const Icon(
                 Icons.broken_image_outlined,
-                color: Color(0xFF7C3AED),
+                color: AppColors.brand,
               ),
             ),
     );
@@ -718,7 +720,7 @@ class PublicBookingLinkCard extends StatelessWidget {
               'generado a partir de él. Tus clientes reservan sin crear '
               'cuenta ni contraseña; la reserva queda pendiente de tu '
               'confirmación.',
-              style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 12),
             Container(
@@ -727,9 +729,9 @@ class PublicBookingLinkCard extends StatelessWidget {
                 vertical: 10,
               ),
               decoration: BoxDecoration(
-                color: const Color(0xFFF9FAFB),
+                color: AppColors.surfaceAlt,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
+                border: Border.all(color: AppColors.border),
               ),
               child: Row(
                 children: [
@@ -904,7 +906,7 @@ class StylistCommissionExceptionsCard extends StatelessWidget {
               'Fija una comisión distinta a la general del negocio para un '
               'estilista en un servicio específico. Sin excepciones, se usa '
               'la comisión general de arriba.',
-              style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
+              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 12),
             for (final stylist in stylists)
@@ -1122,9 +1124,9 @@ class _ServiceCommissionRowState extends State<_ServiceCommissionRow> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
+        color: AppColors.surfaceAlt,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1146,7 +1148,7 @@ class _ServiceCommissionRowState extends State<_ServiceCommissionRow> {
           if (!hasException)
             const Text(
               'Usa la comisión general del negocio.',
-              style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
             )
           else ...[
             Row(
@@ -1375,7 +1377,7 @@ class _DayRow extends StatelessWidget {
                 const Expanded(
                   child: Text(
                     'Cerrado',
-                    style: TextStyle(color: Color(0xFF6B7280)),
+                    style: TextStyle(color: AppColors.textSecondary),
                   ),
                 ),
             ],

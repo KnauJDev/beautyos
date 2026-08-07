@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 import '../services/app_version_service.dart';
 import '../services/page_reloader.dart';
 
@@ -109,7 +111,7 @@ class _UpdateBannerState extends State<UpdateBanner>
     if (!_hayVersionNueva) return const SizedBox.shrink();
 
     return Material(
-      color: const Color(0xFFEEE6FF),
+      color: AppColors.brandTint,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
@@ -117,14 +119,14 @@ class _UpdateBannerState extends State<UpdateBanner>
             const Icon(
               Icons.rocket_launch_outlined,
               size: 20,
-              color: Color(0xFF7C3AED),
+              color: AppColors.brand,
             ),
             const SizedBox(width: 10),
             const Expanded(
               child: Text(
                 'Hay una versión nueva de Salón y Más.',
                 style: TextStyle(
-                  color: Color(0xFF2D1B69),
+                  color: AppColors.brandDeep,
                   fontWeight: FontWeight.w600,
                 ),
               ),

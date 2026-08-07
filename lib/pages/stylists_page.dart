@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/stylist_management_item.dart';
 import '../models/stylist_service_option.dart';
 import '../models/stylist_service_summary.dart';
@@ -265,9 +267,9 @@ class StylistCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
+        color: AppColors.surfaceAlt,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -286,8 +288,8 @@ class StylistCard extends StatelessWidget {
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
                         color: stylist.active
-                            ? const Color(0xFF2D1B69)
-                            : const Color(0xFF9CA3AF),
+                            ? AppColors.brandDeep
+                            : AppColors.textMuted,
                       ),
                     ),
                     if (!stylist.active) ...[
@@ -296,7 +298,7 @@ class StylistCard extends StatelessWidget {
                         '· inactivo',
                         style: TextStyle(
                           fontSize: 13,
-                          color: Color(0xFF9CA3AF),
+                          color: AppColors.textMuted,
                         ),
                       ),
                     ],
@@ -307,7 +309,7 @@ class StylistCard extends StatelessWidget {
                   stylist.specialty,
                   style: const TextStyle(
                     fontSize: 15,
-                    color: Color(0xFF111827),
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -315,7 +317,7 @@ class StylistCard extends StatelessWidget {
                   stylist.phone,
                   style: const TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF6B7280),
+                    color: AppColors.textSecondary,
                   ),
                 ),
                 if (stylist.bio != null && stylist.bio!.trim().isNotEmpty) ...[
@@ -325,7 +327,7 @@ class StylistCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 13,
                       fontStyle: FontStyle.italic,
-                      color: Color(0xFF6B7280),
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
@@ -335,14 +337,14 @@ class StylistCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF2D1B69),
+                    color: AppColors.brandDeep,
                   ),
                 ),
                 const SizedBox(height: 8),
                 if (services.isEmpty)
                   const Text(
                     'Sin servicios asignados.',
-                    style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                   )
                 else
                   Wrap(
@@ -382,8 +384,8 @@ class StylistCard extends StatelessWidget {
                           : Icons.play_circle_outline,
                       size: 20,
                       color: stylist.active
-                          ? const Color(0xFFB91C1C)
-                          : const Color(0xFF2E7D32),
+                          ? AppColors.danger
+                          : AppColors.success,
                     ),
                   ),
                 ],
@@ -405,7 +407,7 @@ class _StylistAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final url = photoUrl;
-    final color = active ? const Color(0xFF7C3AED) : const Color(0xFF9CA3AF);
+    final color = active ? AppColors.brand : AppColors.textMuted;
 
     if (url == null || url.trim().isEmpty) {
       return Icon(
@@ -439,7 +441,7 @@ class StylistServiceChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
       decoration: BoxDecoration(
-        color: const Color(0xFFEDE9FE),
+        color: AppColors.brandTint,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -447,7 +449,7 @@ class StylistServiceChip extends StatelessWidget {
         style: const TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w700,
-          color: Color(0xFF6D28D9),
+          color: AppColors.brandDark,
         ),
       ),
     );
@@ -541,7 +543,7 @@ class _ManageStylistServicesDialogState
               const Text(
                 'Sin servicios seleccionados, esta profesional no aparecera '
                 'como opcion al asignar nuevos servicios.',
-                style: TextStyle(color: Color(0xFFB45309)),
+                style: TextStyle(color: AppColors.warning),
               ),
             ],
           ],

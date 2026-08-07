@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
+
 import '../models/agenda_summary.dart';
 import '../services/agenda_service.dart';
 import '../widgets/app_widgets.dart';
@@ -124,9 +126,9 @@ class AgendaAppointmentCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
+        color: AppColors.surfaceAlt,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -142,7 +144,7 @@ class AgendaAppointmentCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF2D1B69),
+                    color: AppColors.brandDeep,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -150,7 +152,7 @@ class AgendaAppointmentCard extends StatelessWidget {
                   appointment.serviceNames,
                   style: const TextStyle(
                     fontSize: 15,
-                    color: Color(0xFF111827),
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -158,7 +160,7 @@ class AgendaAppointmentCard extends StatelessWidget {
                   'Estilista: ${appointment.stylistNames}',
                   style: const TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF6B7280),
+                    color: AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -167,7 +169,7 @@ class AgendaAppointmentCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF059669),
+                    color: AppColors.success,
                   ),
                 ),
               ],
@@ -192,7 +194,7 @@ class AgendaTimeBox extends StatelessWidget {
       width: 86,
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFEDE9FE),
+        color: AppColors.brandTint,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -202,7 +204,7 @@ class AgendaTimeBox extends StatelessWidget {
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF6D28D9),
+              color: AppColors.brandDark,
             ),
           ),
           const SizedBox(height: 4),
@@ -212,7 +214,7 @@ class AgendaTimeBox extends StatelessWidget {
             style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF6B7280),
+              color: AppColors.textSecondary,
             ),
           ),
         ],
@@ -231,7 +233,7 @@ class AgendaStatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFEDE9FE),
+        color: AppColors.brandTint,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -239,7 +241,7 @@ class AgendaStatusBadge extends StatelessWidget {
         style: const TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.bold,
-          color: Color(0xFF6D28D9),
+          color: AppColors.brandDark,
         ),
       ),
     );
