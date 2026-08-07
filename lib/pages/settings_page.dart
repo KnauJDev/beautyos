@@ -16,6 +16,7 @@ import '../services/commission_policy_service.dart';
 import '../services/stylists_service.dart';
 import '../services/tenant_cover_upload_service.dart';
 import '../services/tenant_logo_upload_service.dart';
+import '../services/app_version_service.dart';
 import '../widgets/app_widgets.dart';
 import '../widgets/update_banner.dart';
 
@@ -362,27 +363,30 @@ class _VersionStamp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final version = AppVersionHolder.bootVersion;
+    return ValueListenableBuilder<AppVersion?>(
+      valueListenable: AppVersionHolder.bootVersion,
+      builder: (context, version, _) {
+        if (version == null || version.isDevelopment) {
+          return const _SettingsLine(
+            label: 'Versión',
+            value: 'En desarrollo (sin publicar)',
+          );
+        }
 
-    if (version == null || version.isDevelopment) {
-      return const _SettingsLine(
-        label: 'Versión',
-        value: 'En desarrollo (sin publicar)',
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _SettingsLine(label: 'Versión', value: version.shortCommit),
-        if (version.builtAt != null)
-          _SettingsLine(label: 'Publicada', value: version.builtAt!),
-        const SizedBox(height: 4),
-        const Text(
-          'Si reportas un problema, incluye este código: dice exactamente qué versión estás viendo.',
-          style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
-        ),
-      ],
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SettingsLine(label: 'Versión', value: version.shortCommit),
+            if (version.builtAt != null)
+              _SettingsLine(label: 'Publicada', value: version.builtAt!),
+            const SizedBox(height: 4),
+            const Text(
+              'Si reportas un problema, incluye este código: dice exactamente qué versión estás viendo.',
+              style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+            ),
+          ],
+        );
+      },
     );
   }
 }

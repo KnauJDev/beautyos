@@ -7,10 +7,16 @@ import '../services/page_reloader.dart';
 
 /// Version con la que arranco esta pestana. La guarda el propio aviso en
 /// cuanto consigue leerla, y la lee Configuracion para mostrar el sello.
+///
+/// Es un `ValueNotifier` y no un campo suelto porque la consulta al servidor
+/// tarda: si Configuracion se dibuja antes de que llegue la respuesta, con un
+/// campo suelto se quedaba mostrando "En desarrollo" para siempre aunque el
+/// dato llegara un segundo despues.
 class AppVersionHolder {
   AppVersionHolder._();
 
-  static AppVersion? bootVersion;
+  static final ValueNotifier<AppVersion?> bootVersion =
+      ValueNotifier<AppVersion?>(null);
 }
 
 /// Avisa cuando hay una version nueva publicada.
@@ -75,11 +81,11 @@ class _UpdateBannerState extends State<UpdateBanner>
       final publicada = await _servicio.fetchPublishedVersion();
       if (publicada == null || !mounted) return;
 
-      final arranque = AppVersionHolder.bootVersion;
+      final arranque = AppVersionHolder.bootVersion.value;
 
       // Primera lectura: no hay con que comparar todavia, solo se anota.
       if (arranque == null) {
-        AppVersionHolder.bootVersion = publicada;
+        AppVersionHolder.bootVersion.value = publicada;
         return;
       }
 
@@ -94,7 +100,7 @@ class _UpdateBannerState extends State<UpdateBanner>
   void _actualizar() {
     // Recarga del navegador, no navegacion interna: lo que hay que reemplazar
     // es el codigo que el navegador ya tiene descargado.
-    AppVersionHolder.bootVersion = null;
+    AppVersionHolder.bootVersion.value = null;
     recargarPagina();
   }
 
