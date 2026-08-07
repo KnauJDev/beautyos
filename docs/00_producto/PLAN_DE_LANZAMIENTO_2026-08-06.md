@@ -237,6 +237,28 @@ Se decide cuando el propietario lo considere. No bloquea nada hoy.
 
 ---
 
+## 6-ter. ETAPA 2.5 — El enlace propio de cada negocio 🔗
+
+**Cuándo:** al terminar la Etapa 2, antes de la Etapa 3. Decidido en D-098.
+**Duración estimada:** 1 sesión. **Costo:** $0.
+
+Hoy el enlace público de un negocio es
+`salonymas.com/?reservar=3f2b8c1a-9d4e-...`, impresentable para un Instagram.
+Pasa a ser `salonymas.com/naguaradeunas`, automático para todos.
+
+| # | Tarea | Quién |
+|---|---|---|
+| 2.11 | Columna de identificador único por negocio, generada del nombre **sin ñ, sin tildes ni espacios** | 🤖 YO |
+| 2.12 | Función pública que resuelva el identificador sin sesión | 🤖 YO |
+| 2.13 | Enrutado por ruta en Flutter y `_redirects` para Cloudflare Pages | 🤖 YO |
+| 2.14 | Poder editar el identificador desde Configuración, con aviso de que el enlace viejo deja de servir | 🤖 YO |
+
+**El dominio propio del negocio** (`naguaradeunas.com`) va en la Etapa 3 como
+función del plan Profesional: Cloudflare for SaaS incluye **100 dominios de
+clientes sin costo**, y luego 0,10 USD al mes cada uno.
+
+---
+
 ## 7. ETAPA 3 — Que cobre 💰
 
 **Objetivo:** que un negocio pueda pagarte y activarse solo.
@@ -310,7 +332,7 @@ la dirección equivocada.
 | Apps en Play Store / App Store | La PWA cubre la necesidad sin costo ni revisiones de tienda |
 | Página pública optimizada para Google (SEO) | Flutter Web no indexa bien, pero eso solo importa si el buscador va a ser un canal de ventas. Se evalúa cuando haya clientes |
 | Paquetes/membresías de sesiones | Pausado a propósito hasta que un negocio real lo pida (D-078, punto 2) |
-| Dominio propio por cada negocio | Se empieza con subdominios automáticos (D-062). El dominio propio queda como función de pago futura |
+| ~~Dominio propio por cada negocio~~ | **Revisado el 07-ago (D-098).** Los subdominios quedan descartados: Cloudflare Pages no admite comodines. En su lugar, dos niveles — ruta automática para todos (`salonymas.com/naguaradeunas`) al terminar la Etapa 2, y dominio propio del negocio con Cloudflare for SaaS en la Etapa 3, atado al plan Profesional. Los primeros 100 no cuestan nada |
 
 ---
 
