@@ -8,6 +8,41 @@ componentes base obligaría a rehacerla entera.
 
 ---
 
+## 0. Agenda y Tickets se fusionan en un solo modulo
+
+**Decidido el 07-ago (D-105).** Hasta ahora eran dos entradas de menu, y al
+revisarlo resultaron ser lo mismo:
+
+| | Agenda | Tickets |
+|---|---|---|
+| Filtra por estado | Solo `confirmado`, `en_espera`, `en_proceso` | Ninguno |
+| Orden | Cronologico hacia adelante | Mas reciente primero |
+| Columnas | cliente, fecha, estado, servicio, estilista, precio, duracion | **Las mismas** + canal, pagado, saldo, estado de pago |
+
+La Agenda **no tenia ni una columna que Tickets no tuviera**: era un
+subconjunto de los mismos tickets, filtrado a tres estados y sin la
+informacion de dinero. Los propios bocetos del propietario decian "tickets" en
+el titulo de lo que llamaba agenda.
+
+**Se unifican en tres niveles:**
+
+| Nivel | Que es | De donde sale |
+|---|---|---|
+| 1 | El tablero de dia, semana y mes | Lo nuevo de esta especificacion |
+| 2 | La lista ampliada al tocar una casilla | Es la pantalla de Tickets de hoy |
+| 3 | El ticket con sus acciones: cobrar, reprogramar, cambiar estado, agregar foto | Ya existe dentro de Tickets |
+
+**Se llama "Agenda" en el menu**, que es la palabra que usa una duena de
+peluqueria, aunque por dentro sea un tablero de tickets. El modelo de tickets
+es el diferenciador del producto; el nombre debe ser el que busca el cliente.
+
+**Beneficio adicional:** deja de haber que adivinar cual de los dos abrir, y se
+libera un puesto en el menu -- que en celular vale oro. Ademas la regla del
+cero solo funciona asi: la Agenda de hoy oculta los cerrados, con lo cual nunca
+se podria comprobar que todo quedo en cero.
+
+---
+
 ## 1. La idea en una frase
 
 La agenda deja de ser un calendario y pasa a ser un **tablero de control de

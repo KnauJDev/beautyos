@@ -482,25 +482,57 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                       ),
                       const SizedBox(width: 8),
                     ],
-                    const Text(
-                      'Salón y Más',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
+                    // En celular la marca cede su sitio al modulo actual: el
+                    // nombre del producto no le dice nada a quien ya esta
+                    // dentro, y era parte de por que la barra no cabia (D-105).
+                    if (isWide)
+                      const Text(
+                        'Salón y Más',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      )
+                    else
+                      Flexible(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              sections[currentIndex].title,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                height: 1.1,
+                              ),
+                            ),
+                            Text(
+                              branch.tenantName,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
                 backgroundColor: AppColors.brand,
                 foregroundColor: Colors.white,
                 actions: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: Center(
-                      child: Text(
-                        sections[currentIndex].title,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
+                  if (isWide) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Center(
+                        child: Text(
+                          sections[currentIndex].title,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
+                    const SizedBox(width: 12),
+                  ],
                   _BranchSelector(
                     branches: branches,
                     selectedBranch: branch,
@@ -521,23 +553,28 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                       onPressed: () => _openCreateBranchDialog(context),
                       icon: const Icon(Icons.add_business_outlined),
                     ),
-                  const SizedBox(width: 12),
-                  const SessionBadge(),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    tooltip: 'Seguridad de tu cuenta',
-                    onPressed: () => showDialog(
-                      context: context,
-                      builder: (_) => const SecuritySettingsDialog(),
+                  // En celular, quien eres, tu seguridad y salir se mudan al
+                  // menu "Mas" (D-105). Arriba solo queda lo que se usa
+                  // mientras se trabaja: el modulo y la sede.
+                  if (isWide) ...[
+                    const SizedBox(width: 12),
+                    const SessionBadge(),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      tooltip: 'Seguridad de tu cuenta',
+                      onPressed: () => showDialog(
+                        context: context,
+                        builder: (_) => const SecuritySettingsDialog(),
+                      ),
+                      icon: const Icon(Icons.security_outlined),
                     ),
-                    icon: const Icon(Icons.security_outlined),
-                  ),
-                  const SizedBox(width: 4),
-                  IconButton(
-                    tooltip: 'Cerrar sesi\u00f3n',
-                    onPressed: signOut,
-                    icon: const Icon(Icons.logout_outlined),
-                  ),
+                    const SizedBox(width: 4),
+                    IconButton(
+                      tooltip: 'Cerrar sesi\u00f3n',
+                      onPressed: signOut,
+                      icon: const Icon(Icons.logout_outlined),
+                    ),
+                  ],
                   const SizedBox(width: 8),
                 ],
               ),
@@ -574,21 +611,15 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
               ),
               bottomNavigationBar: isWide
                   ? null
-                  : NavigationBar(
-                      selectedIndex: currentIndex,
-                      onDestinationSelected: (index) {
+                  : _MobileNavBar(
+                      sections: sections,
+                      currentIndex: currentIndex,
+                      onSelected: (index) {
                         setState(() {
                           selectedIndex = index;
                         });
                       },
-                      destinations: sections
-                          .map(
-                            (section) => NavigationDestination(
-                              icon: Icon(section.icon),
-                              label: section.title,
-                            ),
-                          )
-                          .toList(),
+                      onSignOut: signOut,
                     ),
             );
           },
@@ -888,5 +919,192 @@ class BeautyModule {
 
   bool canAccess(String role) {
     return allowedRoles.contains(role);
+  }
+}
+
+/// Barra inferior de celular (D-105).
+///
+/// Antes se metian **los 15 modulos** en el ancho de un telefono y las
+/// palabras se partian en pedazos ilegibles: "Das hbo ard", "Foto s de trab
+/// ajos". Ahora caben cuatro y el resto vive en "Mas".
+///
+/// **Todos los roles llevan "Mas", tengan 3 modulos o 14**, por dos motivos:
+/// nunca esta vacio -- ahi viven Seguridad y Cerrar sesion, que antes eran
+/// iconos apretujados arriba -- y deja sitio para crecer sin rediseniar la
+/// barra cada vez que un rol gane una herramienta.
+class _MobileNavBar extends StatelessWidget {
+  const _MobileNavBar({
+    required this.sections,
+    required this.currentIndex,
+    required this.onSelected,
+    required this.onSignOut,
+  });
+
+  final List<BeautySection> sections;
+  final int currentIndex;
+  final ValueChanged<int> onSelected;
+  final Future<void> Function() onSignOut;
+
+  /// Cuatro y no cinco: el quinto puesto siempre es "Mas".
+  static const _visibles = 4;
+
+  @override
+  Widget build(BuildContext context) {
+    final directos = sections.take(_visibles).toList();
+    final enMas = sections.length > _visibles;
+
+    // Si el modulo activo vive dentro de "Mas", se resalta "Mas".
+    final seleccionado = currentIndex < directos.length
+        ? currentIndex
+        : directos.length;
+
+    return NavigationBar(
+      selectedIndex: seleccionado,
+      onDestinationSelected: (index) {
+        if (index < directos.length) {
+          onSelected(index);
+          return;
+        }
+        _abrirMas(context);
+      },
+      destinations: [
+        for (final section in directos)
+          NavigationDestination(
+            icon: Icon(section.icon),
+            label: section.title,
+          ),
+        NavigationDestination(
+          icon: const Icon(Icons.more_horiz),
+          label: enMas ? 'Más' : 'Cuenta',
+        ),
+      ],
+    );
+  }
+
+  Future<void> _abrirMas(BuildContext context) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: AppColors.surface,
+      builder: (hoja) {
+        final restantes = <MapEntry<int, BeautySection>>[
+          for (var i = _visibles; i < sections.length; i++)
+            MapEntry(i, sections[i]),
+        ];
+
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              0,
+              AppSpacing.lg,
+              AppSpacing.lg,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (restantes.isNotEmpty) ...[
+                  GridView.count(
+                    crossAxisCount: 3,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    mainAxisSpacing: AppSpacing.sm,
+                    crossAxisSpacing: AppSpacing.sm,
+                    childAspectRatio: 1.15,
+                    children: [
+                      for (final entrada in restantes)
+                        _AccesoMas(
+                          icon: entrada.value.icon,
+                          label: entrada.value.title,
+                          activo: entrada.key == currentIndex,
+                          onTap: () {
+                            Navigator.of(hoja).pop();
+                            onSelected(entrada.key);
+                          },
+                        ),
+                    ],
+                  ),
+                  const Divider(),
+                ],
+                // Seguridad y salir viven aqui desde D-105: en la barra de
+                // arriba eran dos iconos que no cabian en un telefono.
+                ListTile(
+                  leading: const Icon(Icons.security_outlined),
+                  title: const Text('Seguridad de tu cuenta'),
+                  onTap: () {
+                    Navigator.of(hoja).pop();
+                    showDialog(
+                      context: context,
+                      builder: (_) => const SecuritySettingsDialog(),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.logout_outlined,
+                    color: AppColors.danger,
+                  ),
+                  title: const Text(
+                    'Cerrar sesión',
+                    style: TextStyle(color: AppColors.danger),
+                  ),
+                  onTap: () {
+                    Navigator.of(hoja).pop();
+                    onSignOut();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _AccesoMas extends StatelessWidget {
+  const _AccesoMas({
+    required this.icon,
+    required this.label,
+    required this.activo,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool activo;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.control),
+      child: Container(
+        decoration: BoxDecoration(
+          color: activo ? AppColors.brandTint : null,
+          borderRadius: BorderRadius.circular(AppRadius.control),
+        ),
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: AppColors.brand, size: 24),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textStrong,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
