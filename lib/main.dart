@@ -27,6 +27,7 @@ import 'pages/my_stylist_work_photos_page.dart';
 import 'pages/work_photos_page.dart';
 import 'widgets/create_branch_dialog.dart';
 import 'widgets/security_settings_dialog.dart';
+import 'theme/app_theme.dart';
 import 'widgets/session_badge.dart';
 import 'widgets/update_banner.dart';
 import 'pages/reviews_page.dart';
@@ -78,11 +79,9 @@ class BeautyOSApp extends StatelessWidget {
     return MaterialApp(
       title: 'Salón y Más',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF7C3AED)),
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFF8F5FF),
-      ),
+      // Un solo sitio decide el aspecto de toda la aplicacion (D-102). Cuando
+      // llegue la marca blanca, aqui entrara el tema del negocio.
+      theme: AppTheme.light(),
       home: home,
     );
   }

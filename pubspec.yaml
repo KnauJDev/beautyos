@@ -81,6 +81,21 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
+  fonts:
+    # Plus Jakarta Sans (D-100). Empaquetada y no descargada de Google en cada
+    # visita: funciona sin internet y no reintroduce una dependencia de
+    # terceros en tiempo de ejecucion, que es lo que tumbo la app en D-090.
+    # Los tres pesos se extrajeron de la fuente variable oficial de Google
+    # Fonts con fontTools; la licencia SIL OFL va en fonts/OFL.txt.
+    - family: PlusJakartaSans
+      fonts:
+        - asset: fonts/PlusJakartaSans-Regular.ttf
+          weight: 400
+        - asset: fonts/PlusJakartaSans-SemiBold.ttf
+          weight: 600
+        - asset: fonts/PlusJakartaSans-Bold.ttf
+          weight: 700
+
   # fonts:
   #   - family: Schyler
   #     fonts:
