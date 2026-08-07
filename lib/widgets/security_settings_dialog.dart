@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/app_version_service.dart';
+import 'update_banner.dart';
 
 /// Activar/desactivar verificacion en dos pasos (TOTP) para el usuario
 /// actual. Benchmarking 2026-07-28 (AgendaPro), punto 3: opcional, cada
@@ -175,32 +177,47 @@ class _SecuritySettingsDialogState extends State<SecuritySettingsDialog> {
       title: const Text('Seguridad de tu cuenta'),
       content: SizedBox(
         width: 420,
-        child: FutureBuilder<List<Factor>>(
-          future: factorsFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const SizedBox(
-                height: 100,
-                child: Center(child: CircularProgressIndicator()),
-              );
-            }
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Flexible(
+              child: FutureBuilder<List<Factor>>(
+                future: factorsFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SizedBox(
+                      height: 100,
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
 
-            if (snapshot.hasError) {
-              return Text('No se pudo cargar: ${snapshot.error}');
-            }
+                  if (snapshot.hasError) {
+                    return Text('No se pudo cargar: ${snapshot.error}');
+                  }
 
-            final factors = snapshot.data ?? [];
+                  final factors = snapshot.data ?? [];
 
-            if (_pendingFactorId != null) {
-              return _buildEnrollStep();
-            }
+                  if (_pendingFactorId != null) {
+                    return _buildEnrollStep();
+                  }
 
-            if (factors.isNotEmpty) {
-              return _buildEnabledState(factors.first);
-            }
+                  if (factors.isNotEmpty) {
+                    return _buildEnabledState(factors.first);
+                  }
 
-            return _buildDisabledState();
-          },
+                  return _buildDisabledState();
+                },
+              ),
+            ),
+            const Divider(height: 24),
+            // El sello vive aqui y no solo en Configuracion (D-100): esa
+            // pantalla es de owner y admin, asi que la recepcionista y los
+            // estilistas -- que son quienes mas probable reportan un problema
+            // -- no podian ver su version. Este dialogo lo alcanzan todos los
+            // roles y en cualquier tamano de pantalla.
+            const _VersionFooter(),
+          ],
         ),
       ),
       actions: [
@@ -340,6 +357,46 @@ class _SecuritySettingsDialogState extends State<SecuritySettingsDialog> {
           ],
         ),
       ],
+    );
+  }
+}
+
+/// Sello de version accesible para cualquier rol (D-100).
+///
+/// Cuando alguien reporte un problema se le pide este codigo: dice exactamente
+/// que version esta ejecutando, sin depender de que recuerde si actualizo.
+class _VersionFooter extends StatelessWidget {
+  const _VersionFooter();
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<AppVersion?>(
+      valueListenable: AppVersionHolder.bootVersion,
+      builder: (context, version, _) {
+        final texto = (version == null || version.isDevelopment)
+            ? 'Versión: en desarrollo'
+            : 'Versión: ${version.shortCommit}';
+
+        return Row(
+          children: [
+            const Icon(
+              Icons.info_outline,
+              size: 15,
+              color: Color(0xFF9CA3AF),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                '$texto · inclúyela si reportas un problema',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF6B7280),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
