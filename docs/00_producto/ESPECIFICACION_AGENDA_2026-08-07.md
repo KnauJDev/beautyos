@@ -181,11 +181,18 @@ plana sin filtro de fecha.
 ### 8.1 Número de ticket (bloqueante para la lista ampliada)
 
 Los tickets solo tienen identificador interno (`3f2b8c1a-9d4e-…`),
-impresentable para un humano. Hace falta un **consecutivo legible por
-negocio**, y decidir:
+impresentable para un humano. Hace falta un **consecutivo legible**, decidido
+el 07-ago:
 
-- ¿Se reinicia cada año? ¿Lleva prefijo de sede?
-- ¿Qué número reciben los tickets que ya existen?
+- **Uno solo por negocio**, no por sede. Así el número dice cuántos servicios
+  ha prestado el negocio en total.
+- **Empieza en `0000001` y no se reinicia nunca.** Ni por año ni por nada.
+- **Sin prefijo de sede.**
+- Los tickets que ya existen reciben número por orden de creación.
+
+> **Intención a futuro del propietario:** enlazarlo con el número de factura o
+> la factura electrónica. No se construye ahora, pero conviene que el
+> consecutivo nazca limpio y continuo por si termina siendo la base de eso.
 
 ### 8.2 Dos funciones nuevas, no seis
 
@@ -209,11 +216,11 @@ funciones.
 
 ## 9. Pendiente de decidir
 
-| # | Asunto |
-|---|---|
-| A | Formato del consecutivo de ticket y qué pasa con los ya existentes |
-| B | Si el estilista recibe algún resumen agregado de **su** día, o se queda solo con su lista actual |
-| C | Si las horas sin actividad se ocultan en la vista día o se muestran vacías |
+| # | Asunto | Estado |
+|---|---|---|
+| A | Formato del consecutivo de ticket | ✅ Resuelto — ver 8.1 |
+| C | Horas sin actividad en la vista día | ✅ Resuelto — **se muestran igual**, con un `-` o un punto. El propietario lo argumentó bien: es raro que en una hora no haya *nada* en *ningún* estado, así que ocultar filas haría saltar la cuadrícula sin ganar casi espacio |
+| B | Si el estilista recibe un resumen agregado de **su** día | ⬜ **Pendiente a propósito.** Se diseña aparte, mirando qué necesita ver de verdad, cómo y dónde. No se improvisa dentro de esta pantalla |
 
 ---
 
