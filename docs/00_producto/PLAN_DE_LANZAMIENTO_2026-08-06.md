@@ -147,7 +147,7 @@ abrirlas todas de golpe gasta créditos sin aportar nada.
 | # | Módulo | Incluye | Capturas |
 |---|---|---|---|
 | 2.5 | **Dashboard** — el que cuenta la historia del negocio | | `reportes - resumen 1/2` |
-| 2.6 | **Agenda** — la pantalla más usada | **Filtrar por fecha y por rango**, que hoy no existe para ningún rol | `agenda` |
+| 2.6 | **Agenda** — la pantalla más usada | ⚠️ **Tramo propio, no solo rediseño.** Pasa a ser un tablero de tickets con vistas de día, semana y mes. Especificación completa en `ESPECIFICACION_AGENDA_2026-08-07.md` (D-101). Incluye el filtro de fecha que hoy no existe, y **exige construir antes el número de ticket** | `agenda` |
 | 2.7 | **Tickets / Ventas** | **Resolver el desplazamiento excesivo** para encontrar y cobrar un ticket abierto | `ventas - caja de ventas`, `detalle de ventas`, `transacciones` |
 | 2.8 | **Clientes** | | `clientes - base clientes` |
 | 2.9 | **Reportes** | | `reportes - reporte de ventas 1/2`, `reporte de reservas 1/2` |
