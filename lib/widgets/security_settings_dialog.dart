@@ -44,7 +44,38 @@ class _SecuritySettingsDialogState extends State<SecuritySettingsDialog> {
 
   Future<List<Factor>> _loadFactors() async {
     final result = await Supabase.instance.client.auth.mfa.listFactors();
+    // `totp` trae solo los factores **verificados**, que es lo correcto para
+    // decidir si la verificacion en dos pasos esta activa.
     return result.totp;
+  }
+
+  /// Borra los intentos de activacion que quedaron a medias (D-104).
+  ///
+  /// Si alguien empieza a activar el 2FA y cierra el dialogo sin escribir el
+  /// codigo, Supabase conserva ese factor en estado *sin verificar*. La
+  /// pantalla no lo ve -- porque `listFactors().totp` solo devuelve los
+  /// verificados -- pero el servidor si, y rechaza cualquier intento nuevo con
+  /// *"A factor with the friendly name ... already exists"*.
+  ///
+  /// El resultado era una trampa: **bastaba abandonar el proceso una vez para
+  /// no poder activar nunca mas la verificacion en dos pasos**, sin manera de
+  /// salir desde la propia aplicacion.
+  Future<void> _limpiarIntentosAMedias() async {
+    final result = await Supabase.instance.client.auth.mfa.listFactors();
+
+    for (final factor in result.all) {
+      final aMedias =
+          factor.factorType == FactorType.totp &&
+          factor.status == FactorStatus.unverified;
+      if (!aMedias) continue;
+
+      try {
+        await Supabase.instance.client.auth.mfa.unenroll(factor.id);
+      } catch (_) {
+        // Si no se puede borrar, el enroll de abajo fallara con su propio
+        // mensaje. No tiene sentido interrumpir aqui.
+      }
+    }
   }
 
   void _reload() {
@@ -65,6 +96,11 @@ class _SecuritySettingsDialogState extends State<SecuritySettingsDialog> {
     });
 
     try {
+      // Antes de inscribir, se limpia cualquier intento abandonado: si no, el
+      // servidor rechaza el nuevo por nombre repetido y la persona queda sin
+      // poder activar el 2FA nunca mas (D-104).
+      await _limpiarIntentosAMedias();
+
       final response = await Supabase.instance.client.auth.mfa.enroll(
         factorType: FactorType.totp,
         // Nombre que la persona ve en su app de autenticacion (Google
@@ -224,7 +260,14 @@ class _SecuritySettingsDialogState extends State<SecuritySettingsDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () async {
+            // Cerrar a mitad de la activacion borra el factor sin verificar en
+            // vez de dejarlo bloqueando los intentos futuros (D-104).
+            if (_pendingFactorId != null) {
+              await _cancelPendingEnroll();
+            }
+            if (context.mounted) Navigator.of(context).pop();
+          },
           child: const Text('Cerrar'),
         ),
       ],
