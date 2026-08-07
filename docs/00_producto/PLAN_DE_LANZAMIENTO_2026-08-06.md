@@ -178,6 +178,25 @@ el trabajo dos veces.
 necesita otra forma — menú lateral desplegable, o barra inferior con los 4 o 5
 módulos más usados y el resto en "Más".
 
+### 6.4 Que la app se actualice sola
+
+**Puede hacerse antes que 2.1** — no depende del diseño y beneficia a todo lo
+que venga después.
+
+El 06-ago costó tres rondas averiguar qué versión estaba corriendo el
+propietario, y el botón de anular pago siguió apareciendo horas después de
+corregirlo. D-096 arregló que el navegador se quedara pegado, pero **falta que
+la app avise**: quien deje la pestaña abierta toda la semana seguiría con la
+versión del lunes sin enterarse.
+
+| # | Tarea | Quién |
+|---|---|---|
+| 2.16 | Grabar el código de cada versión al compilar (`CF_PAGES_COMMIT_SHA` en Cloudflare) y mostrarlo en Configuración — el **sello de versión** | 🤖 + 👥 el ajuste en Cloudflare |
+| 2.17 | Comprobar si hay versión nueva cada pocos minutos y al volver a la pestaña, y mostrar un aviso discreto *"Hay una versión nueva · Actualizar"* | 🤖 |
+
+**Por qué avisar y no recargar solo:** recargar sin permiso le borraría a la
+recepcionista el ticket que está escribiendo. El aviso lo decide la persona.
+
 ---
 
 ## 7. ETAPA 2.5 — El enlace propio de cada negocio 🔗
@@ -280,7 +299,6 @@ Etapa 2.
 | A | **Las citas recurrentes solo admiten diaria y semanal.** Falta **mensual**, la periodicidad más común de un cliente fiel. No es solo la pantalla: el backend valida `p_repeat_frequency not in ('daily','weekly')` | Función nueva |
 | B | **Crear una serie larga es lento**: 19 citas semanales tardaron un buen rato | Revisar junto con A |
 | C | **La sesión sobrevive al cierre del navegador** | Ver abajo |
-| D | **Sello de versión visible** en Configuración (`v. bd5bf7d`). El 06-ago costó tres rondas averiguar qué versión corría el propietario | Media hora de trabajo |
 | E | **Verificar el celular del cliente con un código** (SMS/WhatsApp) al reservar | Cierra del todo H-02. Cuesta por mensaje |
 | F | **Que la reserva pública no ocupe el horario** hasta que el negocio la confirme | Arreglo estructural de H-02. Cambia cómo funciona la agenda |
 
