@@ -5,6 +5,8 @@ import '../theme/app_theme.dart';
 
 import '../models/platform_tenant_summary.dart';
 import '../services/platform_service.dart';
+import '../widgets/security_settings_dialog.dart';
+import '../widgets/update_banner.dart';
 import 'platform_tenant_detail_page.dart';
 
 class PlatformPanelPage extends StatefulWidget {
@@ -154,6 +156,19 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
             onPressed: reload,
             icon: const Icon(Icons.refresh_outlined),
           ),
+          // Esta cuenta puede suspender negocios y consultar los datos de
+          // cualquier cliente, y era **la unica del sistema que no podia
+          // activar la verificacion en dos pasos** (D-103): el panel de
+          // plataforma nunca tuvo esta entrada, mientras los cuatro roles de
+          // negocio si la tenian.
+          IconButton(
+            tooltip: 'Seguridad de tu cuenta',
+            onPressed: () => showDialog(
+              context: context,
+              builder: (_) => const SecuritySettingsDialog(),
+            ),
+            icon: const Icon(Icons.security_outlined),
+          ),
           IconButton(
             tooltip: 'Cerrar sesión',
             onPressed: signOut,
@@ -162,7 +177,20 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
           const SizedBox(width: 8),
         ],
       ),
-      body: FutureBuilder<List<PlatformTenantSummary>>(
+      body: Column(
+        children: [
+          // El panel de plataforma es un armazon aparte y se habia quedado sin
+          // el aviso de version (D-103). A quien administra la plataforma le
+          // importa igual o mas saber que esta ejecutando codigo viejo.
+          const UpdateBanner(),
+          Expanded(child: _buildTenantList()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTenantList() {
+    return FutureBuilder<List<PlatformTenantSummary>>(
         future: tenantsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -229,8 +257,7 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
                 ),
           );
         },
-      ),
-    );
+      );
   }
 }
 
