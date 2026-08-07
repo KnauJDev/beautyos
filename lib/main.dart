@@ -28,6 +28,7 @@ import 'pages/work_photos_page.dart';
 import 'widgets/create_branch_dialog.dart';
 import 'widgets/security_settings_dialog.dart';
 import 'widgets/session_badge.dart';
+import 'widgets/update_banner.dart';
 import 'pages/reviews_page.dart';
 import 'pages/purchases_page.dart';
 import 'pages/expenses_page.dart';
@@ -543,6 +544,9 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
               ),
               body: Column(
                 children: [
+                  // Va arriba del todo y lo ve cualquier rol: una version vieja
+                  // le afecta igual a la recepcionista que al dueno (D-099).
+                  const UpdateBanner(),
                   if (profile.role == 'owner' || profile.role == 'admin')
                     const _TrialBanner(),
                   Expanded(

@@ -17,6 +17,7 @@ import '../services/stylists_service.dart';
 import '../services/tenant_cover_upload_service.dart';
 import '../services/tenant_logo_upload_service.dart';
 import '../widgets/app_widgets.dart';
+import '../widgets/update_banner.dart';
 
 class ConfiguracionPage extends StatefulWidget {
   const ConfiguracionPage({
@@ -341,6 +342,45 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
               commissionPolicyService: commissionPolicyService,
             );
           },
+        ),
+        const SizedBox(height: 24),
+        const SectionTitle('Versión'),
+        const _VersionStamp(),
+      ],
+    );
+  }
+}
+
+/// Sello de version (D-099).
+///
+/// Existe por una razon practica: el 06-ago costo tres rondas averiguar que
+/// version estaba ejecutando el propietario. Cuando un negocio reporte algo
+/// raro, se le pide este codigo y se sabe al instante si esta viendo la
+/// version actual o una de hace dias.
+class _VersionStamp extends StatelessWidget {
+  const _VersionStamp();
+
+  @override
+  Widget build(BuildContext context) {
+    final version = AppVersionHolder.bootVersion;
+
+    if (version == null || version.isDevelopment) {
+      return const _SettingsLine(
+        label: 'Versión',
+        value: 'En desarrollo (sin publicar)',
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SettingsLine(label: 'Versión', value: version.shortCommit),
+        if (version.builtAt != null)
+          _SettingsLine(label: 'Publicada', value: version.builtAt!),
+        const SizedBox(height: 4),
+        const Text(
+          'Si reportas un problema, incluye este código: dice exactamente qué versión estás viendo.',
+          style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
         ),
       ],
     );

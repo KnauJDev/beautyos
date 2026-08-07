@@ -38,6 +38,10 @@ dependencies:
   image_picker: ^1.1.2
   uuid: ^4.5.1
   flutter_svg: ^2.3.0
+  # Solo para consultar build-info.json y saber si hay version nueva (D-099).
+  # Ya venia como dependencia transitiva de supabase_flutter; se declara para no
+  # depender de un paquete que nadie pidio explicitamente.
+  http: ^1.5.0
 
 dev_dependencies:
   flutter_test:
