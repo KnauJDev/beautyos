@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/dashboard_hoy.dart';
 import '../models/dashboard_metrics.dart';
 import '../models/dashboard_overview.dart';
 import '../models/dashboard_serie.dart';
@@ -69,6 +70,23 @@ class DashboardService {
     }
 
     return resultado;
+  }
+
+  /// El bloque de hoy y los avisos.
+  ///
+  /// No recibe rango a propósito: **hoy es hoy**, mire el propietario el mes o
+  /// el año. Por eso tampoco se recarga al cambiar el filtro de fechas.
+  Future<DashboardHoy> getHoy({
+    List<String> branchIds = const <String>[],
+  }) async {
+    final response = await Supabase.instance.client
+        .rpc(
+          'get_dashboard_today',
+          params: {'p_branch_ids': branchIds.isEmpty ? null : branchIds},
+        )
+        .single();
+
+    return DashboardHoy.fromMap(Map<String, dynamic>.from(response));
   }
 
   /// La serie del gráfico para el mismo rango que se está mirando.

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../models/branch_context.dart';
+import '../models/dashboard_hoy.dart';
 import '../models/dashboard_serie.dart';
 import '../models/periodo_dashboard.dart';
 import '../services/dashboard_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/agenda_de_hoy.dart';
 import '../widgets/app_widgets.dart';
 import '../widgets/filtro_periodo.dart';
 import '../widgets/grafico_protagonista.dart';
@@ -47,16 +49,24 @@ class _DashboardPageState extends State<DashboardPage> {
 
   late Future<ResumenDashboard> _resumen;
   late Future<SerieDashboard> _serie;
+  late Future<DashboardHoy> _hoy;
 
   @override
   void initState() {
     super.initState();
     dashboardService = DashboardService(branchId: widget.branchId);
     _cargarTodo();
+    _cargarHoy();
   }
 
   List<String> get _sedes =>
       _sedeElegida == null ? const <String>[] : <String>[_sedeElegida!];
+
+  /// Se recarga al cambiar de sede, pero **no al cambiar el rango de fechas**:
+  /// hoy es hoy, mire el propietario el mes o el ano.
+  void _cargarHoy() {
+    _hoy = dashboardService.getHoy(branchIds: _sedes);
+  }
 
   void _cargarTodo() {
     _resumen = dashboardService.getOverview(
@@ -73,7 +83,78 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   void _recargar() {
-    setState(_cargarTodo);
+    setState(() {
+      _cargarTodo();
+      _cargarHoy();
+    });
+  }
+
+  /// Convierte los números en frases. Es donde el tablero deja de ser
+  /// estadística y empieza a hablar.
+  ///
+  /// Como mucho **tres**, y en este orden: primero lo que se puede resolver hoy
+  /// —el dinero en la calle—, después lo que se está perdiendo despacio, y solo
+  /// al final la felicitación. Un tablero que abre con elogios y esconde el
+  /// problema al fondo no sirve para dirigir un negocio.
+  List<Aviso> _avisos(DashboardHoy hoy, ResumenDashboard resumen) {
+    final lista = <Aviso>[];
+
+    if (hoy.porCobrarTickets > 0) {
+      lista.add(
+        Aviso(
+          texto:
+              'Tienes ${_Indicadores._dinero(hoy.porCobrarMonto)} por cobrar '
+              'en ${hoy.porCobrarTickets} '
+              '${hoy.porCobrarTickets == 1 ? "ticket finalizado" : "tickets finalizados"}.',
+          tono: TonoAviso.atencion,
+        ),
+      );
+    }
+
+    if (hoy.clientesEnRiesgo > 0) {
+      lista.add(
+        Aviso(
+          texto:
+              '${hoy.clientesEnRiesgo} '
+              '${hoy.clientesEnRiesgo == 1 ? "cliente que venía seguido no vuelve" : "clientes que venían seguido no vuelven"} '
+              'hace más de 45 días.',
+          tono: TonoAviso.atencion,
+        ),
+      );
+    }
+
+    // El indicador que más se movió. Sale gratis: ya está calculado arriba.
+    final movimientos = <String, Comparacion>{
+      'Las ventas': resumen.datos.compararVentas(resumen.rangoAnterior),
+      'Las citas': resumen.datos.compararCitas(resumen.rangoAnterior),
+      'El ticket promedio': resumen.datos.compararTicketPromedio(
+        resumen.rangoAnterior,
+      ),
+    };
+
+    MapEntry<String, Comparacion>? mayor;
+    for (final entrada in movimientos.entries) {
+      if (entrada.value.estado != EstadoComparacion.disponible) continue;
+      final v = entrada.value.variacion!.abs();
+      if (v < 0.05) continue; // menos de un 5 % es ruido, no noticia
+      if (mayor == null || v > mayor.value.variacion!.abs()) {
+        mayor = entrada;
+      }
+    }
+
+    if (mayor != null && lista.length < 3) {
+      final pct = (mayor.value.variacion! * 100).abs().toStringAsFixed(1);
+      lista.add(
+        Aviso(
+          texto: mayor.value.subio
+              ? '${mayor.key} subieron ${pct.replaceAll('.', ',')}% frente al período anterior.'
+              : '${mayor.key} bajaron ${pct.replaceAll('.', ',')}% frente al período anterior.',
+          tono: mayor.value.subio ? TonoAviso.bueno : TonoAviso.atencion,
+        ),
+      );
+    }
+
+    return lista.take(3).toList(growable: false);
   }
 
   @override
@@ -118,6 +199,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     setState(() {
                       _sedeElegida = id;
                       _cargarTodo();
+                      _cargarHoy();
                     });
                   },
                 ),
@@ -147,6 +229,27 @@ class _DashboardPageState extends State<DashboardPage> {
                         );
                       }
                       return GraficoProtagonista(serie: s.data!);
+                    },
+                  ),
+
+                  // El bloque de hoy y los avisos van al final y en su propio
+                  // FutureBuilder: responden a otra pregunta -- "que pasa
+                  // ahora" en vez de "como me fue" -- y no se recargan cuando
+                  // se mueve el filtro de fechas.
+                  FutureBuilder<DashboardHoy>(
+                    future: _hoy,
+                    builder: (context, h) {
+                      if (!h.hasData) return const SizedBox.shrink();
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: AppSpacing.lg),
+                          AgendaDeHoy(hoy: h.data!),
+                          const SizedBox(height: AppSpacing.lg),
+                          AvisosDelDia(avisos: _avisos(h.data!, resumen)),
+                        ],
+                      );
                     },
                   ),
                 ],
