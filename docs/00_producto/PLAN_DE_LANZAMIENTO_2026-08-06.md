@@ -149,7 +149,7 @@ abrirlas todas de golpe gasta créditos sin aportar nada.
 
 | # | Módulo | Incluye | Capturas |
 |---|---|---|---|
-| 2.5 | **Dashboard** — el que cuenta la historia del negocio | | `reportes - resumen 1/2` |
+| 2.5 | **Dashboard** — el que cuenta la historia del negocio | ⚠️ **Tramo propio, no solo rediseño.** Especificación completa en `ESPECIFICACION_DASHBOARD_2026-08-08.md` (D-110). Se parte en **2.5a** motor de comparación + Vista 1 con sus estados, **2.5b** horas vendidas, **2.5c** vistas de Negocio, Clientes y Equipo. Absorbe la tarea 4.4 de onboarding | `reportes - resumen 1/2` |
 | 2.6 | **Agenda** — la pantalla más usada | ⚠️ **Tramo propio, no solo rediseño.** Pasa a ser un tablero de tickets con vistas de día, semana y mes. Especificación completa en `ESPECIFICACION_AGENDA_2026-08-07.md` (D-101). Incluye el filtro de fecha que hoy no existe, y **exige construir antes el número de ticket** | `agenda` |
 | 2.7 | **Tickets / Ventas** | **Resolver el desplazamiento excesivo** para encontrar y cobrar un ticket abierto | `ventas - caja de ventas`, `detalle de ventas`, `transacciones` |
 | — | *(nota para 2.11)* | **"Subir portada" no dice qué hace.** Verificado el 07-ago: la portada solo se pinta en el enlace público de reservas, nunca en el panel. El propietario subió el botón y nunca vio el resultado (D-109) | |
@@ -341,6 +341,7 @@ y deja la sesión abierta en el computador del mostrador.
 - `RUTA_GENERAL_2026-07-25.md` — orden de la fase MVP
 - `RUTA_A_PRODUCCION_2026-07-25.md` — **archivado**
 - `ESPECIFICACION_AGENDA_2026-08-07.md` — el tablero de tickets (tarea 2.6)
+- `ESPECIFICACION_DASHBOARD_2026-08-08.md` — el Dashboard como historia (tarea 2.5)
 - `HANDOFF/HANDOFF_SalonyMas_Etapas_0_1_2_2026-08-07.md` — cierre de las Etapas 0 y 1 y del sistema de diseño
 
 ### Equivalencias tras la reorganización del 07-ago
