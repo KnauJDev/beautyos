@@ -127,34 +127,63 @@ historia y la primera es un dato.
 
 ## 4. La comparación
 
-### 4.1 Qué es el período anterior
+### 4.1 Una sola regla para cualquier largo
 
-| Período elegido | Se compara contra |
+El propietario elige un rango —un día, una semana, uno o varios meses, un año,
+o **dos fechas cualesquiera**— y el sistema busca **el rango anterior del mismo
+tamaño**. No hay una tabla de casos: hay una regla.
+
+Pero esa regla tiene **dos formas**, y cada atajo declara cuál usa, porque
+*"¿cómo voy este mes?"* y *"¿cómo vengo últimamente?"* son dos preguntas
+distintas.
+
+#### Calendario — "cómo voy este mes"
+
+Se compara contra **el mismo tramo** del período calendario anterior.
+
+| Atajo | Hoy es 8 de agosto | Se compara contra |
+|---|---|---|
+| Hoy | 8 ago | 7 ago |
+| Esta semana | lun 4 – vie 8 | lun 28 jul – vie 1 ago |
+| Este mes | 1 – 8 ago | **1 – 8 jul** |
+| Este año | 1 ene – 8 ago | 1 ene – 8 ago del año pasado |
+
+**Nunca contra el período anterior completo.** Comparar el 1–8 de agosto contra
+todo julio haría que cualquier negocio pareciera hundirse los primeros veinte
+días de cada mes.
+
+Cuando el día no existe en el mes anterior (31 de marzo contra "31 de febrero")
+se usa el último día de ese mes.
+
+#### Rodante — "cómo vengo últimamente"
+
+Se compara contra **la ventana inmediatamente anterior del mismo largo**.
+
+| Atajo | Rango | Se compara contra |
+|---|---|---|
+| Últimos 30 días | 10 jul – 8 ago | 10 jun – 9 jul |
+| Últimos 3 meses | 8 may – 8 ago | 8 feb – 7 may |
+| Rango libre | lo que elija | los mismos días, justo antes |
+
+Los atajos de **2, 3, 4… hasta 12 meses** y el **rango libre** son rodantes.
+
+### 4.2 Cuando no alcanza la historia
+
+Son **dos situaciones distintas y se dicen distinto**:
+
+| Situación | Qué se muestra |
 |---|---|
-| Hoy | Ayer |
-| Esta semana | La semana anterior |
-| Este mes | El mes anterior |
-| Este año | El año anterior |
+| El rango anterior empieza **antes de que el negocio existiera** | *"Para comparar trimestres necesitas 6 meses de historia. Llevas 1. **Mira el último mes →**"* |
+| El negocio ya existía pero **no hubo movimiento** | *"El período anterior no tuvo movimiento"* |
 
-### 4.2 La regla del período incompleto
+La primera dice *espera*; la segunda dice *mejoraste*. **Nunca se muestra `↑ 0%`
+ni `↑ ∞%`.**
 
-**El período en curso se compara contra el mismo tramo del anterior, no contra
-el anterior completo.**
-
-Si hoy es 8 de agosto:
-
-- ✅ Ventas del **1 al 8 de agosto** contra ventas del **1 al 8 de julio**
-- ❌ Ventas del 1 al 8 de agosto contra ventas del 1 al 31 de julio
-
-La segunda haría que todo negocio pareciera estar hundiéndose los primeros
-veinte días de cada mes.
-
-### 4.3 Cuando no hay con qué comparar
-
-Un negocio en su primer mes no tiene mes anterior. **Nunca se muestra `↑ 0%`
-ni `↑ ∞%`.** Se muestra:
-
-> Todavía no hay con qué comparar
+> **Este aviso no es un caso raro: es el estado normal del primer año.** Los
+> datos del negocio propio arrancan el 10 de julio de 2026 — poco más de un mes.
+> Comparar un trimestre pide seis meses; comparar un año, dos. Lo mismo le pasa
+> a cada negocio que se registre. Por eso el aviso **dice cuánto falta y ofrece
+> el rango más largo que sí se puede mirar**, en vez de disculparse en gris.
 
 ### 4.4 Zona horaria
 
