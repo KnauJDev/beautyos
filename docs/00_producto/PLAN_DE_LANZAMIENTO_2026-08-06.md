@@ -111,9 +111,9 @@ repintar todo cada vez que cambies de opinión sobre un tono.
 
 | # | Tarea | Quién | Estado |
 |---|---|---|---|
-| 2.1 | Definir la identidad visual: paleta, tipografía, esquinas, sombras, espaciados, **y los 4-5 temas para tus clientes** | 👥 | 🔄 **en curso** — morado y personalidad ya decididos (D-097) |
-| 2.2 | Centralizar todo en un archivo de tema y reemplazar los 302 colores sueltos. **Incluye arreglar la navegación en celular** (ver 6.3) | 🤖 | ⬜ |
-| 2.3 | Componentes base reutilizables (tarjetas, botones, tablas, estados vacíos, errores), ya leyendo el tema | 🤖 | ⬜ |
+| 2.1 | Definir la identidad visual: paleta, tipografía, esquinas, sombras, espaciados, **y los 4-5 temas para tus clientes** | 👥 | ✅ D-097, D-100 |
+| 2.2 | Centralizar todo en un archivo de tema y reemplazar los colores sueltos. **Incluye arreglar la navegación en celular** (ver 6.3) | 🤖 | ✅ D-102, D-105, D-106 |
+| 2.3 | Componentes base reutilizables (tarjetas, botones, tablas, estados vacíos, errores), ya leyendo el tema | 🤖 | ✅ D-107 |
 | 2.4 | Selector de tema en Configuración: columna `tenants.theme_key`, desplegable y lectura al entrar | 🤖 | ⬜ |
 
 **Beneficio doble:** abarata el rediseño a la mitad **y** es lo que hace
@@ -299,6 +299,7 @@ Etapa 2.
 | A | **Las citas recurrentes solo admiten diaria y semanal.** Falta **mensual**, la periodicidad más común de un cliente fiel. No es solo la pantalla: el backend valida `p_repeat_frequency not in ('daily','weekly')` | Función nueva |
 | B | **Crear una serie larga es lento**: 19 citas semanales tardaron un buen rato | Revisar junto con A |
 | C | **La sesión sobrevive al cierre del navegador** | Ver abajo |
+| D | **La barra inferior de celular podría llevar acciones, no módulos** — ver agenda, confirmar agenda, ver quién falta por cobrar, cobrar. Es lo que de verdad se hace desde un teléfono (idea del propietario, 07-ago) | Se planifica antes de fijar los cuatro puestos |
 | E | **Verificar el celular del cliente con un código** (SMS/WhatsApp) al reservar | Cierra del todo H-02. Cuesta por mensaje |
 | F | **Que la reserva pública no ocupe el horario** hasta que el negocio la confirme | Arreglo estructural de H-02. Cambia cómo funciona la agenda |
 
