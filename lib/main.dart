@@ -469,15 +469,25 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (branch.tenantLogoUrl != null) ...[
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: Image.network(
-                          branch.tenantLogoUrl!,
-                          width: 28,
-                          height: 28,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const SizedBox.shrink(),
+                      // Sobre fondo blanco y algo mas grande (D-106): a 28 px
+                      // y directamente sobre el morado, un logo con detalle se
+                      // veia como una mancha clara sin forma.
+                      Container(
+                        width: 34,
+                        height: 34,
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: Image.network(
+                            branch.tenantLogoUrl!,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const SizedBox.shrink(),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -490,32 +500,27 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                         'Salón y Más',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       )
-                    else
+                    else ...[
                       Flexible(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              sections[currentIndex].title,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                height: 1.1,
-                              ),
-                            ),
-                            Text(
-                              branch.tenantName,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Colors.white70,
-                              ),
-                            ),
-                          ],
+                        child: _DosLineas(
+                          arriba: sections[currentIndex].title,
+                          abajo: branch.tenantName,
                         ),
                       ),
+                      // Quien esta trabajando tiene que verse sin abrir nada
+                      // (D-106): al compactar la barra se quito la identidad y
+                      // no quedaba forma de saber con que cuenta se opera --
+                      // critico en un mostrador donde el equipo comparte
+                      // equipo.
+                      const SizedBox(width: AppSpacing.md),
+                      Flexible(
+                        child: _DosLineas(
+                          arriba: profile.fullName,
+                          abajo: profile.roleText,
+                          alineacion: CrossAxisAlignment.end,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
                 backgroundColor: AppColors.brand,
@@ -533,20 +538,25 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                     ),
                     const SizedBox(width: 12),
                   ],
-                  _BranchSelector(
-                    branches: branches,
-                    selectedBranch: branch,
-                    compact: !isWide,
-                    onSelected: (value) {
-                      if (value.branchId == branch.branchId) {
-                        return;
-                      }
+                  // En celular con una sola sede este icono no hace nada: es
+                  // decorativo y encima parece que se puede tocar (D-106). El
+                  // nombre del negocio ya se lee bajo el modulo, asi que
+                  // estorba. Con varias sedes si es el selector y se queda.
+                  if (isWide || branches.length > 1)
+                    _BranchSelector(
+                      branches: branches,
+                      selectedBranch: branch,
+                      compact: !isWide,
+                      onSelected: (value) {
+                        if (value.branchId == branch.branchId) {
+                          return;
+                        }
 
-                      setState(() {
-                        selectedBranch = value;
-                      });
-                    },
-                  ),
+                        setState(() {
+                          selectedBranch = value;
+                        });
+                      },
+                    ),
                   if (profile.role == 'owner')
                     IconButton(
                       tooltip: 'Agregar sede',
@@ -1105,6 +1115,55 @@ class _AccesoMas extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Bloque de dos lineas para la barra superior en celular (D-106).
+///
+/// Se usa dos veces: modulo con negocio a la izquierda, y persona con rol a la
+/// derecha. Ambas lineas recortan con puntos suspensivos, porque un nombre
+/// largo no puede empujar el resto de la barra fuera de la pantalla.
+class _DosLineas extends StatelessWidget {
+  const _DosLineas({
+    required this.arriba,
+    required this.abajo,
+    this.alineacion = CrossAxisAlignment.start,
+  });
+
+  final String arriba;
+  final String abajo;
+  final CrossAxisAlignment alineacion;
+
+  @override
+  Widget build(BuildContext context) {
+    final alDerecha = alineacion == CrossAxisAlignment.end;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: alineacion,
+      children: [
+        Text(
+          arriba,
+          overflow: TextOverflow.ellipsis,
+          textAlign: alDerecha ? TextAlign.right : TextAlign.left,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            height: 1.15,
+          ),
+        ),
+        Text(
+          abajo,
+          overflow: TextOverflow.ellipsis,
+          textAlign: alDerecha ? TextAlign.right : TextAlign.left,
+          style: const TextStyle(
+            fontSize: 11,
+            color: AppColors.brandTint,
+            height: 1.15,
+          ),
+        ),
+      ],
     );
   }
 }
