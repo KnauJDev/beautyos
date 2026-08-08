@@ -189,6 +189,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
   List<BeautyModule> _modulesForProfile(
     MyProfile? profile,
     BranchContext branch,
+    List<BranchContext> branches,
   ) {
     final role = profile?.role ?? 'client';
 
@@ -196,8 +197,12 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
       BeautyModule(
         section: const BeautySection('Dashboard', Icons.dashboard_outlined),
         page: DashboardPage(
-          key: ValueKey('dashboard-${branch.branchId}'),
+          // El Dashboard es el unico modulo que puede mirar varias sedes a la
+          // vez (D-110): "como va mi negocio" para quien tiene dos locales son
+          // los dos juntos. Por eso recibe la lista y no solo la sede activa.
+          key: const ValueKey('dashboard'),
           branchId: branch.branchId,
+          branches: branches,
         ),
         allowedRoles: const <String>{'owner', 'admin'},
       ),
@@ -453,7 +458,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         }
 
         final branch = selectedBranch ?? _initialBranch(branches);
-        final modules = _modulesForProfile(profile, branch);
+        final modules = _modulesForProfile(profile, branch, branches);
 
         if (modules.isEmpty) {
           return Scaffold(

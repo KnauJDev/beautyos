@@ -42,6 +42,7 @@ dependencies:
   # Ya venia como dependencia transitiva de supabase_flutter; se declara para no
   # depender de un paquete que nadie pidio explicitamente.
   http: ^1.5.0
+  fl_chart: ^1.2.0
 
 dev_dependencies:
   flutter_test:
