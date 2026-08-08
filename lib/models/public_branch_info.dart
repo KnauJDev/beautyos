@@ -11,6 +11,8 @@ class PublicBranchInfo {
     required this.currencyCode,
     this.logoUrl,
     this.coverPhotoUrl,
+    this.themeKey,
+    this.brandColor,
   });
 
   final String branchId;
@@ -25,6 +27,13 @@ class PublicBranchInfo {
   final String? logoUrl;
   final String? coverPhotoUrl;
 
+  /// Tema de marca blanca del negocio. D-093d: aplica tambien aqui, que es la
+  /// pagina mas valiosa del negocio porque la ven sus propios clientes.
+  final String? themeKey;
+
+  /// Solo tiene valor cuando [themeKey] es `personalizado` (D-109).
+  final String? brandColor;
+
   factory PublicBranchInfo.fromMap(Map<String, dynamic> map) {
     return PublicBranchInfo(
       branchId: map['branch_id'].toString(),
@@ -38,6 +47,8 @@ class PublicBranchInfo {
       currencyCode: map['currency_code']?.toString() ?? 'COP',
       logoUrl: map['logo_url']?.toString(),
       coverPhotoUrl: map['cover_photo_url']?.toString(),
+      themeKey: map['theme_key']?.toString(),
+      brandColor: map['brand_color']?.toString(),
     );
   }
 }

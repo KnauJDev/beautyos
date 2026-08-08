@@ -116,13 +116,13 @@ class _UpdateBannerState extends State<UpdateBanner>
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.rocket_launch_outlined,
               size: 20,
               color: AppColors.brand,
             ),
             const SizedBox(width: 10),
-            const Expanded(
+            Expanded(
               child: Text(
                 'Hay una versión nueva de Salón y Más.',
                 style: TextStyle(

@@ -1448,7 +1448,7 @@ class _CreateAppointmentDialogState extends State<_CreateAppointmentDialog> {
                       '${service.serviceName} con ${stylist.stylistName}\\n'
                       '$scheduledAtText · ${service.formattedPrice} · '
                       '${service.durationMinutes} min',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: AppColors.brandDark,
                       ),
@@ -2136,7 +2136,7 @@ class _AddTicketServiceDialogState extends State<_AddTicketServiceDialog> {
                     child: Text(
                       '${service.category} · ${service.formattedPrice} · '
                       '${service.durationMinutes} min',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: AppColors.brandDark,
                       ),
@@ -2222,7 +2222,7 @@ class _ManageTicketServicesDialog extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.content_cut_outlined,
                       color: AppColors.brand,
                     ),
@@ -2233,7 +2233,7 @@ class _ManageTicketServicesDialog extends StatelessWidget {
                         children: [
                           Text(
                             item.serviceName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                               color: AppColors.brandDeep,
@@ -2495,7 +2495,7 @@ class _EditTicketServiceDialogState extends State<_EditTicketServiceDialog> {
                     child: Text(
                       '${service.category} · ${service.formattedPrice} · '
                       '${service.durationMinutes} min',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: AppColors.brandDark,
                       ),
@@ -2579,7 +2579,7 @@ class _RemoveTicketServiceDialogState
             children: [
               Text(
                 widget.item.serviceName,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
                   color: AppColors.brandDeep,
@@ -3492,7 +3492,7 @@ class TicketRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
+          Icon(
             Icons.receipt_long_outlined,
             size: 28,
             color: AppColors.brand,
@@ -3504,7 +3504,7 @@ class TicketRow extends StatelessWidget {
               children: [
                 Text(
                   ticket.clientName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
                     color: AppColors.brandDeep,

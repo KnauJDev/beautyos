@@ -124,7 +124,7 @@ class _CompleteTenantSetupPageState extends State<CompleteTenantSetupPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text(
+                    Text(
                       'Ya casi. Cuéntanos de tu negocio',
                       textAlign: TextAlign.center,
                       style: TextStyle(

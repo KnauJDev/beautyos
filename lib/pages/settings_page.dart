@@ -20,6 +20,7 @@ import '../services/tenant_cover_upload_service.dart';
 import '../services/tenant_logo_upload_service.dart';
 import '../services/app_version_service.dart';
 import '../widgets/app_widgets.dart';
+import '../widgets/theme_selector_card.dart';
 import '../widgets/update_banner.dart';
 
 class ConfiguracionPage extends StatefulWidget {
@@ -185,6 +186,38 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
             );
           },
         ),
+        // Los colores son del negocio, no de la sede (D-093c), y solo los
+        // cambia el propietario, igual que el logo. Un admin no ve esta
+        // seccion: la identidad visual no es una preferencia de quien esta en
+        // el mostrador.
+        if (widget.isOwner) ...[
+          const SizedBox(height: 16),
+          const SectionTitle('Colores de tu negocio'),
+          FutureBuilder<BusinessSettings>(
+            future: businessSettingsFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const LoadingCard(mensaje: 'Cargando tu tema...');
+              }
+
+              if (snapshot.hasError || !snapshot.hasData) {
+                return const InfoPanel(
+                  icon: Icons.palette_outlined,
+                  title: 'No se pudo cargar el tema',
+                  description:
+                      'Vuelve a abrir Configuración. Mientras tanto tu negocio '
+                      'sigue viéndose con los colores que ya tenía.',
+                );
+              }
+
+              return ThemeSelectorCard(
+                settings: snapshot.data!,
+                businessSettingsService: businessSettingsService,
+                onChanged: _reloadBusinessSettings,
+              );
+            },
+          ),
+        ],
         const SizedBox(height: 16),
         const SectionTitle('Reserva pública'),
         PublicBookingLinkCard(branchId: widget.branchId),
@@ -482,11 +515,11 @@ class _TenantLogoPreview extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: url == null
-          ? const Icon(Icons.storefront_outlined, color: AppColors.brand)
+          ? Icon(Icons.storefront_outlined, color: AppColors.brand)
           : Image.network(
               url,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => const Icon(
+              errorBuilder: (context, error, stackTrace) => Icon(
                 Icons.broken_image_outlined,
                 color: AppColors.brand,
               ),
@@ -594,11 +627,11 @@ class _TenantCoverPreview extends StatelessWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: url == null
-          ? const Icon(Icons.image_outlined, color: AppColors.brand)
+          ? Icon(Icons.image_outlined, color: AppColors.brand)
           : Image.network(
               url,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => const Icon(
+              errorBuilder: (context, error, stackTrace) => Icon(
                 Icons.broken_image_outlined,
                 color: AppColors.brand,
               ),

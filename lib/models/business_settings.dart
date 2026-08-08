@@ -10,6 +10,13 @@
   final String? logoUrl;
   final String? coverPhotoUrl;
 
+  /// Tema de marca blanca elegido (D-093b). Se guarda el nombre, no los
+  /// colores: al afinar un tema mejoran solos todos los negocios que lo usan.
+  final String? themeKey;
+
+  /// Solo tiene valor cuando [themeKey] es `personalizado` (D-109).
+  final String? brandColor;
+
   const BusinessSettings({
     required this.id,
     required this.name,
@@ -21,6 +28,8 @@
     required this.facebook,
     this.logoUrl,
     this.coverPhotoUrl,
+    this.themeKey,
+    this.brandColor,
   });
 
   factory BusinessSettings.fromMap(Map<String, dynamic> map) {
@@ -35,6 +44,8 @@
       facebook: map['facebook']?.toString() ?? 'Sin Facebook',
       logoUrl: map['logo_url']?.toString(),
       coverPhotoUrl: map['cover_photo_url']?.toString(),
+      themeKey: map['theme_key']?.toString(),
+      brandColor: map['brand_color']?.toString(),
     );
   }
 }

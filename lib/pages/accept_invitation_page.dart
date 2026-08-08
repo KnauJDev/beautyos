@@ -103,7 +103,7 @@ class _AcceptInvitationPageState extends State<AcceptInvitationPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.group_add_outlined,
                       size: 48,
                       color: AppColors.brand,
@@ -112,7 +112,7 @@ class _AcceptInvitationPageState extends State<AcceptInvitationPage> {
                     Text(
                       'Te invitaron a "${widget.invitation.tenantName}"',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
                         color: AppColors.brandDeep,

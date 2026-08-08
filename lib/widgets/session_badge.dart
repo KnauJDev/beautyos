@@ -75,7 +75,7 @@ class _SessionBadgeState extends State<SessionBadge> {
                 Text(
                   '${profile.roleText} · ${profile.tenantName ?? 'Sin negocio'}',
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     color: AppColors.brandTint,
                   ),

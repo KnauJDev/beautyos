@@ -122,7 +122,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     const SizedBox(height: 18),
-                    const Text(
+                    Text(
                       'Salón y Más',
                       style: TextStyle(
                         fontSize: 30,

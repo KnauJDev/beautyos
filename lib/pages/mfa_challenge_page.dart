@@ -105,7 +105,7 @@ class _MfaChallengePageState extends State<MfaChallengePage> {
                       ),
                     ),
                     const SizedBox(height: 18),
-                    const Text(
+                    Text(
                       'Verificación en dos pasos',
                       style: TextStyle(
                         fontSize: 22,

@@ -222,7 +222,7 @@ class _InvitationRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          const Icon(Icons.mail_outline, size: 20, color: AppColors.brand),
+          Icon(Icons.mail_outline, size: 20, color: AppColors.brand),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -508,7 +508,7 @@ class _UserCard extends StatelessWidget {
               children: [
                 Text(
                   user.fullName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: AppColors.brandDeep,

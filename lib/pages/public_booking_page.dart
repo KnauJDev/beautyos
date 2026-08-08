@@ -73,6 +73,11 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
         widget.branchId,
       );
 
+      // D-093d: el cliente que reserva ve los colores de SU salon, no los de
+      // Salon y Mas. Se aplica antes del setState para que la pantalla se
+      // pinte ya con el tema del negocio y no cambie de color a la vista.
+      AppBrand.aplicar(info.themeKey, info.brandColor);
+
       if (!mounted) return;
       setState(() {
         branchInfo = info;
@@ -326,7 +331,7 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
             Text(
               info.businessName,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
                 color: AppColors.brandDeep,
@@ -535,7 +540,7 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
                                 width: 60,
                                 height: 60,
                                 color: AppColors.brandTint,
-                                child: const Icon(
+                                child: Icon(
                                   Icons.person_outline,
                                   color: AppColors.brand,
                                 ),
@@ -550,7 +555,7 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
                                       width: 60,
                                       height: 60,
                                       color: AppColors.brandTint,
-                                      child: const Icon(
+                                      child: Icon(
                                         Icons.person_outline,
                                         color: AppColors.brand,
                                       ),

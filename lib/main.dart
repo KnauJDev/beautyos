@@ -76,13 +76,20 @@ class BeautyOSApp extends StatelessWidget {
       );
     }
 
-    return MaterialApp(
-      title: 'Salón y Más',
-      debugShowCheckedModeBanner: false,
-      // Un solo sitio decide el aspecto de toda la aplicacion (D-102). Cuando
-      // llegue la marca blanca, aqui entrara el tema del negocio.
-      theme: AppTheme.light(),
-      home: home,
+    // Un solo sitio decide el aspecto de toda la aplicacion (D-102). El tema
+    // del negocio no se conoce al arrancar -- llega con los datos de la sede o
+    // de la reserva publica --, asi que `MaterialApp` se reconstruye cuando
+    // `AppBrand.aplicar()` cambia la paleta (D-109).
+    return ValueListenableBuilder<BrandPalette>(
+      valueListenable: AppBrand.activo,
+      builder: (context, palette, _) {
+        return MaterialApp(
+          title: 'Salón y Más',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light(),
+          home: home,
+        );
+      },
     );
   }
 }
@@ -126,10 +133,24 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
     }
 
     final branches = await branchContextService.getAccessibleBranches();
+
+    // El tema se aplica aqui y no en `build` porque cambiar la paleta
+    // reconstruye `MaterialApp`, y eso no se puede disparar en mitad de un
+    // build. Aqui estamos despues de que resolvio la consulta, que es el
+    // primer momento en que se sabe de que negocio es quien entro.
+    if (branches.isNotEmpty) {
+      final inicial = _initialBranch(branches);
+      AppBrand.aplicar(inicial.tenantThemeKey, inicial.tenantBrandColor);
+    }
+
     return _HomeContextData(profile: profile, branches: branches);
   }
 
   Future<void> signOut() async {
+    // Se vuelve al morado de Salon y Mas: la pantalla de login no es de ningun
+    // negocio, y dejarla con los colores del ultimo que entro seria confuso en
+    // un mostrador donde el equipo comparte el mismo equipo.
+    AppBrand.aplicar(null, null);
     await Supabase.instance.client.auth.signOut();
   }
 
@@ -558,6 +579,14 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                         if (value.branchId == branch.branchId) {
                           return;
                         }
+
+                        // Cambiar de sede puede cambiar de negocio, y cada
+                        // negocio tiene su tema. Con una sola empresa esto no
+                        // hace nada.
+                        AppBrand.aplicar(
+                          value.tenantThemeKey,
+                          value.tenantBrandColor,
+                        );
 
                         setState(() {
                           selectedBranch = value;
@@ -1164,7 +1193,7 @@ class _DosLineas extends StatelessWidget {
           abajo,
           overflow: TextOverflow.ellipsis,
           textAlign: alDerecha ? TextAlign.right : TextAlign.left,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11,
             color: AppColors.brandTint,
             height: 1.15,

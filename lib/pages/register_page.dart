@@ -134,7 +134,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
                     const SizedBox(height: 18),
-                    const Text(
+                    Text(
                       'Crea tu cuenta en Salón y Más',
                       textAlign: TextAlign.center,
                       style: TextStyle(

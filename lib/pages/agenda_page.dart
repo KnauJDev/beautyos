@@ -126,7 +126,7 @@ class AgendaAppointmentCard extends StatelessWidget {
               children: [
                 Text(
                   appointment.clientName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
                     color: AppColors.brandDeep,
@@ -186,7 +186,7 @@ class AgendaTimeBox extends StatelessWidget {
         children: [
           Text(
             appointment.scheduledTimeText,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: AppColors.brandDark,
@@ -223,7 +223,7 @@ class AgendaStatusBadge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.bold,
           color: AppColors.brandDark,

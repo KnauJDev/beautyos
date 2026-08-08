@@ -233,7 +233,7 @@ class _TotalCommissionCard extends StatelessWidget {
           padding: const EdgeInsets.all(18),
           child: Row(
             children: [
-              const Icon(Icons.payments_outlined, color: AppColors.brand),
+              Icon(Icons.payments_outlined, color: AppColors.brand),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(

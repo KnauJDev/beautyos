@@ -56,7 +56,7 @@ pago y lo legal.
 | **Supabase Pro** | Todavía no. Se paga cuando un negocio real distinto al propio empiece a cargar datos | D-088 |
 | **Apps nativas** | Aplazadas. La PWA cubre la necesidad | D-088 |
 | **Figura legal** | Persona natural con RUT | D-088 |
-| **Marca blanca** | Temas predefinidos por negocio, no selector libre de colores. Por negocio, no por sede | D-093 |
+| **Marca blanca** | Cinco temas predefinidos **más uno personalizado**: el dueño elige un color y la app deriva el resto, garantizando que se lea. Por negocio, no por sede | D-093, D-109 |
 | **Enlace de cada negocio** | Ruta para todos (`salonymas.com/naguaradeunas`); dominio propio como función de pago | D-098 |
 | **Identidad visual** | Morado `#7C3AED` ratificado; personalidad compacta con carácter | D-097 |
 
@@ -114,7 +114,7 @@ repintar todo cada vez que cambies de opinión sobre un tono.
 | 2.1 | Definir la identidad visual: paleta, tipografía, esquinas, sombras, espaciados, **y los 4-5 temas para tus clientes** | 👥 | ✅ D-097, D-100 |
 | 2.2 | Centralizar todo en un archivo de tema y reemplazar los colores sueltos. **Incluye arreglar la navegación en celular** (ver 6.3) | 🤖 | ✅ D-102, D-105, D-106 |
 | 2.3 | Componentes base reutilizables (tarjetas, botones, tablas, estados vacíos, errores), ya leyendo el tema | 🤖 | ✅ D-107 |
-| 2.4 | Selector de tema en Configuración: columna `tenants.theme_key`, desplegable y lectura al entrar | 🤖 | ⬜ |
+| 2.4 | Selector de tema en Configuración: columna `tenants.theme_key`, desplegable y lectura al entrar | 🤖 | ✅ D-109 |
 
 **Beneficio doble:** abarata el rediseño a la mitad **y** es lo que hace
 posible la marca blanca.
@@ -125,11 +125,14 @@ El **logo por negocio ya está construido** (`tenants.logo_url`, se pinta en el
 panel, la reserva pública y las reseñas). Falta la mitad de los colores, que
 depende de 2.2.
 
-- **Temas predefinidos, no selector libre.** Un dueño puede elegir una
-  combinación ilegible sin darse cuenta, y una interfaz necesita un juego de
-  unos diez colores coherentes, no uno. Caso que lo demuestra: en un tema rojo
-  y negro, el botón de **eliminar** no puede ser rojo o deja de leerse como
-  peligro.
+- **Cinco temas predefinidos y uno personalizado** (D-109, corrige D-093a). El
+  argumento original —un dueño puede elegir una combinación ilegible sin darse
+  cuenta, y el botón de **eliminar** no puede ser rojo en un tema rojo y negro—
+  dejó de aplicar cuando D-097 sacó los colores de estado de la marca blanca y
+  D-100d encerró el color de marca en la barra, los títulos, los botones y las
+  selecciones. En **Personalizado** el propietario elige **un** color y la app
+  deriva los otros cinco, oscureciéndolo si el texto blanco no llegara a 4.5:1.
+  Lo que sigue descartado es elegir los seis a mano: ahí sí no hay red.
 - **Se guarda el nombre del tema, no los códigos de color.** Así, al mejorar un
   tema, mejoran solos todos los negocios que lo usan.
 - **El tema es por negocio, no por sede.** Las sedes son el mismo negocio.
@@ -149,6 +152,7 @@ abrirlas todas de golpe gasta créditos sin aportar nada.
 | 2.5 | **Dashboard** — el que cuenta la historia del negocio | | `reportes - resumen 1/2` |
 | 2.6 | **Agenda** — la pantalla más usada | ⚠️ **Tramo propio, no solo rediseño.** Pasa a ser un tablero de tickets con vistas de día, semana y mes. Especificación completa en `ESPECIFICACION_AGENDA_2026-08-07.md` (D-101). Incluye el filtro de fecha que hoy no existe, y **exige construir antes el número de ticket** | `agenda` |
 | 2.7 | **Tickets / Ventas** | **Resolver el desplazamiento excesivo** para encontrar y cobrar un ticket abierto | `ventas - caja de ventas`, `detalle de ventas`, `transacciones` |
+| — | *(nota para 2.11)* | **"Subir portada" no dice qué hace.** Verificado el 07-ago: la portada solo se pinta en el enlace público de reservas, nunca en el panel. El propietario subió el botón y nunca vio el resultado (D-109) | |
 | 2.8 | **Clientes** | | `clientes - base clientes` |
 | 2.9 | **Reportes** | | `reportes - reporte de ventas 1/2`, `reporte de reservas 1/2` |
 | 2.10 | **Inventario / Productos** | | `productos - inventario`, `movimiento de stock` |

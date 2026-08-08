@@ -13,29 +13,38 @@ class AppColors {
   AppColors._();
 
   // ---------------------------------------------------------------------
-  // MARCA. Es lo unico que cambia con la marca blanca (D-093): cuando un
-  // negocio elija su tema, estos seis valores se sustituyen y el resto de la
-  // aplicacion sigue igual.
+  // MARCA. Es lo unico que cambia con la marca blanca (D-093, D-109).
+  //
+  // **Son los seis unicos valores de este archivo que no son `const`**, y esa
+  // es exactamente la funcion que cumplen: los escribe `AppBrand.aplicar()`
+  // cuando llegan los datos del negocio, y `MaterialApp` se reconstruye.
+  //
+  // Arrancan en morado a proposito. Entre que la aplicacion abre y que
+  // responde la consulta del negocio pasa medio segundo; durante ese rato se
+  // pinta el morado de Salon y Mas, que es lo correcto en la pantalla de
+  // login, donde todavia no se sabe de que negocio es quien entra.
   // ---------------------------------------------------------------------
 
-  /// Color principal. El morado corporativo ratificado en D-097.
-  static const brand = Color(0xFF7C3AED);
+  /// Color principal: barra superior, botones, selecciones. En un tema de dos
+  /// colores es el primero (D-109).
+  static Color brand = const Color(0xFF7C3AED);
 
   /// Para estados presionados y superficies fuertes sobre el principal.
-  static const brandDark = Color(0xFF6D28D9);
+  static Color brandDark = const Color(0xFF6D28D9);
 
   /// Titulos y texto sobre fondos claros de marca. Muy oscuro a proposito:
-  /// el morado puro no tiene contraste suficiente para texto largo.
-  static const brandDeep = Color(0xFF2D1B69);
+  /// el morado puro no tiene contraste suficiente para texto largo. En un tema
+  /// de dos colores es el segundo (D-109).
+  static Color brandDeep = const Color(0xFF2D1B69);
 
   /// Relleno de pildoras, iconos y selecciones.
-  static const brandTint = Color(0xFFEDE9FE);
+  static Color brandTint = const Color(0xFFEDE9FE);
 
   /// Fondos de tarjeta con acento suave.
-  static const brandTintSoft = Color(0xFFF5F3FF);
+  static Color brandTintSoft = const Color(0xFFF5F3FF);
 
   /// Fondo general de la aplicacion.
-  static const brandSurface = Color(0xFFF8F5FF);
+  static Color brandSurface = const Color(0xFFF8F5FF);
 
   // ---------------------------------------------------------------------
   // TEXTO Y SUPERFICIES. Neutrales: no cambian con la marca blanca, porque

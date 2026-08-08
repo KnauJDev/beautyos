@@ -134,7 +134,7 @@ class EmptyState extends StatelessWidget {
           Text(
             titulo,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppColors.brandDeep,

@@ -226,7 +226,7 @@ class _PhotoBadge extends StatelessWidget {
     return Chip(
       label: Text(text),
       backgroundColor: AppColors.brandTintSoft,
-      labelStyle: const TextStyle(
+      labelStyle: TextStyle(
         color: AppColors.brandDark,
         fontWeight: FontWeight.w700,
       ),

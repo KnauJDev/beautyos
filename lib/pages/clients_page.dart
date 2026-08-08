@@ -496,7 +496,7 @@ class ClientRow extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(
+            Icon(
               Icons.person_outline,
               size: 22,
               color: AppColors.brand,
@@ -508,7 +508,7 @@ class ClientRow extends StatelessWidget {
                 children: [
                   Text(
                     client.name,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.bold,
                       color: AppColors.brandDeep,

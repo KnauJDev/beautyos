@@ -317,7 +317,7 @@ class SalesReportCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
+          Icon(
             Icons.insights_outlined,
             size: 30,
             color: AppColors.brand,
@@ -329,7 +329,7 @@ class SalesReportCard extends StatelessWidget {
               children: [
                 Text(
                   report.serviceName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
                     color: AppColors.brandDeep,
@@ -482,7 +482,7 @@ class _DailyCloseSection extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.person_outline,
                         color: AppColors.brand,
                       ),
@@ -493,7 +493,7 @@ class _DailyCloseSection extends StatelessWidget {
                           children: [
                             Text(
                               commission.stylistName,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.brandDeep,
                               ),

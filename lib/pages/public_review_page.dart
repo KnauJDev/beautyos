@@ -197,7 +197,7 @@ class _PublicReviewPageState extends State<PublicReviewPage> {
             ],
             Text(
               loadedTicket.branchName,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: AppColors.brandDeep,

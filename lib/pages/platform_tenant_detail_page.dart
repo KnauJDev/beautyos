@@ -98,7 +98,7 @@ class _PlatformTenantDetailPageState extends State<PlatformTenantDetailPage>
             width: double.infinity,
             color: AppColors.brandTint,
             padding: const EdgeInsets.all(10),
-            child: const Text(
+            child: Text(
               'Solo lectura -- soporte de plataforma. No puedes editar ni '
               'borrar nada desde aquí.',
               textAlign: TextAlign.center,

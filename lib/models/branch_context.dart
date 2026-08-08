@@ -3,6 +3,8 @@ class BranchContext {
     required this.tenantId,
     required this.tenantName,
     this.tenantLogoUrl,
+    this.tenantThemeKey,
+    this.tenantBrandColor,
     required this.branchId,
     required this.branchName,
     required this.branchSlug,
@@ -17,6 +19,15 @@ class BranchContext {
   final String tenantId;
   final String tenantName;
   final String? tenantLogoUrl;
+
+  /// Tema de marca blanca del negocio (D-093). Viaja con el contexto de sede y
+  /// no en su propia consulta a proposito: si llegara despues, la app se
+  /// pintaria morada y cambiaria de color medio segundo mas tarde.
+  final String? tenantThemeKey;
+
+  /// Solo tiene valor cuando [tenantThemeKey] es `personalizado` (D-109).
+  final String? tenantBrandColor;
+
   final String branchId;
   final String branchName;
   final String? branchSlug;
@@ -32,6 +43,8 @@ class BranchContext {
       tenantId: _requiredString(map, 'tenant_id'),
       tenantName: map['tenant_name']?.toString() ?? 'Negocio sin nombre',
       tenantLogoUrl: map['tenant_logo_url']?.toString(),
+      tenantThemeKey: map['tenant_theme_key']?.toString(),
+      tenantBrandColor: map['tenant_brand_color']?.toString(),
       branchId: _requiredString(map, 'branch_id'),
       branchName: map['branch_name']?.toString() ?? 'Sede',
       branchSlug: map['branch_slug']?.toString(),

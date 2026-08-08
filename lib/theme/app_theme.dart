@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'app_dimens.dart';
 
+export 'app_brand.dart';
 export 'app_colors.dart';
 export 'app_dimens.dart';
 
@@ -36,7 +37,7 @@ class AppTheme {
       colorScheme: scheme,
       scaffoldBackgroundColor: AppColors.brandSurface,
 
-      textTheme: const TextTheme(
+      textTheme: TextTheme(
         headlineLarge: TextStyle(
           fontSize: 30,
           fontWeight: FontWeight.w600,
@@ -47,14 +48,17 @@ class AppTheme {
           fontWeight: FontWeight.w600,
           color: AppColors.brandDeep,
         ),
-        titleMedium: TextStyle(
+        titleMedium: const TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w600,
           color: AppColors.textPrimary,
         ),
-        bodyMedium: TextStyle(fontSize: 14, color: AppColors.textPrimary),
-        bodySmall: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-        labelSmall: TextStyle(fontSize: 12, color: AppColors.textMuted),
+        bodyMedium: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
+        bodySmall: const TextStyle(
+          fontSize: 13,
+          color: AppColors.textSecondary,
+        ),
+        labelSmall: const TextStyle(fontSize: 12, color: AppColors.textMuted),
       ),
 
       // Sin sombras en toda la aplicacion (D-100): se ven sucias en pantallas
@@ -71,7 +75,7 @@ class AppTheme {
         ),
       ),
 
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         elevation: 0,
         scrolledUnderElevation: 0,
         backgroundColor: AppColors.brand,
@@ -101,7 +105,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.control),
-          borderSide: const BorderSide(color: AppColors.brand, width: 1.5),
+          borderSide: BorderSide(color: AppColors.brand, width: 1.5),
         ),
         labelStyle: const TextStyle(color: AppColors.textSecondary),
       ),

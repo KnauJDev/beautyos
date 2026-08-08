@@ -332,7 +332,7 @@ class StylistCard extends StatelessWidget {
                   ),
                 ],
                 const SizedBox(height: 14),
-                const Text(
+                Text(
                   'Servicios asignados',
                   style: TextStyle(
                     fontSize: 14,
@@ -446,7 +446,7 @@ class StylistServiceChip extends StatelessWidget {
       ),
       child: Text(
         '${service.serviceName} · ${service.formattedPrice} · ${service.durationMinutes} min',
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w700,
           color: AppColors.brandDark,
