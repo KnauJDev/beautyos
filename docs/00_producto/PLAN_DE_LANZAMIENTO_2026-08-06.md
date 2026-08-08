@@ -42,13 +42,12 @@ de pago ya construida (D-044, D-068, D-069).
 **Lo que falta para vender:** el pulido visual, los precios, la pasarela de
 pago y lo legal.
 
-> ⚠️ **RESPALDO PENDIENTE (verificado el 08-ago).** El último respaldo de la
-> base de datos es del **22 de julio**. En plan Free, Supabase **no ofrece
-> respaldos que el propietario pueda restaurar**: eso empieza en Pro (tarea
-> 3.5). Hoy el único respaldo que existe es el que se haga a mano, y no cubre
-> nada de lo construido desde entonces — salida a internet, 2FA, sistema de
-> diseño, marca blanca ni Dashboard. **Es el riesgo abierto más grande del
-> proyecto.** Ver apartado 11, hallazgo G.
+> ✅ **RESPALDO AL DÍA (08-ago-2026).** Se hizo y se verificó: 5 cuentas de
+> usuario, 1 negocio, 2 sedes, 5 clientes, 30 tickets, 11 cobros, 72 tablas y
+> 182 funciones, con el trabajo de hoy dentro (`theme_key`,
+> `get_dashboard_overview`). Vive en `OneDrive\Documents\BeautyOS Backups`.
+> **Sigue pendiente la restauración de ensayo:** un respaldo sin restaurar
+> comprobada es una promesa, no un respaldo. Ver apartado 11, hallazgo G.
 
 ---
 
@@ -314,7 +313,7 @@ Etapa 2.
 | D | **La barra inferior de celular podría llevar acciones, no módulos** — ver agenda, confirmar agenda, ver quién falta por cobrar, cobrar. Es lo que de verdad se hace desde un teléfono (idea del propietario, 07-ago) | Se planifica antes de fijar los cuatro puestos |
 | E | **Verificar el celular del cliente con un código** (SMS/WhatsApp) al reservar | Cierra del todo H-02. Cuesta por mensaje |
 | F | **Que la reserva pública no ocupe el horario** hasta que el negocio la confirme | Arreglo estructural de H-02. Cambia cómo funciona la agenda |
-| **G** | **No hay respaldo desde el 22 de julio, y el plan Free no da respaldos restaurables.** El script de julio (`crear_respaldo_supabase.ps1`) dejó de servir: exige Docker, que no está instalado. Se escribió `scripts/respaldo_supabase.ps1`, que usa las herramientas de cliente de PostgreSQL 17 (~200 MB, sin servidor ni pgAdmin) | 👤 **Instalar y correr. Lo más urgente del proyecto.** Sin restauración de ensayo, un respaldo es solo una promesa |
+| **G** | ~~No hay respaldo desde el 22 de julio~~ **✅ HECHO el 08-ago** con `scripts/respaldo_supabase.ps1`, que reemplaza al de julio (aquel exigía Docker y llevaba semanas sin poder correr, sin que nadie lo notara). Verificado por contenido, no solo por tamaño | 👤 **Queda la restauración de ensayo.** Se puede hacer contra un segundo proyecto gratuito de Supabase, sin tocar producción. Antes de la Etapa 3 |
 
 ### Sobre la sesión que no se cierra (C)
 
