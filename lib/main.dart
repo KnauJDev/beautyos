@@ -64,18 +64,6 @@ class BeautyOSApp extends StatelessWidget {
     // Mismo motivo: un cliente anonimo nunca debe pasar por login.
     final publicReviewTicketId = Uri.base.queryParameters['resena'];
 
-    Widget home;
-    if (publicBranchId != null && publicBranchId.trim().isNotEmpty) {
-      home = PublicBookingPage(branchId: publicBranchId.trim());
-    } else if (publicReviewTicketId != null &&
-        publicReviewTicketId.trim().isNotEmpty) {
-      home = PublicReviewPage(ticketId: publicReviewTicketId.trim());
-    } else {
-      home = const AuthGate(
-        authenticatedChild: AuthenticatedRouter(businessApp: BeautyOSHome()),
-      );
-    }
-
     // Un solo sitio decide el aspecto de toda la aplicacion (D-102). El tema
     // del negocio no se conoce al arrancar -- llega con los datos de la sede o
     // de la reserva publica --, asi que `MaterialApp` se reconstruye cuando
@@ -83,6 +71,26 @@ class BeautyOSApp extends StatelessWidget {
     return ValueListenableBuilder<BrandPalette>(
       valueListenable: AppBrand.activo,
       builder: (context, palette, _) {
+        // `home` se construye **dentro** del builder a proposito. Las
+        // pantallas leen `AppColors` directamente y no `Theme.of(context)`,
+        // asi que necesitan volver a dibujarse de verdad; si el widget fuera
+        // siempre la misma instancia, Flutter se saltaria ese subarbol al ver
+        // que no cambio y el tema nuevo solo entraria a medias. Al ser
+        // widgets sin `key`, su estado se conserva igual.
+        final Widget home;
+        if (publicBranchId != null && publicBranchId.trim().isNotEmpty) {
+          home = PublicBookingPage(branchId: publicBranchId.trim());
+        } else if (publicReviewTicketId != null &&
+            publicReviewTicketId.trim().isNotEmpty) {
+          home = PublicReviewPage(ticketId: publicReviewTicketId.trim());
+        } else {
+          home = const AuthGate(
+            authenticatedChild: AuthenticatedRouter(
+              businessApp: BeautyOSHome(),
+            ),
+          );
+        }
+
         return MaterialApp(
           title: 'Salón y Más',
           debugShowCheckedModeBanner: false,
