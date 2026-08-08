@@ -31,10 +31,21 @@ $ErrorActionPreference = 'Stop'
 function Buscar-Herramienta {
   param([string]$Nombre)
 
+  # 1. Donde las deja `instalar_herramientas_postgres.ps1`.
+  #
+  # Va primero y no ultimo por un fallo real: la primera version de este script
+  # solo miraba en `Program Files`, asi que no encontraba las herramientas que
+  # su propio instalador acababa de poner en el perfil del usuario. Los dos
+  # scripts tienen que coincidir en la ubicacion o el respaldo no arranca.
+  $propio = Join-Path $env:LOCALAPPDATA "PostgresTools\pgsql\bin\$Nombre.exe"
+  if (Test-Path -LiteralPath $propio) { return $propio }
+
+  # 2. En el PATH. Puede fallar en una ventana abierta ANTES de instalar: las
+  # variables de entorno se leen al arrancar el programa, no despues.
   $enPath = Get-Command $Nombre -ErrorAction SilentlyContinue
   if ($enPath) { return $enPath.Source }
 
-  # Instalaciones tipicas de PostgreSQL en Windows, de mas nueva a mas vieja.
+  # 3. Instalaciones normales de PostgreSQL, de mas nueva a mas vieja.
   $raices = @(
     (Join-Path $env:ProgramFiles 'PostgreSQL'),
     (Join-Path ${env:ProgramFiles(x86)} 'PostgreSQL')
@@ -62,11 +73,13 @@ $pgDump = Buscar-Herramienta -Nombre 'pg_dump'
 if (-not $pgDump) {
   Write-Host 'No encontre pg_dump.' -ForegroundColor Red
   Write-Host ''
-  Write-Host 'Instala las herramientas de cliente de PostgreSQL 17:'
-  Write-Host '  https://www.postgresql.org/download/windows/'
+  Write-Host 'Corre primero el instalador, que no necesita permisos de administrador:'
+  Write-Host '  powershell -ExecutionPolicy Bypass -File "scripts\instalar_herramientas_postgres.ps1"'
   Write-Host ''
-  Write-Host 'En el instalador, DESMARCA "PostgreSQL Server" y "pgAdmin".'
-  Write-Host 'Solo necesitas "Command Line Tools". Son unos 200 MB.'
+  Write-Host 'Busque en:'
+  Write-Host "  $(Join-Path $env:LOCALAPPDATA 'PostgresTools\pgsql\bin')"
+  Write-Host '  el PATH de esta ventana'
+  Write-Host "  $(Join-Path $env:ProgramFiles 'PostgreSQL')"
   Write-Host ''
   throw 'Falta pg_dump.'
 }
