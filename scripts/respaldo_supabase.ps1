@@ -1,7 +1,11 @@
 [CmdletBinding()]
 param(
   [string]$BackupRoot = (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'BeautyOS Backups'),
-  [string]$Etiqueta = ''
+  [string]$Etiqueta = '',
+
+  # Salida de emergencia: si la busqueda automatica falla en una maquina donde
+  # las herramientas SI estan, se le pasa la ruta y se acabo la discusion.
+  [string]$PgDumpPath = ''
 )
 
 # Salon y Mas - Respaldo de Supabase sin Docker.
@@ -28,38 +32,55 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+# Guarda que se reviso y con que resultado, para poder explicar un fallo en vez
+# de solo anunciarlo. Se llena aunque todo salga bien: cuesta nada y el dia que
+# falle en otra maquina, la respuesta ya esta impresa.
+$script:Rastro = New-Object System.Collections.Generic.List[string]
+
 function Buscar-Herramienta {
   param([string]$Nombre)
 
+  $candidatos = New-Object System.Collections.Generic.List[string]
+
   # 1. Donde las deja `instalar_herramientas_postgres.ps1`.
   #
-  # Va primero y no ultimo por un fallo real: la primera version de este script
-  # solo miraba en `Program Files`, asi que no encontraba las herramientas que
-  # su propio instalador acababa de poner en el perfil del usuario. Los dos
-  # scripts tienen que coincidir en la ubicacion o el respaldo no arranca.
-  $propio = Join-Path $env:LOCALAPPDATA "PostgresTools\pgsql\bin\$Nombre.exe"
-  if (Test-Path -LiteralPath $propio) { return $propio }
+  # Va primero por un fallo real del primer uso: los dos scripts no coincidian
+  # en la ubicacion y el respaldo se negaba a arrancar sobre una instalacion
+  # que estaba perfecta.
+  #
+  # Se prueban dos formas de llegar al mismo sitio porque `LOCALAPPDATA` puede
+  # no estar definida segun como se abrio la ventana -- por ejemplo al elevar a
+  # administrador, donde apunta al perfil del administrador y no al tuyo.
+  foreach ($base in @($env:LOCALAPPDATA, (Join-Path $env:USERPROFILE 'AppData\Local'))) {
+    if ([string]::IsNullOrWhiteSpace($base)) { continue }
+    $candidatos.Add((Join-Path $base ('PostgresTools\pgsql\bin\' + $Nombre + '.exe')))
+  }
 
-  # 2. En el PATH. Puede fallar en una ventana abierta ANTES de instalar: las
-  # variables de entorno se leen al arrancar el programa, no despues.
-  $enPath = Get-Command $Nombre -ErrorAction SilentlyContinue
-  if ($enPath) { return $enPath.Source }
-
-  # 3. Instalaciones normales de PostgreSQL, de mas nueva a mas vieja.
-  $raices = @(
+  # 2. Instalaciones normales de PostgreSQL, de mas nueva a mas vieja.
+  foreach ($raiz in @(
     (Join-Path $env:ProgramFiles 'PostgreSQL'),
     (Join-Path ${env:ProgramFiles(x86)} 'PostgreSQL')
-  )
-
-  foreach ($raiz in $raices) {
-    if (-not (Test-Path -LiteralPath $raiz)) { continue }
-    $candidatos = Get-ChildItem -LiteralPath $raiz -Directory -ErrorAction SilentlyContinue |
+  )) {
+    if ([string]::IsNullOrWhiteSpace($raiz) -or -not (Test-Path -LiteralPath $raiz)) { continue }
+    $versiones = Get-ChildItem -LiteralPath $raiz -Directory -ErrorAction SilentlyContinue |
       Sort-Object { [int]($_.Name -replace '\D', '0') } -Descending
-    foreach ($version in $candidatos) {
-      $ruta = Join-Path $version.FullName "bin\$Nombre.exe"
-      if (Test-Path -LiteralPath $ruta) { return $ruta }
+    foreach ($version in $versiones) {
+      $candidatos.Add((Join-Path $version.FullName ('bin\' + $Nombre + '.exe')))
     }
   }
+
+  foreach ($ruta in $candidatos) {
+    $existe = Test-Path -LiteralPath $ruta
+    $script:Rastro.Add("  [$(if ($existe) {'SI'} else {'no'})] $ruta")
+    if ($existe) { return $ruta }
+  }
+
+  # 3. Ultimo recurso: el PATH. Va al final y no al principio porque una
+  # ventana abierta ANTES de instalar no lo ve: las variables de entorno se
+  # leen al arrancar el programa, no despues.
+  $enPath = Get-Command $Nombre -ErrorAction SilentlyContinue
+  $script:Rastro.Add("  [$(if ($enPath) {'SI'} else {'no'})] PATH de esta ventana")
+  if ($enPath) { return $enPath.Source }
 
   return $null
 }
@@ -69,17 +90,26 @@ Write-Host 'Salon y Mas - Respaldo de Supabase' -ForegroundColor Magenta
 Write-Host 'La contrasena se usa solo en esta ventana y no se guarda en ningun archivo.'
 Write-Host ''
 
-$pgDump = Buscar-Herramienta -Nombre 'pg_dump'
+if ($PgDumpPath) {
+  if (-not (Test-Path -LiteralPath $PgDumpPath)) {
+    throw "No existe el archivo que indicaste: $PgDumpPath"
+  }
+  $pgDump = $PgDumpPath
+} else {
+  $pgDump = Buscar-Herramienta -Nombre 'pg_dump'
+}
+
 if (-not $pgDump) {
-  Write-Host 'No encontre pg_dump.' -ForegroundColor Red
+  Write-Host 'No encontre pg_dump. Esto es exactamente lo que revise:' -ForegroundColor Red
   Write-Host ''
-  Write-Host 'Corre primero el instalador, que no necesita permisos de administrador:'
+  foreach ($linea in $script:Rastro) { Write-Host $linea }
+  Write-Host ''
+  Write-Host 'Si alguna dice [SI] y aun asi fallo, mandame estas lineas tal cual.'
+  Write-Host 'Si todas dicen [no], corre primero el instalador:'
   Write-Host '  powershell -ExecutionPolicy Bypass -File "scripts\instalar_herramientas_postgres.ps1"'
   Write-Host ''
-  Write-Host 'Busque en:'
-  Write-Host "  $(Join-Path $env:LOCALAPPDATA 'PostgresTools\pgsql\bin')"
-  Write-Host '  el PATH de esta ventana'
-  Write-Host "  $(Join-Path $env:ProgramFiles 'PostgreSQL')"
+  Write-Host 'Tambien puedes indicarme la ruta a mano:'
+  Write-Host '  ...\respaldo_supabase.ps1 -PgDumpPath "C:\ruta\a\pg_dump.exe"'
   Write-Host ''
   throw 'Falta pg_dump.'
 }
