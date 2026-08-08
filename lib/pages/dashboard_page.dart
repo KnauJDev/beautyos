@@ -292,6 +292,10 @@ class _Controles extends StatelessWidget {
         // icono de la casita en la barra de celular (D-106).
         if (branches.length > 1)
           Container(
+            // Acotado igual que el filtro de fechas: el nombre de una sede
+            // puede ser largo y en un telefono empujaria el control fuera de
+            // la pantalla.
+            constraints: const BoxConstraints(maxWidth: 260),
             decoration: BoxDecoration(
               border: Border.all(color: AppColors.border),
               borderRadius: BorderRadius.circular(AppRadius.control),
@@ -301,6 +305,7 @@ class _Controles extends StatelessWidget {
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String?>(
                 value: sedeElegida,
+                isExpanded: true,
                 borderRadius: BorderRadius.circular(AppRadius.control),
                 onChanged: onSede,
                 items: [
@@ -311,7 +316,10 @@ class _Controles extends StatelessWidget {
                   for (final sede in branches)
                     DropdownMenuItem<String?>(
                       value: sede.branchId,
-                      child: Text(sede.branchName),
+                      child: Text(
+                        sede.branchName,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                 ],
               ),

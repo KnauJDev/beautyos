@@ -38,15 +38,19 @@ class FiltroPeriodo extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
+        // `Wrap` y no `Row`: en un telefono en vertical los dos controles no
+        // caben uno al lado del otro y "Otras fechas" se salia de la pantalla
+        // (hallazgo del propietario, 08-ago). Asi baja a la linea siguiente en
+        // vez de cortarse.
+        Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
           children: [
             _Desplegable(
               periodo: periodo,
               onCambio: onCambio,
               habilitado: habilitado,
             ),
-            const SizedBox(width: AppSpacing.sm),
             OutlinedButton.icon(
               onPressed: habilitado ? () => _elegirRango(context) : null,
               icon: const Icon(Icons.date_range_outlined, size: 17),
@@ -112,6 +116,10 @@ class _Desplegable extends StatelessWidget {
     final esPersonalizado = periodo.clave == 'personalizado';
 
     return Container(
+      // Acotado para que un nombre largo no empuje el control fuera de la
+      // pantalla de un telefono. Con `isExpanded`, lo que sobra se recorta con
+      // puntos suspensivos en vez de desbordarse.
+      constraints: const BoxConstraints(maxWidth: 260),
       decoration: BoxDecoration(
         border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(AppRadius.control),
@@ -122,6 +130,7 @@ class _Desplegable extends StatelessWidget {
         child: DropdownButton<String>(
           value: esPersonalizado ? null : periodo.clave,
           hint: const Text('Rango elegido'),
+          isExpanded: true,
           borderRadius: BorderRadius.circular(AppRadius.control),
           onChanged: habilitado
               ? (clave) {
@@ -136,7 +145,12 @@ class _Desplegable extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(atajo.etiqueta),
+                    Flexible(
+                      child: Text(
+                        atajo.etiqueta,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                     const SizedBox(width: AppSpacing.sm),
                     Text(
                       atajo.modo == ModoComparacion.calendario

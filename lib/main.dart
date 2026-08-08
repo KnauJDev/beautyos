@@ -1045,32 +1045,48 @@ class _MobileNavBar extends StatelessWidget {
       context: context,
       showDragHandle: true,
       backgroundColor: AppColors.surface,
+      // **Sin esto, "Mas" era una trampa en celular** (hallazgo del propietario,
+      // 08-ago). Con 14 modulos la rejilla mide mas que la hoja, y como la hoja
+      // no se desplazaba, lo de abajo -- Configuracion, Seguridad y **Cerrar
+      // sesion** -- quedaba fuera de la pantalla y era imposible de alcanzar.
+      // En horizontal ni siquiera cabia la primera fila completa.
+      isScrollControlled: true,
       builder: (hoja) {
         final restantes = <MapEntry<int, BeautySection>>[
           for (var i = _visibles; i < sections.length; i++)
             MapEntry(i, sections[i]),
         ];
 
+        final alto = MediaQuery.of(hoja).size.height;
+        final apaisado =
+            MediaQuery.of(hoja).orientation == Orientation.landscape;
+
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              0,
-              AppSpacing.lg,
-              AppSpacing.lg,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (restantes.isNotEmpty) ...[
-                  GridView.count(
-                    crossAxisCount: 3,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: AppSpacing.sm,
-                    crossAxisSpacing: AppSpacing.sm,
-                    childAspectRatio: 1.15,
+          child: ConstrainedBox(
+            // En horizontal se toma casi toda la pantalla: la altura util es
+            // tan poca que dejar un margen elegante significaria no ver nada.
+            constraints: BoxConstraints(maxHeight: alto * (apaisado ? 0.92 : 0.8)),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                0,
+                AppSpacing.lg,
+                AppSpacing.lg,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (restantes.isNotEmpty) ...[
+                    GridView.count(
+                      // Cuatro columnas en horizontal: hay ancho de sobra y
+                      // altura ninguna, asi que conviene gastar lo que sobra.
+                      crossAxisCount: apaisado ? 4 : 3,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      mainAxisSpacing: AppSpacing.sm,
+                      crossAxisSpacing: AppSpacing.sm,
+                      childAspectRatio: 1.15,
                     children: [
                       for (final entrada in restantes)
                         _AccesoMas(
@@ -1082,38 +1098,41 @@ class _MobileNavBar extends StatelessWidget {
                             onSelected(entrada.key);
                           },
                         ),
-                    ],
+                      ],
+                    ),
+                    const Divider(),
+                  ],
+                  // Seguridad y salir viven aqui desde D-105: en la barra de
+                  // arriba eran dos iconos que no cabian en un telefono.
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.security_outlined),
+                    title: const Text('Seguridad de tu cuenta'),
+                    onTap: () {
+                      Navigator.of(hoja).pop();
+                      showDialog(
+                        context: context,
+                        builder: (_) => const SecuritySettingsDialog(),
+                      );
+                    },
                   ),
-                  const Divider(),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(
+                      Icons.logout_outlined,
+                      color: AppColors.danger,
+                    ),
+                    title: const Text(
+                      'Cerrar sesión',
+                      style: TextStyle(color: AppColors.danger),
+                    ),
+                    onTap: () {
+                      Navigator.of(hoja).pop();
+                      onSignOut();
+                    },
+                  ),
                 ],
-                // Seguridad y salir viven aqui desde D-105: en la barra de
-                // arriba eran dos iconos que no cabian en un telefono.
-                ListTile(
-                  leading: const Icon(Icons.security_outlined),
-                  title: const Text('Seguridad de tu cuenta'),
-                  onTap: () {
-                    Navigator.of(hoja).pop();
-                    showDialog(
-                      context: context,
-                      builder: (_) => const SecuritySettingsDialog(),
-                    );
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(
-                    Icons.logout_outlined,
-                    color: AppColors.danger,
-                  ),
-                  title: const Text(
-                    'Cerrar sesión',
-                    style: TextStyle(color: AppColors.danger),
-                  ),
-                  onTap: () {
-                    Navigator.of(hoja).pop();
-                    onSignOut();
-                  },
-                ),
-              ],
+              ),
             ),
           ),
         );
