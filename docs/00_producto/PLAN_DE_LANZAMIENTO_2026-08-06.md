@@ -336,6 +336,8 @@ y deja la sesión abierta en el computador del mostrador.
 - `BENCHMARKING_2026-07-28.md` — funciones de AgendaPro pendientes de decidir
 - `RUTA_GENERAL_2026-07-25.md` — orden de la fase MVP
 - `RUTA_A_PRODUCCION_2026-07-25.md` — **archivado**
+- `ESPECIFICACION_AGENDA_2026-08-07.md` — el tablero de tickets (tarea 2.6)
+- `HANDOFF/HANDOFF_SalonyMas_Etapas_0_1_2_2026-08-07.md` — cierre de las Etapas 0 y 1 y del sistema de diseño
 
 ### Equivalencias tras la reorganización del 07-ago
 
