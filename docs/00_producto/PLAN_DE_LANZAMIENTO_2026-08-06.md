@@ -350,6 +350,7 @@ y deja la sesión abierta en el computador del mostrador.
 - `RUTA_A_PRODUCCION_2026-07-25.md` — **archivado**
 - `ESPECIFICACION_AGENDA_2026-08-07.md` — el tablero de tickets (tarea 2.6)
 - `ESPECIFICACION_DASHBOARD_2026-08-08.md` — el Dashboard como historia (tarea 2.5)
+- `GUIA_TECNICA_PARA_PRODUCCION_2026-08-08.md` — sobre qué corre, cuánto cuesta y qué falta para vender
 - `HANDOFF/HANDOFF_SalonyMas_Etapas_0_1_2_2026-08-07.md` — cierre de las Etapas 0 y 1 y del sistema de diseño
 
 ### Equivalencias tras la reorganización del 07-ago
