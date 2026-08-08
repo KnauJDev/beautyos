@@ -3452,30 +3452,8 @@ class _VoidPaymentFormData {
   final String reason;
 }
 
-String _ticketStatusLabel(String status) {
-  switch (status) {
-    case 'solicitado':
-      return 'Solicitado';
-    case 'cotizado':
-      return 'Cotizado';
-    case 'apartado':
-      return 'Apartado';
-    case 'confirmado':
-      return 'Confirmado';
-    case 'en_espera':
-      return 'En espera';
-    case 'en_proceso':
-      return 'En proceso';
-    case 'finalizado':
-      return 'Finalizado';
-    case 'cancelado':
-      return 'Cancelado';
-    case 'no_asistio':
-      return 'No asistió';
-    default:
-      return status;
-  }
-}
+String _ticketStatusLabel(String status) =>
+    TicketStatus.desde(status).etiqueta;
 
 class TicketRow extends StatelessWidget {
   final TicketSummary ticket;

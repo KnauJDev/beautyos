@@ -55,57 +55,42 @@ class _AgendaPageState extends State<AgendaPage> {
           future: agendaFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Card(
-                elevation: 1,
-                color: Colors.white,
-                child: Padding(
-                  padding: EdgeInsets.all(22),
-                  child: Row(
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(width: 16),
-                      Text('Cargando agenda desde Supabase...'),
-                    ],
-                  ),
-                ),
-              );
+              return const LoadingCard(mensaje: 'Cargando la agenda...');
             }
 
+            // Ahora un fallo se distingue de "todavia no hay nada" (D-107):
+            // antes los dos se pintaban con el mismo panel gris y no habia
+            // forma de saber si algo se rompio o si el dia esta vacio.
             if (snapshot.hasError) {
-              return InfoPanel(
-                icon: Icons.error_outline,
-                title: 'No se pudo cargar la agenda',
-                description: snapshot.error.toString(),
+              return ErrorState(
+                titulo: 'No se pudo cargar la agenda',
+                detalle: snapshot.error.toString(),
+                onReintentar: _refreshAgenda,
               );
             }
 
             final appointments = snapshot.data ?? [];
 
             if (appointments.isEmpty) {
-              return const InfoPanel(
-                icon: Icons.info_outline,
-                title: 'Sin citas disponibles',
-                description:
-                    'No hay citas confirmadas o en proceso para mostrar en este momento.',
+              return const EmptyState(
+                icon: Icons.event_available_outlined,
+                titulo: 'Sin citas por ahora',
+                descripcion:
+                    'No hay citas confirmadas ni en proceso para mostrar.',
               );
             }
 
-            return Card(
-              elevation: 1,
-              color: Colors.white,
-              child: Padding(
-                padding: const EdgeInsets.all(22),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SectionTitle('Citas desde Supabase'),
-                    const SizedBox(height: 14),
-                    ...appointments.map(
-                      (appointment) =>
-                          AgendaAppointmentCard(appointment: appointment),
-                    ),
-                  ],
-                ),
+            return AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SectionTitle('Citas desde Supabase'),
+                  const SizedBox(height: AppSpacing.md),
+                  ...appointments.map(
+                    (appointment) =>
+                        AgendaAppointmentCard(appointment: appointment),
+                  ),
+                ],
               ),
             );
           },

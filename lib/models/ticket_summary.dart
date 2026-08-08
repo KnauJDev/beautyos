@@ -1,3 +1,5 @@
+import '../widgets/ticket_status.dart';
+
 class TicketSummary {
   final String id;
   final String clientName;
@@ -110,30 +112,8 @@ class TicketSummary {
     return '$day/$month/$year $hour:$minute';
   }
 
-  String get statusLabel {
-    switch (status.toLowerCase()) {
-      case 'solicitado':
-        return 'Solicitado';
-      case 'cotizado':
-        return 'Cotizado';
-      case 'apartado':
-        return 'Apartado';
-      case 'confirmado':
-        return 'Confirmado';
-      case 'en_espera':
-        return 'En espera';
-      case 'en_proceso':
-        return 'En proceso';
-      case 'finalizado':
-        return 'Finalizado';
-      case 'cerrado':
-        return 'Cerrado';
-      case 'cancelado':
-        return 'Cancelado';
-      case 'no_asistio':
-        return 'No asistio';
-      default:
-        return status;
-    }
-  }
+  /// Delega en `TicketStatus` (D-107). Antes habia **tres copias** de esta
+  /// lista repartidas por el codigo, y ya no coincidian entre si: una decia
+  /// "No asistio" y otra "No asistio" con tilde.
+  String get statusLabel => TicketStatus.desde(status).etiqueta;
 }
