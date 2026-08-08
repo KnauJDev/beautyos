@@ -1,7 +1,7 @@
 import 'periodo_dashboard.dart';
 
-/// Los cuatro indicadores protagonistas de la Vista 1, con los del periodo
-/// anterior al lado (tarea 2.5a, D-110).
+/// Los indicadores de la Vista 1, con los del periodo anterior al lado
+/// (tarea 2.5a, D-110; horas vendidas en 2.5b).
 ///
 /// Llegan juntos en un solo viaje a proposito: si el numero y su comparacion
 /// vinieran en dos consultas, la pantalla pintaria `$24,8M` y el `↑12,4%`
@@ -13,10 +13,12 @@ class DashboardOverview {
     required this.citas,
     required this.clientesAtendidos,
     required this.ticketsCobrados,
+    required this.minutosVendidos,
     required this.ventasAnterior,
     required this.citasAnterior,
     required this.clientesAtendidosAnterior,
     required this.ticketsCobradosAnterior,
+    required this.minutosVendidosAnterior,
     required this.hoyEnLaSede,
     required this.sedesIncluidas,
     this.primeraActividad,
@@ -35,10 +37,20 @@ class DashboardOverview {
   /// Denominador del ticket promedio.
   final int ticketsCobrados;
 
+  /// Minutos de trabajo efectivamente vendidos: la duracion de los servicios de
+  /// los tickets que se cobraron en el periodo (2.5b).
+  ///
+  /// **No es ocupacion y no debe presentarse como tal.** La ocupacion necesita
+  /// saber cuantas horas habia disponibles, y ese dato no existe: el horario se
+  /// guarda por negocio, no por profesional. Esto es solo el numerador, que si
+  /// es un hecho.
+  final int minutosVendidos;
+
   final double ventasAnterior;
   final int citasAnterior;
   final int clientesAtendidosAnterior;
   final int ticketsCobradosAnterior;
+  final int minutosVendidosAnterior;
 
   /// Desde cuando hay historia. `null` si el negocio no tiene ni un dato:
   /// entonces no hay nada que comparar y la pantalla muestra la escalera del
@@ -50,6 +62,11 @@ class DashboardOverview {
   final DateTime hoyEnLaSede;
 
   final int sedesIncluidas;
+
+  /// En horas, que es como lo piensa una persona. Un salon no razona en
+  /// minutos.
+  double get horasVendidas => minutosVendidos / 60;
+  double get horasVendidasAnterior => minutosVendidosAnterior / 60;
 
   /// `null` cuando no se cobro nada: dividir entre cero daria infinito, y un
   /// ticket promedio infinito es justo el tipo de precision que los datos no
@@ -72,6 +89,11 @@ class DashboardOverview {
 
   Comparacion compararClientes(RangoFechas anterior) =>
       _comparar(clientesAtendidos, clientesAtendidosAnterior, anterior);
+
+  /// Se compara en minutos y no en horas: el redondeo a horas haria que dos
+  /// periodos distintos parecieran iguales.
+  Comparacion compararHorasVendidas(RangoFechas anterior) =>
+      _comparar(minutosVendidos, minutosVendidosAnterior, anterior);
 
   /// Sin tickets cobrados en alguno de los dos lados no hay promedio que
   /// comparar, y se trata como periodo sin movimiento en vez de forzar un cero.
@@ -96,10 +118,12 @@ class DashboardOverview {
       citas: _int(map['appointments']),
       clientesAtendidos: _int(map['clients_served']),
       ticketsCobrados: _int(map['paid_tickets']),
+      minutosVendidos: _int(map['minutes_sold']),
       ventasAnterior: _double(map['prev_sales']),
       citasAnterior: _int(map['prev_appointments']),
       clientesAtendidosAnterior: _int(map['prev_clients_served']),
       ticketsCobradosAnterior: _int(map['prev_paid_tickets']),
+      minutosVendidosAnterior: _int(map['prev_minutes_sold']),
       primeraActividad: _fecha(map['first_activity_on']),
       hoyEnLaSede: _fecha(map['today_on']) ?? DateTime.now(),
       sedesIncluidas: _int(map['branches_included']),

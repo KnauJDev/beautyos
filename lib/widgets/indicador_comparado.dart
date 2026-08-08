@@ -44,52 +44,85 @@ class IndicadorComparado extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppCard(
       padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  titulo,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
+      child: IndicadorComparadoDesnudo(
+        titulo: titulo,
+        valor: valor,
+        comparacion: comparacion,
+        etiquetaPeriodoAnterior: etiquetaPeriodoAnterior,
+        origenDelDato: origenDelDato,
+      ),
+    );
+  }
+}
+
+/// El mismo indicador, **sin tarjeta alrededor**.
+///
+/// Existe para poder meterlo dentro de otro bloque que ya tiene su propia
+/// tarjeta -- como "Tu tiempo" de 2.5b -- sin anidar tarjeta dentro de tarjeta,
+/// que se ve como un error de maquetacion.
+class IndicadorComparadoDesnudo extends StatelessWidget {
+  const IndicadorComparadoDesnudo({
+    super.key,
+    required this.titulo,
+    required this.valor,
+    required this.comparacion,
+    required this.etiquetaPeriodoAnterior,
+    this.origenDelDato,
+  });
+
+  final String titulo;
+  final String valor;
+  final Comparacion comparacion;
+  final String etiquetaPeriodoAnterior;
+  final String? origenDelDato;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                titulo,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
                 ),
               ),
-              if (origenDelDato != null)
-                Tooltip(
-                  message: origenDelDato!,
-                  triggerMode: TooltipTriggerMode.tap,
-                  showDuration: const Duration(seconds: 8),
-                  child: const Icon(
-                    Icons.info_outline,
-                    size: 15,
-                    color: AppColors.textMuted,
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            valor,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
-              color: AppColors.brandDeep,
             ),
+            if (origenDelDato != null)
+              Tooltip(
+                message: origenDelDato!,
+                triggerMode: TooltipTriggerMode.tap,
+                showDuration: const Duration(seconds: 8),
+                child: const Icon(
+                  Icons.info_outline,
+                  size: 15,
+                  color: AppColors.textMuted,
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          valor,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w600,
+            color: AppColors.brandDeep,
           ),
-          const SizedBox(height: AppSpacing.xs),
-          _Comparacion(
-            comparacion: comparacion,
-            etiquetaPeriodoAnterior: etiquetaPeriodoAnterior,
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        _Comparacion(
+          comparacion: comparacion,
+          etiquetaPeriodoAnterior: etiquetaPeriodoAnterior,
+        ),
+      ],
     );
   }
 }

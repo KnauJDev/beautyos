@@ -112,7 +112,9 @@ void main() {
     });
   });
 
-  group('los cuatro indicadores salen de la misma serie', () {
+  group('horas vendidas', horasVendidas);
+
+  group('los indicadores salen todos de la misma serie', () {
     test('cambiar de indicador no necesita otra consulta', () {
       final p = PuntoSerie.fromMap(
         fila('2026-08-08', sales: 300000, appointments: 12, clients: 8, paid: 4),
@@ -130,5 +132,44 @@ void main() {
       expect(IndicadorGrafico.citas.esDinero, isFalse);
       expect(IndicadorGrafico.clientes.esDinero, isFalse);
     });
+  });
+}
+
+/// Pruebas de las horas vendidas (2.5b, D-110).
+///
+/// La regla que se vigila aqui es de honestidad, no de aritmetica: **este
+/// numero nunca debe convertirse en un porcentaje de ocupacion**. No hay
+/// denominador real -- el horario se guarda por negocio, no por profesional --
+/// y presentarlo como ocupacion seria la mentira que D-110 prohibe.
+void horasVendidas() {
+  test('las horas salen de los minutos, no se redondean antes de tiempo', () {
+    final p = PuntoSerie.fromMap(<String, dynamic>{
+      'bucket_on': '2026-08-08',
+      'granularity': 'day',
+      'sales': 300000,
+      'appointments': 5,
+      'clients_served': 4,
+      'paid_tickets': 4,
+      'minutes_sold': 270,
+    });
+
+    expect(p.minutosVendidos, 270);
+    expect(IndicadorGrafico.horasVendidas.valorDe(p), 4.5);
+  });
+
+  test('las horas no se pintan como dinero', () {
+    expect(
+      IndicadorGrafico.horasVendidas.esDinero,
+      isFalse,
+      reason: 'Un eje con "\$4,5" donde van horas confunde de inmediato.',
+    );
+  });
+
+  test('el grafico ofrece los cinco indicadores', () {
+    expect(IndicadorGrafico.values.length, 5);
+    expect(
+      IndicadorGrafico.values.map((i) => i.etiqueta),
+      contains('Horas vendidas'),
+    );
   });
 }

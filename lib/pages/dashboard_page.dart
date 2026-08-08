@@ -11,6 +11,7 @@ import '../widgets/app_widgets.dart';
 import '../widgets/filtro_periodo.dart';
 import '../widgets/grafico_protagonista.dart';
 import '../widgets/indicador_comparado.dart';
+import '../widgets/tiempo_vendido.dart';
 
 /// Vista 1 del Dashboard: el resumen (tarea 2.5a, D-110).
 ///
@@ -230,6 +231,16 @@ class _DashboardPageState extends State<DashboardPage> {
                       }
                       return GraficoProtagonista(serie: s.data!);
                     },
+                  ),
+
+                  const SizedBox(height: AppSpacing.lg),
+                  TiempoVendido(
+                    datos: datos,
+                    rangoAnterior: resumen.rangoAnterior,
+                    etiquetaPeriodoAnterior: etiquetaComparacion(
+                      _periodo,
+                      datos.hoyEnLaSede,
+                    ),
                   ),
 
                   // El bloque de hoy y los avisos van al final y en su propio

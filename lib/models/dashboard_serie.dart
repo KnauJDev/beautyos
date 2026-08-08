@@ -6,6 +6,7 @@ class PuntoSerie {
     required this.citas,
     required this.clientesAtendidos,
     required this.ticketsCobrados,
+    required this.minutosVendidos,
   });
 
   final DateTime fecha;
@@ -13,6 +14,9 @@ class PuntoSerie {
   final int citas;
   final int clientesAtendidos;
   final int ticketsCobrados;
+
+  /// Duracion de los servicios de los tickets cobrados en este tramo (2.5b).
+  final int minutosVendidos;
 
   /// `null` cuando no se cobró nada en el período: dividir entre cero daría
   /// infinito, y en un gráfico eso rompe la escala entera.
@@ -26,6 +30,7 @@ class PuntoSerie {
       citas: _int(map['appointments']),
       clientesAtendidos: _int(map['clients_served']),
       ticketsCobrados: _int(map['paid_tickets']),
+      minutosVendidos: _int(map['minutes_sold']),
     );
   }
 
@@ -68,15 +73,16 @@ enum GranoSerie {
   };
 }
 
-/// Cuál de los cuatro indicadores está dibujando el gráfico.
+/// Cuál de los indicadores está dibujando el gráfico.
 ///
-/// **Un solo gráfico hace el trabajo de cuatro** (D-110): cambiar de indicador
-/// no vuelve al servidor porque los cuatro llegaron juntos.
+/// **Un solo gráfico hace el trabajo de cinco** (D-110): cambiar de indicador
+/// no vuelve al servidor porque todos llegaron juntos.
 enum IndicadorGrafico {
   ventas('Ventas'),
   citas('Citas'),
   clientes('Clientes atendidos'),
-  ticketPromedio('Ticket promedio');
+  ticketPromedio('Ticket promedio'),
+  horasVendidas('Horas vendidas');
 
   const IndicadorGrafico(this.etiqueta);
 
@@ -90,6 +96,7 @@ enum IndicadorGrafico {
     IndicadorGrafico.citas => punto.citas.toDouble(),
     IndicadorGrafico.clientes => punto.clientesAtendidos.toDouble(),
     IndicadorGrafico.ticketPromedio => punto.ticketPromedio ?? 0,
+    IndicadorGrafico.horasVendidas => punto.minutosVendidos / 60,
   };
 }
 
