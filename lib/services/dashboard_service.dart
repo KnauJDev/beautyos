@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/dashboard_metrics.dart';
 import '../models/dashboard_overview.dart';
+import '../models/dashboard_serie.dart';
 import '../models/periodo_dashboard.dart';
 
 /// Resultado de pedir el resumen: los numeros y **los rangos con los que se
@@ -68,6 +69,32 @@ class DashboardService {
     }
 
     return resultado;
+  }
+
+  /// La serie del gráfico para el mismo rango que se está mirando.
+  ///
+  /// Va en su propia consulta y no dentro de [getOverview] a propósito: los
+  /// cuatro indicadores de arriba son cuatro números y llegan en un parpadeo,
+  /// mientras que la serie puede traer cientos de filas. Juntarlas haría
+  /// esperar a los números por el gráfico.
+  Future<SerieDashboard> getSerie({
+    required RangoFechas rango,
+    List<String> branchIds = const <String>[],
+  }) async {
+    final response = await Supabase.instance.client.rpc(
+      'get_dashboard_series',
+      params: {
+        'p_branch_ids': branchIds.isEmpty ? null : branchIds,
+        'p_from': _fecha(rango.desde),
+        'p_to': _fecha(rango.hasta),
+      },
+    );
+
+    final filas = (response as List)
+        .map((fila) => Map<String, dynamic>.from(fila as Map))
+        .toList(growable: false);
+
+    return SerieDashboard.fromRows(filas);
   }
 
   Future<ResumenDashboard> _pedirOverview(

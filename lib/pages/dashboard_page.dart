@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../models/branch_context.dart';
+import '../models/dashboard_serie.dart';
 import '../models/periodo_dashboard.dart';
 import '../services/dashboard_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_widgets.dart';
 import '../widgets/filtro_periodo.dart';
+import '../widgets/grafico_protagonista.dart';
 import '../widgets/indicador_comparado.dart';
 
 /// Vista 1 del Dashboard: el resumen (tarea 2.5a, D-110).
@@ -44,27 +46,34 @@ class _DashboardPageState extends State<DashboardPage> {
   String? _sedeElegida;
 
   late Future<ResumenDashboard> _resumen;
+  late Future<SerieDashboard> _serie;
 
   @override
   void initState() {
     super.initState();
     dashboardService = DashboardService(branchId: widget.branchId);
-    _resumen = _cargar();
+    _cargarTodo();
   }
 
-  Future<ResumenDashboard> _cargar() {
-    return dashboardService.getOverview(
+  List<String> get _sedes =>
+      _sedeElegida == null ? const <String>[] : <String>[_sedeElegida!];
+
+  void _cargarTodo() {
+    _resumen = dashboardService.getOverview(
       periodo: _periodo,
-      branchIds: _sedeElegida == null
-          ? const <String>[]
-          : <String>[_sedeElegida!],
+      branchIds: _sedes,
+    );
+
+    // La serie espera al resumen solo para una cosa: saber que dia es en la
+    // sede. El rango se calcula con esa fecha, no con la del navegador, o el
+    // grafico dibujaria un dia corrido respecto a los numeros de arriba.
+    _serie = _resumen.then(
+      (r) => dashboardService.getSerie(rango: r.rango, branchIds: _sedes),
     );
   }
 
   void _recargar() {
-    setState(() {
-      _resumen = _cargar();
-    });
+    setState(_cargarTodo);
   }
 
   @override
@@ -102,13 +111,13 @@ class _DashboardPageState extends State<DashboardPage> {
                   onPeriodo: (p) {
                     setState(() {
                       _periodo = p;
-                      _resumen = _cargar();
+                      _cargarTodo();
                     });
                   },
                   onSede: (id) {
                     setState(() {
                       _sedeElegida = id;
-                      _resumen = _cargar();
+                      _cargarTodo();
                     });
                   },
                 ),
@@ -116,8 +125,31 @@ class _DashboardPageState extends State<DashboardPage> {
 
                 if (datos.sinHistoria)
                   const _DiaCero()
-                else
+                else ...[
                   _Indicadores(resumen: resumen, periodo: _periodo),
+                  const SizedBox(height: AppSpacing.lg),
+                  // El grafico va en su propio FutureBuilder: son cientos de
+                  // filas contra los cuatro numeros de arriba, y esos no tienen
+                  // por que esperarlo.
+                  FutureBuilder<SerieDashboard>(
+                    future: _serie,
+                    builder: (context, s) {
+                      if (s.connectionState == ConnectionState.waiting) {
+                        return const LoadingCard(
+                          mensaje: 'Dibujando tu tendencia...',
+                        );
+                      }
+                      if (s.hasError || !s.hasData) {
+                        return ErrorState(
+                          titulo: 'No se pudo dibujar el gráfico',
+                          detalle: '${s.error ?? ''}',
+                          onReintentar: _recargar,
+                        );
+                      }
+                      return GraficoProtagonista(serie: s.data!);
+                    },
+                  ),
+                ],
               ],
             );
           },
