@@ -504,7 +504,14 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                       Flexible(
                         child: _DosLineas(
                           arriba: sections[currentIndex].title,
-                          abajo: branch.tenantName,
+                          // Con varias sedes se muestra **la sede**, no el
+                          // negocio (D-108): si no, cambiar de sede no cambia
+                          // nada en pantalla y se puede acabar cobrando en la
+                          // sede equivocada sin notarlo. Con una sola sede el
+                          // nombre del negocio informa mas.
+                          abajo: branches.length > 1
+                              ? branch.branchName
+                              : branch.tenantName,
                         ),
                       ),
                       // Quien esta trabajando tiene que verse sin abrir nada

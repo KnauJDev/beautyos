@@ -1,7 +1,7 @@
 # HANDOFF Salón y Más — Etapas 0, 1 y sistema de diseño
 
 **Fechas cubiertas:** 6 y 7 de agosto de 2026
-**Bloque documentado:** decisiones **D-090 a D-107** · 29 commits
+**Bloque documentado:** decisiones **D-090 a D-108** · 31 commits
 **Estado:** todo aplicado, desplegado y verificado en producción
 **Producto en internet:** `https://salonymas.com` · `https://www.salonymas.com`
 
@@ -34,9 +34,14 @@ producción, no por las pruebas automáticas.
 | 6 | **El correo de confirmación apuntaba a `localhost:3000`.** Nadie podía completar un registro nuevo | — (arreglado en el panel de Supabase) |
 | 7 | **El dueño de la SaaS no podía activar 2FA.** El panel de plataforma nunca tuvo el botón | D-103 |
 | 8 | **Abandonar el 2FA una vez bloqueaba la cuenta para siempre.** Trampa sin salida desde la app | D-104 |
+| 9 | **En celular no se veía en qué sede se trabajaba.** La barra mostraba el negocio y no la sede: cambiar de sede no cambiaba nada en pantalla | D-108 |
 
 **Los tres primeros y el sexto llevaban días o semanas rotos sin que nadie lo
 supiera.** Todos afectaban a producción.
+
+> **Dos de los nueve los introduje yo** en esta misma sesión (el 4 y el 9), y
+> los dos los encontró el propietario probando. Queda dicho aquí para que el
+> registro sea honesto.
 
 ---
 
@@ -124,7 +129,7 @@ Etapa 4  Que enamore                   ⬜
 
 | # | Qué | Urgencia |
 |---|---|---|
-| 1 | **Activar el 2FA** de `juankdev2026@gmail.com` (dueño de la SaaS). El botón ya existe y la trampa ya está corregida. **Guardar la clave de respaldo**: si pierde el teléfono, pierde el panel que controla todos los negocios | Alta |
+| 1 | ~~Activar el 2FA de `juankdev2026@gmail.com`~~ **✅ HECHO el 07-ago.** Queda el recordatorio de **guardar la clave de respaldo** en sitio seguro: si pierde el teléfono sin ella, pierde el panel que controla todos los negocios | — |
 | 2 | Verificar en el celular que la barra superior muestre módulo, negocio, nombre y rol sin cortarse | Media |
 | 3 | **Decidir los 4 módulos de la barra inferior.** Hoy son los cuatro primeros de la lista, no una elección. Su propia idea, mejor: que sean **acciones** (confirmar agenda, ver quién falta por cobrar, cobrar) y no módulos | Media |
 | 4 | Antes de la Etapa 3: **rotar `service_role` y `secret`** de Supabase (H-04) | Bloqueante para Etapa 3 |
