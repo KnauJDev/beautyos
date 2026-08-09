@@ -1,16 +1,102 @@
-# Documentación de BeautyOS
+# Documentación de Salón y Más
 
-Esta carpeta es la fuente oficial viva de la arquitectura, producto y operación del proyecto. Todo documento relevante se versiona con Git y se publica junto al código.
+> **Nota de nombre.** El producto se llama **Salón y Más** de cara al cliente
+> desde D-089. El código, el repositorio (`KnauJDev/beautyos`) y el proyecto de
+> Supabase siguen diciendo `beautyos` **a propósito**: no lo lee ningún usuario
+> y renombrarlos costaría más de lo que aporta.
 
-## Estructura
+---
 
-- `00_producto/`: visión, Plan Maestro, decisiones y alcance.
-- `01_arquitectura/`: modelo multisede, roles, suscripciones, migración y ADR.
-- `02_operacion/`: flujos y procedimientos operativos (se crea cuando se documenten).
-- `03_referencias/`: benchmarking y fuentes externas (sin copiar contenido protegido).
-- `04_pruebas/`: criterios de salida y evidencias de calidad.
+## 1. Si llegas nuevo, lee en este orden
 
-## Documentos rectores actuales
+Da igual si eres una persona o una inteligencia artificial. Con cuatro
+documentos entiendes el proyecto:
+
+| # | Documento | Te responde |
+|---|---|---|
+| 1 | `HANDOFF/` — **el más reciente por fecha** | ¿Dónde quedamos? Trae el prompt exacto para retomar |
+| 2 | `00_producto/BARRIDO_Y_PLAN_MAESTRO_2026-08-08.md` | ¿Qué hay construido y qué falta, módulo por módulo? |
+| 3 | `00_producto/PLAN_DE_LANZAMIENTO_2026-08-06.md` | ¿Cuál es el camino hasta vender? |
+| 4 | `00_producto/REGISTRO_DE_DECISIONES.md` | **¿Por qué está hecho así?** Empieza por el final |
+
+**No empieces por el código.** Este proyecto tiene 115 decisiones registradas
+con su porqué; leer el código sin ellas es reconstruir a ciegas razonamientos
+que ya están escritos.
+
+---
+
+## 2. Qué significan los códigos
+
+Verás referencias como `D-102`, `H-09` o "hallazgo G" dentro del código, en los
+mensajes de commit y en los documentos. **Son sistemas distintos:**
+
+| Código | Qué es | Dónde vive |
+|---|---|---|
+| **D-001 … D-115** | **Decisiones.** El porqué de cada cosa, con lo que se descartó y por qué | `00_producto/REGISTRO_DE_DECISIONES.md` |
+| **H-01 … H-13** | **Hallazgos** de la auditoría integral del 6 de agosto | `01_arquitectura/auditorias/AUDITORIA_INTEGRAL_2026-08-06.md` |
+| **A … J** | **Anotado en el camino**: lo que salió sin etapa asignada | `PLAN_DE_LANZAMIENTO`, apartado 11 |
+| **2.4, 3.6…** | **Números de tarea** del plan de lanzamiento | `PLAN_DE_LANZAMIENTO` |
+| **Tramo A, D3.5.2…** | Trabajo de arquitectura multisede de julio | `01_arquitectura/auditorias/` |
+
+> **Cuando el código cita un código, no lo inventes: búscalo.** Un comentario
+> que dice `(D-097, D-102)` está señalando dónde está el razonamiento completo.
+> Que una cita no tuviera respaldo fue exactamente el fallo de D-102, que el
+> código citaba y el registro no tenía.
+
+---
+
+## 3. Qué documento manda sobre qué
+
+Cada uno tiene un trabajo y **no se pisan**. Fue una decisión explícita (D-063)
+después de tener dos mapas compitiendo entre sí.
+
+| Documento | Responde | ¿Crece o se reemplaza? |
+|---|---|---|
+| **REGISTRO_DE_DECISIONES** | ¿Por qué es así? | **Solo crece.** Nunca se borra una fila; una decisión nueva corrige a la vieja citándola |
+| **PLAN_DE_LANZAMIENTO** | ¿Qué falta y en qué orden? | Se actualiza al cerrar cada tarea |
+| **HANDOFF** | ¿Dónde quedamos? | **Se reemplaza.** Cada uno sustituye al anterior |
+| **ESPECIFICACION_\*** | ¿Cómo debe funcionar exactamente? | Contrato de una tarea concreta |
+| **AUDITORIA_\*** | ¿Qué está mal hoy? | Foto de un momento |
+| **`.xlsx`** | ¿Cómo va el avance? | Lo actualiza el propietario |
+
+---
+
+## 4. Cómo se trabaja aquí
+
+Reglas acordadas con el propietario. **No son negociables.**
+
+1. **Verificar en el código antes de afirmar.** No asumir.
+2. **Antes de construir, decir en dos líneas qué y por qué**, y esperar
+   confirmación (acordado el 08-ago).
+3. **Registrar cada decisión con su porqué**, incluyendo lo que se descartó.
+4. **Regla de hallazgos:** lo que aparezca en el camino se anota y se ataca
+   donde le corresponde en el plan. Si no cabe, va al apartado 11.
+5. **Pedir permiso antes de tocar Supabase, Cloudflare o hacer push.**
+6. **Cualquier instalación en el computador del propietario la ejecuta él.**
+   Los procesos del asistente corren aislados: lo que instalan no llega a su
+   máquina (D-111).
+7. **Respaldar antes de cualquier sesión con migraciones:**
+   `scripts/respaldo_supabase.ps1`
+8. **El propietario prueba en producción y reporta.** El asistente no ve la
+   interfaz.
+
+---
+
+## 5. Estructura de carpetas
+
+- `00_producto/` — visión, plan, decisiones, especificaciones y alcance
+- `01_arquitectura/` — modelo multisede, roles, suscripciones, ADR y auditorías
+- `02_operacion/` — respaldo, restauración y procedimientos
+- `03_referencias/` — benchmarking y fuentes externas
+- `04_pruebas/` — criterios de salida y evidencias
+- `HANDOFF/` — el punto de retomada de cada sesión
+
+---
+
+## 6. Registro cronológico
+
+Lo que sigue es el **historial completo** de documentos y migraciones, en el
+orden en que se fueron creando. **No se reescribe para ocultar el pasado.**
 
 1. `00_producto/BEAUTYOS_EXPEDIENTE_TECNICO_Y_PLAN_MAESTRO.md`
 2. `00_producto/REGISTRO_DE_DECISIONES.md`
@@ -102,11 +188,34 @@ Esta carpeta es la fuente oficial viva de la arquitectura, producto y operación
 88. `../supabase/functions/send-low-stock-alert/index.ts` (correo de alarma de stock bajo, D-086)
 89. `01_arquitectura/auditorias/AUDITORIA_INTEGRAL_2026-08-06.md` (**auditoría completa del aplicativo**: arquitectura verificada, matriz de perfiles, integridad Flutter↔BD y 14 hallazgos priorizados, D-087)
 90. `00_producto/PLAN_DE_LANZAMIENTO_2026-08-06.md` (**mapa de lanzamiento vigente**: 5 etapas de proyecto a negocio, hosting/dominio/ePayco decididos, D-088 — reemplaza a `RUTA_A_PRODUCCION_2026-07-25.md`, que queda archivado)
+91. `00_producto/ESPECIFICACION_AGENDA_2026-08-07.md` (**la Agenda como tablero de tickets**: tres vistas, regla del cero, numero de ticket consecutivo, D-101 — contrato de la tarea 2.6)
+92. `../supabase/migrations/20260806140000_tope_reserva_publica.sql` (tope antiabuso de la reserva publica, H-02, D-092)
+93. `../supabase/migrations/20260806160000_asistente_lectura_agenda_tickets_clientes.sql` (acceso de lectura del asistente, D-094)
+94. `../supabase/migrations/20260806190000_asistente_lista_clientes.sql` (regresion de Clientes corregida, D-095)
+95. `../lib/theme/` (**sistema de diseno**: `AppColors`, `AppSpacing`, `AppRadius`, `AppTheme`, `AppBrand` — D-102, D-109)
+96. `../test/sin_colores_sueltos_test.dart` (**guardian del sistema de diseno**: falla si alguien escribe un color a mano fuera del tema, D-102)
+97. `../supabase/migrations/20260807120000_tema_por_negocio_marca_blanca.sql` (marca blanca por colores: 5 temas mas uno personalizado, D-109)
+98. `00_producto/ESPECIFICACION_DASHBOARD_2026-08-08.md` (**el Dashboard como historia**: diccionario de indicadores con su formula, reglas de comparacion, estados del dia cero, D-110)
+99. `../supabase/migrations/20260808120000_dashboard_resumen_comparado.sql` (resumen comparado del Dashboard, D-110)
+100. `../supabase/migrations/20260808160000_dashboard_serie_del_grafico.sql` (serie del grafico protagonista, D-110)
+101. `../supabase/migrations/20260809100000_dashboard_hoy_y_avisos.sql` (agenda de hoy y avisos, D-113)
+102. `../supabase/migrations/20260809140000_dashboard_horas_vendidas.sql` (horas vendidas, sin porcentaje de ocupacion, D-114)
+103. `../scripts/respaldo_supabase.ps1` y `../scripts/respaldo_archivos.ps1` (**respaldo vigente**, sin Docker — reemplazan a `crear_respaldo_supabase.ps1`, D-111)
+104. `../lib/services/monitoreo_service.dart` (**monitoreo de errores sin datos personales**, D-115)
+105. `00_producto/GUIA_TECNICA_PARA_PRODUCCION_2026-08-08.md` (**sobre que corre, cuanto cuesta y que falta para vender**, en lenguaje sin tecnicismos)
+106. `00_producto/BARRIDO_Y_PLAN_MAESTRO_2026-08-08.md` (**barrido completo del 08-ago**: estado real de los 16 modulos, lo huerfano y el plan hasta produccion)
+107. `00_producto/PLAN_DE_TRABAJO_A_PRODUCCION.xlsx` (**hoja de seguimiento del propietario**: 26 acciones en 5 etapas)
+108. `HANDOFF/HANDOFF_SalonyMas_2026-08-08.md` (**handoff vigente**, con el prompt exacto para retomar)
 
-Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión estructural. No se reescriben para ocultar el pasado: una decisión futura la reemplaza mediante otro ADR.
+Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión
+estructural. No se reescriben para ocultar el pasado: una decisión futura la
+reemplaza mediante otro ADR.
 
 ## Regla de actualización
 
-Una modificación de arquitectura, alcance, rol, plan o flujo exige actualizar el Plan Maestro, el registro de decisiones y el documento especializado correspondiente en el mismo cambio.
+Una modificación de arquitectura, alcance, rol, plan o flujo exige actualizar el
+plan de lanzamiento, el registro de decisiones y el documento especializado
+correspondiente **en el mismo cambio**.
 
-Los respaldos editables, capturas y exportaciones Word/PDF se conservan adicionalmente en la carpeta personal de OneDrive del proyecto.
+Los respaldos, capturas y exportaciones se conservan además en la carpeta
+personal de OneDrive del proyecto.
