@@ -43,6 +43,7 @@ dependencies:
   # depender de un paquete que nadie pidio explicitamente.
   http: ^1.5.0
   fl_chart: ^1.2.0
+  sentry_flutter: ^9.26.0
 
 dev_dependencies:
   flutter_test:

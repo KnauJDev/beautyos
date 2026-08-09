@@ -6,6 +6,7 @@ import 'models/branch_context.dart';
 import 'models/pending_invitation.dart';
 import 'models/tenant_subscription_status.dart';
 import 'services/branch_context_service.dart';
+import 'services/monitoreo_service.dart';
 import 'services/my_profile_service.dart';
 import 'services/team_invitations_service.dart';
 import 'services/tenant_subscription_service.dart';
@@ -48,7 +49,10 @@ Future<void> main() async {
     publishableKey: 'sb_publishable_3MOOddcfu6tga68hPr06gw_IdEJ74Pc',
   );
 
-  runApp(const BeautyOSApp());
+  // El monitoreo envuelve a la aplicacion entera para poder capturar tambien
+  // lo que se rompa al arrancar (D-115). Configurado para **no enviar ningun
+  // dato personal**: ver `MonitoreoService`.
+  await MonitoreoService.arrancar(() => const BeautyOSApp());
 }
 
 class BeautyOSApp extends StatelessWidget {
@@ -142,6 +146,14 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
 
     final branches = await branchContextService.getAccessibleBranches();
 
+    // Quien y de que negocio, sin decir nombres (D-115). Sirve para saber si un
+    // fallo le pasa a una persona o a un negocio entero.
+    await MonitoreoService.anotarContexto(
+      userId: Supabase.instance.client.auth.currentUser?.id,
+      rol: profile.role,
+      tenantId: branches.isEmpty ? null : branches.first.tenantId,
+    );
+
     // El tema se aplica aqui y no en `build` porque cambiar la paleta
     // reconstruye `MaterialApp`, y eso no se puede disparar en mitad de un
     // build. Aqui estamos despues de que resolvio la consulta, que es el
@@ -159,6 +171,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
     // negocio, y dejarla con los colores del ultimo que entro seria confuso en
     // un mostrador donde el equipo comparte el mismo equipo.
     AppBrand.aplicar(null, null);
+    await MonitoreoService.olvidarContexto();
     await Supabase.instance.client.auth.signOut();
   }
 
