@@ -15,6 +15,7 @@ documentos entiendes el proyecto:
 | # | Documento | Te responde |
 |---|---|---|
 | 1 | `HANDOFF/` — **el más reciente por fecha** | ¿Dónde quedamos? Trae el prompt exacto para retomar |
+| 1b | `00_producto/PLAN_DE_TRABAJO_A_PRODUCCION.xlsx` | **¿En qué ORDEN se hace?** Manda sobre el plan (D-118) |
 | 2 | `00_producto/BARRIDO_Y_PLAN_MAESTRO_2026-08-08.md` | ¿Qué hay construido y qué falta, módulo por módulo? |
 | 3 | `00_producto/PLAN_DE_LANZAMIENTO_2026-08-06.md` | ¿Cuál es el camino hasta vender? |
 | 4 | `00_producto/REGISTRO_DE_DECISIONES.md` | **¿Por qué está hecho así?** Empieza por el final |
@@ -205,7 +206,7 @@ orden en que se fueron creando. **No se reescribe para ocultar el pasado.**
 105. `00_producto/GUIA_TECNICA_PARA_PRODUCCION_2026-08-08.md` (**sobre que corre, cuanto cuesta y que falta para vender**, en lenguaje sin tecnicismos)
 106. `00_producto/BARRIDO_Y_PLAN_MAESTRO_2026-08-08.md` (**barrido completo del 08-ago**: estado real de los 16 modulos, lo huerfano y el plan hasta produccion)
 107. `00_producto/PLAN_DE_TRABAJO_A_PRODUCCION.xlsx` (**hoja de seguimiento del propietario**: 26 acciones en 5 etapas)
-108. `HANDOFF/HANDOFF_SalonyMas_2026-08-08.md` (**handoff vigente**, con el prompt exacto para retomar)
+108. `HANDOFF/HANDOFF_SalonyMas_2026-08-08.md` (handoff del 08-ago, **reemplazado** por el del 09-ago)
 109. `../supabase/migrations/20260809160000_numero_de_ticket_consecutivo.sql` (**numero de ticket consecutivo y ajustable**, tarea 2.6a, D-117)
 110. `../supabase/sql/161_verify_numero_de_ticket.sql` (verificacion del consecutivo, con prueba de escritura en `ROLLBACK`)
 111. `../test/numero_de_ticket_test.dart` (el consecutivo viaja intacto hasta la pantalla)
@@ -217,6 +218,7 @@ orden en que se fueron creando. **No se reescribe para ocultar el pasado.**
 117. `../supabase/migrations/20260809200000_negocio_de_prueba.sql` (**marcar un negocio como de prueba**, accion A5, D-120)
 118. `../test/dinero_y_roles_test.dart` y `../lib/models/acciones_de_ticket.dart` (**primeras pruebas de dinero y roles**, accion A6, H-03, D-121)
 119. `../supabase/sql/163_test_reglas_de_dinero.sql` (**las tres reglas de dinero contra la base real**, con `ROLLBACK`; hay que ejecutarlo a mano)
+120. `HANDOFF/HANDOFF_SalonyMas_2026-08-09.md` (**handoff vigente**, con el prompt exacto para retomar — reemplaza al del 08-ago)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión
 estructural. No se reescriben para ocultar el pasado: una decisión futura la
