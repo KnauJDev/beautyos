@@ -1,5 +1,54 @@
 # Respaldo y restauración de Supabase
 
+> ## ⚠️ ACTUALIZADO EL 8 DE AGOSTO DE 2026 — LEE ESTO PRIMERO
+>
+> **El procedimiento de julio que describe este documento ya no funciona.**
+> Exigía Docker Desktop, y Docker dejó de estar instalado en el equipo, así
+> que el script llevaba **semanas sin poder ejecutarse sin que nadie lo
+> supiera** — un procedimiento que existe pero no corre es idéntico a no tener
+> procedimiento (D-111).
+>
+> ### Lo que se usa hoy
+>
+> | Qué respaldar | Script | Cada cuánto |
+> |---|---|---|
+> | **La base de datos** | `scripts/respaldo_supabase.ps1` | **Antes de cada sesión con migraciones** y una vez por semana |
+> | **Los archivos** (logos, portadas, fotos) | `scripts/respaldo_archivos.ps1` | Una vez al mes, o tras subir muchas fotos |
+> | Instalar las herramientas, una sola vez | `scripts/instalar_herramientas_postgres.ps1` | — |
+>
+> **Ya no hace falta Docker.** Se usa `pg_dump` directo: 73 MB en disco contra
+> más de mil, sin servidor ni servicio de Windows.
+>
+> ### Por qué son dos scripts y no uno
+>
+> **Ni nuestro respaldo ni los respaldos automáticos de Supabase Pro incluyen
+> los archivos subidos**: guardan las direcciones, no las imágenes. Un negocio
+> restaurado solo con la base funcionaría, pero con todos los recuadros de foto
+> rotos.
+>
+> ### Cuándo respaldar, en concreto
+>
+> 1. **Siempre antes de una sesión donde se toquen migraciones.** Es la regla
+>    que más veces te va a salvar.
+> 2. **Una vez por semana** en cuanto entre un negocio real.
+> 3. **Antes de cualquier cambio grande**: usa la etiqueta, por ejemplo
+>    `-Etiqueta "pre_epayco"`.
+> 4. Al pasar a **Supabase Pro**, los respaldos diarios pasan a ser automáticos
+>    (7 días de historia) y estos scripts quedan como **la segunda copia**, la
+>    que te protege de perder la cuenta de Supabase entera.
+>
+> ### Lo que sigue pendiente
+>
+> **Restaurar un respaldo de ensayo con el procedimiento nuevo.** Hasta que no
+> se restaura, un respaldo es una promesa. Se puede hacer contra un **segundo
+> proyecto gratuito de Supabase**, sin Docker y sin tocar producción.
+>
+> ---
+>
+> Lo que sigue debajo es el procedimiento de julio. **Se conserva como
+> historia** — la restauración de ensayo del 19-jul sí se hizo y sirvió — pero
+> no se ejecuta tal cual.
+
 - **Estado:** procedimiento ejecutado y restauración de ensayo aprobada
 - **Proyecto de origen:** `beautyos-dev` (`eogppgbdnwxdtcbctaol`)
 - **Responsable:** propietario del producto con acompañamiento de Codex
