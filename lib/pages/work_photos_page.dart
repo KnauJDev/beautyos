@@ -119,6 +119,70 @@ class _FotosTrabajosPageState extends State<FotosTrabajosPage> {
     }
   }
 
+  /// Borrar una foto **no se puede deshacer**, y hay que decirlo con esas
+  /// palabras: el respaldo del proyecto guarda la lista de archivos, no los
+  /// archivos, asi que una imagen borrada no esta en ningun respaldo (H-09).
+  Future<void> _deletePhoto(WorkPhotoSummary photo) async {
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('¿Eliminar esta foto?'),
+        content: const Text(
+          'La imagen se borra definitivamente y no se puede recuperar: las '
+          'fotos no se guardan en los respaldos.\n\n'
+          'Si la foto está publicada, dejará de verse en internet.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmado != true) return;
+
+    final ruta = photo.storagePath;
+
+    if (ruta == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Esta foto ya no tiene archivo asociado.'),
+        ),
+      );
+      return;
+    }
+
+    try {
+      await _workPhotosService.deleteWorkPhoto(
+        photoId: photo.id,
+        bucket: photo.storageBucket,
+        storagePath: ruta,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Foto eliminada.')),
+      );
+      _refreshPhotos();
+    } catch (error) {
+      if (!mounted) return;
+      final message = error is PostgrestException
+          ? error.message
+          : error.toString();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo eliminar la foto: $message')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<WorkPhotoSummary>>(
@@ -151,6 +215,7 @@ class _FotosTrabajosPageState extends State<FotosTrabajosPage> {
           onRefresh: _refreshPhotos,
           onSetCustomerVisibility: _setCustomerVisibility,
           onSetPortfolioApproval: _setPortfolioApproval,
+          onDelete: _deletePhoto,
         );
       },
     );
@@ -167,6 +232,7 @@ class _WorkPhotosContent extends StatelessWidget {
   onSetCustomerVisibility;
   final Future<void> Function(WorkPhotoSummary photo, bool approved)
   onSetPortfolioApproval;
+  final Future<void> Function(WorkPhotoSummary photo) onDelete;
 
   const _WorkPhotosContent({
     required this.allPhotos,
@@ -176,6 +242,7 @@ class _WorkPhotosContent extends StatelessWidget {
     required this.onRefresh,
     required this.onSetCustomerVisibility,
     required this.onSetPortfolioApproval,
+    required this.onDelete,
   });
 
   @override
@@ -251,6 +318,7 @@ class _WorkPhotosContent extends StatelessWidget {
           photos: photos,
           onSetCustomerVisibility: onSetCustomerVisibility,
           onSetPortfolioApproval: onSetPortfolioApproval,
+          onDelete: onDelete,
         ),
       ],
     );
@@ -332,11 +400,13 @@ class _WorkPhotosGrid extends StatelessWidget {
   onSetCustomerVisibility;
   final Future<void> Function(WorkPhotoSummary photo, bool approved)
   onSetPortfolioApproval;
+  final Future<void> Function(WorkPhotoSummary photo) onDelete;
 
   const _WorkPhotosGrid({
     required this.photos,
     required this.onSetCustomerVisibility,
     required this.onSetPortfolioApproval,
+    required this.onDelete,
   });
 
   @override
@@ -360,6 +430,7 @@ class _WorkPhotosGrid extends StatelessWidget {
               photo: photo,
               onSetCustomerVisibility: onSetCustomerVisibility,
               onSetPortfolioApproval: onSetPortfolioApproval,
+              onDelete: onDelete,
             ),
           ),
       ],
@@ -373,11 +444,13 @@ class _WorkPhotoCard extends StatelessWidget {
   onSetCustomerVisibility;
   final Future<void> Function(WorkPhotoSummary photo, bool approved)
   onSetPortfolioApproval;
+  final Future<void> Function(WorkPhotoSummary photo) onDelete;
 
   const _WorkPhotoCard({
     required this.photo,
     required this.onSetCustomerVisibility,
     required this.onSetPortfolioApproval,
+    required this.onDelete,
   });
 
   @override
@@ -464,6 +537,14 @@ class _WorkPhotoCard extends StatelessWidget {
                         'Aprobada para portafolio',
                         style: TextStyle(fontSize: 13),
                       ),
+                    ),
+                    // Borrar va aparte y en rojo: es la unica accion de esta
+                    // tarjeta que no se puede deshacer (H-09).
+                    IconButton(
+                      onPressed: () => onDelete(photo),
+                      icon: const Icon(Icons.delete_outline),
+                      color: AppColors.danger,
+                      tooltip: 'Eliminar foto',
                     ),
                   ],
                 ),

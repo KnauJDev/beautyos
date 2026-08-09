@@ -635,6 +635,7 @@ class _StylistFormDialogState extends State<_StylistFormDialog> {
         tenantId: widget.tenantId,
         stylistId: widget.existing!.id,
         image: image,
+        previousUrl: photoUrl,
       );
 
       if (!mounted) return;

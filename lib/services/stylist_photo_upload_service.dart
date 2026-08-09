@@ -2,6 +2,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import 'storage_cleanup.dart';
+
 /// Sube la foto de un profesional al bucket publico `stylist-photos` (punto
 /// 6 del benchmarking). Ruta `{tenant_id}/{stylist_id}/archivo.ext`. La
 /// politica `stylist_photos_insert_owner_admin` sobre `storage.objects`
@@ -20,6 +22,7 @@ class StylistPhotoUploadService {
     required String tenantId,
     required String stylistId,
     required XFile image,
+    String? previousUrl,
   }) async {
     final bytes = await image.readAsBytes();
     final extension = _extensionFor(image.name);
@@ -32,6 +35,14 @@ class StylistPhotoUploadService {
           bytes,
           fileOptions: FileOptions(contentType: _contentTypeFor(extension)),
         );
+
+    // El archivo anterior se borra DESPUES de que el nuevo esta arriba
+    // (H-09). Al reves, un fallo al subir dejaria al negocio sin imagen
+    // ninguna.
+    await const StorageCleanup().borrarPorUrlPublica(
+      bucket: 'stylist-photos',
+      urlPublica: previousUrl,
+    );
 
     return Supabase.instance.client.storage
         .from('stylist-photos')

@@ -2,6 +2,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import 'storage_cleanup.dart';
+
 /// Sube el logo del negocio al bucket publico `tenant-logos` (punto 4.4 de
 /// la ruta general, marca blanca). A diferencia de `WorkPhotosUploadService`
 /// (por sede), el logo es del tenant completo: la ruta es
@@ -20,6 +22,7 @@ class TenantLogoUploadService {
   Future<String> uploadTenantLogo({
     required String tenantId,
     required XFile image,
+    String? previousUrl,
   }) async {
     final bytes = await image.readAsBytes();
     final extension = _extensionFor(image.name);
@@ -32,6 +35,14 @@ class TenantLogoUploadService {
           bytes,
           fileOptions: FileOptions(contentType: _contentTypeFor(extension)),
         );
+
+    // El archivo anterior se borra DESPUES de que el nuevo esta arriba
+    // (H-09). Al reves, un fallo al subir dejaria al negocio sin imagen
+    // ninguna.
+    await const StorageCleanup().borrarPorUrlPublica(
+      bucket: 'tenant-logos',
+      urlPublica: previousUrl,
+    );
 
     return Supabase.instance.client.storage
         .from('tenant-logos')

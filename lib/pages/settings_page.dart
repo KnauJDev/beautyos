@@ -465,7 +465,7 @@ class BusinessSettingsCard extends StatelessWidget {
               const SizedBox(height: 10),
               _LogoUploadButton(
                 tenantId: settings.id,
-                hasLogo: settings.logoUrl != null,
+                logoUrlActual: settings.logoUrl,
                 businessSettingsService: businessSettingsService,
                 onChanged: onLogoChanged,
               ),
@@ -476,7 +476,7 @@ class BusinessSettingsCard extends StatelessWidget {
               const SizedBox(height: 10),
               _CoverPhotoUploadButton(
                 tenantId: settings.id,
-                hasCoverPhoto: settings.coverPhotoUrl != null,
+                coverUrlActual: settings.coverPhotoUrl,
                 businessSettingsService: businessSettingsService,
                 onChanged: onLogoChanged,
               ),
@@ -531,13 +531,15 @@ class _TenantLogoPreview extends StatelessWidget {
 class _LogoUploadButton extends StatefulWidget {
   const _LogoUploadButton({
     required this.tenantId,
-    required this.hasLogo,
+    required this.logoUrlActual,
     required this.businessSettingsService,
     required this.onChanged,
   });
 
   final String tenantId;
-  final bool hasLogo;
+  /// La direccion del logo que se va a reemplazar, para poder borrar ese
+  /// archivo despues de subir el nuevo (H-09).
+  final String? logoUrlActual;
   final BusinessSettingsService businessSettingsService;
   final VoidCallback onChanged;
 
@@ -563,6 +565,7 @@ class _LogoUploadButtonState extends State<_LogoUploadButton> {
       final logoUrl = await _uploadService.uploadTenantLogo(
         tenantId: widget.tenantId,
         image: image,
+        previousUrl: widget.logoUrlActual,
       );
       await widget.businessSettingsService.updateTenantLogo(logoUrl);
 
@@ -598,7 +601,9 @@ class _LogoUploadButtonState extends State<_LogoUploadButton> {
           label: Text(
             _isUploading
                 ? 'Subiendo...'
-                : (widget.hasLogo ? 'Cambiar logo' : 'Subir logo'),
+                : (widget.logoUrlActual != null
+                      ? 'Cambiar logo'
+                      : 'Subir logo'),
           ),
         ),
         if (_error != null) ...[
@@ -643,13 +648,14 @@ class _TenantCoverPreview extends StatelessWidget {
 class _CoverPhotoUploadButton extends StatefulWidget {
   const _CoverPhotoUploadButton({
     required this.tenantId,
-    required this.hasCoverPhoto,
+    required this.coverUrlActual,
     required this.businessSettingsService,
     required this.onChanged,
   });
 
   final String tenantId;
-  final bool hasCoverPhoto;
+  /// La direccion de la portada que se va a reemplazar (H-09).
+  final String? coverUrlActual;
   final BusinessSettingsService businessSettingsService;
   final VoidCallback onChanged;
 
@@ -676,6 +682,7 @@ class _CoverPhotoUploadButtonState extends State<_CoverPhotoUploadButton> {
       final coverPhotoUrl = await _uploadService.uploadTenantCoverPhoto(
         tenantId: widget.tenantId,
         image: image,
+        previousUrl: widget.coverUrlActual,
       );
       await widget.businessSettingsService.updateTenantCoverPhoto(
         coverPhotoUrl,
@@ -713,7 +720,9 @@ class _CoverPhotoUploadButtonState extends State<_CoverPhotoUploadButton> {
           label: Text(
             _isUploading
                 ? 'Subiendo...'
-                : (widget.hasCoverPhoto ? 'Cambiar portada' : 'Subir portada'),
+                : (widget.coverUrlActual != null
+                      ? 'Cambiar portada'
+                      : 'Subir portada'),
           ),
         ),
         if (_error != null) ...[

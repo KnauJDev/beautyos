@@ -152,13 +152,58 @@ create policy work_photos_private_select_staff
     )
   );
 
+-- Borrar es de dueno y administrador, no de todo el que puede subir.
+--
+-- Mismo criterio que ya gobierna el dinero (D-095): recepcion cobra, el dueno
+-- deshace. Decidido por el propietario el 09-ago con este argumento: si un
+-- estilista sube una foto mal de su trabajo, borrarla es trabajo del
+-- administrador.
+--
+-- Hace falta un ayudante propio porque el de subir incluye al estilista, y
+-- una politica de borrado no puede heredar un permiso mas ancho del que le
+-- corresponde. Devuelve verdadero o falso -- no lanza -- porque una politica
+-- de seguridad necesita una respuesta, no una excepcion.
+create or replace function private.beautyos_can_delete_work_photo(
+  p_branch_id uuid
+)
+returns boolean
+language plpgsql
+security definer
+stable
+set search_path = pg_catalog
+as $$
+begin
+  perform 1
+  from private.beautyos_resolve_branch_access(
+    p_branch_id,
+    array['tenant_owner', 'admin']::text[],
+    true
+  );
+
+  return true;
+exception
+  -- Cualquier fallo se traduce en "no autorizado". Falla cerrado a
+  -- proposito: ante la duda, no se borra.
+  when others then
+    return false;
+end;
+$$;
+
+-- Sin acceso para el anonimo. Es la higiene que H-11 echo en falta en el
+-- ayudante hermano; no se repite el descuido en uno nuevo.
+revoke all on function private.beautyos_can_delete_work_photo(uuid)
+  from public, anon, authenticated;
+
+comment on function private.beautyos_can_delete_work_photo(uuid)
+  is 'Si quien llama puede borrar archivos de fotos de trabajo en esa sede: solo tenant_owner y admin (H-09).';
+
 drop policy if exists work_photos_private_delete_staff on storage.objects;
 create policy work_photos_private_delete_staff
   on storage.objects for delete to authenticated
   using (
     bucket_id = 'work-photos-private'
     and array_length(storage.foldername(name), 1) = 1
-    and private.beautyos_can_upload_work_photo(
+    and private.beautyos_can_delete_work_photo(
       (storage.foldername(name))[1]::uuid
     )
   );
@@ -188,7 +233,23 @@ create policy work_photos_delete_staff
   using (
     bucket_id = 'work-photos'
     and array_length(storage.foldername(name), 1) = 1
-    and private.beautyos_can_upload_work_photo(
+    and private.beautyos_can_delete_work_photo(
+      (storage.foldername(name))[1]::uuid
+    )
+  );
+
+-- Al almacen PUBLICO ya nadie sube directamente: se llega solo moviendo una
+-- foto aprobada, y aprobar es de dueno y administrador. Se estrecha la
+-- politica de insercion, que hasta hoy dejaba a un estilista escribir
+-- directamente ahi -- justo el agujero que este bloque cierra.
+drop policy if exists work_photos_insert_staff on storage.objects;
+drop policy if exists work_photos_insert_owner_admin on storage.objects;
+create policy work_photos_insert_owner_admin
+  on storage.objects for insert to authenticated
+  with check (
+    bucket_id = 'work-photos'
+    and array_length(storage.foldername(name), 1) = 1
+    and private.beautyos_can_delete_work_photo(
       (storage.foldername(name))[1]::uuid
     )
   );
@@ -444,7 +505,73 @@ comment on function public.set_work_photo_portfolio_approval(uuid, uuid, boolean
   is 'Publica o retira una foto del portafolio. Aprobar la mueve al almacen publico con direccion permanente; retirarla la devuelve al privado (H-09). Solo tenant_owner/admin.';
 
 -- ---------------------------------------------------------------------------
--- 8. Las tres lecturas devuelven donde esta la foto, para que la aplicacion
+-- 8. Borrar una foto.
+--
+--    **El archivo se borra de verdad; la fila se marca como eliminada.** Es
+--    lo coherente con como trabaja el proyecto desde D-051 y D-056: aqui
+--    nunca se borra un registro fisicamente, se desactiva. Asi el historial
+--    del ticket conserva que hubo una foto, pero la imagen desaparece de
+--    internet y deja de ocupar espacio.
+--
+--    ORDEN: la aplicacion borra **primero el archivo** y despues llama aqui.
+--    Misma regla que retirar del portafolio -- si algo falla a medias, que
+--    falle del lado de que la foto ya no este.
+--
+--    AVISO QUE HAY QUE REPETIR: el respaldo del proyecto **no incluye las
+--    imagenes**. `respaldo_supabase.ps1` guarda la lista de archivos, no los
+--    archivos. Una foto borrada no esta en ningun respaldo y no se puede
+--    recuperar. Por eso la pantalla exige confirmacion y lo dice con esas
+--    palabras.
+-- ---------------------------------------------------------------------------
+
+create or replace function public.delete_work_photo(
+  p_branch_id uuid,
+  p_photo_id uuid
+)
+returns void
+language plpgsql
+security definer
+set search_path = pg_catalog
+as $$
+declare
+  v_access record;
+begin
+  select * into strict v_access
+  from private.beautyos_resolve_branch_access(
+    p_branch_id,
+    array['tenant_owner', 'admin']::text[],
+    true
+  );
+
+  update public.work_photos
+  set active = false,
+      -- Se sueltan la ruta y la direccion: el archivo ya no existe, y dejar
+      -- apuntadores a algo borrado solo genera cuadros rotos y dudas mas
+      -- adelante sobre si el archivo sigue ahi.
+      storage_path = null,
+      photo_url = null,
+      updated_at = now()
+  where id = p_photo_id
+    and tenant_id = v_access.tenant_id
+    and branch_id = v_access.branch_id
+    and active;
+
+  if not found then
+    raise exception 'La foto no existe, ya fue eliminada o no pertenece a esta sede.';
+  end if;
+end;
+$$;
+
+revoke all on function public.delete_work_photo(uuid, uuid)
+  from public, anon, authenticated;
+grant execute on function public.delete_work_photo(uuid, uuid)
+  to authenticated;
+
+comment on function public.delete_work_photo(uuid, uuid)
+  is 'Marca una foto de trabajo como eliminada. El archivo lo borra la aplicacion antes de llamar aqui. Solo tenant_owner/admin (H-09).';
+
+-- ---------------------------------------------------------------------------
+-- 9. Las dos lecturas devuelven donde esta la foto, para que la aplicacion
 --    sepa si usar la direccion permanente o pedir una temporal.
 --    DROP requerido: no se pueden agregar columnas a RETURNS TABLE.
 -- ---------------------------------------------------------------------------

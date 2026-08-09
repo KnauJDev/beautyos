@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/work_photo_summary.dart';
+import 'storage_cleanup.dart';
 import 'work_photo_storage.dart';
 
 class WorkPhotosService {
@@ -61,6 +62,33 @@ class WorkPhotosService {
         'p_photo_id': photoId,
         'p_visible': visible,
       },
+    );
+  }
+
+  /// Borra una foto: **el archivo de verdad**, y la fila queda marcada como
+  /// eliminada (H-09).
+  ///
+  /// **No se puede deshacer.** El respaldo del proyecto guarda la lista de
+  /// archivos, no los archivos: una imagen borrada no esta en ningun
+  /// respaldo. Quien llame a esto debe haber pedido confirmacion antes.
+  ///
+  /// **Primero el archivo, despues la base.** Si se hiciera al reves y el
+  /// borrado del archivo fallara, la foto figuraria como eliminada mientras
+  /// sigue publicada en internet. Asi, un fallo a medias deja como mucho una
+  /// fila apuntando a algo que ya no existe -- feo, no grave.
+  Future<void> deleteWorkPhoto({
+    required String photoId,
+    required String bucket,
+    required String storagePath,
+  }) async {
+    await const StorageCleanup().borrarPorRuta(
+      bucket: bucket,
+      ruta: storagePath,
+    );
+
+    await Supabase.instance.client.rpc(
+      'delete_work_photo',
+      params: {'p_branch_id': branchId, 'p_photo_id': photoId},
     );
   }
 

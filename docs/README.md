@@ -34,7 +34,7 @@ mensajes de commit y en los documentos. **Son sistemas distintos:**
 |---|---|---|
 | **D-001 … D-119** | **Decisiones.** El porqué de cada cosa, con lo que se descartó y por qué | `00_producto/REGISTRO_DE_DECISIONES.md` |
 | **H-01 … H-13** | **Hallazgos** de la auditoría integral del 6 de agosto | `01_arquitectura/auditorias/AUDITORIA_INTEGRAL_2026-08-06.md` |
-| **A … N** | **Anotado en el camino**: lo que salió sin etapa asignada | `PLAN_DE_LANZAMIENTO`, apartado 11 |
+| **A … O** | **Anotado en el camino**: lo que salió sin etapa asignada | `PLAN_DE_LANZAMIENTO`, apartado 11 |
 | **2.4, 3.6…** | **Números de tarea** del plan de lanzamiento | `PLAN_DE_LANZAMIENTO` |
 | **Tramo A, D3.5.2…** | Trabajo de arquitectura multisede de julio | `01_arquitectura/auditorias/` |
 
@@ -213,6 +213,7 @@ orden en que se fueron creando. **No se reescribe para ocultar el pasado.**
 113. `../supabase/migrations/20260809180000_fotos_privadas_hasta_aprobar.sql` (**las fotos de trabajo nacen privadas y aprobarlas es lo que las publica**, accion A4, cierra H-09, D-119)
 114. `../supabase/sql/162_verify_fotos_privadas.sql` (verificacion de los almacenes y de la coherencia entre aprobada y publicada)
 115. `../lib/services/work_photo_storage.dart` (los dos almacenes y el movimiento entre ellos)
+116. `../lib/services/storage_cleanup.dart` (**borrar archivos**: el anterior al reemplazar logo o portada, y el que el dueno elimina a mano)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión
 estructural. No se reescriben para ocultar el pasado: una decisión futura la

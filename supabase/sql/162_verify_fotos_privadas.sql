@@ -30,12 +30,12 @@ where id in ('work-photos', 'work-photos-private')
 order by id;
 
 -- ---------------------------------------------------------------------------
--- 2. Las politicas nuevas. Deben aparecer las 8.
+-- 2. Las politicas nuevas. Deben aparecer las 9.
 --
---    3 del almacen privado (insertar, leer, borrar), 2 del publico (leer y
---    borrar, que son las que permiten el movimiento de vuelta) y 3 de borrado
---    para logo, portada y foto del profesional -- la otra mitad de H-09, los
---    archivos huerfanos que nunca se podian limpiar.
+--    3 del almacen privado (insertar, leer, borrar), 3 del publico (insertar
+--    solo dueno/admin, leer y borrar, que son las que permiten el movimiento)
+--    y 3 de borrado para logo, portada y foto del profesional -- la otra
+--    mitad de H-09, los archivos huerfanos que nunca se podian limpiar.
 -- ---------------------------------------------------------------------------
 select policyname as politica, cmd as operacion
 from pg_policies
@@ -45,6 +45,7 @@ where schemaname = 'storage'
     'work_photos_private_insert_staff',
     'work_photos_private_select_staff',
     'work_photos_private_delete_staff',
+    'work_photos_insert_owner_admin',
     'work_photos_select_staff',
     'work_photos_delete_staff',
     'tenant_logos_delete_owner',
@@ -54,12 +55,25 @@ where schemaname = 'storage'
 order by policyname;
 
 -- ---------------------------------------------------------------------------
--- 3. Ninguna foto se quedo sin ruta de archivo. Debe devolver 0.
+-- 2b. La politica vieja de insercion en el almacen publico debe haber
+--     DESAPARECIDO: dejaba a un estilista escribir directamente ahi, que es
+--     justo el agujero que cierra este bloque. Debe devolver 0 filas.
+-- ---------------------------------------------------------------------------
+select policyname
+from pg_policies
+where schemaname = 'storage'
+  and tablename = 'objects'
+  and policyname = 'work_photos_insert_staff';
+
+-- ---------------------------------------------------------------------------
+-- 3. Ninguna foto VIVA se quedo sin ruta de archivo. Debe devolver 0.
+--    Las eliminadas si tienen la ruta nula a proposito: su archivo ya no
+--    existe y se comprueban aparte, en el punto 7.
 -- ---------------------------------------------------------------------------
 select count(*) as fotos_sin_ruta
 from public.work_photos
-where storage_path is null
-   or btrim(storage_path) = '';
+where active
+  and (storage_path is null or btrim(storage_path) = '');
 
 -- ---------------------------------------------------------------------------
 -- 4. LA COMPROBACION QUE IMPORTA: aprobada y publicada son lo mismo.
@@ -130,3 +144,13 @@ left join storage.objects o
  and o.bucket_id in ('work-photos', 'work-photos-private')
 where wp.active
   and (o.bucket_id is null or o.bucket_id <> wp.storage_bucket);
+
+-- ---------------------------------------------------------------------------
+-- 7. Fotos ya eliminadas: no deben conservar ni ruta ni direccion.
+--    Debe devolver 0 filas. Una fila aqui es un apuntador a un archivo que ya
+--    no existe -- o peor, a uno que si existe y deberia haberse borrado.
+-- ---------------------------------------------------------------------------
+select id, storage_path, photo_url
+from public.work_photos
+where not active
+  and (storage_path is not null or photo_url is not null);

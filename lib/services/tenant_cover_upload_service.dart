@@ -2,6 +2,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import 'storage_cleanup.dart';
+
 /// Sube la portada del negocio al bucket publico `tenant-covers` (punto 6
 /// del benchmarking). Mismo patron que `TenantLogoUploadService`: la portada
 /// es del tenant completo, ruta `{tenant_id}/archivo.ext`. La politica
@@ -19,6 +21,7 @@ class TenantCoverUploadService {
   Future<String> uploadTenantCoverPhoto({
     required String tenantId,
     required XFile image,
+    String? previousUrl,
   }) async {
     final bytes = await image.readAsBytes();
     final extension = _extensionFor(image.name);
@@ -31,6 +34,14 @@ class TenantCoverUploadService {
           bytes,
           fileOptions: FileOptions(contentType: _contentTypeFor(extension)),
         );
+
+    // El archivo anterior se borra DESPUES de que el nuevo esta arriba
+    // (H-09). Al reves, un fallo al subir dejaria al negocio sin imagen
+    // ninguna.
+    await const StorageCleanup().borrarPorUrlPublica(
+      bucket: 'tenant-covers',
+      urlPublica: previousUrl,
+    );
 
     return Supabase.instance.client.storage
         .from('tenant-covers')
