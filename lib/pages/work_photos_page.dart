@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import '../models/work_photo_summary.dart';
 import '../services/work_photos_service.dart';
 import '../widgets/app_widgets.dart';
+import '../widgets/foto_de_trabajo.dart';
 
 class FotosTrabajosPage extends StatefulWidget {
   const FotosTrabajosPage({super.key, required this.branchId});
@@ -83,9 +84,17 @@ class _FotosTrabajosPageState extends State<FotosTrabajosPage> {
     bool approved,
   ) async {
     try {
+      if (photo.storagePath == null) {
+        throw StateError(
+          'Esta foto no tiene ruta de archivo y no se puede publicar. '
+          'Vuelve a subirla.',
+        );
+      }
+
       await _workPhotosService.setPortfolioApproval(
         photoId: photo.id,
         approved: approved,
+        storagePath: photo.storagePath!,
       );
 
       if (!mounted) return;
@@ -382,22 +391,7 @@ class _WorkPhotoCard extends StatelessWidget {
         children: [
           AspectRatio(
             aspectRatio: 3 / 4,
-            child: Image.network(
-              photo.photoUrl,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return const ColoredBox(
-                  color: AppColors.surfaceAlt,
-                  child: Center(
-                    child: Icon(
-                      Icons.broken_image_outlined,
-                      size: 42,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                );
-              },
-            ),
+            child: FotoDeTrabajo(url: photo.displayUrl),
           ),
           Padding(
             padding: const EdgeInsets.all(14),

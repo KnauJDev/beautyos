@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 import '../models/my_stylist_work_photo.dart';
 import '../services/my_stylist_work_photos_service.dart';
 import '../widgets/app_widgets.dart';
+import '../widgets/foto_de_trabajo.dart';
 
 class MyStylistWorkPhotosPage extends StatefulWidget {
   const MyStylistWorkPhotosPage({super.key, required this.branchId});
@@ -153,19 +154,7 @@ class _PhotoCard extends StatelessWidget {
           children: [
             AspectRatio(
               aspectRatio: 4 / 3,
-              child: Image.network(
-                photo.photoUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Center(
-                    child: Icon(
-                      Icons.broken_image_outlined,
-                      size: 42,
-                      color: AppColors.textMuted,
-                    ),
-                  );
-                },
-              ),
+              child: FotoDeTrabajo(url: photo.displayUrl),
             ),
             Padding(
               padding: const EdgeInsets.all(14),

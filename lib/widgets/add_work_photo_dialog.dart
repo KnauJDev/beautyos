@@ -75,14 +75,16 @@ class _AddWorkPhotoDialogState extends State<AddWorkPhotoDialog> {
     });
 
     try {
-      final photoUrl = await _uploadService.uploadWorkPhoto(
+      // Sube al almacen privado y devuelve la RUTA, no una direccion: la
+      // foto todavia no es publica y no debe tener direccion publica (H-09).
+      final storagePath = await _uploadService.uploadWorkPhoto(
         branchId: widget.branchId,
         image: image,
       );
 
       await _workPhotosService.createWorkPhoto(
         ticketId: widget.ticketId,
-        photoUrl: photoUrl,
+        storagePath: storagePath,
         photoType: _photoType,
         caption: _captionController.text.trim().isEmpty
             ? null

@@ -19,7 +19,7 @@ documentos entiendes el proyecto:
 | 3 | `00_producto/PLAN_DE_LANZAMIENTO_2026-08-06.md` | ¿Cuál es el camino hasta vender? |
 | 4 | `00_producto/REGISTRO_DE_DECISIONES.md` | **¿Por qué está hecho así?** Empieza por el final |
 
-**No empieces por el código.** Este proyecto tiene 115 decisiones registradas
+**No empieces por el código.** Este proyecto tiene 119 decisiones registradas
 con su porqué; leer el código sin ellas es reconstruir a ciegas razonamientos
 que ya están escritos.
 
@@ -32,9 +32,9 @@ mensajes de commit y en los documentos. **Son sistemas distintos:**
 
 | Código | Qué es | Dónde vive |
 |---|---|---|
-| **D-001 … D-115** | **Decisiones.** El porqué de cada cosa, con lo que se descartó y por qué | `00_producto/REGISTRO_DE_DECISIONES.md` |
+| **D-001 … D-119** | **Decisiones.** El porqué de cada cosa, con lo que se descartó y por qué | `00_producto/REGISTRO_DE_DECISIONES.md` |
 | **H-01 … H-13** | **Hallazgos** de la auditoría integral del 6 de agosto | `01_arquitectura/auditorias/AUDITORIA_INTEGRAL_2026-08-06.md` |
-| **A … J** | **Anotado en el camino**: lo que salió sin etapa asignada | `PLAN_DE_LANZAMIENTO`, apartado 11 |
+| **A … N** | **Anotado en el camino**: lo que salió sin etapa asignada | `PLAN_DE_LANZAMIENTO`, apartado 11 |
 | **2.4, 3.6…** | **Números de tarea** del plan de lanzamiento | `PLAN_DE_LANZAMIENTO` |
 | **Tramo A, D3.5.2…** | Trabajo de arquitectura multisede de julio | `01_arquitectura/auditorias/` |
 
@@ -210,6 +210,9 @@ orden en que se fueron creando. **No se reescribe para ocultar el pasado.**
 110. `../supabase/sql/161_verify_numero_de_ticket.sql` (verificacion del consecutivo, con prueba de escritura en `ROLLBACK`)
 111. `../test/numero_de_ticket_test.dart` (el consecutivo viaja intacto hasta la pantalla)
 112. `../scripts/aplicar_sql.ps1` (**ejecuta un archivo SQL contra la base**, hermano de `respaldo_supabase.ps1`: codifica la contrasena igual que el, que es lo unico que funciona con la contrasena de este proyecto)
+113. `../supabase/migrations/20260809180000_fotos_privadas_hasta_aprobar.sql` (**las fotos de trabajo nacen privadas y aprobarlas es lo que las publica**, accion A4, cierra H-09, D-119)
+114. `../supabase/sql/162_verify_fotos_privadas.sql` (verificacion de los almacenes y de la coherencia entre aprobada y publicada)
+115. `../lib/services/work_photo_storage.dart` (los dos almacenes y el movimiento entre ellos)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión
 estructural. No se reescriben para ocultar el pasado: una decisión futura la

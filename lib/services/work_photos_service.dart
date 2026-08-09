@@ -1,11 +1,14 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/work_photo_summary.dart';
+import 'work_photo_storage.dart';
 
 class WorkPhotosService {
   const WorkPhotosService({required this.branchId});
 
   final String branchId;
+
+  static const _almacen = WorkPhotoStorage();
 
   Future<List<WorkPhotoSummary>> getWorkPhotosSummary() async {
     final response = await Supabase.instance.client.rpc(
@@ -13,17 +16,21 @@ class WorkPhotosService {
       params: {'p_branch_id': branchId},
     );
 
-    return response
+    final fotos = response
         .map<WorkPhotoSummary>(
           (item) =>
               WorkPhotoSummary.fromMap(Map<String, dynamic>.from(item as Map)),
         )
         .toList();
+
+    // Las que aun no se publican no tienen direccion permanente: se les pide
+    // una temporal para poder verlas dentro de la app y decidir.
+    return _almacen.conDireccionesVisibles(fotos);
   }
 
   Future<String> createWorkPhoto({
     required String ticketId,
-    required String photoUrl,
+    required String storagePath,
     required String photoType,
     String? caption,
     String? stylistId,
@@ -33,7 +40,7 @@ class WorkPhotosService {
       params: {
         'p_branch_id': branchId,
         'p_ticket_id': ticketId,
-        'p_photo_url': photoUrl,
+        'p_storage_path': storagePath,
         'p_photo_type': photoType,
         'p_caption': caption,
         'p_stylist_id': stylistId,
@@ -57,16 +64,50 @@ class WorkPhotosService {
     );
   }
 
+  /// Publica o retira una foto del portafolio (H-09).
+  ///
+  /// **El orden de los dos pasos no es intercambiable.** Mover el archivo y
+  /// anotarlo en la base son operaciones distintas y una puede fallar; la
+  /// regla es que **cualquier fallo a medias deje la foto oculta, nunca
+  /// publicada**:
+  ///
+  /// - **Publicar:** primero la base, despues mover. Si el movimiento falla,
+  ///   la foto no aparece en el portafolio. Molesto, no grave.
+  /// - **Retirar:** primero mover, despues la base. Si la base falla, el
+  ///   archivo ya salio de internet.
+  ///
+  /// Al reves, un fallo dejaria el archivo publico con la base diciendo que
+  /// no lo esta. Eso si seria una fuga, y en fotos de clientas reales no es
+  /// un detalle tecnico.
   Future<void> setPortfolioApproval({
     required String photoId,
     required bool approved,
+    required String storagePath,
   }) async {
+    if (approved) {
+      await Supabase.instance.client.rpc(
+        'set_work_photo_portfolio_approval',
+        params: {
+          'p_branch_id': branchId,
+          'p_photo_id': photoId,
+          'p_approved': true,
+          'p_public_url': _almacen.urlPublica(storagePath),
+        },
+      );
+
+      await _almacen.publicar(storagePath);
+      return;
+    }
+
+    await _almacen.despublicar(storagePath);
+
     await Supabase.instance.client.rpc(
       'set_work_photo_portfolio_approval',
       params: {
         'p_branch_id': branchId,
         'p_photo_id': photoId,
-        'p_approved': approved,
+        'p_approved': false,
+        'p_public_url': null,
       },
     );
   }

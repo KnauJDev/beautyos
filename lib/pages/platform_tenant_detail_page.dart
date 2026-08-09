@@ -4,6 +4,7 @@ import '../theme/app_theme.dart';
 
 import '../models/platform_tenant_detail.dart';
 import '../services/platform_tenant_detail_service.dart';
+import '../widgets/foto_de_trabajo.dart';
 
 /// Vista de solo lectura para el dueno de plataforma: clientes, tickets,
 /// finanzas, equipo, resenas y fotos de CUALQUIER negocio, para dar
@@ -415,8 +416,14 @@ class _PhotosTab extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Solo se ve la foto YA publicada por el negocio. Una que
+                  // todavia espera aprobacion vive en el almacen privado y el
+                  // dueno de plataforma no es miembro del negocio, asi que no
+                  // puede firmarla (H-09). Es coherente con D-076: el acceso
+                  // de soporte es de lectura, no un pase para ver material que
+                  // el negocio no ha decidido publicar.
                   Expanded(
-                    child: Image.network(photo.photoUrl, fit: BoxFit.cover),
+                    child: FotoDeTrabajo(url: photo.photoUrl),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(8),

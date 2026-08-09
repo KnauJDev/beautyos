@@ -196,7 +196,10 @@ class PlatformWorkPhotoSummary {
   final String branchName;
   final String clientName;
   final String stylistName;
-  final String photoUrl;
+  /// Nula cuando el negocio todavia no ha publicado la foto (H-09): el
+  /// acceso de soporte de D-076 es de lectura de lo publicado, no un pase
+  /// para ver material sin aprobar.
+  final String? photoUrl;
   final String photoType;
   final bool visibleToCustomer;
   final bool approvedForPortfolio;
@@ -207,7 +210,7 @@ class PlatformWorkPhotoSummary {
       branchName: map['branch_name']?.toString() ?? 'Sede',
       clientName: map['client_name']?.toString() ?? 'Cliente no asociado',
       stylistName: map['stylist_name']?.toString() ?? 'Estilista no asociado',
-      photoUrl: map['photo_url']?.toString() ?? '',
+      photoUrl: map['photo_url']?.toString(),
       photoType: map['photo_type']?.toString() ?? '',
       visibleToCustomer: map['visible_to_customer'] == true,
       approvedForPortfolio: map['approved_for_portfolio'] == true,

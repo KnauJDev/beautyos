@@ -5,6 +5,9 @@
     required this.clientName,
     required this.serviceName,
     required this.photoUrl,
+    required this.storageBucket,
+    required this.storagePath,
+    required this.displayUrl,
     required this.photoType,
     required this.caption,
     required this.aiStatus,
@@ -17,7 +20,15 @@
   final String? ticketId;
   final String clientName;
   final String serviceName;
-  final String photoUrl;
+  /// Direccion publica permanente. Solo mientras la foto esta publicada en
+  /// el portafolio; nula mientras espera aprobacion (H-09).
+  final String? photoUrl;
+  final String storageBucket;
+  final String? storagePath;
+
+  /// Lo que se pinta: permanente si esta publicada, temporal firmada si no.
+  final String? displayUrl;
+
   final String photoType;
   final String caption;
   final String aiStatus;
@@ -25,13 +36,36 @@
   final bool approvedForPortfolio;
   final DateTime? createdAt;
 
+  MyStylistWorkPhoto conDisplayUrl(String? url) {
+    return MyStylistWorkPhoto(
+      id: id,
+      ticketId: ticketId,
+      clientName: clientName,
+      serviceName: serviceName,
+      photoUrl: photoUrl,
+      storageBucket: storageBucket,
+      storagePath: storagePath,
+      displayUrl: url,
+      photoType: photoType,
+      caption: caption,
+      aiStatus: aiStatus,
+      visibleToCustomer: visibleToCustomer,
+      approvedForPortfolio: approvedForPortfolio,
+      createdAt: createdAt,
+    );
+  }
+
   factory MyStylistWorkPhoto.fromMap(Map<String, dynamic> map) {
     return MyStylistWorkPhoto(
       id: map['id']?.toString() ?? '',
       ticketId: map['ticket_id']?.toString(),
       clientName: map['client_name']?.toString() ?? 'Cliente sin nombre',
       serviceName: map['service_name']?.toString() ?? 'Servicio sin nombre',
-      photoUrl: map['photo_url']?.toString() ?? '',
+      photoUrl: map['photo_url']?.toString(),
+      storageBucket:
+          map['storage_bucket']?.toString() ?? 'work-photos-private',
+      storagePath: map['storage_path']?.toString(),
+      displayUrl: map['photo_url']?.toString(),
       photoType: map['photo_type']?.toString() ?? '',
       caption: map['caption']?.toString() ?? 'Sin descripcion',
       aiStatus: map['ai_status']?.toString() ?? '',
