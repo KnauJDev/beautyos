@@ -209,6 +209,7 @@ orden en que se fueron creando. **No se reescribe para ocultar el pasado.**
 109. `../supabase/migrations/20260809160000_numero_de_ticket_consecutivo.sql` (**numero de ticket consecutivo y ajustable**, tarea 2.6a, D-117)
 110. `../supabase/sql/161_verify_numero_de_ticket.sql` (verificacion del consecutivo, con prueba de escritura en `ROLLBACK`)
 111. `../test/numero_de_ticket_test.dart` (el consecutivo viaja intacto hasta la pantalla)
+112. `../scripts/aplicar_sql.ps1` (**ejecuta un archivo SQL contra la base**, hermano de `respaldo_supabase.ps1`: codifica la contrasena igual que el, que es lo unico que funciona con la contrasena de este proyecto)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión
 estructural. No se reescriben para ocultar el pasado: una decisión futura la
