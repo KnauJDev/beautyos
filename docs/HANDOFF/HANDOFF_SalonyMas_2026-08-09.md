@@ -1,7 +1,7 @@
 # HANDOFF Salón y Más — 9 de agosto de 2026
 
-**Bloque documentado:** decisiones **D-116 a D-121** · 8 commits · 3 migraciones
-**Estado:** todo aplicado y verificado en producción, salvo una prueba de interfaz
+**Bloque documentado:** decisiones **D-116 a D-123** · 12 commits · 5 migraciones
+**Estado:** aplicado y verificado en producción; **quedan 2 migraciones por aplicar**
 **Versión publicada:** `d8c556f` · `https://salonymas.com`
 **Reemplaza como handoff vigente a:** `HANDOFF_SalonyMas_2026-08-08.md`
 
@@ -78,15 +78,33 @@ que ya sabemos expuestas (H-04) sería hacerlo al revés.
 
 ---
 
-## 5. Lo único que quedó pendiente de esta sesión
+## 5. Lo que queda pendiente de esta sesión
 
-**Una prueba de interfaz que solo puede hacer el propietario:** subir una foto,
-aprobarla, retirarle la aprobación y borrarla con la papelera. La mitad de base
-de datos está verificada (8 controles en verde); lo que falta es comprobar que
-la pantalla se comporta.
+**Dos migraciones por aplicar:**
 
-Antes de esta sesión, subir una foto fallaba con `Bucket not found` porque el
-código nuevo ya estaba publicado y la migración no. **Ya está aplicada.**
+```
+20260809220000_permiso_de_ejecucion_del_ayudante_de_borrado.sql
+20260809230000_restaura_nombres_de_respaldo_en_galeria.sql
+```
+
+**La prueba del propietario encontró tres fallos míos, y eso es lo más
+importante de este bloque.** Los tres son de la misma familia —reescribir una
+función y perder lo que hacía— y **ninguna prueba automática los detectó**:
+
+| Fallo | Cómo apareció |
+|---|---|
+| D-119 | Se cayeron la verificación de plan (D-069), el bloqueo de tickets cancelados y la validación de tipo de foto. **Lo cacé yo** releyendo el original contra el respaldo |
+| **D-122** | El ayudante de borrado quedó sin permiso de ejecución: **subir cualquier foto fallaba con 403**. Lo encontró el propietario |
+| **D-123** | Se perdieron dos `coalesce`: una foto sin estilista tumbaría la galería entera. Lo destapó el propietario al no encontrar sus fotos |
+
+> **Regla que deja este bloque: al reescribir una función, compararla línea por
+> línea contra la original, no solo la firma.** Los tres salieron de
+> reescrituras hechas para agregar una columna.
+
+**Por qué las verificaciones no bastaron, que es lo que hay que recordar:**
+`162` comprobaba que las políticas existieran, no que se pudieran **evaluar**;
+y `163` corre como dueño de la base, que **se salta las comprobaciones de
+permiso**. Hay fallos que **solo aparecen usando la aplicación de verdad**.
 
 ---
 
@@ -137,7 +155,12 @@ código nuevo ya estaba publicado y la migración no. **Ya está aplicada.**
    justo lo que resuelve A2.
 5. **Una foto borrada no está en ningún respaldo.** El respaldo guarda la lista
    de archivos, no los archivos.
-6. **`TicketStatusBadge` todavía pinta los colores viejos de D-082** y
+6. **"No encuentro mis fotos" casi siempre es un filtro, no un fallo.** La
+   galería del dueño filtra por **sede activa** y "Mis fotos" filtra además por
+   **el estilista que inició sesión**. Una foto en otra sede, o sin estilista
+   asignado, no aparece donde se la busca. Para verlo:
+   `supabase/sql/164_donde_estan_las_fotos.sql`.
+7. **`TicketStatusBadge` todavía pinta los colores viejos de D-082** y
    contradice a D-097 y D-101 (hallazgo N): `en_proceso` usa el color de marca,
    que en el tema de barbería se volvería rojo. Se arregla en 2.6c/2.7
    cambiándola por `StatusPill`, que ya existe y no la usa nadie.
@@ -160,6 +183,9 @@ Lee primero, en este orden:
 Estamos en la ETAPA A (seguridad). Cerradas A4, A5 y A6 (esta última a
 medias: la parte automática espera a A2). Faltan A1, A2 y A3, que son
 "juntos". De la Etapa B está cerrada 2.6a.
+
+Antes de nada: quedan 2 migraciones sin aplicar (20260809220000 y
+20260809230000).
 
 IMPORTANTE: el orden lo manda la hoja .xlsx, no el plan de lanzamiento.
 Etapa A antes que Etapa B. Se corrigió el 09-ago en D-118 porque se había
@@ -191,10 +217,10 @@ Pendiente mío y bloqueante: definir los 3 precios de los planes.
 
 ## 10. Evidencia
 
-- **8 commits**, de `7f91f25` a `d8c556f`
-- **3 migraciones** aplicadas al proyecto real el 09-ago
-- **Decisiones D-116 a D-121** en `REGISTRO_DE_DECISIONES.md`
-- **Hallazgos L a P** anotados en el apartado 11 del plan
+- **12 commits**, desde `7f91f25`
+- **5 migraciones**, 3 aplicadas el 09-ago y 2 pendientes
+- **Decisiones D-116 a D-123** en `REGISTRO_DE_DECISIONES.md`
+- **Hallazgos L a Q** anotados en el apartado 11 del plan
 - **Respaldo del 09-ago** en `OneDrive\Documents\BeautyOS Backups`
 - **Verificaciones ejecutadas contra producción, todas en verde:**
   - `161_verify_numero_de_ticket.sql` — 6 controles, 700 tickets numerados del

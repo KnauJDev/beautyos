@@ -52,8 +52,11 @@
     return WorkPhotoSummary(
       id: map['id'] as String,
       ticketId: map['ticket_id'] as String?,
-      clientName: map['client_name'] as String,
-      stylistName: map['stylist_name'] as String,
+      // Tolerante a proposito: si el servidor mandara vacio, la tarjeta se ve
+      // incompleta pero la galeria carga. Leerlo como texto obligatorio hacia
+      // que **una sola** foto sin estilista tumbara la lista entera.
+      clientName: map['client_name']?.toString() ?? 'Cliente no asociado',
+      stylistName: map['stylist_name']?.toString() ?? 'Estilista no asociado',
       photoUrl: map['photo_url'] as String?,
       storageBucket:
           map['storage_bucket'] as String? ?? 'work-photos-private',
