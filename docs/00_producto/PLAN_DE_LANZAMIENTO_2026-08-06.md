@@ -116,7 +116,11 @@ que los navegadores se quedaran hasta 4 horas con una versión vieja.
 
 ---
 
-## 6. ETAPA 2 — Que se vea profesional 🎨 ⬅️ **AQUÍ ESTAMOS**
+## 6. ETAPA 2 — Que se vea profesional 🎨
+
+> ⏸️ **EN PAUSA desde el 09-ago.** Manda la hoja `.xlsx`: **la Etapa A
+> (seguridad) va primero** (D-118). De esta etapa solo esta cerrada **2.6a**,
+> el numero de ticket. Se retoma en **2.6b** cuando la Etapa A este completa.
 
 **Duración estimada:** varias sesiones. **Costo:** $0.
 
