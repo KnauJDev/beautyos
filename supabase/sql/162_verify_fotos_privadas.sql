@@ -154,3 +154,37 @@ select id, storage_path, photo_url
 from public.work_photos
 where not active
   and (storage_path is not null or photo_url is not null);
+
+-- ---------------------------------------------------------------------------
+-- 8. Que las politicas se puedan EVALUAR, no solo que existan.
+--
+--    Agregado el 09-ago despues de un fallo real: el ayudante
+--    `beautyos_can_delete_work_photo` existia, las politicas lo usaban, y
+--    subir una foto reventaba con "permission denied for function" porque
+--    `authenticated` no podia ejecutarlo.
+--
+--    Una politica se evalua con los permisos de quien hace la operacion. Si
+--    llama a una funcion y ese usuario no puede ejecutarla, la operacion
+--    falla aunque la politica este perfectamente escrita.
+--
+--    Las dos deben decir 'correcto'.
+-- ---------------------------------------------------------------------------
+select
+  p.proname as ayudante,
+  has_function_privilege('authenticated', p.oid, 'EXECUTE') as puede_authenticated,
+  has_function_privilege('anon', p.oid, 'EXECUTE') as puede_anon,
+  case
+    when not has_function_privilege('authenticated', p.oid, 'EXECUTE')
+      then 'REVISAR: authenticated no puede ejecutarlo, las politicas fallaran'
+    when has_function_privilege('anon', p.oid, 'EXECUTE')
+      then 'REVISAR: anon no deberia poder ejecutarlo (H-11)'
+    else 'correcto'
+  end as veredicto
+from pg_proc p
+join pg_namespace n on n.oid = p.pronamespace
+where n.nspname = 'private'
+  and p.proname in (
+    'beautyos_can_upload_work_photo',
+    'beautyos_can_delete_work_photo'
+  )
+order by p.proname;
