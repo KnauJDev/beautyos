@@ -137,11 +137,12 @@ estado real de los 16 módulos.
 Retomo Salón y Más en C:\Proyectos\salonymas.
 
 Lee primero, en este orden:
-1. docs/HANDOFF/HANDOFF_SalonyMas_2026-08-08.md      (este documento)
-2. docs/00_producto/BARRIDO_Y_PLAN_MAESTRO_2026-08-08.md  (qué hay y qué falta)
-3. docs/00_producto/PLAN_DE_LANZAMIENTO_2026-08-06.md     (el mapa de etapas)
-4. docs/00_producto/REGISTRO_DE_DECISIONES.md, decisiones D-109 a D-115
-5. docs/00_producto/ESPECIFICACION_AGENDA_2026-08-07.md   (para la tarea 2.6)
+1. docs/README.md   (el mapa: qué significa cada código y qué manda sobre qué)
+2. docs/HANDOFF/HANDOFF_SalonyMas_2026-08-08.md      (dónde quedamos)
+3. docs/00_producto/BARRIDO_Y_PLAN_MAESTRO_2026-08-08.md  (qué hay y qué falta)
+4. docs/00_producto/PLAN_DE_LANZAMIENTO_2026-08-06.md     (el mapa de etapas)
+5. docs/00_producto/REGISTRO_DE_DECISIONES.md, decisiones D-109 a D-115
+6. docs/00_producto/ESPECIFICACION_AGENDA_2026-08-07.md   (para la tarea 2.6)
 
 Estamos en la Etapa 2. Cerradas 2.1 a 2.4, y 2.5a y 2.5b del Dashboard.
 El seguimiento vive en docs/00_producto/PLAN_DE_TRABAJO_A_PRODUCCION.xlsx.
