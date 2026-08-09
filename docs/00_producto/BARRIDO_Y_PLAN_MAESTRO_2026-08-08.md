@@ -15,7 +15,7 @@
 
 | # | Hallazgo | Gravedad |
 |---|---|---|
-| **1** | **La fusión Agenda + Tickets se decidió (D-105) y nunca se ejecutó.** Siguen siendo dos módulos | 🔴 Alta |
+| **1** | ~~**La fusión Agenda + Tickets se decidió (D-105) y nunca se ejecutó.**~~ **Resuelto el 09-ago sin fusionar (D-116):** el propietario frenó la fusión y se separaron por nivel — Agenda es el tablero, Tickets el detalle. El argumento de D-105 dejó de aplicar en cuanto Agenda pasó a contar en vez de listar | ✅ Decidido |
 | **2** | **Los almacenes de archivos son públicos** (H-09). Cualquiera con la dirección ve una foto para siempre, aunque en la app esté oculta | 🔴 Alta — protección de datos |
 | **3** | **42 funciones de base de datos que nadie llama** (H-05, medido hoy) | 🟡 Media |
 | **4** | **Toda la infraestructura de planes de pago existe y está dormida**: `list_public_plans` y `get_my_entitlements` no los usa nadie | 🟡 Media — se despierta en Etapa 3 |
@@ -37,8 +37,8 @@ Un propietario ve **16 módulos**. Esto es lo que hay hoy y lo que le falta.
 | Módulo | Qué muestra hoy | Qué le falta o sobra | Dónde se arregla |
 |---|---|---|---|
 | **Dashboard** | ✅ Resumen completo: 4 indicadores comparados, gráfico, agenda de hoy, avisos | Nada urgente | Hecho (2.5a/b) |
-| **Agenda** | Lista básica de citas. **234 líneas** | ⚠️ **Debe absorber Tickets** (D-105). Le falta filtro de fecha y las vistas día/semana/mes de la especificación | **2.6** |
-| **Tickets** | Panel completo de cobro. **3.699 líneas** | ⚠️ **Debe dejar de ser módulo** y pasar a ser el nivel de detalle dentro de Agenda | **2.6** |
+| **Agenda** | Lista básica de citas. **234 líneas** | ⚠️ Pasa a ser **el tablero** (nivel 1): vistas día/semana/mes y el filtro de fecha que hoy no existe | **2.6** |
+| **Tickets** | Panel completo de cobro. **3.699 líneas** | ⚠️ **Sigue siendo módulo** (D-116, corrige D-105): es el nivel 2 y 3, y el destino de la tarjeta de ticket promedio del Dashboard. Su listado debe ser **un solo componente con dos entradas**, compartido con el tablero | **2.6** |
 | **Clientes** | Solo una lista | Nuevos vs recurrentes, tasa de retorno, valor del cliente, quién dejó de venir | **2.8** |
 | **Reportes** | Ventas por servicio + **resultado financiero** (ya calcula utilidad) | Ordenarlo, métodos de pago, comparación entre períodos | **2.9** |
 | **Estilistas** | Lista y configuración | Producción por persona: ventas, servicios, comisiones, ocupación | **2.11** |

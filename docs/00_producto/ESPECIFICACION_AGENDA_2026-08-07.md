@@ -8,10 +8,36 @@ componentes base obligaría a rehacerla entera.
 
 ---
 
-## 0. Agenda y Tickets se fusionan en un solo modulo
+## 0. Agenda y Tickets se separan por nivel, NO se fusionan
 
-**Decidido el 07-ago (D-105).** Hasta ahora eran dos entradas de menu, y al
-revisarlo resultaron ser lo mismo:
+> ⚠️ **Corregido el 09-ago (D-116).** Este apartado decia que los dos modulos
+> se fusionaban y que Tickets desaparecia del menu. **Ya no.** El propietario
+> freno la fusion justo antes de ejecutarla y tenia razon: el argumento que la
+> justificaba se cae solo en cuanto Agenda pasa a ser el tablero.
+>
+> | Modulo | La pregunta que responde | Nivel |
+> |---|---|---|
+> | **Agenda** | *"¿Que me falta hoy / esta semana / como viene el mes?"* | 1 — el tablero de este documento |
+> | **Tickets** | *"Muestrame el detalle"* — desde el menu y desde la tarjeta de ticket promedio del Dashboard | 2 y 3 |
+>
+> **Por que dejo de aplicar el argumento de D-105:** era cierto que Agenda no
+> devolvia ni una columna que Tickets no tuviera, y por eso eran dos puertas al
+> mismo sitio. Pero **el tablero no lista tickets: los cuenta** por estado y por
+> tiempo. Deja de ser un subconjunto y pasa a ser otro nivel. Y la regla del
+> cero se resuelve con el tablero — donde "Cerrado" es una columna mas —, no
+> con borrar el modulo.
+>
+> **La condicion que impide repetir el problema:** el listado de tickets tiene
+> que ser **un solo componente de codigo con dos entradas**. Desde una casilla
+> del tablero llega filtrado por dia y estado; desde Tickets llega sin filtro y
+> con buscador. Dos listas separadas volverian a ser dos pantallas casi iguales
+> que se desincronizan.
+>
+> Lo que sigue de este apartado es **el analisis original del 07-ago**, que se
+> conserva porque explica por que los tres niveles son los que son.
+
+**Lo decidido el 07-ago (D-105), y por que:** hasta entonces eran dos entradas
+de menu, y al revisarlo resultaron ser lo mismo:
 
 | | Agenda | Tickets |
 |---|---|---|
@@ -35,11 +61,15 @@ el titulo de lo que llamaba agenda.
 **Se llama "Agenda" en el menu**, que es la palabra que usa una duena de
 peluqueria, aunque por dentro sea un tablero de tickets. El modelo de tickets
 es el diferenciador del producto; el nombre debe ser el que busca el cliente.
+**Esto sigue vigente.**
 
-**Beneficio adicional:** deja de haber que adivinar cual de los dos abrir, y se
-libera un puesto en el menu -- que en celular vale oro. Ademas la regla del
+~~**Beneficio adicional:** deja de haber que adivinar cual de los dos abrir, y
+se libera un puesto en el menu -- que en celular vale oro. Ademas la regla del
 cero solo funciona asi: la Agenda de hoy oculta los cerrados, con lo cual nunca
-se podria comprobar que todo quedo en cero.
+se podria comprobar que todo quedo en cero.~~
+**Anulado por D-116:** la regla del cero la resuelve el tablero, no la fusion.
+El puesto de menu no se libera, y esta bien: la tarjeta del Dashboard necesita
+un destino y el detalle del ticket merece pantalla propia.
 
 ---
 
@@ -221,13 +251,38 @@ el 07-ago:
 
 - **Uno solo por negocio**, no por sede. Así el número dice cuántos servicios
   ha prestado el negocio en total.
-- **Empieza en `0000001` y no se reinicia nunca.** Ni por año ni por nada.
+- **Arranca en `0000001`** y no se reinicia por año ni por sede.
 - **Sin prefijo de sede.**
 - Los tickets que ya existen reciben número por orden de creación.
 
+> ⚠️ **Corregido el 09-ago (D-117): el consecutivo SÍ se puede ajustar.**
+> Aquí decía "no se reinicia **nunca**". El propietario pidió poder fijarlo,
+> para seguir un consecutivo que ya trae de antes, un número propio, o una
+> numeración autorizada DIAN si algún día la maneja. **Lo de arriba se conserva
+> como valor por defecto, no como camisa de fuerza.** Las reglas del ajuste:
+>
+> 1. **Un número emitido no se reescribe jamás.** Ajustar afecta a los tickets
+>    futuros. Protegido con un *trigger* en la base, no con una promesa.
+> 2. **El nuevo punto de partida debe ser mayor que el último emitido.** Es la
+>    única forma de que "único" siga siendo cierto, y el choque se rechaza en la
+>    base y no a mitad de un cobro.
+> 3. **Ajustar es exclusivo del propietario del negocio**, igual que el logo, la
+>    portada y el tema (D-109): tiene consecuencias contables.
+>
+> Se guardan **dos** columnas: `ticket_number` (ordena y garantiza unicidad
+> aunque el prefijo cambie) y `ticket_code` (lo que ve la persona, congelado con
+> el prefijo y los ceros del día de emisión).
+>
+> **La pantalla para ajustarlo va en 2.11**, no aquí: lo que hay que dejar bien
+> hecho desde el nacimiento es la estructura, porque cambiarla con tickets ya
+> emitidos es carísimo.
+
 > **Intención a futuro del propietario:** enlazarlo con el número de factura o
-> la factura electrónica. No se construye ahora, pero conviene que el
-> consecutivo nazca limpio y continuo por si termina siendo la base de eso.
+> la factura electrónica. **Aviso, para que nadie se confunda: esto NO es
+> facturación electrónica.** La numeración autorizada real trae número de
+> resolución, rango con fecha de vencimiento y reglas de agotamiento. Aquí solo
+> queda el campo listo y limpio por si termina siendo su base. El paso real es
+> la tarea **D4 del plan**: consultar al contador.
 
 ### 8.2 Dos funciones nuevas, no seis
 

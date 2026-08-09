@@ -3502,6 +3502,21 @@ class TicketRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // El consecutivo va primero y por encima del nombre (D-117):
+                // es como se nombra el ticket por telefono o en un papel, y
+                // hasta hoy lo unico que lo identificaba era un uuid.
+                if (ticket.ticketCode.isNotEmpty)
+                  Text(
+                    'Ticket ${ticket.ticketCode}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                if (ticket.ticketCode.isNotEmpty)
+                  const SizedBox(height: AppSpacing.xs),
                 Text(
                   ticket.clientName,
                   style: TextStyle(

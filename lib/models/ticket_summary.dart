@@ -2,6 +2,15 @@ import '../widgets/ticket_status.dart';
 
 class TicketSummary {
   final String id;
+
+  /// El consecutivo del negocio tal como se le muestra a una persona
+  /// ("0000042", o "FE-0000042" si el negocio usa prefijo propio).
+  ///
+  /// Existe desde D-117. El identificador interno (`id`) sigue siendo el que
+  /// viaja a la base de datos: este solo se lee, se busca y se dice en voz
+  /// alta. Nunca cambia una vez emitido.
+  final String ticketCode;
+
   final String clientName;
   final DateTime? scheduledAt;
   final String status;
@@ -16,6 +25,7 @@ class TicketSummary {
 
   const TicketSummary({
     required this.id,
+    required this.ticketCode,
     required this.clientName,
     required this.scheduledAt,
     required this.status,
@@ -32,6 +42,9 @@ class TicketSummary {
   factory TicketSummary.fromMap(Map<String, dynamic> map) {
     return TicketSummary(
       id: map['id'].toString(),
+      // Sin respaldo inventado: si un dia faltara el codigo, se ve el vacio y
+      // se corrige, en vez de mostrar un "0000000" que parece un ticket real.
+      ticketCode: map['ticket_code']?.toString() ?? '',
       clientName: map['client_name']?.toString() ?? 'Cliente sin nombre',
       scheduledAt: map['scheduled_at'] == null
           ? null
