@@ -332,6 +332,34 @@ class _TenantCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                // Un negocio de prueba tiene que verse de un vistazo (D-112).
+                // Hoy no hay clientes reales y da igual; el dia que entre el
+                // primero, cualquier cifra que se mire aqui vendria
+                // contaminada con el negocio propio y nadie se acordaria de
+                // descontarlo.
+                if (tenant.isDemo) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceAlt,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: const Text(
+                      'PRUEBA',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                ],
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,

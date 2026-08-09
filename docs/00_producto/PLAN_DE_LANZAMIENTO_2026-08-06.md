@@ -17,7 +17,8 @@ en lenguaje simple y separa siempre **lo que haces tú** de **lo que hago yo**.
 | 🤖 **YO** | Lo hago yo en una sesión de trabajo (código, migraciones, configuración) |
 | 👥 **JUNTOS** | Yo te guío paso a paso mientras tú lo ejecutas en pantalla |
 
-**Regla de oro:** no se salta de etapa sin terminar la anterior.
+**Regla de oro:** no se salta de etapa sin terminar la anterior. Cada etapa
+existe porque la siguiente la necesita.
 
 > ⚠️ **Quién manda sobre el ORDEN (D-118, 09-ago).** Este documento describe **qué**
 > hay que hacer y **por qué**. Pero el **orden de ejecución** lo manda
@@ -27,8 +28,7 @@ en lenguaje simple y separa siempre **lo que haces tú** de **lo que hago yo**.
 > Se escribe porque el 09-ago se descubrió que **cuatro documentos decían tres
 > cosas distintas** sobre cuándo va la seguridad, y se trabajó en 2.6 con la
 > Etapa A intacta. Ante cualquier duda de orden: **manda la hoja.** Si este
-> documento la contradice, el equivocado es este. Cada etapa
-existe porque la siguiente la necesita.
+> documento la contradice, el equivocado es este.
 
 **Regla de hallazgos** (acordada el 07-ago): lo que aparezca en el camino se
 anota y se ataca **donde le corresponde** dentro de este plan. Si no cabe en
@@ -167,7 +167,7 @@ abrirlas todas de golpe gasta créditos sin aportar nada.
 | # | Módulo | Incluye | Capturas |
 |---|---|---|---|
 | 2.5 | **Dashboard** — el que cuenta la historia del negocio | ⚠️ **Tramo propio, no solo rediseño.** Especificación completa en `ESPECIFICACION_DASHBOARD_2026-08-08.md` (D-110). Se parte en **2.5a** ✅ **CERRADA (D-113)** — motor de comparación, Vista 1, gráfico, agenda de hoy y avisos, verificada en producción · **2.5b** ✅ **CERRADA (D-114)** — horas vendidas comparadas, sin porcentaje de ocupación · **2.5c** vistas de Negocio, Clientes y Equipo. Absorbe la tarea 4.4 de onboarding | `reportes - resumen 1/2` |
-| 2.6 | **Agenda** — la pantalla más usada | ⚠️ **Tramo propio, no solo rediseño.** Pasa a ser un tablero de tickets con vistas de día, semana y mes. Especificación completa en `ESPECIFICACION_AGENDA_2026-08-07.md` (D-101). Incluye el filtro de fecha que hoy no existe, y **exige construir antes el número de ticket**. **Se parte en tres:** **2.6a** ✅ **número de ticket, ajustable (D-117)** — aplicado en código, pendiente de migración y verificación · **2.6b** las dos funciones del tablero · **2.6c** el tablero en Flutter. **Agenda y Tickets NO se fusionan (D-116, corrige D-105):** Agenda es el nivel 1 y Tickets sigue en el menú como niveles 2 y 3 | `agenda` |
+| 2.6 | **Agenda** — la pantalla más usada | ⚠️ **Incluye el hallazgo P:** separar el número operativo del **número de venta**, que se asigna al cerrar el ticket. **Tramo propio, no solo rediseño.** Pasa a ser un tablero de tickets con vistas de día, semana y mes. Especificación completa en `ESPECIFICACION_AGENDA_2026-08-07.md` (D-101). Incluye el filtro de fecha que hoy no existe, y **exige construir antes el número de ticket**. **Se parte en tres:** **2.6a** ✅ **número de ticket, ajustable (D-117)** — aplicado en código, pendiente de migración y verificación · **2.6b** las dos funciones del tablero · **2.6c** el tablero en Flutter. **Agenda y Tickets NO se fusionan (D-116, corrige D-105):** Agenda es el nivel 1 y Tickets sigue en el menú como niveles 2 y 3 | `agenda` |
 | 2.7 | **Tickets / Ventas** | **Sigue viva** (D-116): pulido posterior de la lista ampliada. **Resolver el desplazamiento excesivo** para encontrar y cobrar un ticket abierto — el tablero ya lo alivia entrando por casilla, y el **buscador múltiple** de 2.6c (nombre, celular, correo, número de ticket) lo remata | `ventas - caja de ventas`, `detalle de ventas`, `transacciones` |
 | — | *(nota para 2.11)* | **"Subir portada" no dice qué hace.** Verificado el 07-ago: la portada solo se pinta en el enlace público de reservas, nunca en el panel. El propietario subió el botón y nunca vio el resultado (D-109) | |
 | 2.8 | **Clientes** | **Anotado el 09-ago:** el cliente tiene **un solo campo de nombre**, no nombre y apellido separados. Por eso el buscador de 2.6c encuentra "Gómez" solo si el apellido quedó escrito dentro del nombre. Separarlo toca la tabla, el formulario, la reserva pública y hay que repartir los nombres ya guardados: **se decide aquí**, no en 2.6 | `clientes - base clientes` |
@@ -336,6 +336,8 @@ Etapa 2.
 
 | **Ñ** | **El flujo de las fotos de trabajo no está definido: ¿quién las toma, quién las sube, en qué momento y por dónde?** Petición del propietario, 09-ago | 🟡 **Es diseño de producto, no de código.** Hoy la app permite subir una foto desde el ticket (dueño, admin) o desde "Mi agenda" (estilista, siempre autoatribuida), pero **nadie decidió cuándo ocurre eso en la vida real de un salón**: si la toma el estilista con su celular al terminar, si la recepcionista al cobrar, si hace falta permiso de la clienta y cómo se registra. **Va junto con la página pública del negocio (hallazgo M de Etapa C):** el flujo de captura solo tiene sentido si se sabe dónde termina la foto |
 | **O** | **El panel de plataforma es una pantalla completa a rediseñar.** Petición del propietario, 09-ago | 🟢 **Ya venía señalado en D-103**, donde quedó anotado que había modificaciones pendientes de ese panel *"que se planifican cuando lleguemos a ese punto"*. Hoy no está en ninguna tarea: las tareas 2.5 a 2.11 cubren los módulos del negocio, no este panel. **Se le busca sitio al cerrar la Etapa A** |
+
+| **P** | 🔴 **El consecutivo del ticket no sirve como número contable, y hay que separarlo en dos.** Lo detectó el propietario el 09-ago viendo sus propios datos: un ticket agendado para el **10/12/2026** ya tiene el número **0000693**, o sea que una cita agendada hoy para diciembre se lleva un número **antes** que un cliente que entre mañana y pague ese día | **El problema es mayor de lo observado:** (1) el número se asigna al **crear**, no al vender, así que el consecutivo no sigue el orden real de las ventas; (2) **las citas canceladas y los "no asistió" queman números para siempre**, dejando huecos — y una numeración autorizada DIAN no puede tener huecos sin explicación; (3) lo que nunca se cobra también se lleva número de documento. **Solución acordada en principio: dos números, ninguno cambia nunca.** El **número de ticket** (ya construido, D-117) se queda como el **operativo** — nombrarlo por teléfono, buscarlo, la lista ampliada; es el número de pedido. Se agrega un **número de venta**, asignado **al cerrarse el ticket**, que es el consecutivo contable: sin huecos y en orden real de venta. La maquinaria de D-117 —prefijo, arranque ajustable, cerradura de inmutabilidad— **se muda al número de venta**, que es el que puede llegar a ser DIAN. **Se descartó un solo número que pase de temporal a definitivo:** un número que cambia rompe la regla de que lo emitido no se reescribe y deja obsoleta cualquier referencia ya dada por WhatsApp o en papel. **Se ataca en la tarea 2.6**, decisión del propietario para no volver a saltarse el orden corregido en D-118. **No empeora por esperar:** verificado que `ticket_history` guarda cada cambio de estado con su fecha, así que los números de venta se pueden asignar hacia atrás en el orden real de cierre |
 
 ### Sobre la sesión que no se cierra (C)
 

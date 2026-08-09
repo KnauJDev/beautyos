@@ -5,6 +5,7 @@ class PlatformTenantSummary {
     required this.contactEmail,
     required this.whatsapp,
     required this.tenantActive,
+    required this.isDemo,
     required this.planCode,
     required this.subscriptionStatus,
     required this.trialEndsAt,
@@ -18,6 +19,11 @@ class PlatformTenantSummary {
   final String contactEmail;
   final String? whatsapp;
   final bool tenantActive;
+
+  /// Negocio de prueba del propietario de la plataforma, no un cliente
+  /// real (D-112). Es una etiqueta: no restringe nada, solo evita que se
+  /// cuente como cliente al mirar cualquier cifra.
+  final bool isDemo;
   final String? planCode;
   final String? subscriptionStatus;
   final DateTime? trialEndsAt;
@@ -32,6 +38,7 @@ class PlatformTenantSummary {
       contactEmail: map['contact_email']?.toString() ?? '',
       whatsapp: map['whatsapp']?.toString(),
       tenantActive: map['tenant_active'] == true,
+      isDemo: map['is_demo'] == true,
       planCode: map['plan_code']?.toString(),
       subscriptionStatus: map['subscription_status']?.toString(),
       trialEndsAt: _parseDate(map['trial_ends_at']),
