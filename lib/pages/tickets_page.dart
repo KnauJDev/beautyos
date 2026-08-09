@@ -10,6 +10,7 @@ import '../models/ticket_service_option.dart';
 import '../models/ticket_service_management_item.dart';
 import '../models/ticket_service_correction_option.dart';
 import '../models/ticket_payment.dart';
+import '../models/acciones_de_ticket.dart';
 import '../models/ticket_summary.dart';
 import '../services/clients_service.dart';
 import '../services/tickets_service.dart';
@@ -509,47 +510,37 @@ class _TicketsPageState extends State<TicketsPage> {
     }
   }
 
-  bool _canAddServices(TicketSummary ticket) {
-    return {
-      'solicitado',
-      'cotizado',
-      'apartado',
-      'confirmado',
-      'en_espera',
-    }.contains(ticket.status);
-  }
+  // Las reglas viven en `AccionesDeTicket` para poder probarlas sin abrir un
+  // navegador (H-03). Aqui solo se conectan con el ticket que toca.
+  bool _canAddServices(TicketSummary ticket) =>
+      AccionesDeTicket.puedeAgregarServicios(ticket.status);
 
-  bool _canManageServices(TicketSummary ticket) {
-    return _canAddServices(ticket) && ticket.totalDurationMinutes > 0;
-  }
+  bool _canManageServices(TicketSummary ticket) =>
+      AccionesDeTicket.puedeGestionarServicios(
+        ticket.status,
+        ticket.totalDurationMinutes,
+      );
 
-  bool _canReschedule(TicketSummary ticket) {
-    return ticket.scheduledAt != null &&
-        {
-          'solicitado',
-          'cotizado',
-          'apartado',
-          'confirmado',
-          'en_espera',
-        }.contains(ticket.status);
-  }
+  bool _canReschedule(TicketSummary ticket) =>
+      AccionesDeTicket.puedeReprogramar(
+        ticket.status,
+        tieneFecha: ticket.scheduledAt != null,
+      );
 
-  bool _canChangeStatus(TicketSummary ticket) {
-    return _availableNextStatuses(ticket.status).isNotEmpty;
-  }
+  bool _canChangeStatus(TicketSummary ticket) =>
+      AccionesDeTicket.puedeCambiarEstado(ticket.status);
 
-  bool _canCorrectCompletion(TicketSummary ticket) {
-    if (!widget.isOwnerOrAdmin) return false;
-    return {'en_proceso', 'finalizado'}.contains(ticket.status);
-  }
+  bool _canCorrectCompletion(TicketSummary ticket) =>
+      AccionesDeTicket.puedeCorregirFinalizacion(
+        ticket.status,
+        esDuenoOAdmin: widget.isOwnerOrAdmin,
+      );
 
-  bool _canManagePayments(TicketSummary ticket) {
-    return {'finalizado', 'cerrado'}.contains(ticket.status);
-  }
+  bool _canManagePayments(TicketSummary ticket) =>
+      AccionesDeTicket.puedeGestionarPagos(ticket.status);
 
-  bool _canCopyReviewLink(TicketSummary ticket) {
-    return {'finalizado', 'cerrado'}.contains(ticket.status);
-  }
+  bool _canCopyReviewLink(TicketSummary ticket) =>
+      AccionesDeTicket.puedeCopiarEnlaceResena(ticket.status);
 
   Future<void> _copyReviewLink(TicketSummary ticket) async {
     final link = '${Uri.base.origin}/?resena=${ticket.id}';
@@ -560,9 +551,8 @@ class _TicketsPageState extends State<TicketsPage> {
     );
   }
 
-  bool _canAddWorkPhoto(TicketSummary ticket) {
-    return !{'cancelado', 'no_asistio'}.contains(ticket.status);
-  }
+  bool _canAddWorkPhoto(TicketSummary ticket) =>
+      AccionesDeTicket.puedeAgregarFoto(ticket.status);
 
   Future<void> _openAddWorkPhotoDialog(TicketSummary ticket) async {
     List<TicketServiceManagementItem> stylistOptions;
@@ -590,23 +580,6 @@ class _TicketsPageState extends State<TicketsPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Foto agregada correctamente.')),
     );
-  }
-
-  static List<String> _availableNextStatuses(String currentStatus) {
-    switch (currentStatus) {
-      case 'solicitado':
-        return ['cotizado', 'apartado', 'confirmado', 'cancelado'];
-      case 'cotizado':
-        return ['apartado', 'confirmado', 'cancelado'];
-      case 'apartado':
-        return ['confirmado', 'cancelado'];
-      case 'confirmado':
-        return ['en_espera', 'en_proceso', 'cancelado', 'no_asistio'];
-      case 'en_espera':
-        return ['en_proceso', 'cancelado', 'no_asistio'];
-      default:
-        return [];
-    }
   }
 
   @override
@@ -2798,7 +2771,7 @@ class _ChangeTicketStatusDialogState extends State<_ChangeTicketStatusDialog> {
   @override
   void initState() {
     super.initState();
-    availableStatuses = _TicketsPageState._availableNextStatuses(
+    availableStatuses = AccionesDeTicket.siguientesEstados(
       widget.ticket.status,
     );
   }

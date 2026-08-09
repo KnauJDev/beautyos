@@ -19,7 +19,7 @@ documentos entiendes el proyecto:
 | 3 | `00_producto/PLAN_DE_LANZAMIENTO_2026-08-06.md` | ¿Cuál es el camino hasta vender? |
 | 4 | `00_producto/REGISTRO_DE_DECISIONES.md` | **¿Por qué está hecho así?** Empieza por el final |
 
-**No empieces por el código.** Este proyecto tiene 120 decisiones registradas
+**No empieces por el código.** Este proyecto tiene 121 decisiones registradas
 con su porqué; leer el código sin ellas es reconstruir a ciegas razonamientos
 que ya están escritos.
 
@@ -32,7 +32,7 @@ mensajes de commit y en los documentos. **Son sistemas distintos:**
 
 | Código | Qué es | Dónde vive |
 |---|---|---|
-| **D-001 … D-120** | **Decisiones.** El porqué de cada cosa, con lo que se descartó y por qué | `00_producto/REGISTRO_DE_DECISIONES.md` |
+| **D-001 … D-121** | **Decisiones.** El porqué de cada cosa, con lo que se descartó y por qué | `00_producto/REGISTRO_DE_DECISIONES.md` |
 | **H-01 … H-13** | **Hallazgos** de la auditoría integral del 6 de agosto | `01_arquitectura/auditorias/AUDITORIA_INTEGRAL_2026-08-06.md` |
 | **A … P** | **Anotado en el camino**: lo que salió sin etapa asignada | `PLAN_DE_LANZAMIENTO`, apartado 11 |
 | **2.4, 3.6…** | **Números de tarea** del plan de lanzamiento | `PLAN_DE_LANZAMIENTO` |
@@ -215,6 +215,8 @@ orden en que se fueron creando. **No se reescribe para ocultar el pasado.**
 115. `../lib/services/work_photo_storage.dart` (los dos almacenes y el movimiento entre ellos)
 116. `../lib/services/storage_cleanup.dart` (**borrar archivos**: el anterior al reemplazar logo o portada, y el que el dueno elimina a mano)
 117. `../supabase/migrations/20260809200000_negocio_de_prueba.sql` (**marcar un negocio como de prueba**, accion A5, D-120)
+118. `../test/dinero_y_roles_test.dart` y `../lib/models/acciones_de_ticket.dart` (**primeras pruebas de dinero y roles**, accion A6, H-03, D-121)
+119. `../supabase/sql/163_test_reglas_de_dinero.sql` (**las tres reglas de dinero contra la base real**, con `ROLLBACK`; hay que ejecutarlo a mano)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión
 estructural. No se reescriben para ocultar el pasado: una decisión futura la
