@@ -71,12 +71,12 @@ export default {
         // pruebas de Resend, que **solo entrega al dueno de la cuenta**: por
         // eso ninguna invitacion llegaba a nadie mas.
         //
-        // El nombre vuelve a llevar tildes. D-089 las habia quitado por
-        // precaucion -- el campo "De:" es propenso a mostrar simbolos raros
-        // por codificacion y no se podia comprobar en sandbox. Ahora si se
-        // puede: si el primer correo real llega con el nombre roto, se
-        // vuelve a "Salon y Mas" y queda resuelto de una vez.
-        from: "Salón y Más <hola@salonymas.com>",
+        // El nombre sigue SIN tildes, como decidio D-089: el campo "De:" es
+        // el mas propenso a mostrar simbolos raros por codificacion. Ahora
+        // que hay dominio propio ya se podria comprobar, pero no vale una
+        // publicacion nueva solo por dos acentos. Queda para cuando se toque
+        // esta funcion por otro motivo.
+        from: "Salon y Mas <hola@salonymas.com>",
         to: [data.contact_email],
         subject: `Stock bajo: ${data.product_name} en ${data.business_name}`,
         html: `
