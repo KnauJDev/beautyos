@@ -66,7 +66,17 @@ export default {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Salon y Mas <onboarding@resend.dev>",
+        // Remitente propio desde el 10-ago (paso 2.3, cierra H-12).
+        // Antes salia de `onboarding@resend.dev`, la direccion compartida de
+        // pruebas de Resend, que **solo entrega al dueno de la cuenta**: por
+        // eso ninguna invitacion llegaba a nadie mas.
+        //
+        // El nombre vuelve a llevar tildes. D-089 las habia quitado por
+        // precaucion -- el campo "De:" es propenso a mostrar simbolos raros
+        // por codificacion y no se podia comprobar en sandbox. Ahora si se
+        // puede: si el primer correo real llega con el nombre roto, se
+        // vuelve a "Salon y Mas" y queda resuelto de una vez.
+        from: "Salón y Más <hola@salonymas.com>",
         to: [data.contact_email],
         subject: `Stock bajo: ${data.product_name} en ${data.business_name}`,
         html: `
