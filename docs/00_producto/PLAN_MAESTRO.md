@@ -169,13 +169,13 @@ instalable como app. **Costo real: ~12 USD al año.**
 
 Tope antiabuso en la reserva pública, rol Asistente con sus pantallas, 2FA.
 
-### FASE 2 — Seguridad y red de protección 🔄 **AQUÍ ESTAMOS** (4 de 6)
+### FASE 2 — Seguridad y red de protección 🔄 **AQUÍ ESTAMOS** (5 de 6)
 
 | # | Paso | Quién | Estado |
 |---|---|---|---|
 | 2.1 | **Rotar las claves `service_role` y `secret`** (H-04). Expuestas el 03-ago | 👥 | ✅ **CERRADO 09-ago (D-127).** Se borró la clave secreta y se **desactivaron** las claves antiguas — mejor que rotarlas. Verificado de extremo a extremo en producción |
 | 2.2 | Restaurar un respaldo de ensayo en un segundo proyecto gratuito (D-111) | 👥 | ⬜ |
-| 2.3 | **Verificar el dominio en Resend** (H-12). Hoy ningún correo llega a nadie | 👥 | ⬜ **Bloquea F3.7** |
+| 2.3 | **Verificar el dominio en Resend** (H-12) | 👥 | ✅ **CERRADO 10-ago (D-128).** Eran tres problemas encadenados; el de fondo era una dependencia anclada con rango. **Falta aplicar el mismo arreglo a `send-low-stock-alert`** |
 | 2.4 | Cerrar los almacenes de archivos (H-09) | 🤖 | ✅ D-119 |
 | 2.5 | Marcar "Naguara de Uñas" como negocio de prueba | 🤖 | ✅ D-120 |
 | 2.6 | Pruebas de las 3 reglas de dinero y de los roles (H-03) | 🤖 | ✅ D-121 — la mitad automática espera a 2.2 |
@@ -190,11 +190,11 @@ Tope antiabuso en la reserva pública, rol Asistente con sus pantallas, 2FA.
 | 3.4 | Subir Supabase a plan Pro (~25 USD/mes) | 👤 | ⬜ |
 | 3.5 | Cargar los 3 planes con precios de lista y límites | 🤖 | ⬜ |
 | 3.6 | **Precio y descuento por cliente** en la suscripción (columnas nuevas) | 🤖 | ⬜ |
-| 3.7 | **Filtro de aceptación:** formulario, estado `pending`, aprobar/rechazar. La prueba gratis **empieza al aprobar** | 🤖 | ⛔ necesita 2.3 |
+| 3.7 | **Filtro de aceptación:** formulario, estado `pending`, aprobar/rechazar. La prueba gratis **empieza al aprobar** | 🤖 | ⬜ **Desbloqueado** |
 | 3.8 | Pantalla pública de planes (`list_public_plans` ya existe, dormida) | 🤖 | ⬜ |
 | 3.9 | **ePayco con confirmación en el servidor.** Nunca creerle al navegador | 🤖 | ⬜ |
 | 3.10 | Pago → suscripción: activar, renovar, manejar el fallido | 🤖 | ⬜ |
-| 3.11 | Avisos por correo **10, 5 y 3 días** antes de vencer | 🤖 | ⛔ necesita 2.3 |
+| 3.11 | Avisos por correo **10, 5 y 3 días** antes de vencer | 🤖 | ⬜ **Desbloqueado** |
 
 ### FASE 4 — Pulido módulo a módulo
 
@@ -306,7 +306,7 @@ toque, o se descarta con su motivo.
 | H-09 | Archivos públicos permanentes | ✅ Cerrado (D-119) |
 | H-10 | `social_publishing` sin nada detrás | 🔄 Es la fase 6 |
 | H-11 | Permiso suelto de Storage | ⬜ Paso 8.3 |
-| H-12 | **Resend en sandbox: los correos no llegan** | ⬜ **Paso 2.3** |
+| H-12 | Resend en sandbox: los correos no llegan | ✅ **Cerrado 10-ago (D-128)** |
 | H-13 | Commits sin publicar | ✅ Cerrado |
 
 ### Anotados en el camino
