@@ -184,7 +184,7 @@ Tope antiabuso en la reserva pública, rol Asistente con sus pantallas, 2FA.
 
 | # | Paso | Quién | Estado |
 |---|---|---|---|
-| 3.1 | Confirmar con ePayco si admite **cobros recurrentes con RUT de persona natural** | 👤 | ⬜ **Si no, cambia el modelo entero** |
+| 3.1 | Confirmar con ePayco si admite **cobros recurrentes** | 👤 | ✅ **CONFIRMADO 09-ago: la cuenta sí admite cobros recurrentes.** Era el mayor riesgo de esta fase y quedó descartado |
 | 3.2 | Consultar a un contador las obligaciones al facturar (DIAN, IVA) | 👤 | ⬜ |
 | 3.3 | Términos de servicio y política de privacidad (Ley 1581) | 👥 | ⬜ **Obligatorio: se manejan datos de terceros** |
 | 3.4 | Subir Supabase a plan Pro (~25 USD/mes) | 👤 | ⬜ |
