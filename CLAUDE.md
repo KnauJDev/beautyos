@@ -20,15 +20,19 @@
 Lee, en este orden:
 
 1. **El HANDOFF más reciente por fecha** en `docs/HANDOFF/` — dónde quedamos y
-   qué quedó a medias. Cada uno reemplaza al anterior; solo vale el último.
-2. `docs/00_producto/REGISTRO_DE_DECISIONES.md` — **las últimas 15 entradas.**
+   qué quedó a medias. Solo vale el último.
+2. **`docs/00_producto/PLAN_MAESTRO.md`** — **el único documento que manda
+   sobre qué falta y en qué orden.** Trae la visión del producto, los planes y
+   precios, el estado de los 16 módulos, las 8 fases con sus pasos, el buzón de
+   ideas y las reglas de trabajo.
+3. `docs/00_producto/REGISTRO_DE_DECISIONES.md` — **las últimas 15 entradas.**
    Muchas dudas ya tienen respuesta ahí, con lo que se descartó y por qué.
-3. `docs/00_producto/PLAN_DE_LANZAMIENTO_2026-08-06.md` — qué falta y en qué orden.
-4. `docs/00_producto/PROMPT_MAESTRO_IA.md` — arquitectura real y reglas no
-   negociables (Flutter + `setState`, RLS + RPC, dinero en enteros COP,
-   sincronizar catálogo de tenant con tablas de sede).
 
-**No empieces por el código.** Este proyecto tiene más de 120 decisiones
+**No hay un cuarto documento con opinión sobre el plan.** Si encuentras uno,
+está mal: siete se fundieron en el Plan Maestro el 09-ago (D-126) y lo anterior
+vive en `docs/_archivo/`, que no manda sobre nada.
+
+**No empieces por el código.** Este proyecto tiene más de 126 decisiones
 registradas con su porqué; leer el código sin ellas es reconstruir a ciegas
 razonamientos que ya están escritos.
 

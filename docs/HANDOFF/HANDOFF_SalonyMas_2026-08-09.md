@@ -1,6 +1,6 @@
 # HANDOFF Salón y Más — 9 de agosto de 2026
 
-**Bloque documentado:** decisiones **D-116 a D-123** · 12 commits · 5 migraciones
+**Bloque documentado:** decisiones **D-116 a D-126** · 13 commits · 5 migraciones
 **Estado:** aplicado y verificado en producción; **quedan 2 migraciones por aplicar**
 **Versión publicada:** `d8c556f` · `https://salonymas.com`
 **Reemplaza como handoff vigente a:** `HANDOFF_SalonyMas_2026-08-08.md`
@@ -43,14 +43,20 @@ asistente** (A4, A5, A6). Pero lo importante no fue el código:
 
 ## 3. La corrección de rumbo más importante
 
-> **Manda `PLAN_DE_TRABAJO_A_PRODUCCION.xlsx` sobre el ORDEN de ejecución.**
-> El plan de lanzamiento manda sobre el **qué** y el **por qué**.
+**Se reorganizó la casa entera (D-126).** Siete documentos opinaban sobre el
+plan y ya se habían contradicho dos veces (D-063 y D-118, esta última costó
+trabajar una etapa fuera de orden).
 
-Se escribió porque el apartado 11-J del plan ponía el barrido de seguridad *"al
-cerrar la Etapa 2"* mientras la hoja del propietario lo pone **antes**. Es la
-reaparición del problema que D-063 quiso cerrar hace dos semanas.
+> **Ahora hay TRES documentos vivos y ninguno se pisa:**
+> **`PLAN_MAESTRO.md`** (qué falta y en qué orden) · **`REGISTRO_DE_DECISIONES`**
+> (por qué, solo crece) · **`HANDOFF`** (dónde quedamos hoy).
+>
+> **74 documentos se archivaron en `docs/_archivo/`. No se borró ninguno.**
 
-**Ante cualquier duda de orden: manda la hoja.**
+El Plan Maestro trae además dos cosas que no existían: **la visión completa del
+producto** —planes, precios, límites, IA, referidos, cuenta del cliente final—
+y un **buzón de ideas**, para que lo que se le ocurra al propietario a mitad de
+una construcción se anote sin interrumpir y sin perderse.
 
 ---
 
@@ -180,9 +186,11 @@ Lee primero, en este orden:
 5. docs/00_producto/REGISTRO_DE_DECISIONES.md, decisiones D-116 a D-121
 6. docs/00_producto/BARRIDO_Y_PLAN_MAESTRO_2026-08-08.md
 
-Estamos en la ETAPA A (seguridad). Cerradas A4, A5 y A6 (esta última a
-medias: la parte automática espera a A2). Faltan A1, A2 y A3, que son
-"juntos". De la Etapa B está cerrada 2.6a.
+Estamos en la FASE 2 del PLAN_MAESTRO (seguridad), 3 de 6. Cerrados los
+pasos 2.4, 2.5 y 2.6. Faltan 2.1 (rotar claves), 2.2 (respaldo de ensayo)
+y 2.3 (Resend), que son "juntos".
+
+Lo siguiente es 2.1: rotar las claves. Desbloquea todo lo demás.
 
 Antes de nada: quedan 2 migraciones sin aplicar (20260809220000 y
 20260809230000).
@@ -219,8 +227,8 @@ Pendiente mío y bloqueante: definir los 3 precios de los planes.
 
 - **12 commits**, desde `7f91f25`
 - **5 migraciones**, 3 aplicadas el 09-ago y 2 pendientes
-- **Decisiones D-116 a D-123** en `REGISTRO_DE_DECISIONES.md`
-- **Hallazgos L a Q** anotados en el apartado 11 del plan
+- **Decisiones D-116 a D-126** en `REGISTRO_DE_DECISIONES.md`
+- **Hallazgos L a Q** y **10 ideas** en el `PLAN_MAESTRO`, secciones 6 y 7
 - **Respaldo del 09-ago** en `OneDrive\Documents\BeautyOS Backups`
 - **Verificaciones ejecutadas contra producción, todas en verde:**
   - `161_verify_numero_de_ticket.sql` — 6 controles, 700 tickets numerados del

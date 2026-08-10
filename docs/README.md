@@ -9,20 +9,23 @@
 
 ## 1. Si llegas nuevo, lee en este orden
 
-Da igual si eres una persona o una inteligencia artificial. Con cuatro
-documentos entiendes el proyecto:
+Da igual si eres una persona o una inteligencia artificial. **Con tres
+documentos entiendes el proyecto entero.**
 
 | # | Documento | Te responde |
 |---|---|---|
 | 1 | `HANDOFF/` — **el más reciente por fecha** | ¿Dónde quedamos? Trae el prompt exacto para retomar |
-| 1b | `00_producto/PLAN_DE_TRABAJO_A_PRODUCCION.xlsx` | **¿En qué ORDEN se hace?** Manda sobre el plan (D-118) |
-| 2 | `00_producto/BARRIDO_Y_PLAN_MAESTRO_2026-08-08.md` | ¿Qué hay construido y qué falta, módulo por módulo? |
-| 3 | `00_producto/PLAN_DE_LANZAMIENTO_2026-08-06.md` | ¿Cuál es el camino hasta vender? |
-| 4 | `00_producto/REGISTRO_DE_DECISIONES.md` | **¿Por qué está hecho así?** Empieza por el final |
+| 2 | **`00_producto/PLAN_MAESTRO.md`** | **¿Qué es, qué falta y en qué orden?** El único que manda sobre el plan |
+| 3 | `00_producto/REGISTRO_DE_DECISIONES.md` | **¿Por qué está hecho así?** Empieza por el final |
 
-**No empieces por el código.** Este proyecto tiene 121 decisiones registradas
+**No empieces por el código.** Este proyecto tiene 126 decisiones registradas
 con su porqué; leer el código sin ellas es reconstruir a ciegas razonamientos
 que ya están escritos.
+
+> **Si encuentras un cuarto documento opinando sobre el plan, está mal.** Siete
+> documentos compitiendo entre sí causaron dos desviaciones reales (D-063,
+> D-118). Se fundieron en el Plan Maestro el 09-ago (D-126) y lo anterior vive
+> en `_archivo/`, que **no manda sobre nada**.
 
 ---
 
@@ -33,10 +36,11 @@ mensajes de commit y en los documentos. **Son sistemas distintos:**
 
 | Código | Qué es | Dónde vive |
 |---|---|---|
-| **D-001 … D-121** | **Decisiones.** El porqué de cada cosa, con lo que se descartó y por qué | `00_producto/REGISTRO_DE_DECISIONES.md` |
+| **D-001 … D-126** | **Decisiones.** El porqué de cada cosa, con lo que se descartó y por qué | `00_producto/REGISTRO_DE_DECISIONES.md` |
 | **H-01 … H-13** | **Hallazgos** de la auditoría integral del 6 de agosto | `01_arquitectura/auditorias/AUDITORIA_INTEGRAL_2026-08-06.md` |
-| **A … P** | **Anotado en el camino**: lo que salió sin etapa asignada | `PLAN_DE_LANZAMIENTO`, apartado 11 |
-| **2.4, 3.6…** | **Números de tarea** del plan de lanzamiento | `PLAN_DE_LANZAMIENTO` |
+| **A … Q** | **Anotado en el camino** | `PLAN_MAESTRO`, sección 7 |
+| **I-01 … I-10** | **Buzón de ideas**: lo que aún no tiene fase | `PLAN_MAESTRO`, sección 6 |
+| **F3.7, 4.10…** | **Números de paso** del Plan Maestro | `PLAN_MAESTRO`, sección 5 |
 | **Tramo A, D3.5.2…** | Trabajo de arquitectura multisede de julio | `01_arquitectura/auditorias/` |
 
 > **Cuando el código cita un código, no lo inventes: búscalo.** Un comentario
@@ -48,17 +52,21 @@ mensajes de commit y en los documentos. **Son sistemas distintos:**
 
 ## 3. Qué documento manda sobre qué
 
-Cada uno tiene un trabajo y **no se pisan**. Fue una decisión explícita (D-063)
-después de tener dos mapas compitiendo entre sí.
+**Tres documentos vivos, tres trabajos que no se pisan** (D-063, D-126).
 
 | Documento | Responde | ¿Crece o se reemplaza? |
 |---|---|---|
-| **REGISTRO_DE_DECISIONES** | ¿Por qué es así? | **Solo crece.** Nunca se borra una fila; una decisión nueva corrige a la vieja citándola |
-| **PLAN_DE_LANZAMIENTO** | ¿Qué falta y en qué orden? | Se actualiza al cerrar cada tarea |
-| **HANDOFF** | ¿Dónde quedamos? | **Se reemplaza.** Cada uno sustituye al anterior |
-| **ESPECIFICACION_\*** | ¿Cómo debe funcionar exactamente? | Contrato de una tarea concreta |
-| **AUDITORIA_\*** | ¿Qué está mal hoy? | Foto de un momento |
-| **`.xlsx`** | ¿Cómo va el avance? | Lo actualiza el propietario |
+| **PLAN_MAESTRO** | ¿Qué es, qué falta y en qué orden? | Se actualiza al cerrar cada paso |
+| **REGISTRO_DE_DECISIONES** | ¿Por qué es así? | **Solo crece.** Nunca se borra ni se resume una fila |
+| **HANDOFF** | ¿Dónde quedamos hoy? | **Se reemplaza.** Cada uno sustituye al anterior |
+
+**Y tres de apoyo, que no opinan sobre el plan:**
+
+| Documento | Responde |
+|---|---|
+| `ESPECIFICACION_*` | ¿Cómo debe funcionar exactamente? Contrato de una tarea |
+| `AUDITORIA_INTEGRAL_2026-08-06` | ¿Qué está mal hoy? Foto de un momento |
+| `ADR/` | ¿Por qué la arquitectura es así? No se reescriben |
 
 ---
 
@@ -85,12 +93,13 @@ Reglas acordadas con el propietario. **No son negociables.**
 
 ## 5. Estructura de carpetas
 
-- `00_producto/` — visión, plan, decisiones, especificaciones y alcance
+- `00_producto/` — **el Plan Maestro**, las decisiones y las especificaciones
 - `01_arquitectura/` — modelo multisede, roles, suscripciones, ADR y auditorías
 - `02_operacion/` — respaldo, restauración y procedimientos
 - `03_referencias/` — benchmarking y fuentes externas
 - `04_pruebas/` — criterios de salida y evidencias
-- `HANDOFF/` — el punto de retomada de cada sesión
+- `HANDOFF/` — el punto de retomada (solo el vigente)
+- `_archivo/` — **74 documentos históricos.** No mandan sobre nada; guardan el porqué
 
 ---
 
