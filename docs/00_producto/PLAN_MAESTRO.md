@@ -150,7 +150,7 @@ Un dueño ve **16 módulos**. Esto es lo que hay hoy.
 | **Servicios** | Catálogo y precios | Cuáles dejan más dinero. Foto por servicio | F4.9 |
 | **Usuarios** | Invitar y gestionar | ⚠️ **Las invitaciones no llegan** (H-12) | F2.3 |
 | **Inventario / Compras / Gastos** | Funcionan | Pulido visual | F4.8 |
-| **Fotos de trabajos** | ✅ Privadas hasta aprobar, papelera | Flujo de captura sin definir; tipos de foto confusos | F5.7, F4.9 |
+| **Fotos de trabajos** | ✅ Privadas hasta aprobar, papelera. **Ya van amarradas al ticket, al cliente y al estilista** | **No se ve el número de ticket** en la galería; sin filtros por cliente ni por estilista; flujo de captura sin definir; tipos de foto confusos | F4.9, F5.7 |
 | **Reseñas** | Funcionan | Respuestas asistidas | F6.3 |
 | **Configuración** | Completa, con tema y versión | Numeración de ticket ajustable; explicar "Subir portada" | F4.9 |
 | **Panel de plataforma** | Solo lectura de negocios | Rediseño completo, aprobar clientes, tarifas, referidos | F3.7, F7 |
@@ -169,11 +169,11 @@ instalable como app. **Costo real: ~12 USD al año.**
 
 Tope antiabuso en la reserva pública, rol Asistente con sus pantallas, 2FA.
 
-### FASE 2 — Seguridad y red de protección 🔄 **AQUÍ ESTAMOS** (3 de 6)
+### FASE 2 — Seguridad y red de protección 🔄 **AQUÍ ESTAMOS** (4 de 6)
 
 | # | Paso | Quién | Estado |
 |---|---|---|---|
-| 2.1 | **Rotar las claves `service_role` y `secret`** (H-04). Expuestas el 03-ago | 👥 | ⬜ **El más urgente** |
+| 2.1 | **Rotar las claves `service_role` y `secret`** (H-04). Expuestas el 03-ago | 👥 | ✅ **CERRADO 09-ago (D-127).** Se borró la clave secreta y se **desactivaron** las claves antiguas — mejor que rotarlas. Verificado de extremo a extremo en producción |
 | 2.2 | Restaurar un respaldo de ensayo en un segundo proyecto gratuito (D-111) | 👥 | ⬜ |
 | 2.3 | **Verificar el dominio en Resend** (H-12). Hoy ningún correo llega a nadie | 👥 | ⬜ **Bloquea F3.7** |
 | 2.4 | Cerrar los almacenes de archivos (H-09) | 🤖 | ✅ D-119 |
@@ -208,7 +208,7 @@ Tope antiabuso en la reserva pública, rol Asistente con sus pantallas, 2FA.
 | 4.6 | Clientes: análisis de retorno y valor. Decidir si se separa el apellido | 🤖 | ⬜ |
 | 4.7 | Reportes: nivel 2 y 3, métodos de pago, comparación | 🤖 | ⬜ |
 | 4.8 | Inventario, Compras y Gastos: pulido visual | 🤖 | ⬜ |
-| 4.9 | Servicios, Estilistas y Configuración: pulido, producción por persona, numeración ajustable, tipos de foto | 🤖 | ⬜ |
+| 4.9 | Servicios, Estilistas y Configuración: pulido, producción por persona, numeración ajustable, tipos de foto. **Y la galería de fotos: mostrar el número de ticket y poder filtrar por cliente y por estilista** | 🤖 | ⬜ |
 | 4.10 | **Barra inferior de celular con acciones**, no módulos (hallazgo D) | 🤖 | ⬜ |
 | 4.11 | Rediseño del panel de plataforma (hallazgo O) | 🤖 | ⬜ |
 
@@ -298,7 +298,7 @@ toque, o se descarta con su motivo.
 | H-01 | Rol Asistente sin pantallas | ✅ Cerrado (D-092) |
 | H-02 | Reserva pública sin protección | ✅ Mitigado (D-092). Fondo en I-04, I-05 |
 | H-03 | Sin pruebas de dinero ni roles | 🔄 Mitad hecha (D-121). La otra mitad necesita 2.2 |
-| H-04 | **Claves expuestas sin rotar** | ⬜ **Paso 2.1** |
+| H-04 | Claves expuestas sin rotar | ✅ **Cerrado 09-ago (D-127)** |
 | H-05 | 42 funciones heredadas | ⬜ Paso 8.1 |
 | H-06 | Documento rector desactualizado | ✅ Cerrado — y este documento lo reemplaza |
 | H-07 | `pubspec.lock` sin versionar | ✅ Cerrado (D-091) |
@@ -319,7 +319,7 @@ toque, o se descarta con su motivo.
 | **Ñ** | **El flujo de las fotos no está definido:** quién las toma, cuándo, por dónde. Y los tipos "Final" y "Portafolio" sobran | Pasos 4.9 y 5.7 |
 | **O** | Rediseño del panel de plataforma | Paso 4.11 |
 | **P** | **El consecutivo de ticket no sirve como número contable** | Paso 4.4 |
-| **Q** | Que la pantalla del administrador se entere sola cuando el estilista finaliza | Paso 4.3 |
+| **Q** | **Ningún módulo se actualiza solo.** Empezó como "que el administrador se entere cuando el estilista finaliza", pero el 09-ago se comprobó que es general: **entrar a un módulo no recarga sus datos**, hay que pulsar Actualizar o F5. Se vio con las fotos, y aplica igual a Tickets, Clientes y el resto | Paso 4.3, ampliado a todos los módulos |
 
 ---
 

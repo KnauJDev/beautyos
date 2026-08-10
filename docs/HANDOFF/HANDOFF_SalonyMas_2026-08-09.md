@@ -1,6 +1,6 @@
 # HANDOFF Salón y Más — 9 de agosto de 2026
 
-**Bloque documentado:** decisiones **D-116 a D-126** · 13 commits · 5 migraciones
+**Bloque documentado:** decisiones **D-116 a D-127** · 15 commits · 5 migraciones
 **Estado:** aplicado y verificado en producción; **quedan 2 migraciones por aplicar**
 **Versión publicada:** `d8c556f` · `https://salonymas.com`
 **Reemplaza como handoff vigente a:** `HANDOFF_SalonyMas_2026-08-08.md`
@@ -65,8 +65,8 @@ una construcción se anote sin interrumpir y sin perderse.
 ```
 Etapa 0  Que exista en internet        ✅ CERRADA
 Etapa 1  Que sea seguro compartirla    ✅ CERRADA
-Etapa A  Seguridad y red de protección 🔄 AQUÍ  (3 de 6)
-         A1 Rotar claves               ⬜ 👥 ← el que desbloquea lo demás
+Etapa A  Seguridad y red de protección 🔄 AQUÍ  (4 de 6)
+         A1 Rotar claves               ✅ CERRADO — H-04 cerrado (D-127)
          A2 Restauración de ensayo     ⬜ 👥
          A3 Verificar Resend           ⬜ 👥
          A4 Cerrar almacenes           ✅
@@ -119,7 +119,7 @@ permiso**. Hay fallos que **solo aparecen usando la aplicación de verdad**.
 | Qué | Quién |
 |---|---|
 | **Definir los 3 precios** | 👤 **Marca la fecha de salida** |
-| **A1 — Rotar claves de Supabase (H-04)** | 👥 Abierto desde el 03-ago |
+| ~~A1 — Rotar claves de Supabase (H-04)~~ | ✅ **CERRADO el 09-ago** (D-127) |
 | A2 — Restaurar un respaldo de ensayo | 👥 **Y desbloquea la otra mitad de A6** |
 | A3 — Verificar Resend: hoy las invitaciones no llegan a nadie | 👥 |
 
@@ -186,14 +186,17 @@ Lee primero, en este orden:
 5. docs/00_producto/REGISTRO_DE_DECISIONES.md, decisiones D-116 a D-121
 6. docs/00_producto/BARRIDO_Y_PLAN_MAESTRO_2026-08-08.md
 
-Estamos en la FASE 2 del PLAN_MAESTRO (seguridad), 3 de 6. Cerrados los
-pasos 2.4, 2.5 y 2.6. Faltan 2.1 (rotar claves), 2.2 (respaldo de ensayo)
-y 2.3 (Resend), que son "juntos".
+Estamos en la FASE 2 del PLAN_MAESTRO (seguridad), 4 de 6. Cerrados los
+pasos 2.1, 2.4, 2.5 y 2.6. Faltan 2.2 (restauración de ensayo) y 2.3
+(verificar el dominio en Resend), que son "juntos".
 
-Lo siguiente es 2.1: rotar las claves. Desbloquea todo lo demás.
+Lo siguiente es 2.3: verificar Resend. Hoy ningún correo llega a nadie,
+y eso bloquea el filtro de aceptación (paso 3.7) y los avisos de
+vencimiento (3.11).
 
-Antes de nada: quedan 2 migraciones sin aplicar (20260809220000 y
-20260809230000).
+Todas las migraciones están aplicadas. El propietario verificó de
+extremo a extremo: crear cita, finalizar como estilista, subir foto,
+cobrar como administrador e invitar usuario.
 
 IMPORTANTE: el orden lo manda la hoja .xlsx, no el plan de lanzamiento.
 Etapa A antes que Etapa B. Se corrigió el 09-ago en D-118 porque se había
