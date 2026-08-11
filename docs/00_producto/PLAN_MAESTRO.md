@@ -169,7 +169,10 @@ instalable como app. **Costo real: ~12 USD al año.**
 
 Tope antiabuso en la reserva pública, rol Asistente con sus pantallas, 2FA.
 
-### FASE 2 — Seguridad y red de protección 🔄 **AQUÍ ESTAMOS** (5 de 7)
+### FASE 2 — Seguridad y red de protección 🔄 **AQUÍ ESTAMOS** (6 de 7)
+
+> **Solo queda el paso 2.2, la restauración de ensayo.** Es 👥 y desbloquea
+> además la mitad pendiente de H-03 (D-121).
 
 | # | Paso | Quién | Estado |
 |---|---|---|---|
@@ -179,7 +182,7 @@ Tope antiabuso en la reserva pública, rol Asistente con sus pantallas, 2FA.
 | 2.4 | Cerrar los almacenes de archivos (H-09) | 🤖 | ✅ D-119 |
 | 2.5 | Marcar "Naguara de Uñas" como negocio de prueba | 🤖 | ✅ D-120 |
 | 2.6 | Pruebas de las 3 reglas de dinero y de los roles (H-03) | 🤖 | ✅ D-121 — la mitad automática espera a 2.2 |
-| 2.7 | **Arreglar `send-low-stock-alert`** — estaba rota por la misma causa que D-128 (hallazgo T) | 🤖 | 🔄 **Arreglada y publicada el 11-ago (D-131), versión 6.** Comprobado que la función **arranca y ejecuta nuestro código** — que era exactamente lo que fallaba — y que llega hasta la base de datos. **Falta que el propietario compruebe que el correo llega**, con un consumo interno que deje un producto en su mínimo |
+| 2.7 | **Arreglar `send-low-stock-alert`** — estaba rota por la misma causa que D-128 (hallazgo T) | 🤖 | ✅ **CERRADO 11-ago (D-131).** Arreglada, publicada (versión 6) y **verificada de extremo a extremo por el propietario**: consumo interno de 6 unidades de "Gel para Peinar" → quedó en 3 con mínimo 5 → **el correo llegó** desde `hola@salonymas.com` con el producto, la sede y las cantidades correctas |
 
 ### FASE 3 — Poder cobrar — *el camino corto al primer cliente*
 
@@ -209,7 +212,7 @@ Tope antiabuso en la reserva pública, rol Asistente con sus pantallas, 2FA.
 | 4.5 | Tickets: pulido del nivel 2 y 3 + cambiar `TicketStatusBadge` por `StatusPill` (hallazgo N) | 🤖 | ⬜ |
 | 4.6 | Clientes: análisis de retorno y valor. Decidir si se separa el apellido | 🤖 | ⬜ |
 | 4.7 | Reportes: nivel 2 y 3, métodos de pago, comparación | 🤖 | ⬜ |
-| 4.8 | Inventario, Compras y Gastos: pulido visual | 🤖 | ⬜ |
+| 4.8 | Inventario, Compras y Gastos: pulido visual. **Y el plural de las unidades en el correo de stock bajo**: hoy dice *"quedó con 3 unidad"* y *"el mínimo (5 unidad)"*, porque la unidad se guarda en singular. Con unidades como `ml` o `gr` se lee bien; con `unidad` no. Visto el 11-ago en el correo real | 🤖 | ⬜ |
 | 4.9 | Servicios, Estilistas y Configuración: pulido, producción por persona, numeración ajustable, tipos de foto. **Y la galería de fotos: mostrar el número de ticket y poder filtrar por cliente y por estilista** | 🤖 | ⬜ |
 | 4.10 | **Barra inferior de celular con acciones**, no módulos (hallazgo D) | 🤖 | ⬜ |
 | 4.11 | Rediseño del panel de plataforma (hallazgo O) | 🤖 | ⬜ |
