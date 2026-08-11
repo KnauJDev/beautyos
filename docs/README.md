@@ -229,6 +229,8 @@ orden en que se fueron creando. **No se reescribe para ocultar el pasado.**
 123. `HANDOFF/HANDOFF_SalonyMas_2026-08-10.md` (**handoff vigente**, con el prompt exacto para retomar)
 124. `02_operacion/CORREO_Y_DOMINIO.md` (**como esta montado el envio de correo**: dominio, los 4 registros DNS, remitente, por que el rastreo esta apagado, y que mirar cuando falle — D-128, D-130)
 125. `02_operacion/MAPA_TECNICO.md` (**donde esta cada cosa y como se opera**: el proyecto de Supabase y la trampa de su nombre, los tres caminos de publicacion, la CLI, los guiones, que cubren las pruebas y que NO, y las diez trampas que ya mordieron — D-131)
+126. `../supabase/migrations/20260811100000_un_estilista_una_cuenta_activa.sql` (**un estilista del catalogo, una sola cuenta ACTIVA**, hallazgo R — cierra los tres caminos y deja un indice unico como red; **solo cuentas activas a proposito**, para que cambiar de correo siga siendo posible — D-132)
+127. `../supabase/sql/165_verify_un_estilista_una_cuenta.sql` (verificacion del candado: 7 controles y una prueba de escritura real en `ROLLBACK` que comprueba **las dos mitades** — que rechaza la segunda cuenta activa y que si acepta una suspendida)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión
 estructural. No se reescriben para ocultar el pasado: una decisión futura la
