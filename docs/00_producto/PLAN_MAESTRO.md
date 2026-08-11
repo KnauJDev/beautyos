@@ -195,6 +195,7 @@ Tope antiabuso en la reserva pública, rol Asistente con sus pantallas, 2FA.
 | 3.9 | **ePayco con confirmación en el servidor.** Nunca creerle al navegador | 🤖 | ⬜ |
 | 3.10 | Pago → suscripción: activar, renovar, manejar el fallido | 🤖 | ⬜ |
 | 3.11 | Avisos por correo **10, 5 y 3 días** antes de vencer | 🤖 | ⬜ **Desbloqueado** |
+| 3.12 | 🔴 **Que los correos de cuenta salgan por Resend, no por Supabase.** El *"Confirma tu correo"* del registro lo manda hoy el servicio interno de Supabase (`noreply@mail.app.supabase.io`), que en el plan gratuito **tiene un tope diario bajísimo** — el propietario lo agotó el 10-ago probando, con el mensaje `email rate limit exceeded`. **Con clientes reales esto rompe el registro el primer día.** Se resuelve apuntando el SMTP de Supabase Auth a Resend, que ya está verificado. De paso, el correo deja de venir de Supabase y viene de Salón y Más | 👥 | ⬜ **Antes del primer cliente** |
 
 ### FASE 4 — Pulido módulo a módulo
 
