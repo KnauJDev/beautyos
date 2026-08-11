@@ -25,9 +25,10 @@ Un día de **cerrar cosas viejas y ordenar la casa**. Nada de esto fue código n
 ```
 Fase 0  Que exista en internet        ✅
 Fase 1  Que sea seguro compartirla    ✅
-Fase 2  Seguridad                     🔄 5 de 6  ← AQUÍ
+Fase 2  Seguridad                     🔄 5 de 7  ← AQUÍ
         2.1 Rotar claves              ✅ H-04 cerrado hoy
-        2.2 Restauración de ensayo    ⬜ 👥 ← LO ÚNICO QUE FALTA
+        2.2 Restauración de ensayo    ⬜ 👥
+        2.7 Arreglar low-stock-alert  ⬜ 🤖 ← lo primero
         2.3 Verificar Resend          ✅ H-12 cerrado hoy
         2.4 Almacenes                 ✅
         2.5 Negocio de prueba         ✅
@@ -120,6 +121,7 @@ original, no solo la firma.**
 ## 7. Estado técnico
 
 - **Pruebas:** 89, en 10 archivos · `flutter analyze` limpio
+- **Correo y dominio:** cómo está montado, en `02_operacion/CORREO_Y_DOMINIO.md`
 - **Migraciones:** todas aplicadas
 - **Edge Functions:** `send-invitation-email` ✅ arreglada ·
   `send-low-stock-alert` ❌ **rota, pendiente**
@@ -146,8 +148,8 @@ Antes de proponer nada, lee en este orden:
 4. docs/00_producto/REGISTRO_DE_DECISIONES.md, las últimas 15 entradas
    (por qué está hecho así — solo crece, nunca se resume)
 
-Estamos en la FASE 2 (seguridad), 5 de 6. Solo falta 2.2, la restauración
-de ensayo, que es "juntos".
+Estamos en la FASE 2 (seguridad), 5 de 7. Faltan 2.2 (restauración de
+ensayo, "juntos") y 2.7 (arreglar send-low-stock-alert).
 
 Lo primero de hoy, en este orden:
 1. Arreglar send-low-stock-alert: sigue rota por la misma causa que D-128

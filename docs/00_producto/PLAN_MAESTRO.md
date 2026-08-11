@@ -148,7 +148,7 @@ Un dueño ve **16 módulos**. Esto es lo que hay hoy.
 | **Reportes** | Ventas + resultado financiero | Nivel 2 y 3, métodos de pago, comparación entre períodos | F4.7 |
 | **Estilistas** | Lista y configuración | Producción por persona | F4.9 |
 | **Servicios** | Catálogo y precios | Cuáles dejan más dinero. Foto por servicio | F4.9 |
-| **Usuarios** | Invitar y gestionar | ⚠️ **Las invitaciones no llegan** (H-12) | F2.3 |
+| **Usuarios** | Invitar y gestionar. **El correo de invitación ya llega** (H-12 cerrado el 10-ago) | Impedir el estilista duplicado (**R**) y separar el texto de la pantalla de acceso (**S**) | Fase 4 |
 | **Inventario / Compras / Gastos** | Funcionan | Pulido visual | F4.8 |
 | **Fotos de trabajos** | ✅ Privadas hasta aprobar, papelera. **Ya van amarradas al ticket, al cliente y al estilista** | **No se ve el número de ticket** en la galería; sin filtros por cliente ni por estilista; flujo de captura sin definir; tipos de foto confusos | F4.9, F5.7 |
 | **Reseñas** | Funcionan | Respuestas asistidas | F6.3 |
@@ -169,7 +169,7 @@ instalable como app. **Costo real: ~12 USD al año.**
 
 Tope antiabuso en la reserva pública, rol Asistente con sus pantallas, 2FA.
 
-### FASE 2 — Seguridad y red de protección 🔄 **AQUÍ ESTAMOS** (5 de 6)
+### FASE 2 — Seguridad y red de protección 🔄 **AQUÍ ESTAMOS** (5 de 7)
 
 | # | Paso | Quién | Estado |
 |---|---|---|---|
@@ -196,7 +196,7 @@ Tope antiabuso en la reserva pública, rol Asistente con sus pantallas, 2FA.
 | 3.9 | **ePayco con confirmación en el servidor.** Nunca creerle al navegador | 🤖 | ⬜ |
 | 3.10 | Pago → suscripción: activar, renovar, manejar el fallido | 🤖 | ⬜ |
 | 3.11 | Avisos por correo **10, 5 y 3 días** antes de vencer | 🤖 | ⬜ **Desbloqueado** |
-| 3.12 | 🔴 **Que los correos de cuenta salgan por Resend, no por Supabase.** El *"Confirma tu correo"* del registro lo manda hoy el servicio interno de Supabase (`noreply@mail.app.supabase.io`), que en el plan gratuito **tiene un tope diario bajísimo** — el propietario lo agotó el 10-ago probando, con el mensaje `email rate limit exceeded`. **Con clientes reales esto rompe el registro el primer día.** Se resuelve apuntando el SMTP de Supabase Auth a Resend, que ya está verificado. De paso, el correo deja de venir de Supabase y viene de Salón y Más | 👥 | ⬜ **Antes del primer cliente** |
+| 3.12 | 🔴 **Se adelanta a la Fase 2 a propósito** — la regla de oro pide anotar por qué: el tope de correos se agota probando, así que **bloquea las pruebas de hoy**, no solo las ventas de mañana. **Que los correos de cuenta salgan por Resend, no por Supabase.** El *"Confirma tu correo"* del registro lo manda hoy el servicio interno de Supabase (`noreply@mail.app.supabase.io`), que en el plan gratuito **tiene un tope diario bajísimo** — el propietario lo agotó el 10-ago probando, con el mensaje `email rate limit exceeded`. **Con clientes reales esto rompe el registro el primer día.** Se resuelve apuntando el SMTP de Supabase Auth a Resend, que ya está verificado. De paso, el correo deja de venir de Supabase y viene de Salón y Más | 👥 | ⬜ **Antes del primer cliente** |
 
 ### FASE 4 — Pulido módulo a módulo
 
@@ -288,6 +288,9 @@ toque, o se descarta con su motivo.
 | I-08 | Paquetes / membresías de sesiones para el cliente final | 28-jul | Pausado hasta que un negocio real lo pida |
 | I-09 | Propinas — no existe ni la columna | 08-ago | Sin asignar |
 | I-10 | Vista de ausencias de todo el equipo para el administrador | 27-jul | Sin asignar |
+| I-11 | **Correos del salón a SUS clientas**: cumpleaños, recordatorios de cita. Idea del propietario, 09-ago | **No existe nada.** Decidido cómo se hará cuando toque: salen del dominio propio pero **con el nombre del salón como remitente** y respuesta al correo del salón, para que la clienta vea *"Naguara de Uñas"* y no *"Salón y Más"*. Van por **subdominio aparte**, para que si algún día caen en spam no arrastren a los correos de negocio. Fase 6 |
+| I-12 | **Reenvío gratuito de `hola@salonymas.com` al Gmail del propietario** con Cloudflare Email Routing | Hoy esa dirección **solo envía, no recibe**: si un cliente responde una invitación, ese mensaje se pierde. Es gratis y son cinco minutos. **No confligue con Resend**: el MX de Resend vive en `send.`, el del reenvío iría en la raíz |
+| I-13 | **Darle al asistente acceso directo a Supabase** con el conector oficial y un token revocable | Se aplazó el 09-ago hasta rotar las claves. **Ya están rotadas (D-127), así que la condición se cumplió.** Hoy el asistente dicta clics porque la extensión de Chrome tiene bloqueado el dominio de Supabase; con el conector leería registros y desplegaría funciones solo. **Es acceso permanente a producción: decisión del propietario, no del asistente** |
 
 ---
 
