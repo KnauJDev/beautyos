@@ -38,7 +38,7 @@ mensajes de commit y en los documentos. **Son sistemas distintos:**
 |---|---|---|
 | **D-001 … D-133** | **Decisiones.** El porqué de cada cosa, con lo que se descartó y por qué | `00_producto/REGISTRO_DE_DECISIONES.md` |
 | **H-01 … H-13** | **Hallazgos** de la auditoría integral del 6 de agosto | `01_arquitectura/auditorias/AUDITORIA_INTEGRAL_2026-08-06.md` |
-| **A … W** | **Anotado en el camino** | `PLAN_MAESTRO`, sección 7 |
+| **A … X** | **Anotado en el camino** | `PLAN_MAESTRO`, sección 7 |
 | **I-01 … I-13** | **Buzón de ideas**: lo que aún no tiene fase | `PLAN_MAESTRO`, sección 6 |
 | **F3.7, 4.10…** | **Números de paso** del Plan Maestro | `PLAN_MAESTRO`, sección 5 |
 | **Tramo A, D3.5.2…** | Trabajo de arquitectura multisede de julio | `01_arquitectura/auditorias/` |
