@@ -44,18 +44,13 @@ incompleto. Revisa el `git log` para cerrar el hueco.
 
 ## Cómo se trabaja
 
-- **Un bloque a la vez.** Una pieza de funcionalidad por turno. Al terminar:
-  qué se hizo, qué falta, y esperar confirmación.
-- **Tarea grande = primero un plan** con pasos numerados y una recomendación de
-  por dónde empezar. Código después.
-- **Nunca asumas — verifica.** Confirma el nombre exacto de tablas, columnas,
-  RPC y políticas antes de escribir una migración. Adivinar ya causó bugs reales.
-- **No inventes.** Si falta un dato de negocio o una decisión de producto,
-  pregunta.
-- Después de implementar: pruebas proporcionales, `flutter analyze`, y
-  documentar el resultado.
-- No hacer `push` sin confirmar el alcance y verificar el estado de Git.
-- Explicar los pasos en **español claro, apto para una persona no técnica**.
+**Las 21 reglas están en `docs/00_producto/PLAN_MAESTRO.md`, apartado 8.
+Léelas ahí. Aquí no se copian.**
+
+Estaban escritas en seis sitios y ya se contradecían entre ellas (D-131). Una
+regla copiada en seis sitios no está reforzada: está a punto de divergir.
+
+**Si alguna vez este archivo vuelve a listar las reglas, está mal.**
 
 ---
 
@@ -66,6 +61,9 @@ Antes de terminar un bloque de trabajo, dejar el estado escrito en disco:
 1. Revisar el `git log` desde el último HANDOFF y listar lo que se hizo.
 2. Registrar como `D-XXX` solo lo que cambió el porqué, citando la decisión que
    corrige si aplica. El registro **solo crece**: nunca se borra una fila.
+   **Y añadir su línea al índice del principio, en el mismo cambio.** Un índice
+   incompleto es peor que no tenerlo: nadie va a buscar lo que el índice dice
+   que no existe (D-129, D-131).
 3. Actualizar **`PLAN_MAESTRO.md`**: marcar lo cerrado y anotar lo que salió
    sin fase asignada. *(`PLAN_DE_LANZAMIENTO` fue archivado el 09-ago, D-126.)*
 4. Escribir un **HANDOFF nuevo** que reemplace al anterior, con: dónde quedamos,

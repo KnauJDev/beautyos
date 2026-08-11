@@ -1,5 +1,162 @@
 # Registro de decisiones de producto
 
+> **Este documento solo crece.** Nunca se resume, nunca se borra una fila y
+> nunca se acorta una entrada. Es el único sitio donde un error queda escrito
+> con su fecha y su causa, y es lo que permite ver el patrón (D-126, D-129).
+
+## Índice — las 130 decisiones de un vistazo
+
+**Esto es una tabla de contenidos, no un resumen.** Ninguna entrada se ha
+tocado, acortado ni reescrito: están todas completas más abajo, con su porqué
+y con lo que se descartó.
+
+**Para qué existe:** el registro completo pesa lo que pesa, y leerlo entero
+para encontrar dos decisiones gasta la memoria de una sesión de trabajo antes
+de escribir la primera línea de código. Con el índice se ven las 130 de golpe y
+se abren solo las que hacen falta.
+
+**Regla de mantenimiento:** al añadir una decisión nueva se añade **también**
+su línea aquí. Un índice incompleto es peor que no tenerlo, porque nadie va a
+buscar lo que el índice dice que no existe (D-129).
+
+| # | De qué trata | Fecha |
+|---|---|---|
+| **D-001** | BeautyOS será una SaaS para estética, barberías, peluquerías y spas | 2026-07-19 |
+| **D-002** | Colombia será el mercado del primer piloto | 2026-07-19 |
+| **D-003** | Se soportarán múltiples sedes por tenant desde la arquitectura base | 2026-07-19 |
+| **D-004** | Planes comerciales: Básico, Business y Profesional | 2026-07-19 |
+| **D-005** | Reserva pública: web/QR y WhatsApp; automatización profunda de WhatsApp será posterior | 2026-07-19 |
+| **D-006** | Identidad principal del cliente: celular; documento es opcional y sensible | 2026-07-19 |
+| **D-007** | Compensación de estilistas configurable: porcentaje, monto fijo y salario fijo; con vigencias | 2026-07-19 |
+| **D-008** | Alertas operativas quedan pausadas | 2026-07-19 |
+| **D-009** | Plataforma, tenant y sede son fronteras distintas | 2026-07-19 |
+| **D-010** | La autorización usa membresías de tenant y sede; `user_profiles` queda como identidad global | 2026-07-19 |
+| **D-011** | Clientes, servicios, profesionales y productos son catálogos del tenant; la operación es de sede | 2026-07-19 |
+| **D-012** | Los planes se aplican mediante entitlements verificados en backend | 2026-07-19 |
+| **D-013** | Pagos SaaS y pagos del salón son dominios financieros separados | 2026-07-19 |
+| **D-014** | La suspensión por falta de pago es gradual, reversible y sin borrado de datos | 2026-07-19 |
+| **D-015** | La migración multisede será aditiva y por tramos con Sede principal | 2026-07-19 |
+| **D-016** | El Tramo B mantiene `branch_id` nullable con triggers privados de compatibilidad hasta que Flutter y las RPC usen sed... | 2026-07-20 |
+| **D-017** | El contexto de sede se selecciona en Flutter pero se resuelve y autoriza nuevamente en cada RPC | 2026-07-20 |
+| **D-018** | El endurecimiento multisede se divide en D0–D5 y comienza retirando el fallback Flutter antes de imponer `NOT NULL` o... | 2026-07-20 |
+| **D-019** | D1 exige sede autorizada en Flutter y D2 hace obligatorio `branch_id` en las 15 tablas operativas mediante una precon... | 2026-07-20 |
+| **D-020** | D3 conserva triggers de integridad, reescribe los que contienen fallback y sustituye antes de retirar las seis RPC aú... | 2026-07-20 |
+| **D-021** | D3.1 define seis RPC `_v2` con sede obligatoria, autorización backend y forma de respuesta compatible antes de retira... | 2026-07-20 |
+| **D-022** | D3.2 implementa y verifica localmente los seis RPC `_v2` por sede, sin retirar aún sus firmas heredadas | 2026-07-20 |
+| **D-023** | D3.3 confirma que seis RPC heredadas sustituidas no tienen consumidores internos y deben cerrarse primero mediante re... | 2026-07-20 |
+| **D-024** | D3.4 revoca localmente `EXECUTE` sobre seis RPC heredadas para `PUBLIC`, `anon` y `authenticated`, manteniendo tempor... | 2026-07-20 |
+| **D-025** | D4.0 prueba que un cliente autenticado heredado queda bloqueado por la revocación, que el permiso puede reotorgarse t... | 2026-07-20 |
+| **D-026** | D4.1 prepara la matriz de cliente heredado, privilegios y aislamiento, pero no ejecuta consultas remotas al no existi... | 2026-07-20 |
+| **D-027** | D4.2 selecciona `beautyos-dev` (`eogppgbdnwxdtcbctaol`) como candidato Supabase no productivo conectable mediante met... | 2026-07-20 |
+| **D-028** | D4.3-pre prepara un SQL de fotografía remota limitado a metadatos, privilegios, firmas y conteos agregados, sin DDL,... | 2026-07-20 |
+| **D-029** | D4.3 ejecuta fotografía SQL remota de solo lectura en `beautyos-dev` y detecta que el entorno no tiene las seis RPC `... | 2026-07-20 |
+| **D-030** | D4.4 decide alinear `beautyos-dev` con las migraciones locales D3.2 y D3.4, preservando trazabilidad de migración y s... | 2026-07-20 |
+| **D-031** | D4.5 selecciona el mecanismo MCP de migraciones para alinear `beautyos-dev` con D3.2 y D3.4, dejando CLI como alterna... | 2026-07-20 |
+| **D-032** | D4.6 alinea `beautyos-dev` aplicando D3.2 y D3.4 mediante migraciones MCP separadas, registradas y verificadas | 2026-07-20 |
+| **D-033** | D4.7 valida en `beautyos-dev` que las seis RPC heredadas quedan bloqueadas para cliente autenticado, que el `GRANT` t... | 2026-07-20 |
+| **D-034** | D4.8 decide no saltar directo a D5 y exige una fotografía completa de salida no productiva posterior a D4.6/D4.7 | 2026-07-20 |
+| **D-035** | D4.9 consolida la fotografía final de salida no productiva en `beautyos-dev`, posterior a D4.6/D4.7 | 2026-07-20 |
+| **D-036** | D4.10 prepara el paquete de autorización para D5 sin ejecutar producción | 2026-07-20 |
+| **D-037** | D5-pre.1 detecta que `beautyos-dev` (`eogppgbdnwxdtcbctaol`) está documentado como producción en el Tramo C y como no... | 2026-07-20 |
+| **D-038** | D5-pre.2 determina que el paquete D5 actual no cierra íntegramente el Tramo D: ocho triggers conservan fallback, 46 R... | 2026-07-20 |
+| **D-039** | D3.5.1 hace estricto el helper privado usado por ocho triggers: una sede nula u omitida falla y ya no selecciona la S... | 2026-07-20 |
+| **D-040** | D3.5.2 reconcilia los privilegios de las 46 RPC heredadas restantes: cierra `anon` en todas, cierra `authenticated` e... | 2026-07-20 |
+| **D-041** | D3.5.3 migra los tres helpers de autorizacion (`get_my_tenant_id`, `get_my_role`, `is_owner_or_admin`), `get_tenant_u... | 2026-07-22 |
+| **D-042** | NC-D-01 se cierra: el propietario confirmo en el panel de Supabase que la organizacion `KnauJDev` tiene un unico proy... | 2026-07-22 |
+| **D-043** | Con NC-D-01 resuelta, el propietario autorizo desplegar D2, D3.2, D3.4, D3.5.1, D3.5.2 y D3.5.3 directamente sobre el... | 2026-07-22 |
+| **D-044** | Se construyo y desplego la fundacion de suscripciones/entitlements (`plans`, `features`, `plan_features`, `tenant_sub... | 2026-07-22 |
+| **D-045** | El propietario decidio: prueba gratis de 21 dias, plan Profesional por defecto al registrarse | 2026-07-22 |
+| **D-046** | Se creo `public.platform_operators` y se sembro al propietario (`juankdev2026@gmail.com`, UID `dbee91f0-36e0-4bd8-930... | 2026-07-22 |
+| **D-047** | Se construyeron las pantallas de Flutter para registro self-serve y panel de plataforma | 2026-07-22 |
+| **D-048** | Se agregaron `create_service` y `create_stylist` (escriben catalogo del tenant y fila de sede en una sola transaccion... | 2026-07-23 |
+| **D-049** | `set_stylist_services()` (anterior a esta sesion) solo escribia `stylist_services` (catalogo del tenant); la agenda (... | 2026-07-23 |
+| **D-050** | Se agrego el flujo de invitar usuarios del negocio (estilistas, admins, asistentes): `create_team_invitation`, `list_... | 2026-07-23 |
+| **D-051** | Se agrego editar/desactivar servicios y estilistas: `update_service`, `set_service_active`, `update_stylist`, `set_st... | 2026-07-23 |
+| **D-052** | Se agrego editar horario, politica de citas y politica de comision: `update_business_hours` (7 dias en una sola llama... | 2026-07-23 |
+| **D-053** | Se agrego reserva publica de cliente (D-005): cuatro RPC `anon` (`public_get_branch_booking_info`, `public_get_bookab... | 2026-07-23 |
+| **D-054** | Se agrego editar productos de inventario (sub-bloque 1 de 3, inventario/compras/gastos): `create_product`, `update_pr... | 2026-07-23 |
+| **D-055** | Se agrego registrar compras (sub-bloque 2 de 3): `create_purchase` (compra + items + movimientos de inventario + actu... | 2026-07-24 |
+| **D-056** | Se agrego editar gastos (sub-bloque 3 de 3, cierra la ruta acordada): `create_expense`, `update_expense`, `set_expens... | 2026-07-24 |
+| **D-057** | Se agrego registrar consumo interno de inventario: `create_stock_consumption` descuenta stock y crea un `inventory_mo... | 2026-07-24 |
+| **D-058** | El propietario planteo su conceptualizacion completa de los 5 roles del producto (plataforma, dueno de negocio, admin... | 2026-07-24 |
+| **D-059** | Se agrego el sub-bloque 1 de 3 de "Resenas y fotos de trabajo" (D-058): resenas publicas de cliente y moderacion | 2026-07-25 |
+| **D-060** | Se agrego el sub-bloque 2 de 3 de "Resenas y fotos de trabajo": infraestructura de Supabase Storage | 2026-07-25 |
+| **D-061** | Se agrego el sub-bloque 3 de 3 (ultimo) de "Resenas y fotos de trabajo": crear y aprobar fotos | 2026-07-25 |
+| **D-062** | El propietario eligio como siguiente bloque el envio automatico del correo de invitacion (brecha conocida desde D-050... | 2026-07-25 |
+| **D-063** | El propietario senalo que tener varios documentos con su propia lista de "que sigue" (`PROMPT_MAESTRO_IA.md`, `AUDITO... | 2026-07-25 |
+| **D-064** | El propietario probo en su propio navegador, con sesion autenticada real, la subida de fotos de trabajo: subir imagen... | 2026-07-25 |
+| **D-065** | Se completo y desplego el correo automatico de invitacion (D-062): nueva funcion `get_team_invitation_email_context`... | 2026-07-25 |
+| **D-066** | Prueba real de extremo a extremo (Luiscar, estilista de Naguara de Uñas) encontro un bug real: el menu "Servicios" se... | 2026-07-25 |
+| **D-067** | El propietario probo con la cuenta real de Luiscar (estilista) y penso en voz alta: le gustaria que el estilista pudi... | 2026-07-25 |
+| **D-068** | Primer bloque de "hacer cumplir los planes" (brecha detectada en D-063: la fundacion de suscripciones/entitlements de... | 2026-07-26 |
+| **D-069** | Segundo bloque de "hacer cumplir los planes" (punto 2.2 de `RUTA_GENERAL_2026-07-25.md`): que un plan Basico no pueda... | 2026-07-26 |
+| **D-070** | Se descarto el punto 3 de `RUTA_GENERAL_2026-07-25.md` ("UsuariosPage restringida a owner aunque el backend ya permit... | 2026-07-26 |
+| **D-071** | Tras D-070, el propietario confirmo que gestionar usuarios *si* deberia ser una funcion normal de administrador -- co... | 2026-07-26 |
+| **D-072** | Punto 4.1 de `RUTA_GENERAL_2026-07-25.md`: crear sedes adicionales (hueco confirmado desde D-058, `create_branch` no... | 2026-07-27 |
+| **D-073** | Al probar D-072 con una sede real, el propietario detecto un riesgo real: `enforce_stylist_schedule_conflict` (Tramo... | 2026-07-27 |
+| **D-074** | El propietario reconsidero el candidato de D-073 (dias especificos por sede para un estilista, ver sedes asignadas en... | 2026-07-27 |
+| **D-075** | Punto 4.2 de `RUTA_GENERAL_2026-07-25.md`: bloqueo de agenda del estilista (ausencias/no disponibilidad; hueco confir... | 2026-07-27 |
+| **D-076** | Punto 4.3 de `RUTA_GENERAL_2026-07-25.md`: reconfirmacion de D-009 | 2026-07-27 |
+| **D-077** | Punto 4.4 de `RUTA_GENERAL_2026-07-25.md`: logo por negocio (marca blanca) | 2026-07-27 |
+| **D-078** | Punto 1 de `BENCHMARKING_2026-07-28.md` (el mas dificil del orden acordado, "de mas dificil a mas facil"): comision d... | 2026-07-28 |
+| **D-079** | Punto 3 de `BENCHMARKING_2026-07-28.md`: verificacion en dos pasos (2FA) en el login | 2026-07-28 |
+| **D-080** | Punto 4a de `BENCHMARKING_2026-07-28.md` (parte de bajo riesgo del punto 4, "recurrencia"): bloqueo de agenda del est... | 2026-07-28 |
+| **D-081** | Punto 4b de `BENCHMARKING_2026-07-28.md`: citas recurrentes | 2026-07-28 |
+| **D-082** | Punto 9 (el mas facil del orden acordado) de `BENCHMARKING_2026-07-28.md`: colores por estado de reserva | 2026-07-28 |
+| **D-083** | Punto 5 de `BENCHMARKING_2026-07-28.md`: ficha de cliente con saldo acumulado | 2026-08-04 |
+| **D-084** | Punto 6 de `BENCHMARKING_2026-07-28.md`: portada del negocio + foto/bio del profesional en reserva publica | 2026-08-05 |
+| **D-085** | El propietario decidio posponer el punto 7 (onboarding guiado, "Primeros pasos"): construirlo ahora no tiene sentido... | 2026-08-05 |
+| **D-086** | Punto 8 de `BENCHMARKING_2026-07-28.md`: marca de producto + alarma de stock por correo | 2026-08-06 |
+| **D-087** | 0 funciones sin `search_path` fijo | 2026-08-06 |
+| **D-088** | (a) Arquitectura | 2026-08-06 |
+| **D-089** | El producto pasa a llamarse "Salón y Más" | 2026-08-06 |
+| **D-090** | (a) Iconos propios | 2026-08-06 |
+| **D-091** | Etapa 0 cerrada: la aplicacion existe en internet | 2026-08-06 |
+| **D-092** | Etapa 1 del plan de lanzamiento: cerrar los huecos que hacian peligroso repartir el enlace | 2026-08-06 |
+| **D-093** | Marca blanca por colores: como se va a construir | 2026-08-06 |
+| **D-094** | Tres correcciones salidas de las pruebas del propietario en produccion | 2026-08-06 |
+| **D-095** | Correccion de una regresion que yo mismo introduje en D-094, y cierre completo del rol asistente | 2026-08-06 |
+| **D-096** | Los navegadores se quedaban hasta cuatro horas con una version vieja de la app | 2026-08-06 |
+| **D-097** | Etapa 2, tarea 2.1: primeras decisiones de identidad visual | 2026-08-06 |
+| **D-098** | El enlace propio de cada negocio: dos niveles, no uno | 2026-08-07 |
+| **D-099** | La aplicacion avisa cuando hay una version nueva, y muestra cual esta ejecutando | 2026-08-07 |
+| **D-100** | El sello de version estaba donde menos falta hacia, y se cierra 2.1 | 2026-08-07 |
+| **D-101** | La agenda deja de ser un calendario y pasa a ser un tablero de control de tickets | 2026-08-07 |
+| **D-102** | Tarea 2.2: el sistema de diseno | 2026-08-07 |
+| **D-103** | La cuenta mas privilegiada del sistema era la unica que no podia activar el 2FA | 2026-08-07 |
+| **D-104** | Abandonar la activacion del 2FA una sola vez dejaba a esa cuenta sin poder activarlo nunca mas | 2026-08-07 |
+| **D-105** | Agenda y Tickets se fusionan, y se arregla la navegacion en celular | 2026-08-07 |
+| **D-106** | Tres correcciones a la barra superior en celular, salidas de la prueba del propietario | 2026-08-07 |
+| **D-107** | Tarea 2.3: componentes base | 2026-08-07 |
+| **D-108** | En celular no se veia en que sede se estaba trabajando | 2026-08-07 |
+| **D-109** | Tarea 2.4: el selector de tema, y la reapertura de D-093a | 2026-08-07 |
+| **D-110** | El Dashboard deja de ser un rediseno y pasa a ser un tramo propio, con especificacion | 2026-08-08 |
+| **D-111** | Se cierra el hueco de respaldos, y una leccion de metodo cara | 2026-08-08 |
+| **D-112** | "Naguara de Unas" es un negocio de prueba en ambiente real, y NO se recomienda borrarlo | 2026-08-08 |
+| **D-113** | Tarea 2.5a cerrada: la Vista 1 del Dashboard, verificada por el propietario | 2026-08-09 |
+| **D-114** | Tarea 2.5b: horas vendidas, y por que NO es un porcentaje de ocupacion | 2026-08-08 |
+| **D-115** | Monitoreo de errores, y la regla de privacidad que lo gobierna | 2026-08-08 |
+| **D-116** | Agenda y Tickets NO se fusionan: se separan por nivel. Corrige a D-105(a) | 2026-08-09 |
+| **D-117** | El consecutivo de ticket se puede ajustar. Corrige el punto 8.1 de `ESPECIFICACION_AGENDA_2026-08-07.md` | 2026-08-09 |
+| **D-118** | Repaso completo del proyecto y correccion del orden de trabajo | 2026-08-09 |
+| **D-119** | Accion A4 de la Etapa A: las fotos de trabajo son privadas hasta que se aprueban (cierra H-09) | 2026-08-09 |
+| **D-120** | Accion A5 de la Etapa A: "Naguara de Unas" queda marcado como negocio de prueba (cierra el pendiente de D-112) | 2026-08-09 |
+| **D-121** | Accion A6 de la Etapa A: primeras pruebas de dinero y de roles (H-03, a medias a proposito) | 2026-08-09 |
+| **D-122** | Un permiso a medias dejaba imposible subir cualquier foto. Lo encontro el propietario probando, no las pruebas | 2026-08-09 |
+| **D-123** | Tercer fallo de la misma familia: al reescribir la galeria de fotos se perdieron dos textos de respaldo | 2026-08-09 |
+| **D-124** | Planes, precios y limites quedan definidos. Corrige a D-004 en los precios, la confirma en la estructura | 2026-08-09 |
+| **D-125** | Nadie entra solo: se agrega un filtro de aceptacion al registro de negocios. Corrige a D-045 | 2026-08-09 |
+| **D-126** | Un solo Plan Maestro. Siete documentos de planeacion se funden y se archivan | 2026-08-09 |
+| **D-127** | H-04 cerrado: las claves expuestas ya no sirven. Y se descubrio que rotarlas no era lo mejor -- apagarlas si | 2026-08-09 |
+| **D-128** | H-12 cerrado: los correos por fin llegan. Y la causa no era Resend | 2026-08-10 |
+| **D-129** | Tres hallazgos se perdieron porque una edicion documental fallo en silencio, y el registro afirmo que si habia funcio... | 2026-08-11 |
+| **D-130** | Barrido del 11-ago: siete cosas decididas en conversacion que nunca se escribieron, y tres contradicciones -- dos de... | 2026-08-11 |
+| **D-131** | Las reglas dejan de estar escritas en seis sitios, el registro estrena indice, y nace el mapa tecnico | 2026-08-11 |
+
+---
+
+## Las decisiones completas
+
 | ID | Decisión | Estado | Fecha | Consecuencia principal |
 |---|---|---|---|---|
 | D-001 | BeautyOS será una SaaS para estética, barberías, peluquerías y spas. | Aprobada | 2026-07-19 | Producto vertical multi-tenant. |
@@ -132,3 +289,4 @@
 | D-128 | **H-12 cerrado: los correos por fin llegan. Y la causa no era Resend.** El hallazgo llevaba abierto desde el 25-jul. Se creia que bastaba con verificar el dominio, y resulto que eran **tres problemas encadenados**, cada uno tapando al siguiente. **(1)** El remitente estaba escrito a mano como `onboarding@resend.dev`, la direccion compartida de pruebas de Resend, **que solo entrega al dueno de la cuenta**: verificar el dominio era necesario pero no suficiente. **(2)** Al arreglar eso aparecio el de verdad: la funcion devolvia **500 con `EDGE_FUNCTION_ERROR`** y **nunca llegaba a Resend** -- los registros de Resend mostraban cero solicitudes ese dia. **(3)** La causa raiz: `@supabase/server` (`withSupabase`), anclada en `deno.json` como **`npm:@supabase/server@^1`**, o sea *"la version mas nueva que haya"*. **Cada despliegue traia un codigo distinto sin que nadie lo decidiera**, y esa capa **reventaba antes de ejecutar la primera linea propia**. Se comprobo instrumentando la funcion con `console.log` en cada paso: los registros seguian mostrando solo `booted` y `shutdown`, **ni uno solo de los mensajes nuestros** -- prueba de que el fallo estaba encima de nuestro codigo, no dentro. **Solucion: se elimino esa dependencia.** Lo unico que hacia era leer la sesion de quien llama, y eso se hace pasando la cabecera `Authorization` tal cual a un cliente de `@supabase/supabase-js` **con version fija (`2.45.4`, no un rango)**. Se agrego ademas manejo explicito de CORS, que antes ponia la libreria, y captura de errores en cada paso. **Se descartaron por el camino, con evidencia:** que fuera `RESEND_API_KEY` (estaba puesta desde el 25-jul), que fueran las claves heredadas (se reactivaron y siguio fallando), que fuera la app (la invocacion llegaba con sesion valida y `supabase-flutter`), y que fuera el permiso de la llave de Resend (`Sending access`, sin restriccion). | **Cerrado y verificado de extremo a extremo por el propietario**: el correo llego, se registro con ese correo, confirmo la cuenta y quedo unido al negocio como estilista | 2026-08-10 | **Leccion de metodo, y es la mas cara del proyecto hasta hoy:** una dependencia anclada con rango (`^1`) en algo desplegado **no es una comodidad, es una bomba de tiempo** -- el mismo codigo se comporta distinto en dos despliegues y no hay forma de saber por que. Todas las dependencias de las Edge Functions quedan con version exacta. **Y la segunda:** el `fetch` a Resend estaba sin `try`, asi que cualquier fallo mataba la funcion en silencio; se tardaron **dos horas** en localizar algo que un mensaje de error habria dicho en dos minutos. **Pendiente inmediato: `send-low-stock-alert` sigue usando `withSupabase` con el mismo `^1` y por tanto sigue rota.** Hay que aplicarle identico arreglo. |
 | D-129 | **Tres hallazgos se perdieron porque una edicion documental fallo en silencio, y el registro afirmo que si habia funcionado.** El 10-ago se anotaron los hallazgos **R** (dos cuentas al mismo estilista del catalogo), **S** (la pantalla de acceso solo le habla a los duenos) y **T** (`send-low-stock-alert` sigue rota) con una sustitucion de texto anclada en la frase *"Sobre la sesion que no se cierra (C)"*. **Esa frase no existe en `PLAN_MAESTRO`: vivia en `PLAN_DE_LANZAMIENTO`, el documento que se acababa de archivar ese mismo dia.** La sustitucion no encontro el ancla, no hizo nada, **y no lanzo ningun error** -- a diferencia de todas las demas ediciones del dia, a esa no se le puso comprobacion. **Lo grave no fue la omision sino lo que vino despues:** el mensaje del commit y el apartado 9 del HANDOFF **afirmaron que los tres quedaban anotados en la seccion 7 del Plan Maestro**, y era falso. Un documento diciendo que existe algo que no existe es peor que el hueco, porque nadie va a ir a buscarlo. **Lo detecto el propietario al dia siguiente leyendo el HANDOFF contra el Plan Maestro** -- exactamente el cruce que D-118 dejo como habito. **Que se salvo y que no:** el contenido de **T** sobrevivio como paso 2.7 y en el HANDOFF; el de **R** sobrevivio en la tabla del HANDOFF; **S no quedo en ningun sitio del proyecto** y solo se pudo recuperar de la conversacion. **Si el chat hubiera cerrado, S se perdia.** **Regla que queda: toda edicion documental automatica verifica que su ancla existe ANTES de sustituir, y que el texto quedo escrito DESPUES.** Y el corolario, que es el que de verdad importa: **no se afirma en un commit ni en un handoff que algo quedo escrito sin haberlo comprobado.** Corregido el 11-ago: los tres estan en la seccion 7 con verificacion, y la linea falsa del HANDOFF ahora dice lo que paso. | Corregido y verificado | 2026-08-11 | **Segunda vez en tres dias que la documentacion afirma algo que no era cierto.** La primera fue D-118, cuando cuatro documentos decian tres cosas distintas sobre el orden. La diferencia es que aquella fue por acumulacion y esta por descuido de un solo paso. **Ambas las encontro el propietario leyendo, no una herramienta.** Refuerza por que el `REGISTRO_DE_DECISIONES` no se resume nunca: es el unico sitio donde un error queda escrito con su fecha y su causa, y es lo que permite ver el patron. |
 | D-130 | **Barrido del 11-ago: siete cosas decididas en conversacion que nunca se escribieron, y tres contradicciones -- dos de ellas mias.** Tras el aviso del propietario por los hallazgos perdidos (D-129) se reviso la sesion entera del 09 y 10-ago buscando **todo lo acordado que no hubiera quedado en disco**. **Lo que faltaba:** **(a) gstack** -- se evaluo el paquete de herramientas de Garry Tan y se decidio **aplazarlo**: buena parte de sus habilidades leen la pagina web y esta app es **Flutter Web, que se dibuja sobre un lienzo** y no tiene pagina que leer, asi que rendirian mucho menos de lo que prometen; ademas pide instalar Bun y Node y quiere importar las cookies de Chrome, justo el dia que se cerraban accesos. Si algun dia se retoma, las utiles aqui son `/review` y `/cso`. **(b) El conector de Supabase** para el asistente quedo aplazado hasta rotar las claves; **ya estan rotadas, asi que la condicion se cumplio** y la decision vuelve a estar sobre la mesa (idea I-13). **(c) La arquitectura de correo en dos niveles**: los correos del SaaS a sus clientes salen del dominio raiz; los del salon a SUS clientas -- cumpleanos, recordatorios -- saldran **con el nombre del salon como remitente y respuesta al correo del salon**, para que la clienta vea *"Naguara de Unas"* y no *"Salon y Mas"*, y **por un subdominio aparte**, para que si esos caen en spam no arrastren a los de negocio (idea I-11). **(d) El reenvio gratuito de `hola@salonymas.com`** al correo del propietario, porque hoy esa direccion **solo envia**: si un cliente responde una invitacion, ese mensaje se pierde (idea I-12). **(e) La configuracion de correo y dominio** -- region, remitente, los cuatro registros DNS, por que el rastreo esta apagado y por que se hizo a mano -- que no estaba en ningun sitio y sin la cual nadie podria reconstruirla: queda en `02_operacion/CORREO_Y_DOMINIO.md`. **Las contradicciones corregidas:** la tabla de modulos del Plan Maestro seguia diciendo *"las invitaciones no llegan (H-12)"* con H-12 ya cerrado -- **lo detecto una sesion nueva leyendo, y es exactamente el problema que D-126 quiso terminar**; la Fase 2 decia *"5 de 6"* cuando **yo mismo le habia agregado el paso 2.7** el dia anterior, dejandola en 5 de 7; y el paso 3.12 se adelanta de fase sin la nota que exige la regla de oro. | Corregido y verificado | 2026-08-11 | **Tres de los siete huecos los abri yo el mismo dia**, y los tres eran del mismo tipo: **escribir en un sitio y no revisar si eso contradecia otro**. Es la version pequena de D-118. **La leccion practica: al cerrar una sesion no basta con anotar lo construido -- hay que releer lo que se decidio de palabra**, porque las decisiones de conversacion no dejan commit y se evaporan. Este barrido salio de que el propietario cruzara dos documentos; **la tercera vez en cuatro dias que un fallo de documentacion lo encuentra una persona leyendo y no una herramienta**. |
+| D-131 | **Tres piezas de ordenamiento que el propietario pidio para "unificar todo", mas el cierre del paso 2.7 y un hallazgo nuevo que se decidio NO arreglar hoy.** **(1) Las reglas de trabajo pasan a estar escritas en un solo sitio: `PLAN_MAESTRO` apartado 8.** Estaban en **seis**: `AGENTS.md`, `CLAUDE.md`, `README` seccion 4, `PLAN_MAESTRO` seccion 8, la seccion 6 de cada HANDOFF, y el mensaje que el propietario pegaba cada manana. **Y ya habian divergido, con prueba:** el Plan Maestro tenia 11 reglas y el README 8, y al README le faltaba justo *"al reescribir una funcion, compararla linea por linea contra la original"* -- **la que nacio de tres fallos en un mismo dia** (D-119, D-122, D-123). Una regla copiada en seis sitios no esta reforzada: **esta a punto de contradecirse.** Es exactamente lo que D-126 curo con los siete planes, sin aplicarlo nunca a las reglas. Ahora los otros cinco sitios apuntan al apartado 8 y no copian nada, y el apartado 8 quedo como **superconjunto de las seis versiones**: se recuperaron cuatro reglas que solo vivian en `CLAUDE.md` o en `AGENTS.md` y que el Plan Maestro no tenia (un bloque a la vez, tarea grande = plan primero, no inventar, y pruebas + `flutter analyze` al terminar). **Efecto practico: el mensaje de arranque del propietario pasa de sesenta lineas a tres**, y deja de ser una septima copia que puede divergir. **(2) El registro de decisiones estrena indice, y es una tabla de contenidos, NO un resumen.** Ninguna de las 130 entradas se toco, acorto ni reescribio -- **verificado: 156 lineas anadidas, CERO borradas**. **Por que hacia falta:** el registro completo pesa unas 78.000 unidades de contexto, y leer "las ultimas 15" para retomar gastaba ~22.000 antes de escribir una sola linea de codigo. Con el indice se ven **las 130 de golpe por ~4.000** y se abren enteras solo las dos o tres que hacen falta: **se ve mas gastando menos**, que es lo contrario de resumir. **Se descarto partir el registro en varios archivos por rangos de fecha:** ahorraria parecido pero rompe la propiedad que lo hace util -- que este todo en un solo sitio que solo crece --, y multiplicaria los sitios donde buscar, que es justo la enfermedad que se estaba curando. **(3) Nace `02_operacion/MAPA_TECNICO.md`**, el "otro documento" que pidio el propietario. Recoge lo que habia que **redescubrir en cada sesion** y no estaba escrito en ninguna parte: que el proyecto de produccion se llama `beautyos-dev` -- trampa que ya hizo archivar un hallazgo falso dos veces (D-037, D-118) --, los tres caminos distintos de publicacion y por que confundirlos cuesta tiempo, que hace cada guion de `scripts/`, donde vive cada cosa, como se nombran las funciones, **que cubren las 89 pruebas y sobre todo que NO cubren**, y una tabla de las diez trampas que ya mordieron. **No rompe la regla del cuarto documento (D-126): no opina sobre que falta ni en que orden.** Es de la familia de `CORREO_Y_DOMINIO.md` -- se lee cuando hay que hacer algo, no para saber que hacer. **(4) Se cierra el paso 2.7 / hallazgo T: `send-low-stock-alert` arreglada y publicada.** Identico trasplante que D-128: fuera `@supabase/server@^1`, dentro `@supabase/supabase-js@2.45.4` con version exacta, mas CORS explicito, `try` alrededor del `fetch` a Resend y un `console.log` por paso. Se comprobo comportamiento por comportamiento contra la original (regla de D-123): mensajes identicos, el caso *"no hay nada que enviar"* sigue devolviendo `sent:false` **y no un error**, y el cuerpo del correo es identico caracter por caracter. **(5) El propietario autoriza la CLI de Supabase y el permiso permanente para publicar funciones.** Antes el asistente dictaba clics y el propietario pegaba codigo en el tablero -- con la trampa de que **hay que pegar el `deno.json` ademas del `index.ts`**, y pegar solo uno deja la funcion peor que antes. Con la CLI los sube juntos y esa trampa desaparece. **Se dijo con todas las letras antes de que autorizara** que ese acceso es el mismo poder que el conector de I-13 y que la diferencia real no es la seguridad sino donde vive la llave: en su computador, y se apaga con `logout`. **Todo lo demas de Supabase sigue necesitando permiso.** **(6) Hallazgo U, encontrado al publicar y NO arreglado a proposito.** Las dos Edge Functions tienen `verify_jwt = false`: cualquiera puede hacerlas ejecutar sin cuenta. **Los datos no estan expuestos** -- quien autoriza es la funcion de base de datos --, pero la cuota es gastable por cualquiera. **Se descarto arreglarlo en el mismo movimiento:** cambiar un ajuste de seguridad de rebote, mientras se arregla otra cosa, es como se cuelan los fallos que despues nadie sabe explicar. Va a la fase 8 junto con H-11. | **Aplicado y verificado.** La funcion quedo en **version 6, ACTIVE**, con la huella del codigo cambiada y `send-invitation-email` intacta en la suya. **Prueba de humo desde el servidor, sin gastar un solo correo:** sin sesion devuelve `{"error":"Falta la sesion de quien registra."}` con 401 -- **prueba de que arranca y ejecuta nuestro codigo**, que era exactamente lo que fallaba en D-128 --; y con un token falso llega hasta la base, que lo rechaza con `Expected 3 parts in JWT`. **Falta el ultimo tramo, que solo puede probar el propietario:** que Resend entregue el correo tras un consumo interno real | 2026-08-11 | **Lo que este bloque deja dicho sobre el metodo, y vale mas que las tres piezas:** el ahorro de contexto **no se consigue resumiendo, se consigue indexando**. Resumir pierde el detalle que hace util al registro -- y perder detalle en silencio es exactamente D-129. Un indice no pierde nada y ademas ensancha lo que se ve. **Queda una regla de mantenimiento que si se incumple hace dano:** al anadir una decision se anade **tambien** su linea al indice; un indice incompleto es peor que no tenerlo, porque nadie busca lo que el indice dice que no existe. Se anadio al cierre de sesion de `CLAUDE.md`. **Y queda una deuda honesta:** el mapa tecnico solo sirve si se corrige cuando un dato deja de ser cierto; el dia que mienta sera peor que no existir, por el mismo motivo que D-129. |

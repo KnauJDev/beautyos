@@ -18,7 +18,7 @@ documentos entiendes el proyecto entero.**
 | 2 | **`00_producto/PLAN_MAESTRO.md`** | **¿Qué es, qué falta y en qué orden?** El único que manda sobre el plan |
 | 3 | `00_producto/REGISTRO_DE_DECISIONES.md` | **¿Por qué está hecho así?** Empieza por el final |
 
-**No empieces por el código.** Este proyecto tiene 130 decisiones registradas
+**No empieces por el código.** Este proyecto tiene 131 decisiones registradas
 con su porqué; leer el código sin ellas es reconstruir a ciegas razonamientos
 que ya están escritos.
 
@@ -36,9 +36,9 @@ mensajes de commit y en los documentos. **Son sistemas distintos:**
 
 | Código | Qué es | Dónde vive |
 |---|---|---|
-| **D-001 … D-130** | **Decisiones.** El porqué de cada cosa, con lo que se descartó y por qué | `00_producto/REGISTRO_DE_DECISIONES.md` |
+| **D-001 … D-131** | **Decisiones.** El porqué de cada cosa, con lo que se descartó y por qué | `00_producto/REGISTRO_DE_DECISIONES.md` |
 | **H-01 … H-13** | **Hallazgos** de la auditoría integral del 6 de agosto | `01_arquitectura/auditorias/AUDITORIA_INTEGRAL_2026-08-06.md` |
-| **A … T** | **Anotado en el camino** | `PLAN_MAESTRO`, sección 7 |
+| **A … U** | **Anotado en el camino** | `PLAN_MAESTRO`, sección 7 |
 | **I-01 … I-13** | **Buzón de ideas**: lo que aún no tiene fase | `PLAN_MAESTRO`, sección 6 |
 | **F3.7, 4.10…** | **Números de paso** del Plan Maestro | `PLAN_MAESTRO`, sección 5 |
 | **Tramo A, D3.5.2…** | Trabajo de arquitectura multisede de julio | `01_arquitectura/auditorias/` |
@@ -72,24 +72,17 @@ mensajes de commit y en los documentos. **Son sistemas distintos:**
 
 ## 4. Cómo se trabaja aquí
 
-Reglas acordadas con el propietario. **No son negociables.**
-
-1. **Verificar en el código antes de afirmar.** No asumir.
-2. **Antes de construir, decir en dos líneas qué y por qué**, y esperar
-   confirmación (acordado el 08-ago).
-3. **Registrar cada decisión con su porqué**, incluyendo lo que se descartó.
-4. **Regla de hallazgos:** lo que aparezca en el camino se anota y se ataca
-   donde le corresponde en el Plan Maestro. Si no cabe en ninguna fase, va al
-   **buzón de ideas** (sección 6). *(Decía "apartado 11", que era del
-   `PLAN_DE_LANZAMIENTO`, archivado el 09-ago.)*
-5. **Pedir permiso antes de tocar Supabase, Cloudflare o hacer push.**
-6. **Cualquier instalación en el computador del propietario la ejecuta él.**
-   Los procesos del asistente corren aislados: lo que instalan no llega a su
-   máquina (D-111).
-7. **Respaldar antes de cualquier sesión con migraciones:**
-   `scripts/respaldo_supabase.ps1`
-8. **El propietario prueba en producción y reporta.** El asistente no ve la
-   interfaz.
+> ### 👉 Las reglas están en **`00_producto/PLAN_MAESTRO.md`, apartado 8.**
+>
+> **Aquí no se copian, a propósito.** Hasta el 11-ago estaban escritas en seis
+> sitios y ya decían cosas distintas: el Plan Maestro tenía 11 reglas y este
+> README tenía 8, y a este le faltaba justo *"comparar línea por línea al
+> reescribir una función"* — la que nació de tres fallos en un mismo día
+> (D-119, D-122, D-123).
+>
+> Una regla copiada en seis sitios no está reforzada: **está a punto de
+> contradecirse.** Es lo mismo que pasó con los siete planes (D-126).
+> Corregido en **D-131**.
 
 ---
 
@@ -97,7 +90,8 @@ Reglas acordadas con el propietario. **No son negociables.**
 
 - `00_producto/` — **el Plan Maestro**, las decisiones y las especificaciones
 - `01_arquitectura/` — modelo multisede, roles, suscripciones, ADR y auditorías
-- `02_operacion/` — respaldo, restauración, **correo y dominio**, procedimientos
+- `02_operacion/` — respaldo, restauración, **correo y dominio**, **el mapa
+  técnico** (dónde está cada cosa y cómo se publica), procedimientos
 - `03_referencias/` — benchmarking y fuentes externas
 - `04_pruebas/` — criterios de salida y evidencias
 - `HANDOFF/` — el punto de retomada (solo el vigente)
@@ -234,6 +228,7 @@ orden en que se fueron creando. **No se reescribe para ocultar el pasado.**
 122. `_archivo/LEEME.md` (que hay en el archivo historico y por que se archivo cada cosa)
 123. `HANDOFF/HANDOFF_SalonyMas_2026-08-10.md` (**handoff vigente**, con el prompt exacto para retomar)
 124. `02_operacion/CORREO_Y_DOMINIO.md` (**como esta montado el envio de correo**: dominio, los 4 registros DNS, remitente, por que el rastreo esta apagado, y que mirar cuando falle — D-128, D-130)
+125. `02_operacion/MAPA_TECNICO.md` (**donde esta cada cosa y como se opera**: el proyecto de Supabase y la trampa de su nombre, los tres caminos de publicacion, la CLI, los guiones, que cubren las pruebas y que NO, y las diez trampas que ya mordieron — D-131)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión
 estructural. No se reescriben para ocultar el pasado: una decisión futura la

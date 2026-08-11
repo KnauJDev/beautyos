@@ -102,19 +102,10 @@ original, no solo la firma.**
 
 ## 6. Cómo trabajamos — no negociable
 
-- **Verifica en el código antes de afirmar. No asumas.**
-- **Antes de construir, di en dos líneas qué y por qué, y espera confirmación.**
-- Varios puntos a la vez: repetirlos en una lista y confirmar **antes** de
-  resolver.
-- Preguntar **"¿algo más antes de seguir?"** antes de cerrar cada bloque.
-- **Registrar cada decisión con su porqué**, incluyendo lo descartado.
-- **Regla de hallazgos:** lo que aparezca se anota donde le corresponde. Si no
-  cabe, va al **buzón de ideas** del Plan Maestro.
-- **Pedir permiso antes de tocar Supabase, Cloudflare o hacer push.**
-- **Las instalaciones las ejecuta el propietario.**
-- **Respaldar antes de cada sesión con migraciones.**
-- **El propietario prueba en producción y reporta.**
-- **Al reescribir una función, compararla línea por línea contra la original.**
+**Las 21 reglas están en `00_producto/PLAN_MAESTRO.md`, apartado 8.**
+
+Aquí ya no se copian, y **ningún HANDOFF futuro debe volver a copiarlas**:
+estaban escritas en seis sitios y ya decían cosas distintas (D-131).
 
 ---
 

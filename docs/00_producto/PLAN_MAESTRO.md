@@ -175,11 +175,11 @@ Tope antiabuso en la reserva pública, rol Asistente con sus pantallas, 2FA.
 |---|---|---|---|
 | 2.1 | **Rotar las claves `service_role` y `secret`** (H-04). Expuestas el 03-ago | 👥 | ✅ **CERRADO 09-ago (D-127).** Se borró la clave secreta y se **desactivaron** las claves antiguas — mejor que rotarlas. Verificado de extremo a extremo en producción |
 | 2.2 | Restaurar un respaldo de ensayo en un segundo proyecto gratuito (D-111) | 👥 | ⬜ |
-| 2.3 | **Verificar el dominio en Resend** (H-12) | 👥 | ✅ **CERRADO 10-ago (D-128).** Eran tres problemas encadenados; el de fondo era una dependencia anclada con rango. **Falta aplicar el mismo arreglo a `send-low-stock-alert`** |
+| 2.3 | **Verificar el dominio en Resend** (H-12) | 👥 | ✅ **CERRADO 10-ago (D-128).** Eran tres problemas encadenados; el de fondo era una dependencia anclada con rango. *(El mismo arreglo en `send-low-stock-alert` ya se aplicó: paso 2.7.)* |
 | 2.4 | Cerrar los almacenes de archivos (H-09) | 🤖 | ✅ D-119 |
 | 2.5 | Marcar "Naguara de Uñas" como negocio de prueba | 🤖 | ✅ D-120 |
 | 2.6 | Pruebas de las 3 reglas de dinero y de los roles (H-03) | 🤖 | ✅ D-121 — la mitad automática espera a 2.2 |
-| 2.7 | **Arreglar `send-low-stock-alert`** — sigue rota por la misma causa que D-128 | 🤖 | ⬜ **Lo primero de la próxima sesión** |
+| 2.7 | **Arreglar `send-low-stock-alert`** — estaba rota por la misma causa que D-128 (hallazgo T) | 🤖 | 🔄 **Arreglada y publicada el 11-ago (D-131), versión 6.** Comprobado que la función **arranca y ejecuta nuestro código** — que era exactamente lo que fallaba — y que llega hasta la base de datos. **Falta que el propietario compruebe que el correo llega**, con un consumo interno que deje un producto en su mínimo |
 
 ### FASE 3 — Poder cobrar — *el camino corto al primer cliente*
 
@@ -327,30 +327,80 @@ toque, o se descarta con su motivo.
 | **Q** | **Ningún módulo se actualiza solo.** Empezó como "que el administrador se entere cuando el estilista finaliza", pero el 09-ago se comprobó que es general: **entrar a un módulo no recarga sus datos**, hay que pulsar Actualizar o F5. Se vio con las fotos, y aplica igual a Tickets, Clientes y el resto | Paso 4.3, ampliado a todos los módulos |
 | **R** | 🔴 **Se puede invitar a DOS cuentas distintas al MISMO estilista del catálogo.** Lo encontró el propietario el 10-ago: invitó `elboga010` vinculándolo a "Erick Chaparro", que ya tenía cuenta con `elboga005`. **Quedaron dos usuarios llamados Erick Chaparro apuntando al mismo estilista.** **No es cosmético:** las dos cuentas ven la misma agenda, las mismas comisiones y las mismas fotos, porque todo cuelga del `stylist_id`, y no hay forma de saber cuál es la persona real. Se arregla **rechazando la invitación** cuando ese estilista ya tiene una cuenta activa vinculada. *(El duplicado real quedó suspendido, no borrado.)* | Pulido de Usuarios, fase 4 |
 | **S** | **La pantalla de acceso solo le habla a los dueños.** Dice *"¿No tienes cuenta? Crea tu negocio"*, pero por ahí también entra un **empleado invitado**, que no viene a crear ningún negocio. Observación del propietario, 10-ago | Confunde justo a quien acaba de recibir una invitación. Se resuelve separando los dos caminos: *"Crea tu negocio"* y *"Te invitaron a un equipo"*. Pulido de la pantalla de acceso, fase 4 |
-| **T** | **`send-low-stock-alert` sigue rota por la misma causa que D-128.** Usa `withSupabase` con la dependencia anclada como `^1` | **Va a fallar igual que la de invitaciones.** Mismo arreglo: quitar esa librería y fijar la versión | Paso **2.7** |
+| **T** | **`send-low-stock-alert` sigue rota por la misma causa que D-128.** Usa `withSupabase` con la dependencia anclada como `^1` | **Va a fallar igual que la de invitaciones.** Mismo arreglo: quitar esa librería y fijar la versión | ✅ **Cerrado el 11-ago** en el paso **2.7** (D-131) |
+| **U** | **Las dos Edge Functions se pueden ejecutar sin ninguna cuenta** (`verify_jwt = false`). **Los datos NO están expuestos** — quien autoriza es la función de base de datos, que exige sesión de dueño o administrador de esa sede —, pero **cualquiera puede hacerlas correr en vacío y gastar cuota**. Encontrado el 11-ago al publicar la de stock. **No lo decidió nadie:** lo generó Supabase con sus valores por defecto al crear `config.toml` el 27-jul, y nunca se revisó | Se probó a propósito **no arreglarlo en el mismo movimiento**: cambiar un ajuste de seguridad de rebote, mientras se arregla otra cosa, es cómo se cuelan los fallos que después nadie sabe explicar (D-131) | Fase 8, junto con H-11 (el otro permiso suelto) |
 
 ---
 
 ## 8. Reglas de trabajo — no negociables
 
-1. **Verificar en el código antes de afirmar.** No asumir.
-2. **Antes de construir, decir en dos líneas qué y por qué**, y esperar
+> **Este apartado es el ÚNICO sitio donde se escriben las reglas.** `AGENTS.md`,
+> `CLAUDE.md`, `README.md` y los HANDOFF apuntan aquí y no las repiten.
+>
+> **Por qué:** hasta el 11-ago las mismas reglas estaban escritas en **seis
+> sitios** y ya decían cosas distintas — el Plan Maestro tenía 11 y el README 8,
+> y al README le faltaba justo *"comparar línea por línea al reescribir"*, la
+> que nació de tres fallos en un mismo día. Es la enfermedad que D-126 curó con
+> los planes, sin aplicarla a las reglas. Corregido en D-131.
+
+### Cómo hablamos
+
+1. **Verificar en el código antes de afirmar.** No asumir. Confirmar el nombre
+   exacto de tablas, columnas, RPC y políticas antes de escribir una migración:
+   adivinar ya causó fallos reales.
+2. **No inventar.** Si falta un dato de negocio o una decisión de producto,
+   **preguntar**.
+3. **Explicar en español claro, apto para una persona no técnica.** El porqué
+   de las cosas, no solo el qué.
+4. **Discutir con argumentos** antes que dar la razón. El propietario lo pidió
+   así expresamente.
+
+### Cómo se construye
+
+5. **Antes de construir, decir en dos líneas qué y por qué**, y esperar
    confirmación.
-3. Cuando haya varios puntos, **repetirlos en una lista** para confirmar que se
+6. Cuando haya varios puntos, **repetirlos en una lista** para confirmar que se
    entendieron **antes** de resolver.
-4. Preguntar **"¿algo más antes de seguir?"** antes de cerrar cada bloque.
-5. **Registrar cada decisión con su porqué**, incluyendo lo descartado.
-6. **Regla de hallazgos:** lo que aparezca se anota y se ataca donde le
-   corresponde. Si no cabe en ninguna fase, va al **buzón de ideas**.
-7. **Pedir permiso antes de tocar Supabase, Cloudflare o hacer push.**
-8. **Cualquier instalación en el computador del propietario la ejecuta él.**
-9. **Respaldar antes de cada sesión con migraciones:**
-   `powershell -ExecutionPolicy Bypass -File scripts\respaldo_supabase.ps1`
-10. **El propietario prueba en producción y reporta.** El asistente no ve la
-    interfaz — y el 09-ago eso encontró tres fallos que ninguna prueba vio.
-11. **Al reescribir una función, compararla línea por línea contra la
+7. **Un bloque a la vez.** Una pieza por turno. Al terminar: qué se hizo, qué
+   falta, y esperar confirmación.
+8. **Tarea grande = primero un plan** con pasos numerados y una recomendación
+   de por dónde empezar. Código después.
+9. Preguntar **"¿algo más antes de seguir?"** antes de cerrar cada bloque.
+10. **Al reescribir una función, compararla línea por línea contra la
     original**, no solo la firma. Tres fallos de un mismo día salieron de ahí
     (D-119, D-122, D-123).
+11. **Después de implementar:** pruebas proporcionales, `flutter analyze`, y
+    documentar el resultado.
+
+### Qué se puede tocar y qué no
+
+12. **Pedir permiso antes de tocar Cloudflare o hacer `push`.**
+13. **Publicar Edge Functions no necesita permiso** desde el 11-ago (D-131): el
+    propietario autorizó la CLI justamente para eso. Se avisa, no se pregunta.
+    **Todo lo demás de Supabase sigue necesitando permiso.**
+14. **Cualquier instalación en el computador del propietario la ejecuta él.**
+15. **Respaldar antes de cada sesión con migraciones:**
+    `powershell -ExecutionPolicy Bypass -File scripts\respaldo_supabase.ps1`
+16. **Las migraciones las aplica el propietario:**
+    `powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "<ruta>"`
+
+### Qué queda escrito
+
+17. **Registrar cada decisión con su porqué**, incluyendo lo descartado.
+18. **Regla de hallazgos:** lo que aparezca se anota y se ataca donde le
+    corresponde. Si no cabe en ninguna fase, va al **buzón de ideas**.
+19. **Toda edición documental automática comprueba que su ancla existe ANTES de
+    sustituir, y que el texto quedó escrito DESPUÉS.** Y no se afirma en un
+    commit ni en un handoff que algo quedó escrito sin haberlo comprobado
+    (D-129).
+20. **Señalar contradicciones y duplicados encontrados**, sin resolverlos por
+    iniciativa propia.
+
+### Quién verifica de verdad
+
+21. **El propietario prueba en producción y reporta.** El asistente no ve la
+    interfaz — y el 09-ago eso encontró tres fallos que ninguna prueba vio.
+    **Su prueba no es un trámite: es parte de la verificación.**
 
 ---
 
@@ -369,6 +419,8 @@ toque, o se descarta con su motivo.
 | `AUDITORIA_INTEGRAL_2026-08-06.md` | Los 14 hallazgos |
 | `BENCHMARKING_2026-07-28.md` | Comparación con AgendaPro |
 | `02_operacion/RESPALDO_Y_RESTAURACION_SUPABASE.md` | Cómo respaldar y restaurar |
+| `02_operacion/CORREO_Y_DOMINIO.md` | Cómo está montado el correo y qué mirar cuando falle |
+| **`02_operacion/MAPA_TECNICO.md`** | **Dónde está cada cosa y cómo se publica.** El proyecto de Supabase, la CLI, los guiones, qué cubren las pruebas y qué no, y las trampas que ya mordieron (D-131) |
 | `01_arquitectura/ADR/` | Las 5 decisiones estructurales |
 | `01_arquitectura/ROLES_Y_PERMISOS.md`, `SUSCRIPCION_Y_ENTITLEMENTS.md` | Referencia de arquitectura |
 

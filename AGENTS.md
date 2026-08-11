@@ -28,7 +28,8 @@ BeautyOS es una SaaS multi-tenant y multi-sede para centros de estética, barber
 
 ## Forma de trabajo
 
-- Antes de implementar: revisar el Plan Maestro y la decisión aplicable.
-- Después de implementar: ejecutar pruebas proporcionales, `flutter analyze`, y documentar resultado.
-- No publicar ni hacer `push` sin confirmar el alcance y verificar el estado de Git.
-- Explicar los pasos en español claro y apto para una persona no técnica.
+**Las reglas están en `docs/00_producto/PLAN_MAESTRO.md`, apartado 8.**
+
+Aquí no se copian: estaban en seis sitios y ya decían cosas distintas (D-131).
+Lo que queda arriba en este archivo son **invariantes de arquitectura y
+seguridad**, que es otra cosa y sí vive aquí.
