@@ -192,7 +192,10 @@ y conseguir los primeros 25 salones.
 
 - **12 commits**, de `2c8ec43` a `6271fa3`
 - **Decisiones D-124 a D-128** en `REGISTRO_DE_DECISIONES.md`
-- **Hallazgos R, S y T** nuevos en el Plan Maestro, sección 7
+- **Hallazgos R, S y T** en el Plan Maestro, sección 7 — **escritos el 11-ago.**
+  El 10-ago esta línea afirmaba que ya estaban y **era falsa**: la edición se
+  ancló en un documento recién archivado y no hizo nada. Lo detectó el
+  propietario leyendo el handoff contra el plan (D-129)
 - **Verificado en producción por el propietario:** correo de invitación
   recibido, registro completado, cuenta unida al negocio como estilista, y
   todo funcionando **con las claves antiguas ya desactivadas**

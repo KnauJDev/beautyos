@@ -322,6 +322,9 @@ toque, o se descarta con su motivo.
 | **O** | Rediseño del panel de plataforma | Paso 4.11 |
 | **P** | **El consecutivo de ticket no sirve como número contable** | Paso 4.4 |
 | **Q** | **Ningún módulo se actualiza solo.** Empezó como "que el administrador se entere cuando el estilista finaliza", pero el 09-ago se comprobó que es general: **entrar a un módulo no recarga sus datos**, hay que pulsar Actualizar o F5. Se vio con las fotos, y aplica igual a Tickets, Clientes y el resto | Paso 4.3, ampliado a todos los módulos |
+| **R** | 🔴 **Se puede invitar a DOS cuentas distintas al MISMO estilista del catálogo.** Lo encontró el propietario el 10-ago: invitó `elboga010` vinculándolo a "Erick Chaparro", que ya tenía cuenta con `elboga005`. **Quedaron dos usuarios llamados Erick Chaparro apuntando al mismo estilista.** **No es cosmético:** las dos cuentas ven la misma agenda, las mismas comisiones y las mismas fotos, porque todo cuelga del `stylist_id`, y no hay forma de saber cuál es la persona real. Se arregla **rechazando la invitación** cuando ese estilista ya tiene una cuenta activa vinculada. *(El duplicado real quedó suspendido, no borrado.)* | Pulido de Usuarios, fase 4 |
+| **S** | **La pantalla de acceso solo le habla a los dueños.** Dice *"¿No tienes cuenta? Crea tu negocio"*, pero por ahí también entra un **empleado invitado**, que no viene a crear ningún negocio. Observación del propietario, 10-ago | Confunde justo a quien acaba de recibir una invitación. Se resuelve separando los dos caminos: *"Crea tu negocio"* y *"Te invitaron a un equipo"*. Pulido de la pantalla de acceso, fase 4 |
+| **T** | **`send-low-stock-alert` sigue rota por la misma causa que D-128.** Usa `withSupabase` con la dependencia anclada como `^1` | **Va a fallar igual que la de invitaciones.** Mismo arreglo: quitar esa librería y fijar la versión | Paso **2.7** |
 
 ---
 

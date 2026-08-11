@@ -32,7 +32,7 @@ Lee, en este orden:
 está mal: siete se fundieron en el Plan Maestro el 09-ago (D-126) y lo anterior
 vive en `docs/_archivo/`, que no manda sobre nada.
 
-**No empieces por el código.** Este proyecto tiene más de 126 decisiones
+**No empieces por el código.** Este proyecto tiene más de 129 decisiones
 registradas con su porqué; leer el código sin ellas es reconstruir a ciegas
 razonamientos que ya están escritos.
 
@@ -66,8 +66,12 @@ Antes de terminar un bloque de trabajo, dejar el estado escrito en disco:
 1. Revisar el `git log` desde el último HANDOFF y listar lo que se hizo.
 2. Registrar como `D-XXX` solo lo que cambió el porqué, citando la decisión que
    corrige si aplica. El registro **solo crece**: nunca se borra una fila.
-3. Actualizar `PLAN_DE_LANZAMIENTO`: marcar lo cerrado y anotar lo que salió sin
-   etapa asignada.
+3. Actualizar **`PLAN_MAESTRO.md`**: marcar lo cerrado y anotar lo que salió
+   sin fase asignada. *(`PLAN_DE_LANZAMIENTO` fue archivado el 09-ago, D-126.)*
+6. **Verificar que lo escrito quedó escrito.** Una edición documental que
+   falla en silencio y un commit que afirma lo contrario es peor que no
+   haberla hecho: nadie va a buscar lo que el documento dice que ya existe
+   (D-129).
 4. Escribir un **HANDOFF nuevo** que reemplace al anterior, con: dónde quedamos,
    qué quedó a medias, qué NO hacer, y el prompt exacto para retomar.
 5. Señalar contradicciones o duplicados encontrados, sin resolverlos por
