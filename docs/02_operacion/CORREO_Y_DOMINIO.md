@@ -12,12 +12,34 @@ falta: eso lo manda el `PLAN_MAESTRO`.
 | Correo | Quién lo manda | Estado |
 |---|---|---|
 | **Invitación de equipo** | Nuestra función `send-invitation-email` → Resend | ✅ Funciona |
-| **Alarma de stock bajo** | Nuestra función `send-low-stock-alert` → Resend | ❌ **Rota** (paso 2.7) |
-| **"Confirma tu correo"** del registro | **Supabase Auth**, con su servicio interno | ⚠️ **Tope diario bajísimo** — paso 3.12 |
+| **Alarma de stock bajo** | Nuestra función `send-low-stock-alert` → Resend | ✅ **Arreglada el 11-ago** (D-131) |
+| **Correos de cuenta** (confirmar, recuperar contraseña, cambiar correo…) | **Supabase Auth → SMTP → Resend** | ✅ **Desde el 11-ago** (D-133). ⚠️ **Están en inglés** — hallazgo W, paso 3.13 |
 
 > **La confusión que costó dos horas el 10-ago:** el correo de confirmación
-> **no pasa por Resend**. Sale de `noreply@mail.app.supabase.io`. Verificar el
-> dominio en Resend no lo arregla; hay que apuntar el SMTP de Supabase a Resend.
+> **no pasaba por Resend**. Salía de `noreply@mail.app.supabase.io`. Verificar el
+> dominio en Resend no lo arreglaba; había que apuntar el SMTP de Supabase a
+> Resend, que es lo que se hizo el 11-ago.
+
+### El SMTP de Supabase Auth, para poder reconstruirlo
+
+**Authentication → Emails → SMTP Settings**, con "Enable custom SMTP" activado:
+
+| Campo | Valor |
+|---|---|
+| Sender email | `hola@salonymas.com` |
+| Sender name | `Salon y Mas` *(sin tildes, D-089)* |
+| Host | `smtp.resend.com` |
+| Port | `465` |
+| Username | **`resend`** — literalmente esa palabra, no un correo. Es lo que más confunde |
+| Password | La llave de Resend **`SMTP Supabase Auth`**, restringida al dominio `salonymas.com` |
+
+> **Son DOS llaves de Resend distintas y no se pueden intercambiar de memoria:**
+> `BeautyOS` vive en Supabase como secreto `RESEND_API_KEY` y la usan las dos
+> Edge Functions; `SMTP Supabase Auth` es la contraseña del SMTP. **Borrar la
+> primera deja sin correo las invitaciones y las alarmas de stock.**
+>
+> Al activar el SMTP propio, Supabase **sube solo** el tope de correos de la
+> cuenta a **30 por hora** (Authentication → Rate Limits).
 
 ---
 

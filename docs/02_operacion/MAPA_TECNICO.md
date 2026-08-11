@@ -47,13 +47,28 @@ Son **tres caminos distintos** y confundirlos cuesta tiempo.
 
 | Qué | Cómo se publica | Quién |
 |---|---|---|
-| **La aplicación** (Flutter Web) | `git push` → Cloudflare Pages compila y publica sola | Pedir permiso |
+| **La aplicación** (Flutter Web) | `git push` → Cloudflare Pages compila y publica sola. **Comprobar que salió** — ver abajo | Pedir permiso |
 | **Las Edge Functions** | CLI de Supabase (abajo) | Sin permiso desde D-131 |
 | **Las migraciones** | `aplicar_sql.ps1`, a mano | **Solo el propietario** |
 
 > **Las Edge Functions NO salen del repositorio.** Un `push` no las publica y
 > publicarlas no necesita `push`. Son dos mundos separados: por eso el 10-ago
 > el repositorio y lo desplegado estuvieron un rato diciendo cosas distintas.
+
+### Cómo comprobar que un cambio de la app SALIÓ de verdad
+
+**Un `push` correcto no garantiza que la app se publicara** (D-133). Sin salir de
+la terminal, se busca en el JavaScript publicado algo que solo exista en el
+cambio nuevo — el nombre de una función, un texto:
+
+```
+curl -s https://salonymas.com/main.dart.js -o /tmp/pub.js
+grep -c "get_stylists_for_invitation" /tmp/pub.js
+```
+
+`0` significa que **lo publicado es la versión vieja**, aunque GitHub tenga el
+commit. Es más fiable que mirar la pantalla: si el cambio también tocó la base
+de datos, la mitad de la base sí funciona y **parece que se publicó**.
 
 ### La CLI de Supabase
 
@@ -205,6 +220,7 @@ Cada una costó tiempo real. Están aquí para que cueste una sola vez.
 | **Dependencia con rango (`^1`)** en una Edge Function | El mismo código se comporta distinto en cada despliegue y revienta **antes** de la primera línea propia. **Siempre versión exacta** | D-128 |
 | **El `deno.json` va con el `index.ts`** | Publicar solo el código deja la dependencia rota. La CLI los sube juntos; a mano hay que acordarse | D-128, D-131 |
 | **`npx` bloqueado en PowerShell** | Usar `npx.cmd` | D-131 |
+| **Un `push` puede no publicar nada, y nadie avisa** | El 11-ago la compilación falló en **3 segundos** al descargarse el código: `server certificate verification failed. CAfile: none`. Es una avería **de la máquina de Cloudflare**, no del proyecto. **El propietario probó la app creyendo que era la versión nueva y no lo era.** Se arregla con **"Retry deployment"** | D-133 |
 | **Un `numeric` puede llegar como texto** | Si se lee como número, revienta en producción y en ninguna prueba | D-121 |
 | **El contador de tickets está en 701** | Los 700 numerados incluyen los datos sembrados. Al borrar la semilla, el primero real sería el 0000701. Se corrige con `set_ticket_numbering` | D-117, D-118, D-120 |
 | **Un usuario con membresía no se puede borrar** desde Supabase | Las llaves tienen `RESTRICT`. La base se defiende sola. Verificado el 10-ago | HANDOFF 10-ago |

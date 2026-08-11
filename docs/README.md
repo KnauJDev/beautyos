@@ -18,7 +18,7 @@ documentos entiendes el proyecto entero.**
 | 2 | **`00_producto/PLAN_MAESTRO.md`** | **¿Qué es, qué falta y en qué orden?** El único que manda sobre el plan |
 | 3 | `00_producto/REGISTRO_DE_DECISIONES.md` | **¿Por qué está hecho así?** Empieza por el final |
 
-**No empieces por el código.** Este proyecto tiene 132 decisiones registradas
+**No empieces por el código.** Este proyecto tiene 133 decisiones registradas
 con su porqué; leer el código sin ellas es reconstruir a ciegas razonamientos
 que ya están escritos.
 
@@ -36,9 +36,9 @@ mensajes de commit y en los documentos. **Son sistemas distintos:**
 
 | Código | Qué es | Dónde vive |
 |---|---|---|
-| **D-001 … D-132** | **Decisiones.** El porqué de cada cosa, con lo que se descartó y por qué | `00_producto/REGISTRO_DE_DECISIONES.md` |
+| **D-001 … D-133** | **Decisiones.** El porqué de cada cosa, con lo que se descartó y por qué | `00_producto/REGISTRO_DE_DECISIONES.md` |
 | **H-01 … H-13** | **Hallazgos** de la auditoría integral del 6 de agosto | `01_arquitectura/auditorias/AUDITORIA_INTEGRAL_2026-08-06.md` |
-| **A … V** | **Anotado en el camino** | `PLAN_MAESTRO`, sección 7 |
+| **A … W** | **Anotado en el camino** | `PLAN_MAESTRO`, sección 7 |
 | **I-01 … I-13** | **Buzón de ideas**: lo que aún no tiene fase | `PLAN_MAESTRO`, sección 6 |
 | **F3.7, 4.10…** | **Números de paso** del Plan Maestro | `PLAN_MAESTRO`, sección 5 |
 | **Tramo A, D3.5.2…** | Trabajo de arquitectura multisede de julio | `01_arquitectura/auditorias/` |
@@ -226,11 +226,12 @@ orden en que se fueron creando. **No se reescribe para ocultar el pasado.**
 120. `_archivo/handoffs/HANDOFF_SalonyMas_2026-08-09.md` (handoff del 09-ago, **reemplazado**)
 121. `00_producto/PLAN_MAESTRO.md` (**el documento rector unico**: vision, planes, precios, limites, los 16 modulos, 8 fases, buzon de ideas y hallazgos — reemplaza a siete documentos, D-126)
 122. `_archivo/LEEME.md` (que hay en el archivo historico y por que se archivo cada cosa)
-123. `HANDOFF/HANDOFF_SalonyMas_2026-08-10.md` (**handoff vigente**, con el prompt exacto para retomar)
+123. `_archivo/handoffs/HANDOFF_SalonyMas_2026-08-10.md` (handoff del 10-ago, **reemplazado**)
 124. `02_operacion/CORREO_Y_DOMINIO.md` (**como esta montado el envio de correo**: dominio, los 4 registros DNS, remitente, por que el rastreo esta apagado, y que mirar cuando falle — D-128, D-130)
 125. `02_operacion/MAPA_TECNICO.md` (**donde esta cada cosa y como se opera**: el proyecto de Supabase y la trampa de su nombre, los tres caminos de publicacion, la CLI, los guiones, que cubren las pruebas y que NO, y las diez trampas que ya mordieron — D-131)
 126. `../supabase/migrations/20260811100000_un_estilista_una_cuenta_activa.sql` (**un estilista del catalogo, una sola cuenta ACTIVA**, hallazgo R — cierra los tres caminos y deja un indice unico como red; **solo cuentas activas a proposito**, para que cambiar de correo siga siendo posible — D-132)
 127. `../supabase/sql/165_verify_un_estilista_una_cuenta.sql` (verificacion del candado: 7 controles y una prueba de escritura real en `ROLLBACK` que comprueba **las dos mitades** — que rechaza la segunda cuenta activa y que si acepta una suspendida)
+128. `HANDOFF/HANDOFF_SalonyMas_2026-08-11.md` (**handoff vigente**, con el prompt exacto para retomar)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión
 estructural. No se reescriben para ocultar el pasado: una decisión futura la
