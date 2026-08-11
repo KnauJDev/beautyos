@@ -68,14 +68,14 @@ Antes de terminar un bloque de trabajo, dejar el estado escrito en disco:
    corrige si aplica. El registro **solo crece**: nunca se borra una fila.
 3. Actualizar **`PLAN_MAESTRO.md`**: marcar lo cerrado y anotar lo que salió
    sin fase asignada. *(`PLAN_DE_LANZAMIENTO` fue archivado el 09-ago, D-126.)*
-6. **Verificar que lo escrito quedó escrito.** Una edición documental que
-   falla en silencio y un commit que afirma lo contrario es peor que no
-   haberla hecho: nadie va a buscar lo que el documento dice que ya existe
-   (D-129).
 4. Escribir un **HANDOFF nuevo** que reemplace al anterior, con: dónde quedamos,
    qué quedó a medias, qué NO hacer, y el prompt exacto para retomar.
 5. Señalar contradicciones o duplicados encontrados, sin resolverlos por
    iniciativa propia.
+6. **Verificar que lo escrito quedó escrito**, releyendo el archivo. Una
+   edición que falla en silencio y un commit que afirma lo contrario es peor
+   que no haberla hecho: nadie va a buscar lo que el documento dice que ya
+   existe (D-129).
 
 La continuidad entre chats no depende de que la IA "recuerde": depende de que el
 estado quede escrito antes de cerrar.
