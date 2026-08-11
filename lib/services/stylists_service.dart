@@ -1,5 +1,6 @@
 ﻿import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/stylist_for_invitation.dart';
 import '../models/stylist_management_item.dart';
 import '../models/stylist_summary.dart';
 
@@ -12,6 +13,29 @@ class StylistsService {
 
     return response
         .map<StylistSummary>((item) => StylistSummary.fromMap(item))
+        .toList();
+  }
+
+  /// Los estilistas que se pueden invitar **en esta sede**, marcando cuáles ya
+  /// tienen cuenta activa (hallazgo R, D-132).
+  ///
+  /// Es distinta de `getStylistsSummary`, que responde por todo el negocio: el
+  /// diálogo de invitar mostraba estilistas de otras sedes y la invitación se
+  /// rechazaba **después** de llenar el formulario.
+  Future<List<StylistForInvitation>> getStylistsForInvitation(
+    String branchId,
+  ) async {
+    final response = await Supabase.instance.client.rpc(
+      'get_stylists_for_invitation',
+      params: {'p_branch_id': branchId},
+    );
+
+    return (response as List)
+        .map<StylistForInvitation>(
+          (item) => StylistForInvitation.fromMap(
+            Map<String, dynamic>.from(item as Map),
+          ),
+        )
         .toList();
   }
 

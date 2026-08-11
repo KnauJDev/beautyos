@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../theme/app_theme.dart';
 
-import '../models/stylist_summary.dart';
+import '../models/stylist_for_invitation.dart';
 import '../models/team_invitation.dart';
 import '../models/tenant_user.dart';
 import '../services/stylists_service.dart';
@@ -63,7 +63,10 @@ class _UsuariosPageState extends State<UsuariosPage> {
   }
 
   Future<void> _openInviteDialog() async {
-    final stylists = await _stylistsService.getStylistsSummary();
+    // Por sede y con la marca de quién ya tiene cuenta (hallazgo R, D-132).
+    final stylists = await _stylistsService.getStylistsForInvitation(
+      widget.branchId,
+    );
     if (!mounted) return;
 
     final emailSent = await showDialog<bool>(
@@ -259,7 +262,7 @@ class _InviteUserDialog extends StatefulWidget {
   });
 
   final String branchId;
-  final List<StylistSummary> stylists;
+  final List<StylistForInvitation> stylists;
   final TeamInvitationsService invitationsService;
 
   @override
@@ -274,6 +277,12 @@ class _InviteUserDialogState extends State<_InviteUserDialog> {
   String? stylistId;
   bool isSaving = false;
   String? errorMessage;
+
+  /// Los que se pueden invitar de verdad: los que aún no tienen cuenta activa.
+  /// El candado de la base rechaza al resto, así que ofrecerlos solo servía
+  /// para que el dueño se llevara un error después de llenar el formulario.
+  List<StylistForInvitation> get _invitables =>
+      widget.stylists.where((s) => !s.hasActiveAccount).toList();
 
   @override
   void dispose() {
@@ -365,10 +374,23 @@ class _InviteUserDialogState extends State<_InviteUserDialog> {
             ),
             if (role == 'stylist') ...[
               const SizedBox(height: 12),
+              // Solo se ofrecen los que NO tienen cuenta activa (hallazgo R).
+              // Los tres avisos dicen cosas distintas a propósito: "no hay
+              // ninguno", "los hay pero ya están todos vinculados" y la lista.
+              // Un aviso genérico dejaría al dueño sin saber qué hacer.
               if (widget.stylists.isEmpty)
                 const Text(
-                  'No hay estilistas en el catálogo todavía. Créalo primero '
-                  'en "Estilistas".',
+                  'No hay estilistas activos en esta sede todavía. Créalo '
+                  'primero en "Estilistas".',
+                  style: TextStyle(color: AppColors.warning),
+                )
+              else if (_invitables.isEmpty)
+                const Text(
+                  'Todos los estilistas de esta sede ya tienen cuenta. Si vas '
+                  'a vincular a otra persona, créala primero en "Estilistas". '
+                  'Y si alguien cambió de correo, desactiva su cuenta en esta '
+                  'misma pantalla y vuelve a invitarla: su historial no se '
+                  'pierde.',
                   style: TextStyle(color: AppColors.warning),
                 )
               else
@@ -377,7 +399,7 @@ class _InviteUserDialogState extends State<_InviteUserDialog> {
                   decoration: const InputDecoration(
                     labelText: 'Estilista del catálogo',
                   ),
-                  items: widget.stylists
+                  items: _invitables
                       .map(
                         (stylist) => DropdownMenuItem(
                           value: stylist.id,
