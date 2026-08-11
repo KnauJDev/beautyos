@@ -18,7 +18,7 @@ documentos entiendes el proyecto entero.**
 | 2 | **`00_producto/PLAN_MAESTRO.md`** | **¿Qué es, qué falta y en qué orden?** El único que manda sobre el plan |
 | 3 | `00_producto/REGISTRO_DE_DECISIONES.md` | **¿Por qué está hecho así?** Empieza por el final |
 
-**No empieces por el código.** Este proyecto tiene 126 decisiones registradas
+**No empieces por el código.** Este proyecto tiene 128 decisiones registradas
 con su porqué; leer el código sin ellas es reconstruir a ciegas razonamientos
 que ya están escritos.
 
@@ -36,7 +36,7 @@ mensajes de commit y en los documentos. **Son sistemas distintos:**
 
 | Código | Qué es | Dónde vive |
 |---|---|---|
-| **D-001 … D-126** | **Decisiones.** El porqué de cada cosa, con lo que se descartó y por qué | `00_producto/REGISTRO_DE_DECISIONES.md` |
+| **D-001 … D-128** | **Decisiones.** El porqué de cada cosa, con lo que se descartó y por qué | `00_producto/REGISTRO_DE_DECISIONES.md` |
 | **H-01 … H-13** | **Hallazgos** de la auditoría integral del 6 de agosto | `01_arquitectura/auditorias/AUDITORIA_INTEGRAL_2026-08-06.md` |
 | **A … Q** | **Anotado en el camino** | `PLAN_MAESTRO`, sección 7 |
 | **I-01 … I-10** | **Buzón de ideas**: lo que aún no tiene fase | `PLAN_MAESTRO`, sección 6 |
@@ -227,7 +227,10 @@ orden en que se fueron creando. **No se reescribe para ocultar el pasado.**
 117. `../supabase/migrations/20260809200000_negocio_de_prueba.sql` (**marcar un negocio como de prueba**, accion A5, D-120)
 118. `../test/dinero_y_roles_test.dart` y `../lib/models/acciones_de_ticket.dart` (**primeras pruebas de dinero y roles**, accion A6, H-03, D-121)
 119. `../supabase/sql/163_test_reglas_de_dinero.sql` (**las tres reglas de dinero contra la base real**, con `ROLLBACK`; hay que ejecutarlo a mano)
-120. `HANDOFF/HANDOFF_SalonyMas_2026-08-09.md` (**handoff vigente**, con el prompt exacto para retomar — reemplaza al del 08-ago)
+120. `_archivo/handoffs/HANDOFF_SalonyMas_2026-08-09.md` (handoff del 09-ago, **reemplazado**)
+121. `00_producto/PLAN_MAESTRO.md` (**el documento rector unico**: vision, planes, precios, limites, los 16 modulos, 8 fases, buzon de ideas y hallazgos — reemplaza a siete documentos, D-126)
+122. `_archivo/LEEME.md` (que hay en el archivo historico y por que se archivo cada cosa)
+123. `HANDOFF/HANDOFF_SalonyMas_2026-08-10.md` (**handoff vigente**, con el prompt exacto para retomar)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión
 estructural. No se reescriben para ocultar el pasado: una decisión futura la

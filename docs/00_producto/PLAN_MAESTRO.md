@@ -1,6 +1,6 @@
 # PLAN MAESTRO — Salón y Más
 
-**Creado:** 9 de agosto de 2026 · **Última revisión:** 9 de agosto de 2026
+**Creado:** 9 de agosto de 2026 · **Última revisión:** 10 de agosto de 2026
 **Estado:** vigente · **Manda sobre:** todo lo demás en materia de qué falta y en qué orden
 
 > **Este documento reemplaza y jubila a siete:** `PLAN_DE_LANZAMIENTO_2026-08-06`,
@@ -179,6 +179,7 @@ Tope antiabuso en la reserva pública, rol Asistente con sus pantallas, 2FA.
 | 2.4 | Cerrar los almacenes de archivos (H-09) | 🤖 | ✅ D-119 |
 | 2.5 | Marcar "Naguara de Uñas" como negocio de prueba | 🤖 | ✅ D-120 |
 | 2.6 | Pruebas de las 3 reglas de dinero y de los roles (H-03) | 🤖 | ✅ D-121 — la mitad automática espera a 2.2 |
+| 2.7 | **Arreglar `send-low-stock-alert`** — sigue rota por la misma causa que D-128 | 🤖 | ⬜ **Lo primero de la próxima sesión** |
 
 ### FASE 3 — Poder cobrar — *el camino corto al primer cliente*
 
