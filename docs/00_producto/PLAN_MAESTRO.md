@@ -410,6 +410,27 @@ toque, o se descarta con su motivo.
 20. **Señalar contradicciones y duplicados encontrados**, sin resolverlos por
     iniciativa propia.
 
+### Cuando trabaja más de un asistente
+
+> **Desde el 12-ago el proyecto lo pueden tocar varios asistentes distintos**
+> (D-137). El riesgo nuevo no es que uno se equivoque: es que **dos trabajen
+> sin verse**. Estas tres reglas lo evitan.
+
+22. **El repositorio es la única fuente de verdad, y quien construye es quien
+    registra.** Cualquier asistente que construya algo lo deja escrito **en el
+    mismo cambio**: la decisión con su porqué, su línea en el índice, el Plan
+    Maestro actualizado y el HANDOFF. **Lo que no está escrito no existe** —
+    porque el siguiente asistente no tiene forma de saberlo.
+23. **Un solo HANDOFF vigente, y se reemplaza, nunca se duplica.** Antes de
+    escribir uno nuevo hay que **leer el que hay** y archivar el anterior en
+    `_archivo/handoffs/`. Dos HANDOFF a la vez es la enfermedad de D-126 con
+    otro nombre.
+24. **Antes de proponer nada, comprobar si el repositorio avanzó sin que el
+    HANDOFF lo cuente.** Si hay commits posteriores al último HANDOFF,
+    **otro asistente trabajó**: hay que leer ese `git log` y cerrar el hueco
+    **antes** de tocar nada. Proponer sobre un estado viejo es cómo se
+    reconstruye a ciegas lo que ya estaba hecho.
+
 ### Quién verifica de verdad
 
 21. **El propietario prueba en producción y reporta.** El asistente no ve la

@@ -249,6 +249,21 @@ las que más caro salieron:
    quedó escrito DESPUÉS** — y no se afirma en un commit que algo quedó escrito
    sin haberlo comprobado (D-129).
 
+### Y tres reglas que son para ti en concreto
+
+**Desde el 12-ago el proyecto lo puede tocar más de un asistente** (D-137). El
+riesgo no es equivocarse: es **trabajar sin verse**. Están completas en el
+apartado 8 del Plan Maestro, reglas **22 a 24**:
+
+1. **Quien construye es quien registra**, en el mismo cambio: la decisión con
+   su porqué, su línea en el índice, el Plan Maestro y el HANDOFF. **Lo que no
+   está escrito no existe**, porque el siguiente no tiene cómo saberlo.
+2. **Un solo HANDOFF vigente.** Se reemplaza, nunca se duplica: lee el que hay
+   y archiva el anterior en `_archivo/handoffs/`.
+3. **Antes de proponer nada, mira si el repositorio avanzó sin que el HANDOFF
+   lo cuente.** Si hay commits posteriores al último HANDOFF, **otro asistente
+   trabajó**: lee ese `git log` y cierra el hueco antes de tocar nada.
+
 ### El prompt para arrancar
 
 ```
