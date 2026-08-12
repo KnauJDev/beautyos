@@ -149,7 +149,31 @@ try {
     Add-Content -LiteralPath $registro -Value "===== $a =====" -Encoding utf8
 
     # SIN ON_ERROR_STOP: se ejecuta todo y se registra todo.
-    $salida = & $psql --dbname=$url --file=$ruta 2>&1 | Out-String
+    #
+    # NO se usa `& $psql ... 2>&1`, y esto no es un detalle de estilo.
+    # En Windows PowerShell 5.1, redirigir con `2>&1` la salida de error de un
+    # programa externo **envuelve cada linea en un error de PowerShell**. Con
+    # `$ErrorActionPreference = 'Stop'`, el primer `ERROR:` de psql mata el
+    # guion entero -- es decir, justo los errores de "ya existe" que este
+    # guion existe para tolerar. Paso en el primer intento del 12-ago.
+    #
+    # `Start-Process` con archivos de redireccion no pasa por ese mecanismo:
+    # psql escribe directamente a disco y PowerShell no interpreta nada.
+    $tmpOut = [System.IO.Path]::GetTempFileName()
+    $tmpErr = [System.IO.Path]::GetTempFileName()
+
+    Start-Process -FilePath $psql `
+      -ArgumentList @("--dbname=$url", "--file=$ruta") `
+      -NoNewWindow -Wait `
+      -RedirectStandardOutput $tmpOut -RedirectStandardError $tmpErr | Out-Null
+
+    $salida = ''
+    foreach ($t in @($tmpOut, $tmpErr)) {
+      $trozo = Get-Content -LiteralPath $t -Raw -ErrorAction SilentlyContinue
+      if ($trozo) { $salida += $trozo }
+    }
+    Remove-Item -LiteralPath $tmpOut, $tmpErr -Force -ErrorAction SilentlyContinue
+
     Add-Content -LiteralPath $registro -Value $salida -Encoding utf8
 
     $errores = ([regex]::Matches($salida, '(?im)^\s*ERROR:')).Count
