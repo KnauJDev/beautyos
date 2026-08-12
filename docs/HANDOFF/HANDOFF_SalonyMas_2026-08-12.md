@@ -193,7 +193,91 @@ con precio pionero, y conseguir los primeros 25 salones.
 
 ---
 
-## 9. Evidencia
+## 9. Si quien retoma es una IA distinta
+
+**Esto es lo mínimo que necesita saber alguien que llega sin historia.** No
+sustituye a leer los tres documentos: los enumera y avisa de lo que muerde.
+
+### Los tres documentos, y qué manda cada uno
+
+| Documento | Responde | Regla |
+|---|---|---|
+| **`docs/HANDOFF/`** (el más reciente) | ¿Dónde quedamos? | Se reemplaza cada sesión |
+| **`docs/00_producto/PLAN_MAESTRO.md`** | ¿Qué falta y en qué orden? | **El único que manda sobre el plan** |
+| **`docs/00_producto/REGISTRO_DE_DECISIONES.md`** | ¿Por qué está hecho así? | **Solo crece.** Nunca se resume ni se borra una fila. Tiene un **índice** al principio: léelo entero y abre solo las entradas que necesites |
+
+**Si aparece un cuarto documento opinando sobre el plan, está mal.** Siete
+compitiendo causaron dos desviaciones reales (D-063, D-118).
+
+**Y dos de apoyo que se leen antes de hacer algo, no para saber qué hacer:**
+`02_operacion/MAPA_TECNICO.md` (dónde está cada cosa, cómo se publica, **las
+trampas que ya mordieron**) y `02_operacion/CORREO_Y_DOMINIO.md`.
+
+### Lo que no es obvio y cuesta caro
+
+1. **`beautyos-dev` ES el proyecto de producción.** Es el único que existe. El
+   nombre ya hizo archivar un hallazgo falso dos veces.
+2. **La base es producción; los datos son sembrados.** El único negocio es del
+   propietario y está marcado de prueba. Lee `MAPA_TECNICO` apartado **1-bis**,
+   que incluye **qué cambia el día que entre el primer cliente real**.
+3. **El propietario no es técnico.** Explícale el porqué, no solo el qué, en
+   español claro. **Él prueba en producción y reporta** — y así encontró la
+   mayoría de los fallos que ninguna prueba automática vio.
+4. **Las migraciones las aplica él**, con
+   `powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "<ruta>"`.
+   Van dentro de `begin/commit`: si algo falla, no se aplica nada.
+5. **Respaldar antes de cualquier migración**, con `scripts\respaldo_supabase.ps1`.
+6. **Las Edge Functions no salen del repositorio.** Un `push` no las publica.
+
+### Las cinco reglas de método que salieron de fallos reales
+
+Están completas en el **apartado 8 del Plan Maestro** (son 21). Estas cinco son
+las que más caro salieron:
+
+1. **Verificar en el código antes de afirmar.** Adivinar nombres de tablas y
+   columnas ya causó fallos reales.
+2. **Al reescribir una función, compararla línea por línea contra la
+   original**, no solo la firma. Tres fallos en un mismo día salieron de ahí
+   (D-119, D-122, D-123).
+3. **Al borrar una función, sus permisos se pierden — y el respaldo no los
+   trae.** Cópialos antes y repónlos. Reinventarlos rompió la app una vez
+   (D-122) y casi rompe la página pública de precios otra (D-136).
+4. **Que un proceso termine sin errores no prueba que sirva.** El respaldo se
+   creaba perfecto y no servía para reconstruir nada (D-134). Un `push`
+   correcto no publicó la app (D-133). **Verifica el resultado, no el proceso.**
+5. **Toda edición documental comprueba que su ancla existe ANTES y que el texto
+   quedó escrito DESPUÉS** — y no se afirma en un commit que algo quedó escrito
+   sin haberlo comprobado (D-129).
+
+### El prompt para arrancar
+
+```
+Voy a trabajar contigo en Salón y Más, una SaaS para salones de estética en
+Colombia, en C:\Proyectos\salonymas. No soy técnico: explícame el porqué de
+las cosas, no solo el qué, en español claro.
+
+Antes de proponer nada, lee en este orden:
+1. docs/HANDOFF/ — el más reciente por fecha. Dónde quedamos.
+2. docs/00_producto/PLAN_MAESTRO.md — el único que manda sobre qué falta y en
+   qué orden. Sus reglas de trabajo están en el apartado 8 y no son
+   negociables.
+3. El índice del principio de docs/00_producto/REGISTRO_DE_DECISIONES.md, y
+   abre enteras solo las decisiones que necesites.
+4. docs/02_operacion/MAPA_TECNICO.md — dónde está cada cosa, cómo se publica,
+   y las trampas que ya nos costaron tiempo.
+
+No empieces por el código: hay más de 136 decisiones registradas con su
+porqué, y leerlo sin ellas es reconstruir a ciegas razonamientos que ya están
+escritos.
+
+Cuando termines de leer, dime en pocas líneas dónde estamos y cuál es el
+siguiente paso según el Plan Maestro, y espera mi confirmación antes de
+construir nada.
+```
+
+---
+
+## 10. Evidencia
 
 - **Decisiones D-134 y D-135** en `REGISTRO_DE_DECISIONES.md` (135 en total)
 - **Hallazgos Y y Z** nuevos en el Plan Maestro, sección 7; **Y cerrado** el
