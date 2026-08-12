@@ -364,8 +364,34 @@ $$;
 -- 8. La pantalla publica de planes deja de pedir una columna que ya no existe.
 --
 -- Se renombra la columna que devuelve, de `price_cents` a `price_cop`. Sigue
--- dormida (paso 3.8), pero si no se toca aqui, se rompe.
+-- dormida (paso 3.8), pero si no se toca aqui, se rompe: su cuerpo pide una
+-- columna que ya no existe.
+--
+-- HAY QUE BORRARLA Y RECREARLA, y no es opcional: PostgreSQL no deja cambiar
+-- con `create or replace` lo que una funcion devuelve. El primer intento del
+-- 12-ago fallo justo aqui, con `cannot change return type of existing
+-- function`. La migracion entera se deshizo sola, que es para lo que esta el
+-- `begin/commit`.
+--
+-- **Y BORRAR UNA FUNCION PIERDE SUS PERMISOS.** Es literalmente el fallo de
+-- D-122: un permiso a medias que nadie ve hasta que alguien no puede trabajar.
+-- El respaldo **no los trae** -- se genera sin permisos, cero `GRANT` en todo
+-- el archivo (D-131) --, asi que reescribirlos seria inventarselos.
+--
+-- Solucion: se COPIAN los permisos reales antes de borrar y se devuelven
+-- despues, sean los que sean. Si la funcion tenia los permisos por defecto
+-- (`proacl` nulo), la tabla sale vacia y no hay nada que reponer -- porque una
+-- funcion recien creada nace con esos mismos permisos por defecto.
 -- ---------------------------------------------------------------------------
+
+create temporary table _permisos_list_public_plans on commit drop as
+select unnest(coalesce(p.proacl, '{}'::aclitem[]))::text as permiso
+from pg_proc p
+join pg_namespace n on n.oid = p.pronamespace
+where n.nspname = 'public'
+  and p.proname = 'list_public_plans';
+
+drop function if exists public.list_public_plans();
 
 create or replace function public.list_public_plans()
 returns table (
@@ -398,6 +424,37 @@ as $$
   join public.features f on f.id = pf.feature_id
   where p.status = 'active'
   order by p.code, f.key;
+$$;
+
+-- Se devuelven los permisos que tenia, tal cual estaban.
+--
+-- Un permiso de PostgreSQL se escribe `beneficiario=LETRAS/quien_lo_dio`, y
+-- beneficiario vacio significa PUBLIC. La letra `X` es EXECUTE, la unica que
+-- aplica a una funcion.
+do $$
+declare
+  r record;
+  v_beneficiario text;
+  v_letras text;
+begin
+  for r in select permiso from _permisos_list_public_plans loop
+    v_beneficiario := split_part(r.permiso, '=', 1);
+    v_letras := split_part(split_part(r.permiso, '=', 2), '/', 1);
+
+    if position('X' in v_letras) > 0 then
+      if v_beneficiario = '' then
+        execute 'grant execute on function public.list_public_plans() to public';
+      else
+        execute format(
+          'grant execute on function public.list_public_plans() to %I',
+          v_beneficiario
+        );
+      end if;
+      raise notice 'Permiso repuesto: % puede ejecutar list_public_plans',
+        coalesce(nullif(v_beneficiario, ''), 'PUBLIC');
+    end if;
+  end loop;
+end
 $$;
 
 -- ---------------------------------------------------------------------------
