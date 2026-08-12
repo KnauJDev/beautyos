@@ -155,9 +155,25 @@ try {
   $schemaPath = Join-Path $carpeta 'schema.sql'
   $dataPath   = Join-Path $carpeta 'data.sql'
 
-  # Los esquemas que importan. `public` es donde viven las 41 tablas y las
+  # Los esquemas que importan. `public` es donde viven las tablas y las
   # funciones; `auth` son las cuentas; `storage` la lista de archivos.
-  $esquemas = @('--schema=public', '--schema=auth', '--schema=storage')
+  #
+  # `private` SE ANADIO EL 12-ago Y FALTABA DESDE EL 08-ago (hallazgo Y).
+  # Lo encontro la restauracion de ensayo del paso 2.2: al restaurar salieron
+  # 40 errores de "schema private does not exist". **Ahi viven las 18 funciones
+  # que autorizan cada operacion del negocio** -- `beautyos_resolve_branch_access`
+  # la primera -- mas los disparadores que numeran el ticket y que impiden
+  # cambiarlo. Sin ellas se recuperan todos los datos y la aplicacion **no
+  # funciona en absoluto**: ni ver la agenda, ni cobrar, ni subir una foto.
+  #
+  # Llevaba cuatro dias incompleto en silencio, y no habia forma de saberlo
+  # porque nadie habia restaurado nunca un respaldo. Es exactamente para esto
+  # que existe el ensayo.
+  #
+  # REGLA QUE QUEDA: si algun dia se crea un esquema nuevo, se anade AQUI en el
+  # mismo cambio. Un esquema que no esta en esta linea no existe para el
+  # respaldo, y nadie se entera hasta el dia que haga falta.
+  $esquemas = @('--schema=public', '--schema=private', '--schema=auth', '--schema=storage')
 
   Write-Host ''
   Write-Host '1/3 Roles...' -ForegroundColor Cyan

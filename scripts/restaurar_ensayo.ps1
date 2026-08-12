@@ -188,40 +188,71 @@ try {
 
     Add-Content -LiteralPath $registro -Value $salida -Encoding utf8
 
-    # SE CUENTAN DOS FAMILIAS DE ERROR DISTINTAS, y confundirlas costo un
-    # intento entero:
-    #   "ERROR:"       -> la base rechazo una instruccion. Los de "already
-    #                     exists" son normales en una restauracion.
-    #   "psql: error:" -> **el programa no pudo ni empezar**: no encontro el
-    #                     archivo, no pudo conectarse. Esto NUNCA es normal.
-    # La primera version solo miraba la primera familia, asi que dijo
-    # "ningun error inesperado" cuando no habia ejecutado ni una linea.
-    $errores    = ([regex]::Matches($salida, '(?im)^\s*ERROR:')).Count
-    $yaExisten  = ([regex]::Matches($salida, '(?im)^\s*ERROR:.*already exists')).Count
-    $delPrograma = ([regex]::Matches($salida, '(?im)^\s*psql:\s*error:')).Count
-    $otros      = $errores - $yaExisten
+    # CONTAR ERRORES DE psql TIENE DOS TRAMPAS, Y CAI EN LAS DOS EL 12-ago.
+    #
+    # Trampa 1: psql **no empieza la linea con `ERROR:`**. La escribe asi:
+    #     psql:data.sql:399: ERROR:  syntax error at or near "X"
+    # Buscar `^ERROR:` no encuentra nada nunca. La primera version informo
+    # "0 errores" habiendo 364.
+    #
+    # Trampa 2: hay dos familias y se distinguen por MAYUSCULAS.
+    #     `ERROR:`  (mayusculas) -> la base rechazo una instruccion
+    #     `error:`  (minusculas) -> **el programa no pudo ni empezar**: no
+    #                               encontro el archivo, no pudo conectarse
+    # Por eso estas expresiones NO llevan `i`: distinguir mayusculas es lo
+    # unico que separa "la base dijo que no" de "psql ni lo intento".
+    $errores = ([regex]::Matches($salida, '(?m)^(?:psql:[^\r\n]*?:\s*)?ERROR:')).Count
+
+    # Y DENTRO DE LAS MINUSCULAS HAY OTRAS DOS COSAS DISTINTAS. Se separan por
+    # si viene o no un archivo:linea delante:
+    #
+    #   `psql: error: ...`            -> **FATAL**. psql ni arranco: no
+    #                                    encontro el archivo, no se conecto.
+    #   `psql:data.sql:392: error: `  -> menor. Se quejo de UNA linea y siguio.
+    #                                    Aqui son 16 de "backslash commands are
+    #                                    restricted", una peculiaridad del
+    #                                    formato de pg_dump 17.6 con el
+    #                                    conector de Supabase. No toca datos.
+    #
+    # Si no se separan, esas 16 quejas inofensivas darian FALLO en cada
+    # restauracion correcta y nadie volveria a creerse el aviso.
+    $fatales = ([regex]::Matches($salida, '(?m)^psql:\s+error:')).Count
+    $menores = ([regex]::Matches($salida, '(?m)^psql:\S[^\r\n]*?:\s*error:')).Count
+
+    # Los errores ESPERABLES al restaurar en un Supabase gestionado: no eres
+    # superusuario, asi que los esquemas `auth` y `storage` -- que son de la
+    # plataforma y el proyecto nuevo ya trae -- rechazan que los toques. Y los
+    # roles ya existen. Nada de eso afecta a los datos del negocio.
+    $esperables = ([regex]::Matches(
+      $salida,
+      '(?m)^(?:psql:[^\r\n]*?:\s*)?ERROR:.*(already exists|permission denied|reserved role|must be owner|memberships are reserved)'
+    )).Count
+
+    $yaExisten = $esperables
+    $otros     = $errores - $esperables
 
     # Y LA TERCERA COMPROBACION, que es la que de verdad protege: una
     # restauracion que no dice NADA no es una restauracion silenciosa y
     # limpia -- es una que no ocurrio. `schema.sql` sano imprime miles de
     # lineas. Silencio absoluto = no se ejecuto.
     $vacio = [string]::IsNullOrWhiteSpace($salida)
-    $fallo = ($proc.ExitCode -ne 0) -or ($delPrograma -gt 0) -or $vacio
+    $fallo = ($proc.ExitCode -ne 0) -or ($fatales -gt 0) -or $vacio
 
     $resumen += [pscustomobject]@{
-      Archivo      = $a
-      Codigo       = $proc.ExitCode
-      Errores      = $errores
-      YaExistian   = $yaExisten
-      OtrosErrores = $otros
-      DelPrograma  = $delPrograma
-      Resultado    = if ($fallo) { 'FALLO' } else { 'ok' }
+      Archivo    = $a
+      Codigo     = $proc.ExitCode
+      Errores    = $errores
+      Esperables = $esperables
+      Revisar    = $otros
+      Fatales    = $fatales
+      Menores    = $menores
+      Resultado  = if ($fallo) { 'FALLO' } else { 'ok' }
     }
 
     if ($fallo) {
       Write-Host ' FALLO' -ForegroundColor Red
     } else {
-      Write-Host (" {0} errores ({1} de 'ya existe')" -f $errores, $yaExisten)
+      Write-Host (" {0} errores: {1} esperables, {2} por revisar" -f $errores, $esperables, $otros)
     }
   }
 
@@ -229,7 +260,7 @@ try {
   Write-Host 'RESUMEN' -ForegroundColor Green
   $resumen | Format-Table -AutoSize
 
-  $otrosTotal = ($resumen | Measure-Object -Property OtrosErrores -Sum).Sum
+  $otrosTotal = ($resumen | Measure-Object -Property Revisar -Sum).Sum
   $fallos     = @($resumen | Where-Object { $_.Resultado -eq 'FALLO' }).Count
 
   Write-Host ''
