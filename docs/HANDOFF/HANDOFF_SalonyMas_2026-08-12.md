@@ -1,6 +1,6 @@
 # HANDOFF Salón y Más — 12 de agosto de 2026
 
-**Bloque documentado:** decisiones **D-134 a D-136** · restauración de ensayo + pasos 3.5 y 3.6
+**Bloque documentado:** decisiones **D-134 a D-137** · restauración de ensayo + pasos 3.5 y 3.6
 **Estado:** todo verificado en producción por el propietario
 **Reemplaza como handoff vigente a:** `HANDOFF_SalonyMas_2026-08-11.md`
 
@@ -58,6 +58,7 @@ qué cambia está en `MAPA_TECNICO`, 1-bis. Consúltala ese día.
 | **Queda escrito qué hay en la base y qué cambia el día 1** | D-135 |
 | **Pasos 3.5 y 3.6: la máquina de cobrar** — precios, límites y precio por cliente | D-136 |
 | **Se aplaza a propósito la matriz de los planes** (idea I-14) | D-136 |
+| **Tres reglas nuevas para cuando trabaja más de un asistente** | D-137 |
 
 ### Los pasos 3.5 y 3.6, en corto
 
@@ -157,7 +158,7 @@ de decisiones, que guarda **porqués**, no en el mapa técnico, que responde
 
 ## 6. Cómo trabajamos
 
-**Las 21 reglas están en `00_producto/PLAN_MAESTRO.md`, apartado 8.**
+**Las reglas de trabajo están en `00_producto/PLAN_MAESTRO.md`, apartado 8.**
 Aquí no se copian, y ningún HANDOFF futuro debe volver a copiarlas (D-131).
 
 ---
@@ -165,7 +166,7 @@ Aquí no se copian, y ningún HANDOFF futuro debe volver a copiarlas (D-131).
 ## 7. Estado técnico
 
 - **Pruebas:** 95, en 11 archivos · `flutter analyze` limpio
-- **Migraciones:** todas aplicadas, la última `20260811100000`
+- **Migraciones:** todas aplicadas, la última `20260812100000`
 - **Edge Functions:** las dos en v6, funcionando
 - **Correo:** invitaciones, stock bajo y correos de cuenta salen por Resend
   desde `hola@salonymas.com`. Tope 30/hora

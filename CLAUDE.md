@@ -44,7 +44,7 @@ incompleto. Revisa el `git log` para cerrar el hueco.
 
 ## Cómo se trabaja
 
-**Las 21 reglas están en `docs/00_producto/PLAN_MAESTRO.md`, apartado 8.
+**Las reglas de trabajo están en `docs/00_producto/PLAN_MAESTRO.md`, apartado 8.
 Léelas ahí. Aquí no se copian.**
 
 Estaban escritas en seis sitios y ya se contradecían entre ellas (D-131). Una

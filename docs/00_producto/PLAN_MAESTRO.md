@@ -410,6 +410,12 @@ toque, o se descarta con su motivo.
 20. **Señalar contradicciones y duplicados encontrados**, sin resolverlos por
     iniciativa propia.
 
+### Quién verifica de verdad
+
+21. **El propietario prueba en producción y reporta.** El asistente no ve la
+    interfaz — y el 09-ago eso encontró tres fallos que ninguna prueba vio.
+    **Su prueba no es un trámite: es parte de la verificación.**
+
 ### Cuando trabaja más de un asistente
 
 > **Desde el 12-ago el proyecto lo pueden tocar varios asistentes distintos**
@@ -431,11 +437,6 @@ toque, o se descarta con su motivo.
     **antes** de tocar nada. Proponer sobre un estado viejo es cómo se
     reconstruye a ciegas lo que ya estaba hecho.
 
-### Quién verifica de verdad
-
-21. **El propietario prueba en producción y reporta.** El asistente no ve la
-    interfaz — y el 09-ago eso encontró tres fallos que ninguna prueba vio.
-    **Su prueba no es un trámite: es parte de la verificación.**
 
 ---
 
