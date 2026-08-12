@@ -18,7 +18,7 @@ documentos entiendes el proyecto entero.**
 | 2 | **`00_producto/PLAN_MAESTRO.md`** | **¿Qué es, qué falta y en qué orden?** El único que manda sobre el plan |
 | 3 | `00_producto/REGISTRO_DE_DECISIONES.md` | **¿Por qué está hecho así?** Empieza por el final |
 
-**No empieces por el código.** Este proyecto tiene 135 decisiones registradas
+**No empieces por el código.** Este proyecto tiene 136 decisiones registradas
 con su porqué; leer el código sin ellas es reconstruir a ciegas razonamientos
 que ya están escritos.
 
@@ -36,10 +36,10 @@ mensajes de commit y en los documentos. **Son sistemas distintos:**
 
 | Código | Qué es | Dónde vive |
 |---|---|---|
-| **D-001 … D-135** | **Decisiones.** El porqué de cada cosa, con lo que se descartó y por qué | `00_producto/REGISTRO_DE_DECISIONES.md` |
+| **D-001 … D-136** | **Decisiones.** El porqué de cada cosa, con lo que se descartó y por qué | `00_producto/REGISTRO_DE_DECISIONES.md` |
 | **H-01 … H-13** | **Hallazgos** de la auditoría integral del 6 de agosto | `01_arquitectura/auditorias/AUDITORIA_INTEGRAL_2026-08-06.md` |
 | **A … Z** | **Anotado en el camino** | `PLAN_MAESTRO`, sección 7 |
-| **I-01 … I-13** | **Buzón de ideas**: lo que aún no tiene fase | `PLAN_MAESTRO`, sección 6 |
+| **I-01 … I-14** | **Buzón de ideas**: lo que aún no tiene fase | `PLAN_MAESTRO`, sección 6 |
 | **F3.7, 4.10…** | **Números de paso** del Plan Maestro | `PLAN_MAESTRO`, sección 5 |
 | **Tramo A, D3.5.2…** | Trabajo de arquitectura multisede de julio | `01_arquitectura/auditorias/` |
 
@@ -234,6 +234,7 @@ orden en que se fueron creando. **No se reescribe para ocultar el pasado.**
 128. `_archivo/handoffs/HANDOFF_SalonyMas_2026-08-11.md` (handoff del 11-ago, **reemplazado**)
 129. `../scripts/restaurar_ensayo.ps1` y `../supabase/sql/166_censo_para_comparar.sql` (**la restauracion de ensayo del paso 2.2**: el guion que restaura en el proyecto de ensayo con dos candados contra tocar produccion, y el censo de 37 cifras que se ejecuta contra las dos bases y se compara — D-134)
 130. `HANDOFF/HANDOFF_SalonyMas_2026-08-12.md` (**handoff vigente**, con el prompt exacto para retomar)
+131. `../supabase/migrations/20260812100000_precios_limites_y_precio_por_cliente.sql` y `../supabase/sql/167_verify_precios_y_limites.sql` (**pasos 3.5 y 3.6**: precios en pesos, las capacidades de sedes y cuentas de equipo con sus topes **haciendose cumplir**, y el precio o descuento pactado con cada cliente — D-136)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión
 estructural. No se reescriben para ocultar el pasado: una decisión futura la

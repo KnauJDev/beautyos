@@ -1,6 +1,6 @@
 # HANDOFF Salón y Más — 12 de agosto de 2026
 
-**Bloque documentado:** decisiones **D-134 y D-135** · restauración de ensayo
+**Bloque documentado:** decisiones **D-134 a D-136** · restauración de ensayo + pasos 3.5 y 3.6
 **Estado:** todo verificado en producción por el propietario
 **Reemplaza como handoff vigente a:** `HANDOFF_SalonyMas_2026-08-11.md`
 
@@ -12,13 +12,16 @@
 Fase 0  Que exista en internet        ✅
 Fase 1  Que sea seguro compartirla    ✅
 Fase 2  Seguridad                     ✅ CERRADA HOY — 7 de 7
-Fase 3  Poder cobrar                  🔄  ← AQUÍ EMPIEZA LO SIGUIENTE
+Fase 3  Poder cobrar                  🔄  ← AQUÍ
         3.1  ePayco admite recurrencia    ✅
+        3.5  Precios y límites            ✅ CERRADO HOY
+        3.6  Precio por cliente           ✅ CERRADO HOY
         3.12 Correos de cuenta por Resend ✅
+        3.7  Filtro de aceptación         ⬜ 🤖  ← LO SIGUIENTE
+        3.8–3.11  Planes públicos, ePayco, avisos  ⬜ 🤖
         3.2  Contador (DIAN, IVA)         ⬜ 👤
         3.3  Términos y privacidad        ⬜ 👥  Ley 1581, obligatorio
         3.4  Supabase Pro (~25 USD/mes)   ⬜ 👤
-        3.5–3.11  Planes, precios, filtro, ePayco, avisos  ⬜ 🤖
         3.13 Traducir los correos         ⬜ 👥  hallazgo W
 Fase 4  Pulido módulo a módulo        🔄 4.1 ✅
 ```
@@ -53,6 +56,34 @@ qué cambia está en `MAPA_TECNICO`, 1-bis. Consúltala ese día.
 | **El respaldo llevaba 4 días sin servir** (hallazgo Y) — corregido | D-134 |
 | **Hallazgo Z:** `storage.objects` no vuelve al restaurar | D-134 |
 | **Queda escrito qué hay en la base y qué cambia el día 1** | D-135 |
+| **Pasos 3.5 y 3.6: la máquina de cobrar** — precios, límites y precio por cliente | D-136 |
+| **Se aplaza a propósito la matriz de los planes** (idea I-14) | D-136 |
+
+### Los pasos 3.5 y 3.6, en corto
+
+**Ya se puede cobrar.** Precios en **pesos** (160/200/240 mil), la columna
+renombrada a `price_cop` para que nadie lea centavos donde hay pesos, y **las
+dos capacidades que no existían**: sedes y cuentas de equipo. Sin ellas no se
+podía ni escribir *"3 sedes pero 25 cuentas"* — que es justo lo que el
+propietario quiere poder negociar. **Y se hacen cumplir**: antes `create_branch`
+no tenía **ni una sola** comprobación de límite.
+
+La suscripción admite **precio propio o descuento con fecha de fin**, con motivo
+obligatorio. **El pionero es un descuento sin fecha de fin**: 50% mientras siga
+activo.
+
+### Lo que NO se decidió, y es deliberado
+
+**Qué módulo lleva cada plan.** El propietario no está decidido y tiene una idea
+que lo cambiaría: fotos visibles en el Básico, Instagram en el Profesional.
+
+> **Se aplazó con argumento:** si hoy se mueven las fotos al Básico, **el
+> Profesional se queda sin nada exclusivo que exista** — Instagram y la IA son
+> Fase 6. La matriz son 15 casillas: una instrucción hoy, un clic en la Fase 7.
+> **Se decide después de las primeras cinco visitas a salones reales.**
+
+Está anotado como **I-14**, con la discrepancia entre la imagen que él maneja
+(10 filas) y este plan (12).
 
 ### El resultado del ensayo, en una línea
 
@@ -149,13 +180,13 @@ Aquí no se copian, y ningún HANDOFF futuro debe volver a copiarlas (D-131).
 
 **La Fase 3 no tiene un orden obligado.** Recomendación, por lo que desbloquea:
 
-| # | Qué | Por qué primero |
+| # | Qué | Por qué |
 |---|---|---|
-| 1 | **3.5 y 3.6** — cargar planes, precios y límites; precio y descuento por cliente 🤖 | Es lo único de la fase que **no depende de nadie externo**. Se puede hacer entero hoy |
-| 2 | **3.7** — filtro de aceptación 🤖 | *"Nadie entra solo"* (D-125). Sin esto no hay forma de aprobar un salón |
-| 3 | **3.3** — términos y privacidad 👥 | **Obligatorio por ley** antes del primer cliente |
-| 4 | **3.13** — traducir los correos 👥 | 30 minutos, y es el primer correo que ve la clienta |
-| 5 | **3.2 y 3.4** — contador y Supabase Pro 👤 | Dependen de terceros; conviene arrancarlos ya en paralelo |
+| 1 | **3.7 — filtro de aceptación** 🤖 | *"Nadie entra solo"* (D-125). **Es donde se usa lo que se construyó hoy**: al aprobar un salón se le asigna precio o descuento. Sin esto, cualquiera se registra y entra |
+| 2 | **3.3** — términos y privacidad 👥 | **Obligatorio por ley** antes del primer cliente |
+| 3 | **3.13** — traducir los correos 👥 | 30 minutos, y es el primer correo que ve la clienta |
+| 4 | **3.2 y 3.4** — contador y Supabase Pro 👤 | Dependen de terceros; conviene arrancarlos ya en paralelo |
+| 5 | **I-14** — la matriz de los planes 👤 | **Después de las primeras cinco visitas**, no antes |
 
 **Pendiente del propietario, sin fecha:** decidir si sale con precio de lista o
 con precio pionero, y conseguir los primeros 25 salones.
