@@ -41,6 +41,55 @@ la lista devuelve uno solo. Eso es justamente lo que falta en el **paso 2.2**.
 
 ---
 
+## 1-bis. Qué hay REALMENTE dentro de la base
+
+> **Léelo antes de tratar estos datos como sensibles, o de tratarlos como
+> desechables.** No son ni una cosa ni la otra, y confundirse en cualquiera de
+> las dos direcciones sale caro.
+
+**Hoy, 12 de agosto de 2026:**
+
+| | |
+|---|---|
+| Negocios | **Uno solo: "Naguara de Uñas"**, marcado `is_demo = true` (D-120) |
+| De quién es | **Del propio propietario.** No es un cliente |
+| Los 703 tickets, las 36 clientas, los $67 millones | **Sembrados por el asistente** de febrero a agosto (D-112). **No son personas reales ni dinero real** |
+| Las cuentas de `auth` | Correos de prueba del propietario (`elboga00X@gmail.com`) y el suyo de plataforma |
+| Fotos, reseñas, compras | De prueba también |
+
+**Qué significa esto en la práctica:**
+
+- **Copiar esta base a un proyecto de ensayo NO es exponer datos de terceros.**
+  Es mover datos inventados. Pausar o borrar el ensayo es **higiene y ahorro**,
+  no una obligación legal.
+- **Pero la base ES producción.** Es la única que existe, es la que sirve la
+  aplicación publicada, y perderla o corromperla cuesta el trabajo de meses.
+  **"De prueba" describe los datos, no la base.**
+- Los datos sembrados **no son basura**: son lo que permite ver funcionar las
+  comparaciones del Dashboard (D-110) y lo que hizo posible probar todo. Por eso
+  D-120 decidió **etiquetarlos, no borrarlos**.
+
+### ⚠️ Qué cambia el día que entre el primer cliente real
+
+**Ese día, todo lo de arriba deja de ser cierto de golpe.** Esta lista existe
+para que nadie tenga que acordarse:
+
+1. **Copiar la base a un proyecto de ensayo pasa a mover datos personales de
+   terceros** — nombres y teléfonos de las clientas de otro salón. Ahí sí
+   aplican la Ley 1581 y el criterio de D-115: el ensayo se borra al terminar,
+   sin excepción.
+2. **Los respaldos pasan a ser semanales**, no solo antes de cada migración
+   (`RESPALDO_Y_RESTAURACION`).
+3. **Las cifras del panel de plataforma dejan de ser limpias** si no se
+   descuenta el negocio de prueba. Por eso existe la insignia **PRUEBA** y por
+   eso los de prueba se ordenan al final (D-120).
+4. **El primer ticket real seguiría la numeración sembrada** — sería el 0000704
+   o más. Se corrige con `set_ticket_numbering` (D-117, hallazgo P).
+5. **Los errores dejan de ser gratis.** Hoy un fallo lo sufre el propietario y
+   lo reporta; entonces lo sufre alguien que paga y no vuelve.
+
+---
+
 ## 2. Cómo se publica cada cosa
 
 Son **tres caminos distintos** y confundirlos cuesta tiempo.

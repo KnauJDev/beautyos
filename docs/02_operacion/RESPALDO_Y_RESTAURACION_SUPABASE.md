@@ -62,8 +62,15 @@
 > (hallazgo Z: las tablas de plataforma no se dejan escribir) y aparecen ~15
 > errores en `data.sql` de las tablas internas de `auth` y `storage`.
 >
-> ⚠️ **El proyecto de ensayo contiene datos reales de clientas.** Cuando no se
-> use, **se pausa o se borra**: no se deja ahí "por si acaso" (Ley 1581, D-115).
+> **Sobre el proyecto de ensayo y los datos que contiene** (D-135): hoy son
+> **datos sembrados**, no personas reales — el único negocio es "Naguara de
+> Uñas", que es del propietario y está marcado como de prueba (D-120). Así que
+> pausar o borrar el ensayo es **higiene y ahorro, no una obligación legal**.
+>
+> ⚠️ **Eso cambia el día que entre el primer cliente real.** Desde ese día, una
+> copia de ensayo contiene datos personales de terceros y **se borra al
+> terminar, sin excepción** (Ley 1581, D-115). La lista completa de lo que
+> cambia ese día está en `MAPA_TECNICO.md`, apartado 1-bis.
 >
 > ---
 >

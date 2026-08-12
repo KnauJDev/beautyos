@@ -18,7 +18,7 @@ documentos entiendes el proyecto entero.**
 | 2 | **`00_producto/PLAN_MAESTRO.md`** | **¿Qué es, qué falta y en qué orden?** El único que manda sobre el plan |
 | 3 | `00_producto/REGISTRO_DE_DECISIONES.md` | **¿Por qué está hecho así?** Empieza por el final |
 
-**No empieces por el código.** Este proyecto tiene 134 decisiones registradas
+**No empieces por el código.** Este proyecto tiene 135 decisiones registradas
 con su porqué; leer el código sin ellas es reconstruir a ciegas razonamientos
 que ya están escritos.
 
@@ -36,7 +36,7 @@ mensajes de commit y en los documentos. **Son sistemas distintos:**
 
 | Código | Qué es | Dónde vive |
 |---|---|---|
-| **D-001 … D-134** | **Decisiones.** El porqué de cada cosa, con lo que se descartó y por qué | `00_producto/REGISTRO_DE_DECISIONES.md` |
+| **D-001 … D-135** | **Decisiones.** El porqué de cada cosa, con lo que se descartó y por qué | `00_producto/REGISTRO_DE_DECISIONES.md` |
 | **H-01 … H-13** | **Hallazgos** de la auditoría integral del 6 de agosto | `01_arquitectura/auditorias/AUDITORIA_INTEGRAL_2026-08-06.md` |
 | **A … Z** | **Anotado en el camino** | `PLAN_MAESTRO`, sección 7 |
 | **I-01 … I-13** | **Buzón de ideas**: lo que aún no tiene fase | `PLAN_MAESTRO`, sección 6 |
@@ -231,7 +231,9 @@ orden en que se fueron creando. **No se reescribe para ocultar el pasado.**
 125. `02_operacion/MAPA_TECNICO.md` (**donde esta cada cosa y como se opera**: el proyecto de Supabase y la trampa de su nombre, los tres caminos de publicacion, la CLI, los guiones, que cubren las pruebas y que NO, y las diez trampas que ya mordieron — D-131)
 126. `../supabase/migrations/20260811100000_un_estilista_una_cuenta_activa.sql` (**un estilista del catalogo, una sola cuenta ACTIVA**, hallazgo R — cierra los tres caminos y deja un indice unico como red; **solo cuentas activas a proposito**, para que cambiar de correo siga siendo posible — D-132)
 127. `../supabase/sql/165_verify_un_estilista_una_cuenta.sql` (verificacion del candado: 7 controles y una prueba de escritura real en `ROLLBACK` que comprueba **las dos mitades** — que rechaza la segunda cuenta activa y que si acepta una suspendida)
-128. `HANDOFF/HANDOFF_SalonyMas_2026-08-11.md` (**handoff vigente**, con el prompt exacto para retomar)
+128. `_archivo/handoffs/HANDOFF_SalonyMas_2026-08-11.md` (handoff del 11-ago, **reemplazado**)
+129. `../scripts/restaurar_ensayo.ps1` y `../supabase/sql/166_censo_para_comparar.sql` (**la restauracion de ensayo del paso 2.2**: el guion que restaura en el proyecto de ensayo con dos candados contra tocar produccion, y el censo de 37 cifras que se ejecuta contra las dos bases y se compara — D-134)
+130. `HANDOFF/HANDOFF_SalonyMas_2026-08-12.md` (**handoff vigente**, con el prompt exacto para retomar)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión
 estructural. No se reescriben para ocultar el pasado: una decisión futura la
