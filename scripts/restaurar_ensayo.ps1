@@ -162,10 +162,22 @@ try {
     $tmpOut = [System.IO.Path]::GetTempFileName()
     $tmpErr = [System.IO.Path]::GetTempFileName()
 
-    Start-Process -FilePath $psql `
-      -ArgumentList @("--dbname=$url", "--file=$ruta") `
-      -NoNewWindow -Wait `
-      -RedirectStandardOutput $tmpOut -RedirectStandardError $tmpErr | Out-Null
+    # EL ESPACIO DE "BeautyOS Backups" ROMPIO EL PRIMER INTENTO DEL 12-ago:
+    # `Start-Process -ArgumentList` no pone comillas solo, partio el argumento
+    # en el espacio y psql recibio "...\BeautyOS". No se restauro nada.
+    #
+    # Se podria arreglar poniendo las comillas a mano. **No se hace asi**: eso
+    # deja el problema vivo esperando a la proxima ruta rara. Se le pasa a psql
+    # solo el NOMBRE del archivo -- `roles.sql`, sin espacios posibles -- y se
+    # le dice en que carpeta trabajar. Asi no hay ruta que partir.
+    #
+    # `$url` va entre comillas por si acaso, aunque no puede llevar espacios:
+    # la contrasena se codifica con EscapeDataString antes de entrar aqui.
+    $proc = Start-Process -FilePath $psql `
+      -ArgumentList @("--dbname=`"$url`"", "--file=$a") `
+      -WorkingDirectory $carpetaReal `
+      -NoNewWindow -Wait -PassThru `
+      -RedirectStandardOutput $tmpOut -RedirectStandardError $tmpErr
 
     $salida = ''
     foreach ($t in @($tmpOut, $tmpErr)) {
@@ -176,18 +188,41 @@ try {
 
     Add-Content -LiteralPath $registro -Value $salida -Encoding utf8
 
-    $errores = ([regex]::Matches($salida, '(?im)^\s*ERROR:')).Count
-    $yaExisten = ([regex]::Matches($salida, '(?im)^\s*ERROR:.*already exists')).Count
-    $otros = $errores - $yaExisten
+    # SE CUENTAN DOS FAMILIAS DE ERROR DISTINTAS, y confundirlas costo un
+    # intento entero:
+    #   "ERROR:"       -> la base rechazo una instruccion. Los de "already
+    #                     exists" son normales en una restauracion.
+    #   "psql: error:" -> **el programa no pudo ni empezar**: no encontro el
+    #                     archivo, no pudo conectarse. Esto NUNCA es normal.
+    # La primera version solo miraba la primera familia, asi que dijo
+    # "ningun error inesperado" cuando no habia ejecutado ni una linea.
+    $errores    = ([regex]::Matches($salida, '(?im)^\s*ERROR:')).Count
+    $yaExisten  = ([regex]::Matches($salida, '(?im)^\s*ERROR:.*already exists')).Count
+    $delPrograma = ([regex]::Matches($salida, '(?im)^\s*psql:\s*error:')).Count
+    $otros      = $errores - $yaExisten
+
+    # Y LA TERCERA COMPROBACION, que es la que de verdad protege: una
+    # restauracion que no dice NADA no es una restauracion silenciosa y
+    # limpia -- es una que no ocurrio. `schema.sql` sano imprime miles de
+    # lineas. Silencio absoluto = no se ejecuto.
+    $vacio = [string]::IsNullOrWhiteSpace($salida)
+    $fallo = ($proc.ExitCode -ne 0) -or ($delPrograma -gt 0) -or $vacio
 
     $resumen += [pscustomobject]@{
-      Archivo        = $a
-      Errores        = $errores
-      YaExistian     = $yaExisten
-      OtrosErrores   = $otros
+      Archivo      = $a
+      Codigo       = $proc.ExitCode
+      Errores      = $errores
+      YaExistian   = $yaExisten
+      OtrosErrores = $otros
+      DelPrograma  = $delPrograma
+      Resultado    = if ($fallo) { 'FALLO' } else { 'ok' }
     }
 
-    Write-Host (" {0} errores ({1} de 'ya existe')" -f $errores, $yaExisten)
+    if ($fallo) {
+      Write-Host ' FALLO' -ForegroundColor Red
+    } else {
+      Write-Host (" {0} errores ({1} de 'ya existe')" -f $errores, $yaExisten)
+    }
   }
 
   Write-Host ''
@@ -195,8 +230,26 @@ try {
   $resumen | Format-Table -AutoSize
 
   $otrosTotal = ($resumen | Measure-Object -Property OtrosErrores -Sum).Sum
+  $fallos     = @($resumen | Where-Object { $_.Resultado -eq 'FALLO' }).Count
 
   Write-Host ''
+  if ($fallos -gt 0) {
+    Write-Host '=============================================================' -ForegroundColor Red
+    Write-Host " NO SE RESTAURO. $fallos de $($archivos.Count) archivos fallaron." -ForegroundColor Red
+    Write-Host '=============================================================' -ForegroundColor Red
+    Write-Host ''
+    Write-Host ' Esto NO son los errores normales de "ya existe": es que psql'
+    Write-Host ' no pudo ni empezar, o termino con codigo distinto de cero, o'
+    Write-Host ' no dijo absolutamente nada -- que en una restauracion sana'
+    Write-Host ' es imposible.'
+    Write-Host ''
+    Write-Host " Mira el registro: $registro"
+    Write-Host ''
+    Write-Host ' NO EJECUTES EL CENSO. No hay nada que censar.' -ForegroundColor Yellow
+    Write-Host ''
+    return
+  }
+
   if ($otrosTotal -eq 0) {
     Write-Host 'Ningun error inesperado. Los de "ya existe" son los normales.' -ForegroundColor Green
   } else {
