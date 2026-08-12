@@ -169,15 +169,19 @@ instalable como app. **Costo real: ~12 USD al año.**
 
 Tope antiabuso en la reserva pública, rol Asistente con sus pantallas, 2FA.
 
-### FASE 2 — Seguridad y red de protección 🔄 **AQUÍ ESTAMOS** (6 de 7)
+### FASE 2 — Seguridad y red de protección ✅ **CERRADA (12-ago)** — 7 de 7
 
-> **Solo queda el paso 2.2, la restauración de ensayo.** Es 👥 y desbloquea
-> además la mitad pendiente de H-03 (D-121).
+> **El paso 2.2 encontró que el respaldo estaba incompleto desde el 08-ago**
+> (hallazgo Y): no incluía el esquema `private`, donde viven las 18 funciones
+> que autorizan cada operación. **Se habrían recuperado todos los datos con la
+> aplicación inutilizada.** Corregido y verificado el mismo día.
+>
+> Queda desbloqueada la mitad automática de H-03 (D-121).
 
 | # | Paso | Quién | Estado |
 |---|---|---|---|
 | 2.1 | **Rotar las claves `service_role` y `secret`** (H-04). Expuestas el 03-ago | 👥 | ✅ **CERRADO 09-ago (D-127).** Se borró la clave secreta y se **desactivaron** las claves antiguas — mejor que rotarlas. Verificado de extremo a extremo en producción |
-| 2.2 | Restaurar un respaldo de ensayo en un segundo proyecto gratuito (D-111) | 👥 | ⬜ |
+| 2.2 | Restaurar un respaldo de ensayo en un segundo proyecto gratuito (D-111) | 👥 | ✅ **CERRADO 12-ago (D-134).** Se creó `salonymas-ensayo`, se restauró y se comparó con un censo de 37 cifras: **36 idénticas**. La única diferencia es el registro de archivos de Storage (hallazgo Z). **Encontró que el respaldo llevaba 4 días incompleto** (hallazgo Y) |
 | 2.3 | **Verificar el dominio en Resend** (H-12) | 👥 | ✅ **CERRADO 10-ago (D-128).** Eran tres problemas encadenados; el de fondo era una dependencia anclada con rango. *(El mismo arreglo en `send-low-stock-alert` ya se aplicó: paso 2.7.)* |
 | 2.4 | Cerrar los almacenes de archivos (H-09) | 🤖 | ✅ D-119 |
 | 2.5 | Marcar "Naguara de Uñas" como negocio de prueba | 🤖 | ✅ D-120 |
@@ -306,7 +310,7 @@ toque, o se descarta con su motivo.
 |---|---|---|
 | H-01 | Rol Asistente sin pantallas | ✅ Cerrado (D-092) |
 | H-02 | Reserva pública sin protección | ✅ Mitigado (D-092). Fondo en I-04, I-05 |
-| H-03 | Sin pruebas de dinero ni roles | 🔄 Mitad hecha (D-121). La otra mitad necesita 2.2 |
+| H-03 | Sin pruebas de dinero ni roles | 🔄 Mitad hecha (D-121). **La otra mitad quedó desbloqueada el 12-ago:** ya existe base de ensayo (2.2) contra la que correr las pruebas solas |
 | H-04 | Claves expuestas sin rotar | ✅ **Cerrado 09-ago (D-127)** |
 | H-05 | 42 funciones heredadas | ⬜ Paso 8.1 |
 | H-06 | Documento rector desactualizado | ✅ Cerrado — y este documento lo reemplaza |
@@ -330,6 +334,8 @@ toque, o se descarta con su motivo.
 | **P** | **El consecutivo de ticket no sirve como número contable** | Paso 4.4 |
 | **Q** | **Ningún módulo se actualiza solo.** Empezó como "que el administrador se entere cuando el estilista finaliza", pero el 09-ago se comprobó que es general: **entrar a un módulo no recarga sus datos**, hay que pulsar Actualizar o F5. Se vio con las fotos, y aplica igual a Tickets, Clientes y el resto | Paso 4.3, ampliado a todos los módulos |
 | **R** | 🔴 **Se puede invitar a DOS cuentas distintas al MISMO estilista del catálogo.** Lo encontró el propietario el 10-ago: invitó `elboga010` vinculándolo a "Erick Chaparro", que ya tenía cuenta con `elboga005`. **Quedaron dos usuarios llamados Erick Chaparro apuntando al mismo estilista.** **No es cosmético:** las dos cuentas ven la misma agenda, las mismas comisiones y las mismas fotos, porque todo cuelga del `stylist_id`, y no hay forma de saber cuál es la persona real. Se arregla **rechazando la invitación** cuando ese estilista ya tiene una cuenta activa vinculada. *(El duplicado real quedó suspendido, no borrado.)* | ✅ **Cerrado 11-ago (D-132).** Se adelantó a la fase 4 a petición del propietario, y la regla de oro pide decir por qué: **el duplicado ya existía en producción y cada invitación nueva podía crear otro.** Verificado con 7 controles y una prueba de escritura real |
+| **Y** | 🔴 **El respaldo llevaba 4 días sin incluir el esquema `private`**, donde viven las **18 funciones que autorizan cada operación del negocio** (`beautyos_resolve_branch_access` la primera) y los disparadores que numeran el ticket. **Restaurarlo habría devuelto todos los datos con la aplicación inutilizada:** ni agenda, ni cobrar, ni fotos. `respaldo_supabase.ps1` volcaba solo `public`, `auth` y `storage` desde el 08-ago (D-111). **Nadie podía saberlo porque nadie había restaurado nunca un respaldo** | ✅ **Cerrado 12-ago (D-134).** Lo encontró el propio paso 2.2, que es exactamente para lo que existe. **Regla nueva en el guion: un esquema nuevo se añade a esa línea en el mismo cambio** |
+| **Z** | **Al restaurar, el registro de archivos de Storage no vuelve.** `storage.objects` pasó de 11 filas a 0: en un Supabase gestionado no eres superusuario y esas tablas de plataforma no se dejan escribir. **Lo que SÍ vuelve es `public.work_photos`** (6 = 6), con el ticket, el cliente y el estilista de cada foto — o sea, **no se pierde a qué pertenece cada imagen**, solo hay que volver a subirlas desde `respaldo_archivos.ps1` | Documentar el procedimiento de recuperación de fotos. Fase 8, o antes si entra un cliente con muchas fotos |
 | **X** | **La contraseña de la base de datos nunca se ha rotado.** No formaba parte de H-04 —aquello eran las claves `service_role` y `secret`— y por eso se quedó fuera del paso 2.1. Se escribe a mano en cada migración con `aplicar_sql.ps1` y **no se guarda en ningún archivo**, que es lo correcto. **No hay ninguna fuga conocida:** esto es higiene, no incendio | Fase 8, con el resto de limpieza. **Pasa a urgente si alguna vez se teclea en una sesión compartida, se pega en un chat o aparece en una captura** |
 | **W** | 🔴 **Los correos de cuenta están en INGLÉS.** Visto el 11-ago en el correo real: *"Confirm your email address — Follow the link below to confirm this email address and finish signing up."* Son las plantillas de fábrica de Supabase. **Y es el PRIMER correo que recibe tu clienta**, que es la dueña de un salón en Colombia y no tiene por qué saber inglés. Un correo en inglés en el primer contacto dice *"esto es una herramienta extranjera"* — justo lo contrario del argumento de venta a partir del cliente 26, que es **ser local**. Son 6 plantillas en Authentication → Emails → Templates | **No se arregló el mismo día a propósito**, mismo criterio que el hallazgo U: no se cambia algo de rebote mientras se cierra otra cosa. Paso **3.13**, antes del primer cliente |
 | **V** | **No hay forma de dar acceso a una segunda sede a alguien que ya tiene cuenta.** Encontrado el 11-ago verificando el hallazgo R: solo **tres** funciones insertan en `branch_memberships` — `register_tenant`, `create_branch` y `accept_team_invitation` — y ninguna sirve para eso; `create_branch` solo mete a quien crea la sede. **Consecuencia real con las dos sedes de hoy:** puedes asignar a una estilista a trabajar en la sede 2 en el catálogo (`branch_stylists`) y **su cuenta no podrá verla** (`branch_memberships`). Son dos cosas distintas y hoy solo se puede tocar una | Fase 4, junto con el pulido de Usuarios. **Antes de vender a un salón de varias sedes** |

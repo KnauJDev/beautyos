@@ -37,11 +37,33 @@
 >    (7 días de historia) y estos scripts quedan como **la segunda copia**, la
 >    que te protege de perder la cuenta de Supabase entera.
 >
-> ### Lo que sigue pendiente
+> ### ✅ Restauración de ensayo hecha el 12-ago-2026 (D-134)
 >
-> **Restaurar un respaldo de ensayo con el procedimiento nuevo.** Hasta que no
-> se restaura, un respaldo es una promesa. Se puede hacer contra un **segundo
-> proyecto gratuito de Supabase**, sin Docker y sin tocar producción.
+> Se restauró en `salonymas-ensayo`, un segundo proyecto gratuito, sin Docker y
+> sin tocar producción. **36 de 37 cifras idénticas**, incluidas las cinco sumas
+> de dinero al peso y los números de ticket del 0000001 al 0000703.
+>
+> **Y encontró que el respaldo llevaba cuatro días incompleto:** no incluía el
+> esquema `private`, donde viven las 18 funciones que autorizan cada operación.
+> Se habrían recuperado todos los datos **con la aplicación inutilizada**.
+> Corregido en `respaldo_supabase.ps1` el mismo día.
+>
+> **Cómo se rehace (30 minutos):**
+>
+> 1. `scripts\respaldo_supabase.ps1` — respaldo nuevo
+> 2. `scripts\aplicar_sql.ps1 -Archivo "supabase\sql\166_censo_para_comparar.sql"`
+>    contra **producción**; guardar la lista
+> 3. En el proyecto de ensayo, SQL Editor:
+>    `drop schema if exists public cascade; drop schema if exists private cascade; create schema public;`
+> 4. `scripts\restaurar_ensayo.ps1 -Carpeta "<la del paso 1>"`
+> 5. El mismo censo contra la **copia**, y comparar
+>
+> **Dos diferencias son normales y no son fallo:** `storage.objects` vuelve a 0
+> (hallazgo Z: las tablas de plataforma no se dejan escribir) y aparecen ~15
+> errores en `data.sql` de las tablas internas de `auth` y `storage`.
+>
+> ⚠️ **El proyecto de ensayo contiene datos reales de clientas.** Cuando no se
+> use, **se pausa o se borra**: no se deja ahí "por si acaso" (Ley 1581, D-115).
 >
 > ---
 >
