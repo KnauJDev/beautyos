@@ -351,8 +351,7 @@ begin
   update public.tenants
   set
     active = true,
-    rejection_reason = null,
-    updated_at = now()
+    rejection_reason = null
   where id = p_tenant_id;
 
   insert into public.subscription_events (
@@ -430,8 +429,7 @@ begin
   update public.tenants
   set
     rejection_reason = v_reason,
-    active = false,
-    updated_at = now()
+    active = false
   where id = p_tenant_id;
 
   insert into public.subscription_events (
