@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../theme/app_theme.dart';
@@ -41,15 +41,22 @@ class _TenantApprovalStatusPageState extends State<TenantApprovalStatusPage> {
   }
 
   Future<void> _contactSupport() async {
-    const contactInfo = 'WhatsApp Soporte Salón y Más: +57 (300) 000-0000 · Correo: hola@salonymas.com';
-    await Clipboard.setData(const ClipboardData(text: contactInfo));
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Datos de contacto de soporte copiados al portapapeles: hola@salonymas.com'),
-        backgroundColor: AppColors.brand,
-      ),
+    // Número de soporte de Salón y Más (Colombia +57)
+    const whatsappNumber = '573159780158';
+    final businessName = widget.status.tenantName;
+    final message = Uri.encodeComponent(
+      'Hola equipo de Salón y Más 👋\n'
+      'Registré mi negocio "$businessName" y quisiera saber el estado de mi solicitud. '
+      '¡Gracias!',
     );
+    final url = Uri.parse('https://wa.me/$whatsappNumber?text=$message');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else if (mounted) {
+      // Fallback: si no puede abrir WhatsApp, ofrecer correo
+      final mailUrl = Uri.parse('mailto:hola@salonymas.com?subject=Estado de solicitud - $businessName');
+      await launchUrl(mailUrl);
+    }
   }
 
   @override
