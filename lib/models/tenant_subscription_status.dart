@@ -1,53 +1,72 @@
 class TenantSubscriptionStatus {
   const TenantSubscriptionStatus({
-    required this.planCode,
-    required this.planName,
-    required this.status,
-    required this.trialEndsAt,
-    required this.currentPeriodEnd,
-    required this.graceEndsAt,
+    required this.tenantId,
+    required this.tenantName,
+    required this.subscriptionStatus,
+    this.planCode,
+    this.planName,
+    this.trialEndsAt,
+    this.isFounder = false,
+    this.priceCop,
+    this.discountPercent,
+    this.rejectionReason,
+    this.createdAt,
   });
 
-  final String planCode;
-  final String planName;
-  final String status;
+  final String tenantId;
+  final String tenantName;
+  final String subscriptionStatus;
+  final String? planCode;
+  final String? planName;
   final DateTime? trialEndsAt;
-  final DateTime? currentPeriodEnd;
-  final DateTime? graceEndsAt;
+  final bool isFounder;
+  final int? priceCop;
+  final double? discountPercent;
+  final String? rejectionReason;
+  final DateTime? createdAt;
+
+  bool get isPending => subscriptionStatus == 'pending';
+  bool get isTrialing => subscriptionStatus == 'trialing';
+  bool get isActive => subscriptionStatus == 'active';
+  bool get isRejected => subscriptionStatus == 'rejected';
+  bool get isSuspended => subscriptionStatus == 'suspended';
+
+  int? get trialDaysRemaining {
+    if (trialEndsAt == null) return null;
+    final now = DateTime.now();
+    return trialEndsAt!.difference(now).inDays;
+  }
 
   factory TenantSubscriptionStatus.fromMap(Map<String, dynamic> map) {
     return TenantSubscriptionStatus(
-      planCode: map['plan_code']?.toString() ?? '',
-      planName: map['plan_name']?.toString() ?? '',
-      status: map['status']?.toString() ?? '',
-      trialEndsAt: map['trial_ends_at'] == null
-          ? null
-          : DateTime.tryParse(map['trial_ends_at'].toString())?.toLocal(),
-      currentPeriodEnd: map['current_period_end'] == null
-          ? null
-          : DateTime.tryParse(
-              map['current_period_end'].toString(),
-            )?.toLocal(),
-      graceEndsAt: map['grace_ends_at'] == null
-          ? null
-          : DateTime.tryParse(map['grace_ends_at'].toString())?.toLocal(),
+      tenantId: map['tenant_id']?.toString() ?? '',
+      tenantName: map['tenant_name']?.toString() ?? 'Mi Negocio',
+      subscriptionStatus: map['subscription_status']?.toString() ?? 'pending',
+      planCode: map['plan_code']?.toString(),
+      planName: map['plan_name']?.toString(),
+      trialEndsAt: _parseDate(map['trial_ends_at']),
+      isFounder: map['is_founder'] == true,
+      priceCop: _parseInt(map['price_cop']),
+      discountPercent: _parseDouble(map['discount_percent']),
+      rejectionReason: map['rejection_reason']?.toString(),
+      createdAt: _parseDate(map['created_at']),
     );
   }
 
-  /// Días restantes de prueba gratis (negativo si ya venció). Null si no
-  /// aplica (no está en prueba o no tiene fecha de fin).
-  int? get trialDaysRemaining {
-    final endsAt = trialEndsAt;
-
-    if (status != 'trialing' || endsAt == null) {
-      return null;
-    }
-
-    return endsAt.difference(DateTime.now()).inHours ~/ 24;
+  static DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
+    return DateTime.tryParse(value.toString());
   }
 
-  bool get isTrialExpired {
-    final remaining = trialDaysRemaining;
-    return remaining != null && remaining < 0;
+  static int? _parseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    return int.tryParse(value.toString());
+  }
+
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString());
   }
 }

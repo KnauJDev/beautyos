@@ -17,6 +17,7 @@ import 'pages/authenticated_router.dart';
 import 'pages/complete_tenant_setup_page.dart';
 import 'pages/public_booking_page.dart';
 import 'pages/public_review_page.dart';
+import 'pages/tenant_approval_status_page.dart';
 import 'pages/agenda_page.dart';
 import 'pages/clients_page.dart';
 import 'pages/dashboard_page.dart';
@@ -121,6 +122,8 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
       const BranchContextService();
   final TeamInvitationsService teamInvitationsService =
       const TeamInvitationsService();
+  final TenantSubscriptionService tenantSubscriptionService =
+      const TenantSubscriptionService();
 
   late Future<_HomeContextData> homeContextFuture;
   BranchContext? selectedBranch;
@@ -144,6 +147,19 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
       );
     }
 
+    // Consultar estado de aprobación / suscripción del negocio (D-125)
+    final subscriptionStatus = await tenantSubscriptionService
+        .getMyTenantSubscriptionStatus();
+
+    if (subscriptionStatus != null &&
+        (subscriptionStatus.isPending || subscriptionStatus.isRejected)) {
+      return _HomeContextData(
+        profile: profile,
+        branches: const [],
+        subscriptionStatus: subscriptionStatus,
+      );
+    }
+
     final branches = await branchContextService.getAccessibleBranches();
 
     // Quien y de que negocio, sin decir nombres (D-115). Sirve para saber si un
@@ -163,7 +179,11 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
       AppBrand.aplicar(inicial.tenantThemeKey, inicial.tenantBrandColor);
     }
 
-    return _HomeContextData(profile: profile, branches: branches);
+    return _HomeContextData(
+      profile: profile,
+      branches: branches,
+      subscriptionStatus: subscriptionStatus,
+    );
   }
 
   Future<void> signOut() async {
@@ -425,6 +445,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
 
         final homeContext = snapshot.data;
         final profile = homeContext?.profile;
+        final subscriptionStatus = homeContext?.subscriptionStatus;
         final branches = homeContext?.branches ?? const <BranchContext>[];
 
         if (profile == null) {
@@ -443,6 +464,18 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
 
           return CompleteTenantSetupPage(
             onCompleted: () {
+              setState(() {
+                homeContextFuture = _loadHomeContext();
+              });
+            },
+          );
+        }
+
+        if (subscriptionStatus != null &&
+            (subscriptionStatus.isPending || subscriptionStatus.isRejected)) {
+          return TenantApprovalStatusPage(
+            status: subscriptionStatus,
+            onRefresh: () async {
               setState(() {
                 homeContextFuture = _loadHomeContext();
               });
@@ -889,11 +922,13 @@ class _HomeContextData {
     required this.profile,
     required this.branches,
     this.pendingInvitation,
+    this.subscriptionStatus,
   });
 
   final MyProfile? profile;
   final List<BranchContext> branches;
   final PendingInvitation? pendingInvitation;
+  final TenantSubscriptionStatus? subscriptionStatus;
 }
 
 class _SideMenu extends StatelessWidget {

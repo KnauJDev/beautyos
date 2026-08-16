@@ -26,6 +26,44 @@ class PlatformService {
         .toList();
   }
 
+  Future<void> approveTenant({
+    required String tenantId,
+    String planCode = 'profesional',
+    bool isFounder = false,
+    int? priceCop,
+    double? discountPercent,
+    DateTime? discountEndsAt,
+    String? priceReason,
+    int trialDays = 21,
+  }) async {
+    await Supabase.instance.client.rpc(
+      'platform_approve_tenant',
+      params: {
+        'p_tenant_id': tenantId,
+        'p_plan_code': planCode,
+        'p_is_founder': isFounder,
+        'p_price_cop': priceCop,
+        'p_discount_percent': discountPercent,
+        'p_discount_ends_at': discountEndsAt?.toUtc().toIso8601String(),
+        'p_price_reason': priceReason,
+        'p_trial_days': trialDays,
+      },
+    );
+  }
+
+  Future<void> rejectTenant({
+    required String tenantId,
+    required String reason,
+  }) async {
+    await Supabase.instance.client.rpc(
+      'platform_reject_tenant',
+      params: {
+        'p_tenant_id': tenantId,
+        'p_reason': reason,
+      },
+    );
+  }
+
   Future<void> suspendTenant({
     required String tenantId,
     required String reason,

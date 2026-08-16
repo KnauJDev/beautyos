@@ -5,19 +5,38 @@ import '../models/tenant_subscription_status.dart';
 class TenantSubscriptionService {
   const TenantSubscriptionService();
 
-  Future<TenantSubscriptionStatus?> getMySubscription() async {
+  Future<TenantSubscriptionStatus?> getMyTenantSubscriptionStatus() async {
     final response = await Supabase.instance.client.rpc(
-      'get_my_tenant_subscription',
+      'get_my_tenant_subscription_status',
     );
 
-    final rows = response as List<dynamic>;
-
-    if (rows.isEmpty) {
+    if (response == null) {
       return null;
     }
 
-    return TenantSubscriptionStatus.fromMap(
-      Map<String, dynamic>.from(rows.first as Map),
-    );
+    if (response is List) {
+      if (response.isEmpty) {
+        return null;
+      }
+      final first = response.first;
+      if (first is Map) {
+        return TenantSubscriptionStatus.fromMap(
+          Map<String, dynamic>.from(first),
+        );
+      }
+    }
+
+    if (response is Map) {
+      return TenantSubscriptionStatus.fromMap(
+        Map<String, dynamic>.from(response),
+      );
+    }
+
+    return null;
+  }
+
+  /// Alias compatible con el banner de prueba existente (_TrialBanner).
+  Future<TenantSubscriptionStatus?> getMySubscription() async {
+    return getMyTenantSubscriptionStatus();
   }
 }

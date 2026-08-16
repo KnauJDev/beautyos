@@ -2,12 +2,21 @@ class PlatformTenantSummary {
   const PlatformTenantSummary({
     required this.tenantId,
     required this.tenantName,
+    this.businessType,
+    this.city,
+    this.estimatedBranches = 1,
+    this.estimatedTeamSize = 1,
+    this.referralSource,
+    this.rejectionReason,
     required this.contactEmail,
     required this.whatsapp,
     required this.tenantActive,
     required this.isDemo,
     required this.planCode,
     required this.subscriptionStatus,
+    this.isFounder = false,
+    this.priceCop,
+    this.discountPercent,
     required this.trialEndsAt,
     required this.currentPeriodEnd,
     required this.graceEndsAt,
@@ -16,6 +25,12 @@ class PlatformTenantSummary {
 
   final String tenantId;
   final String tenantName;
+  final String? businessType;
+  final String? city;
+  final int estimatedBranches;
+  final int estimatedTeamSize;
+  final String? referralSource;
+  final String? rejectionReason;
   final String contactEmail;
   final String? whatsapp;
   final bool tenantActive;
@@ -26,21 +41,38 @@ class PlatformTenantSummary {
   final bool isDemo;
   final String? planCode;
   final String? subscriptionStatus;
+  final bool isFounder;
+  final int? priceCop;
+  final double? discountPercent;
   final DateTime? trialEndsAt;
   final DateTime? currentPeriodEnd;
   final DateTime? graceEndsAt;
   final DateTime? createdAt;
 
+  bool get isPending => subscriptionStatus == 'pending';
+  bool get isTrialing => subscriptionStatus == 'trialing';
+  bool get isActive => subscriptionStatus == 'active';
+  bool get isRejected => subscriptionStatus == 'rejected';
+
   factory PlatformTenantSummary.fromMap(Map<String, dynamic> map) {
     return PlatformTenantSummary(
       tenantId: map['tenant_id'].toString(),
       tenantName: map['tenant_name']?.toString() ?? 'Sin nombre',
+      businessType: map['business_type']?.toString(),
+      city: map['city']?.toString(),
+      estimatedBranches: _parseInt(map['estimated_branches']) ?? 1,
+      estimatedTeamSize: _parseInt(map['estimated_team_size']) ?? 1,
+      referralSource: map['referral_source']?.toString(),
+      rejectionReason: map['rejection_reason']?.toString(),
       contactEmail: map['contact_email']?.toString() ?? '',
       whatsapp: map['whatsapp']?.toString(),
       tenantActive: map['tenant_active'] == true,
       isDemo: map['is_demo'] == true,
       planCode: map['plan_code']?.toString(),
       subscriptionStatus: map['subscription_status']?.toString(),
+      isFounder: map['is_founder'] == true,
+      priceCop: _parseInt(map['price_cop']),
+      discountPercent: _parseDouble(map['discount_percent']),
       trialEndsAt: _parseDate(map['trial_ends_at']),
       currentPeriodEnd: _parseDate(map['current_period_end']),
       graceEndsAt: _parseDate(map['grace_ends_at']),
@@ -53,5 +85,17 @@ class PlatformTenantSummary {
       return null;
     }
     return DateTime.tryParse(value.toString());
+  }
+
+  static int? _parseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    return int.tryParse(value.toString());
+  }
+
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString());
   }
 }

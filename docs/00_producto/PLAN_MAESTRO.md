@@ -198,7 +198,7 @@ Tope antiabuso en la reserva pública, rol Asistente con sus pantallas, 2FA.
 | 3.4 | Subir Supabase a plan Pro (~25 USD/mes) | 👤 | ⬜ |
 | 3.5 | Cargar los 3 planes con precios de lista y límites | 🤖 | ✅ **CERRADO 12-ago (D-136).** Precios en **pesos** (160/200/240 mil), columna renombrada a `price_cop`, y **se crearon "sedes" y "cuentas de equipo"**, que no existían como capacidad — sin ellas no se podía ni escribir *"3 sedes pero 25 cuentas"*. **Y se hacen cumplir**: antes `create_branch` no tenía ni una comprobación |
 | 3.6 | **Precio y descuento por cliente** en la suscripción (columnas nuevas) | 🤖 | ✅ **CERRADO 12-ago (D-136).** Precio propio **o** descuento con fecha de fin, motivo obligatorio, y marca de pionero. **El pionero es un descuento sin fecha de fin**: 50% mientras siga activo. La regla de cuánto paga vive en `beautyos_precio_efectivo`, un solo sitio |
-| 3.7 | **Filtro de aceptación:** formulario, estado `pending`, aprobar/rechazar. La prueba gratis **empieza al aprobar** | 🤖 | ⬜ **Desbloqueado** |
+| 3.7 | **Filtro de aceptación:** formulario, estado `pending`, aprobar/rechazar. La prueba gratis **empieza al aprobar** | 🤖 | ✅ **CERRADO 16-ago (D-138).** Formulario con cuestionario (ciudad, sedes, equipo, medio), estado `pending` sin tiempo de prueba, aprobación con plan / 50% Pionero, rechazo con motivo, y pantalla de espera/rechazo para el usuario. 98/98 pruebas |
 | 3.8 | Pantalla pública de planes (`list_public_plans` ya existe, dormida) | 🤖 | ⬜ |
 | 3.9 | **ePayco con confirmación en el servidor.** Nunca creerle al navegador | 🤖 | ⬜ |
 | 3.10 | Pago → suscripción: activar, renovar, manejar el fallido | 🤖 | ⬜ |

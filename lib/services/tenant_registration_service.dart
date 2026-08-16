@@ -4,20 +4,18 @@ class TenantRegistrationResult {
   const TenantRegistrationResult({
     required this.tenantId,
     required this.branchId,
-    required this.trialEndsAt,
+    required this.status,
   });
 
   final String tenantId;
   final String branchId;
-  final DateTime? trialEndsAt;
+  final String status;
 
   factory TenantRegistrationResult.fromMap(Map<String, dynamic> map) {
     return TenantRegistrationResult(
       tenantId: map['tenant_id'].toString(),
       branchId: map['branch_id'].toString(),
-      trialEndsAt: map['trial_ends_at'] == null
-          ? null
-          : DateTime.tryParse(map['trial_ends_at'].toString()),
+      status: map['status']?.toString() ?? 'pending',
     );
   }
 }
@@ -30,6 +28,10 @@ class TenantRegistrationService {
     required String ownerFullName,
     required String whatsapp,
     String? businessType,
+    String? city,
+    int estimatedBranches = 1,
+    int estimatedTeamSize = 1,
+    String? referralSource,
   }) async {
     final response = await Supabase.instance.client.rpc(
       'register_tenant',
@@ -38,13 +40,13 @@ class TenantRegistrationService {
         'p_owner_full_name': ownerFullName,
         'p_whatsapp': whatsapp,
         'p_business_type': businessType,
+        'p_city': city,
+        'p_estimated_branches': estimatedBranches,
+        'p_estimated_team_size': estimatedTeamSize,
+        'p_referral_source': referralSource,
       },
     );
 
-    // register_tenant() es "returns table" de una sola fila; se acepta
-    // tanto una lista (forma habitual de un RPC de conjunto) como un mapa
-    // suelto, para no depender de una unica forma de respuesta sin
-    // evidencia directa de cual entrega el cliente en este caso.
     final Map<String, dynamic> row;
     if (response is List) {
       if (response.isEmpty) {
