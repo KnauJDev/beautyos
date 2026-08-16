@@ -72,19 +72,28 @@ El registro self-serve anterior permitía que cualquier persona que creara cuent
    - Se agregó `url_launcher: ^6.3.1` al proyecto.
 
 4. **Mejora UX: Sección "Soporte" en Configuración (`settings_page.dart`):**
-   - Nueva tarjeta con dos botones: WhatsApp (verde) y Correo.
+   - Nueva tarjeta con dos botones: WhatsApp (verde `AppColors.whatsapp`) y Correo.
    - Muestra el número y correo visualmente.
    - Permite a cualquier dueño de negocio contactar a soporte en cualquier momento, no solo en la pantalla de espera.
+
+5. **Seguridad y Blindaje RLS (Decisión D-139 / Auditoría Claude Code):**
+   - **`public.tenants` y `public.user_profiles`:** habilitado `ENABLE ROW LEVEL SECURITY` con política de aislamiento estricta (`tenant_isolation_select` y `user_profiles_isolation_select`) que solo permite lectura a los miembros del propio salón o al `platform_owner`.
+   - **`platform_approve_tenant`:** guard de estado añadido; solo permite aprobar negocios en estado `'pending'` o `'rejected'`, impidiendo sobreescrituras accidentales de planes o reseteo de pruebas a clientes activos.
+   - **`platform_reject_tenant`:** guard de estado añadido; solo permite rechazar solicitudes en estado `'pending'`.
+   - **Migración:** `supabase/migrations/20260816170000_blindaje_rls_tenants_y_guards_aprobacion.sql`.
+   - **Script de prueba:** `supabase/sql/169_test_blindaje_rls_tenants.sql`.
 
 ---
 
 ## 3. Estado técnico
 
 - **Pruebas:** 98 en 12 archivos · `flutter analyze` 100% limpio
-- **Migración nueva:** `supabase/migrations/20260816100000_filtro_aceptacion_registro.sql`
-- **Script de prueba SQL:** `supabase/sql/168_test_filtro_aceptacion.sql`
+- **Migraciones del día:**
+  * `supabase/migrations/20260816100000_filtro_aceptacion_registro.sql` (Paso 3.7 / D-138)
+  * `supabase/migrations/20260816170000_blindaje_rls_tenants_y_guards_aprobacion.sql` (Blindaje / D-139)
+- **Scripts de prueba SQL:** `168_test_filtro_aceptacion.sql`, `169_test_blindaje_rls_tenants.sql`
 - **Proyectos Supabase:** `beautyos-dev` (producción) y `salonymas-ensayo`
-- **Commits del día:** `65bebeb` → `c01b9fc` → `1bdddf1` → `a8434fe`
+- **Commits del día:** `65bebeb` → `c01b9fc` → `1bdddf1` → `a8434fe` → `8926d34` → `4a8e685`
 
 ---
 
