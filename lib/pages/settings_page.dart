@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -380,9 +381,91 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
           },
         ),
         const SizedBox(height: 24),
+        const SectionTitle('Soporte'),
+        const _SupportCard(),
+        const SizedBox(height: 24),
         const SectionTitle('Versión'),
         const _VersionStamp(),
       ],
+    );
+  }
+}
+
+/// Tarjeta de soporte: permite al dueño del negocio contactar al equipo
+/// de Salón y Más por WhatsApp o correo electrónico desde Configuración.
+class _SupportCard extends StatelessWidget {
+  const _SupportCard();
+
+  static const _whatsappNumber = '573159780158';
+  static const _supportEmail = 'hola@salonymas.com';
+
+  Future<void> _openWhatsApp() async {
+    final url = Uri.parse(
+      'https://wa.me/$_whatsappNumber?text='
+      '${Uri.encodeComponent('Hola equipo de Salón y Más 👋\nNecesito ayuda con mi negocio. ¡Gracias!')}',
+    );
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> _openEmail() async {
+    final url = Uri.parse('mailto:$_supportEmail?subject=Solicitud de soporte');
+    await launchUrl(url);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '¿Necesitas ayuda o tienes alguna duda?',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Nuestro equipo está listo para apoyarte.',
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _openWhatsApp,
+                    icon: const Icon(Icons.chat_outlined, size: 18),
+                    label: const Text('WhatsApp'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF25D366),
+                      side: const BorderSide(color: Color(0xFF25D366)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _openEmail,
+                    icon: const Icon(Icons.email_outlined, size: 18),
+                    label: const Text('Correo'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'WhatsApp: +57 315 978 0158  ·  $_supportEmail',
+              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
