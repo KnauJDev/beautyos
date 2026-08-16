@@ -67,23 +67,20 @@ create policy user_profiles_isolation_select on public.user_profiles
 -- 2. Actualización de `public.platform_approve_tenant` con Guard de Estado
 -- ---------------------------------------------------------------------------
 
+drop function if exists public.platform_approve_tenant(uuid, text, boolean, bigint, numeric, timestamptz, text, integer);
+drop function if exists public.platform_approve_tenant(uuid, text, integer, boolean, numeric, numeric, timestamptz, text);
+
 create or replace function public.platform_approve_tenant(
   p_tenant_id uuid,
   p_plan_code text default 'profesional',
-  p_trial_days integer default 21,
   p_is_founder boolean default false,
-  p_price_cop numeric default null,
+  p_price_cop bigint default null,
   p_discount_percent numeric default null,
   p_discount_ends_at timestamptz default null,
-  p_price_reason text default null
+  p_price_reason text default null,
+  p_trial_days integer default 21
 )
-returns table (
-  tenant_id uuid,
-  status text,
-  trial_ends_at timestamptz,
-  plan_code text,
-  is_founder boolean
-)
+returns public.tenant_subscriptions
 language plpgsql
 security definer
 set search_path = pg_catalog
@@ -95,7 +92,7 @@ declare
   v_trial_ends_at timestamptz := now() + (v_trial_days || ' days')::interval;
   v_subscription public.tenant_subscriptions%rowtype;
   v_current_status text;
-  v_discount_percent numeric := p_discount_percent;
+  v_discount_percent numeric(5,2) := p_discount_percent;
   v_price_reason text := nullif(trim(coalesce(p_price_reason, '')), '');
 begin
   if v_caller_role is null or v_caller_role != 'platform_owner' then
@@ -185,41 +182,34 @@ begin
     auth.uid()
   );
 
-  return query select
-    v_subscription.tenant_id,
-    v_subscription.status,
-    v_subscription.trial_ends_at,
-    p_plan_code,
-    v_subscription.is_founder;
+  return v_subscription;
 end;
 $$;
 
-revoke all on function public.platform_approve_tenant(uuid, text, integer, boolean, numeric, numeric, timestamptz, text) from public, anon;
-grant execute on function public.platform_approve_tenant(uuid, text, integer, boolean, numeric, numeric, timestamptz, text) to authenticated;
+revoke all on function public.platform_approve_tenant(uuid, text, boolean, bigint, numeric, timestamptz, text, integer) from public, anon;
+grant execute on function public.platform_approve_tenant(uuid, text, boolean, bigint, numeric, timestamptz, text, integer) to authenticated;
 
-comment on function public.platform_approve_tenant(uuid, text, integer, boolean, numeric, numeric, timestamptz, text)
+comment on function public.platform_approve_tenant(uuid, text, boolean, bigint, numeric, timestamptz, text, integer)
   is 'Aprueba la solicitud de un negocio (en pending o rejected), arrancando su prueba gratis y fijando su plan/descuentos.';
 
 -- ---------------------------------------------------------------------------
 -- 3. Actualización de `public.platform_reject_tenant` con Guard de Estado
 -- ---------------------------------------------------------------------------
 
+drop function if exists public.platform_reject_tenant(uuid, text);
+
 create or replace function public.platform_reject_tenant(
   p_tenant_id uuid,
-  p_rejection_reason text
+  p_reason text
 )
-returns table (
-  tenant_id uuid,
-  status text,
-  rejection_reason text
-)
+returns public.tenant_subscriptions
 language plpgsql
 security definer
 set search_path = pg_catalog
 as $$
 declare
   v_caller_role text := private.beautyos_current_platform_role();
-  v_reason text := trim(coalesce(p_rejection_reason, ''));
+  v_reason text := trim(coalesce(p_reason, ''));
   v_subscription public.tenant_subscriptions%rowtype;
   v_current_status text;
 begin
@@ -280,10 +270,7 @@ begin
     auth.uid()
   );
 
-  return query select
-    v_subscription.tenant_id,
-    v_subscription.status,
-    v_reason;
+  return v_subscription;
 end;
 $$;
 
