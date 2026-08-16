@@ -443,8 +443,8 @@ class _SupportCard extends StatelessWidget {
                     icon: const Icon(Icons.chat_outlined, size: 18),
                     label: const Text('WhatsApp'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFF25D366),
-                      side: const BorderSide(color: Color(0xFF25D366)),
+                      foregroundColor: AppColors.whatsapp,
+                      side: const BorderSide(color: AppColors.whatsapp),
                     ),
                   ),
                 ),

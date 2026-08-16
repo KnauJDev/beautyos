@@ -106,4 +106,7 @@ class AppColors {
 
   static const info = Color(0xFF1D4ED8);
   static const infoTint = Color(0xFFDBEAFE);
+
+  /// Color oficial de WhatsApp para botones de contacto e integraciones.
+  static const whatsapp = Color(0xFF25D366);
 }
