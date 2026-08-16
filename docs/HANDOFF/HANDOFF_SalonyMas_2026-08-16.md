@@ -55,6 +55,27 @@ El registro self-serve anterior permitía que cualquier persona que creara cuent
    - **Pruebas unitarias de Flutter:** `test/filtro_aceptacion_test.dart` añadido; suite total ejecutada con éxito: **98 de 98 pruebas en verde** (`flutter test`).
    - **`flutter analyze`:** 0 advertencias, 0 errores.
 
+### Correcciones y mejoras post-despliegue (mismo día):
+
+1. **Fix: `column reference "status" is ambiguous` en `register_tenant`:**
+   - Causa: la consulta `where status = 'active'` en `plans` se confundía con la columna de retorno `status text`.
+   - Solución: calificar con alias `p.status` tanto en `register_tenant` como en `platform_approve_tenant`.
+
+2. **Fix: `column "updated_at" of relation "tenants" does not exist` en `platform_approve_tenant`:**
+   - Causa: la tabla `tenants` no tiene columna `updated_at` (la tabla `tenant_subscriptions` sí).
+   - Solución: eliminar `updated_at = now()` del `UPDATE public.tenants` en `platform_approve_tenant` y `platform_reject_tenant`.
+
+3. **Mejora UX: Botón "Contactar al equipo de soporte" ahora abre WhatsApp directo:**
+   - Antes: copiaba texto al portapapeles (poco intuitivo).
+   - Ahora: abre `wa.me/573159780158` con mensaje prellenado incluyendo el nombre del negocio.
+   - Fallback: si WhatsApp no está disponible, abre `mailto:hola@salonymas.com`.
+   - Se agregó `url_launcher: ^6.3.1` al proyecto.
+
+4. **Mejora UX: Sección "Soporte" en Configuración (`settings_page.dart`):**
+   - Nueva tarjeta con dos botones: WhatsApp (verde) y Correo.
+   - Muestra el número y correo visualmente.
+   - Permite a cualquier dueño de negocio contactar a soporte en cualquier momento, no solo en la pantalla de espera.
+
 ---
 
 ## 3. Estado técnico
@@ -63,6 +84,7 @@ El registro self-serve anterior permitía que cualquier persona que creara cuent
 - **Migración nueva:** `supabase/migrations/20260816100000_filtro_aceptacion_registro.sql`
 - **Script de prueba SQL:** `supabase/sql/168_test_filtro_aceptacion.sql`
 - **Proyectos Supabase:** `beautyos-dev` (producción) y `salonymas-ensayo`
+- **Commits del día:** `65bebeb` → `c01b9fc` → `1bdddf1` → `a8434fe`
 
 ---
 
