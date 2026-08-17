@@ -1,8 +1,8 @@
-# HANDOFF Salón y Más — 17 de agosto de 2026 (bloque D-144)
+# HANDOFF Salón y Más — 17 de agosto de 2026 (bloque D-145)
 
-**Bloque documentado:** decisión **D-144** · Paso 3.3: Términos de Servicio y Política de Privacidad / Habeas Data
-**Estado:** 113 de 113 pruebas unitarias en verde (`flutter test`), `flutter analyze` 100% limpio (0 errores, 0 advertencias). Contenido legal técnico construido; **falta la revisión de un abogado colombiano antes de tratarlo como vinculante** (el propio Plan Maestro marca el paso 3.3 como trabajo conjunto 👥, no solo técnico).
-**Reemplaza como handoff vigente a:** la versión anterior de este mismo archivo (bloque D-140/D-141/D-142/D-143, archivada en `docs/_archivo/handoffs/HANDOFF_SalonyMas_2026-08-17.md`)
+**Bloque documentado:** decisión **D-145** · Cierre real del Paso 3.11 (disparador diario) señalado como pendiente en la auditoría del bloque D-143
+**Estado:** migración y script de verificación **escritos, sin aplicar todavía** — regla 16: las migraciones las aplica el propietario. Requiere además un paso manual de Vault, fuera de git.
+**Reemplaza como handoff vigente a:** la versión anterior de este mismo archivo (bloque D-144, archivada en `docs/_archivo/handoffs/HANDOFF_SalonyMas_2026-08-17_D144.md`)
 
 ---
 
@@ -20,7 +20,7 @@ Fase 3  Poder cobrar                  🔄  ← AQUÍ
         3.8  Pantalla pública de planes   ✅ CERRADO (17-ago / D-140)
         3.9  ePayco en servidor (webhook) ✅ CERRADO (17-ago / D-141, D-142)
         3.10 Pagos y suscripciones        ✅ CERRADO (17-ago / D-141, D-142)
-        3.11 Avisos por correo y gracia   ✅ CERRADO (17-ago / D-143) — falta montar el disparador diario (pg_cron/externo)
+        3.11 Avisos por correo y gracia   🔄 CÓDIGO LISTO (17-ago / D-143, D-145) — falta aplicar la migración y el paso de Vault
         3.12 Correos de cuenta por Resend ✅
         3.3  Términos y privacidad        🔄 CONTENIDO TÉCNICO LISTO (17-ago / D-144) — falta revisión legal 👥
         3.2  Contador (DIAN, IVA)         ⬜ 👤
@@ -31,51 +31,62 @@ Fase 4  Pulido módulo a módulo        🔄 4.1 ✅
 
 ---
 
-## 2. Qué pasó en este bloque (Paso 3.3 / D-144)
+## 2. Qué pasó en este bloque (D-145)
 
-El Plan Maestro exigía Términos de Servicio y Política de Privacidad conformes a la Ley 1581 de 2012 (Habeas Data) antes de poder aceptar clientes reales que registren datos de terceros. Se construyó el contenido y su integración obligatoria en el flujo de registro.
+La auditoría del bloque anterior (sobre D-143) dejó un solo punto pendiente: `send-subscription-expiry-alerts` estaba bien blindada (`CRON_SECRET` fail-closed) pero **nadie la llamaba sola cada día**. Se cerró con `pg_cron` + `pg_net`, ya soportados por Supabase.
 
 ### Lo que se construyó:
 
-1. **`lib/pages/terms_and_privacy_page.dart`** (página nueva): dos pestañas navegables (`TabController`) — Términos de Servicio y Política de Privacidad — con diseño responsivo usando `AppColors`/`AppSpacing`/`AppRadius` del tema (sin colores sueltos; pasa `sin_colores_sueltos_test.dart`).
-   - **Términos de Servicio:** aceptación, qué es la plataforma, responsabilidad del negocio (tenant) frente a sus propios clientes, disponibilidad del servicio, planes/precios/pagos, propiedad intelectual, **no reventa de datos**, uso aceptable, terminación, limitación de responsabilidad, ley aplicable (Colombia).
-   - **Política de Privacidad / Habeas Data:** responsable del tratamiento, marco legal (Ley 1581 de 2012, Decreto 1377 de 2013), qué datos se recolectan, finalidad, **derechos ARCO** completos (Conocer, Actualizar, Rectificar, Suprimir, Revocar), procedimiento y plazos legales de respuesta (10 días hábiles consultas, 15 días hábiles reclamos), seguridad de la información, y **encargados del tratamiento nombrados explícitamente: Supabase, ePayco y Resend** — los proveedores reales de la plataforma, verificados contra el código, no genéricos.
-   - Canal de contacto en ambos documentos: hola@salonymas.com.
+1. **`supabase/migrations/20260817140000_programar_alertas_suscripcion_diarias.sql`:**
+   - Habilita las extensiones `pg_cron` y `pg_net` (`create extension if not exists`).
+   - Reprograma de forma idempotente (`cron.unschedule` si ya existía, luego `cron.schedule`) una tarea diaria **`avisos_vencimiento_suscripcion_diario`** a las **08:00 hora Colombia (`0 13 * * *` UTC)**.
+   - La tarea llama a `send-subscription-expiry-alerts` vía `net.http_post`, con la cabecera `x-cron-secret` leída **por nombre** desde `vault.decrypted_secrets` — **el valor real de `CRON_SECRET` no está escrito en este archivo ni en ningún otro versionado.**
 
-2. **`main.dart`:** enrutamiento público sin sesión vía `?terminos=1` / `?terms=1` (pestaña de Términos) y `?privacidad=1` / `?privacy=1` (pestaña de Privacidad), mismo patrón que `?planes=1` de D-140.
+2. **`supabase/sql/172_verify_disparador_alertas_suscripcion.sql`:** control de solo lectura (sin `BEGIN`/`ROLLBACK`, no escribe nada) que confirma extensiones instaladas, la tarea activa con el horario y destino correctos, y **avisa sin fallar** si el secreto de Vault todavía no se guardó, para que ese paso manual no quede invisible.
 
-3. **`register_page.dart`:** checkbox obligatorio ("Acepto los *Términos de Servicio* y la *Política de Privacidad*") con los dos enlaces tocables abriendo `TermsAndPrivacyPage` en la pestaña correspondiente. `register()` bloquea el alta con un mensaje claro si no está marcado, **antes** de llamar a Supabase. Los `TapGestureRecognizer` de los enlaces se guardan como campos de estado y se liberan en `dispose()` (no se crean sueltos en cada build).
-
-4. **Enlaces discretos** en el pie de página de `LoginPage` y `PublicPlansPage`.
-
-5. **Pruebas — primera suite de widgets del proyecto:** `test/terms_and_privacy_test.dart` (7 pruebas): contenido presente en cada pestaña, cambio de pestaña, el checkbox inicia sin marcar, el registro se bloquea con aviso claro si no se acepta, marcar el checkbox lo confirma, y tocar el enlace abre la vista legal completa (verificado invocando el `recognizer` del `TextSpan`, ya que Flutter envuelve `Text.rich` en un `TextSpan` sintético adicional con el estilo por defecto).
-
-### Detalle técnico encontrado y corregido durante la construcción:
-- `AppColors.brand` y `AppColors.brandDeep` son `static Color` **no `const`** (mutables para la marca blanca, D-109) — un primer intento de usar `const TextStyle(color: AppColors.brand)` falló en tiempo de compilación. Se corrigió quitando `const` de esos `TextStyle` puntuales.
+### Lo que NO se hizo, a propósito:
+- No se escribió el valor real de `CRON_SECRET` en ningún lado del repositorio. Es un paso manual, ver sección 4.
+- No se pudo aplicar ni verificar contra `beautyos-dev` en esta sesión (sin acceso directo a la base) — es la **primera vez que este proyecto usa `pg_cron`/`pg_net`/Vault**, así que aunque la sintaxis sigue el patrón oficial de Supabase para invocar Edge Functions desde `pg_cron`, el control 172 es la forma real de confirmarlo después de aplicar.
 
 ---
 
 ## 3. Estado técnico
 
-- **Pruebas:** 113 pruebas unitarias y de widgets · `flutter test` y `flutter analyze` 100% limpios
-- **Sin migraciones nuevas:** este bloque es 100% Flutter, no toca la base de datos
+- **Pruebas Flutter:** sin cambios en este bloque (100% backend/infraestructura) — siguen 113/113 en verde
+- **Migraciones pendientes de aplicar:**
+  * `supabase/migrations/20260817140000_programar_alertas_suscripcion_diarias.sql`
+- **Scripts de verificación:** `172_verify_disparador_alertas_suscripcion.sql`
 - **Proyectos Supabase:** `beautyos-dev` (producción) y `salonymas-ensayo`
 
 ---
 
-## 4. Lo que NO se hizo, a propósito
+## 4. Instrucción para aplicar (Propietario) — dos pasos, en este orden
 
-**El contenido legal es un borrador técnico sólido, no una revisión de un abogado colombiano.** El propio Plan Maestro marca el paso 3.3 con 👥 ("obligatorio: se manejan datos de terceros"), es decir, trabajo conjunto, no solo técnico. Antes de tratar estos documentos como vinculantes de verdad:
-- Un abogado debe revisar las cláusulas de responsabilidad y limitación de garantías.
-- Si se agregan proveedores nuevos que procesen datos personales (encargados del tratamiento), hay que actualizar la lista de la Política de Privacidad en el mismo cambio que se agregue el proveedor.
-- **3.11 sigue con un pendiente propio, sin relación con este bloque:** falta montar el disparador diario real (`pg_cron`/externo) de `send-subscription-expiry-alerts`; el código ya exige `CRON_SECRET` pero nadie la llama sola todavía.
+1. **Respaldar la base de datos:**
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File scripts\respaldo_supabase.ps1
+   ```
+2. **Aplicar la migración:**
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\migrations\20260817140000_programar_alertas_suscripcion_diarias.sql"
+   ```
+3. **Paso manual obligatorio, fuera de git, en el Editor SQL de Supabase** (una sola vez, con el mismo valor que ya usaste al configurar `CRON_SECRET` en los secretos de la Edge Function):
+   ```sql
+   select vault.create_secret(
+     '<el mismo valor exacto de CRON_SECRET>',
+     'cron_secret_subscription_alerts',
+     'Secreto usado por pg_cron para llamar a send-subscription-expiry-alerts'
+   );
+   ```
+   Si ese nombre ya existiera, usar `vault.update_secret(...)` en su lugar (la migración trae el comando exacto en un comentario).
+4. **Verificar con el control 172** (`supabase/sql/172_verify_disparador_alertas_suscripcion.sql`) — debe confirmar la tarea activa y, si falta el paso 3, avisarlo sin fallar el resto de los controles.
 
 ---
 
 ## 5. Lo siguiente según el Plan Maestro
 
-1. **Revisión legal humana del paso 3.3** (fuera del alcance de este asistente).
-2. **3.11 — Montar el disparador diario** (`pg_cron`/externo) para que las alertas de vencimiento corran solas.
+1. **Aplicar este bloque** (migración + paso de Vault) y confirmar con el control 172.
+2. **Revisión legal humana del paso 3.3** (fuera del alcance de este asistente).
 3. **3.2 — Contador** (DIAN, IVA) — 👤 pendiente del propietario.
 4. **3.4 — Supabase Pro** (~25 USD/mes) — 👤 pendiente del propietario.
 5. **3.13 — Traducir plantillas de correo de Auth a español** (hallazgo W).
