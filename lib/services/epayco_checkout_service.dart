@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -14,19 +15,40 @@ import 'monitoreo_service.dart';
 class EpaycoCheckoutService {
   const EpaycoCheckoutService();
 
-  // ID público de comercio ePayco por defecto (configurable por variables de entorno)
-  static const String defaultCustId = '1302824';
-  static const String defaultPublicKey = '248dfeb1765c82eb5c21f2bb406cf658';
+  // ID público de comercio ePayco (configurable por variables de entorno)
+  static const String defaultCustId = String.fromEnvironment(
+    'EPAYCO_PUBLIC_CUST_ID',
+    defaultValue: '1302824',
+  );
+
+  // Llave pública de ePayco para checkout (NUNCA la llave privada P_KEY)
+  static const String defaultPublicKey = String.fromEnvironment(
+    'EPAYCO_PUBLIC_KEY',
+    defaultValue: '248dfeb1765c82eb5c21f2bb406cf658',
+  );
+
+  // Modo de prueba de ePayco (activo en debug/ensayo, apagado en producción)
+  static const bool defaultTestMode = bool.fromEnvironment(
+    'EPAYCO_TEST_MODE',
+    defaultValue: !kReleaseMode,
+  );
 
   // URL del webhook de confirmación en Supabase Edge Functions
   static const String confirmationWebhookUrl =
       'https://eogppgbdnwxdtcbctaol.supabase.co/functions/v1/epayco-webhook';
 
   /// Construye la URL del Checkout hospedado o estándar de ePayco.
-  Uri buildCheckoutUri(TenantSubscriptionStatus subscription, {bool isTest = true}) {
-    final amount = subscription.priceCop ?? 240000;
+  Uri buildCheckoutUri(TenantSubscriptionStatus subscription, {bool? isTest}) {
+    final amount = subscription.priceCop;
+    if (amount == null || amount <= 0) {
+      throw ArgumentError(
+        'No se puede construir el Checkout de ePayco: el precio efectivo de la suscripción es nulo o inválido.',
+      );
+    }
+
     final planName = subscription.planName ?? 'Profesional';
     final tenantName = subscription.tenantName;
+    final testFlag = isTest ?? defaultTestMode;
 
     final queryParams = {
       'p_cust_id_cliente': defaultCustId,
@@ -40,11 +62,10 @@ class EpaycoCheckoutService {
       'x_extra1': subscription.tenantId,
       'x_extra2': subscription.planCode ?? 'profesional',
       'x_extra3': 'beautyos_app',
-      'x_test_request': isTest ? 'true' : 'false',
+      'x_test_request': testFlag ? 'true' : 'false',
       'x_confirmation_url': confirmationWebhookUrl,
     };
 
-    // Usamos el portal estándar de checkout de ePayco
     return Uri.https('checkout.epayco.co', '/checkout.php', queryParams);
   }
 
@@ -54,6 +75,19 @@ class EpaycoCheckoutService {
     TenantSubscriptionStatus subscription, {
     VoidCallback? onPaymentLaunched,
   }) async {
+    final amount = subscription.priceCop;
+    if (amount == null || amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No se pudo determinar el valor exacto de tu plan. Por favor contacta a soporte.',
+          ),
+          backgroundColor: AppColors.danger,
+        ),
+      );
+      return;
+    }
+
     final amountText = subscription.formattedPrice;
     final planName = subscription.planName ?? 'Profesional';
 
@@ -183,8 +217,8 @@ class EpaycoCheckoutService {
 
     if (shouldProceed != true) return;
 
-    final uri = buildCheckoutUri(subscription);
     try {
+      final uri = buildCheckoutUri(subscription);
       final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (launched) {
         onPaymentLaunched?.call();

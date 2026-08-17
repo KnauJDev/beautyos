@@ -2,8 +2,8 @@
 //
 // Recibe las notificaciones de confirmacion de transacciones de ePayco (servidor a servidor),
 // valida la firma criptografica SHA-256 usando la llave privada (EPAYCO_P_KEY) que reside
-// exclusivamente en el servidor, y ejecuta de forma atomica e idempotente la RPC interna
-// `private.beautyos_procesar_evento_epayco` con privilegios de `service_role`.
+// exclusivamente en el servidor (FAIL-CLOSED: obligatorio), y ejecuta de forma atomica
+// e idempotente la RPC interna `private.beautyos_procesar_evento_epayco` con privilegios de `service_role`.
 
 import { createClient } from "@supabase/supabase-js";
 
@@ -53,6 +53,12 @@ Deno.serve(async (req) => {
       return responder({ error: "Configuracion interna de base de datos incompleta." }, 500);
     }
 
+    // BLINDAJE FAIL-CLOSED: Si las llaves de ePayco no estan en el servidor, no se procesa nada
+    if (!EPAYCO_P_CUST_ID || !EPAYCO_P_KEY) {
+      console.error("CRITICO: Falta configurar EPAYCO_P_CUST_ID o EPAYCO_P_KEY en las variables de entorno.");
+      return responder({ error: "Configuracion de seguridad de pasarela incompleta en el servidor." }, 500);
+    }
+
     paso = "leer cuerpo de la solicitud";
     let payload: Record<string, any> = {};
     const contentType = req.headers.get("content-type") || "";
@@ -75,16 +81,17 @@ Deno.serve(async (req) => {
     }
 
     paso = "extraer campos de epayco";
-    const xRefPayco = payload.x_ref_payco ?? payload.x_ref_payco_ ?? "";
-    const xTransactionId = payload.x_transaction_id ?? payload.x_id_invoice ?? "";
-    const xAmount = payload.x_amount ?? "0";
-    const xCurrencyCode = payload.x_currency_code ?? "COP";
-    const xSignature = payload.x_signature ?? "";
-    const xTransactionState = payload.x_transaction_state ?? payload.x_response ?? "";
-    const xTenantId = payload.x_extra1 ?? payload.extra1 ?? "";
+    const xRefPayco = (payload.x_ref_payco ?? payload.x_ref_payco_ ?? "").toString().trim();
+    const xTransactionId = (payload.x_transaction_id ?? payload.x_id_invoice ?? "").toString().trim();
+    const xAmount = (payload.x_amount ?? "0").toString().trim();
+    const xCurrencyCode = (payload.x_currency_code ?? "COP").toString().trim();
+    const xSignature = (payload.x_signature ?? "").toString().trim();
+    const xTransactionState = (payload.x_transaction_state ?? payload.x_response ?? "").toString().trim();
+    const xCodTransactionState = (payload.x_cod_transaction_state ?? "").toString().trim();
+    const xTenantId = (payload.x_extra1 ?? payload.extra1 ?? "").toString().trim();
 
     console.log(
-      `PASO: ${paso} | ref: ${xRefPayco} | tx: ${xTransactionId} | estado: ${xTransactionState} | monto: ${xAmount} | tenant: ${xTenantId}`
+      `PASO: ${paso} | ref: ${xRefPayco} | tx: ${xTransactionId} | estado: ${xTransactionState} (cod: ${xCodTransactionState}) | monto: ${xAmount} | tenant: ${xTenantId}`
     );
 
     if (!xRefPayco || !xTenantId) {
@@ -92,24 +99,24 @@ Deno.serve(async (req) => {
       return responder({ error: "Faltan parametros obligatorios: x_ref_payco o x_extra1." }, 400);
     }
 
+    // BLINDAJE FAIL-CLOSED: x_signature es 100% obligatoria
+    if (!xSignature) {
+      console.error("ALERTA DE SEGURIDAD: Solicitud rechazada. No se recibio la firma criptografica x_signature.");
+      return responder({ error: "Firma criptografica ausente." }, 400);
+    }
+
     paso = "validar firma criptografica sha256";
     // Formula estandar ePayco: sha256(p_cust_id_cliente ^ p_key ^ x_ref_payco ^ x_transaction_id ^ x_amount ^ x_currency_code)
-    if (EPAYCO_P_CUST_ID && EPAYCO_P_KEY && xSignature) {
-      const cadenaFirma = `${EPAYCO_P_CUST_ID}^${EPAYCO_P_KEY}^${xRefPayco}^${xTransactionId}^${xAmount}^${xCurrencyCode}`;
-      const firmaCalculada = await calcularSha256(cadenaFirma);
+    const cadenaFirma = `${EPAYCO_P_CUST_ID}^${EPAYCO_P_KEY}^${xRefPayco}^${xTransactionId}^${xAmount}^${xCurrencyCode}`;
+    const firmaCalculada = await calcularSha256(cadenaFirma);
 
-      if (firmaCalculada.toLowerCase() !== xSignature.toLowerCase()) {
-        console.error(
-          `ALERTA DE SEGURIDAD: Firma de ePayco invalida. Recibida: ${xSignature} | Esperada: ${firmaCalculada}`
-        );
-        return responder({ error: "Firma criptografica de confirmacion invalida." }, 400);
-      }
-      console.log("Firma criptografica de ePayco verificada con exito en el servidor.");
-    } else {
-      console.warn(
-        "Aviso: Validacion estricta de firma omitida por ausencia de llaves en ambiente de desarrollo/ensayo."
+    if (firmaCalculada.toLowerCase() !== xSignature.toLowerCase()) {
+      console.error(
+        `ALERTA DE SEGURIDAD: Firma de ePayco invalida. Recibida: ${xSignature} | Esperada: ${firmaCalculada}`
       );
+      return responder({ error: "Firma criptografica de confirmacion invalida." }, 400);
     }
+    console.log("Firma criptografica de ePayco verificada con exito en el servidor.");
 
     paso = "ejecutar rpc interna con service_role";
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -123,6 +130,7 @@ Deno.serve(async (req) => {
       p_x_ref_payco: xRefPayco,
       p_transaction_id: xTransactionId,
       p_transaction_state: xTransactionState,
+      p_cod_transaction_state: xCodTransactionState,
       p_amount_cop: amountNum,
       p_currency_code: xCurrencyCode,
       p_payload: payload,

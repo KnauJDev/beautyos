@@ -49,6 +49,7 @@ begin
     'PAYCO-REF-001',
     'TX-998811',
     'Aceptada',
+    '1',
     240000,
     'COP',
     '{"x_test": true, "metodo": "PSE"}'::jsonb
@@ -75,6 +76,7 @@ begin
     'PAYCO-REF-001', -- MISMA REFERENCIA
     'TX-998811',
     'Aceptada',
+    '1',
     240000,
     'COP',
     '{"x_test": true, "reintento": 1}'::jsonb
@@ -95,6 +97,7 @@ begin
     'PAYCO-REF-002',
     'TX-998822',
     'Rechazada',
+    '2',
     240000,
     'COP',
     '{"x_test": true, "motivo": "Fondos insuficientes"}'::jsonb
@@ -139,6 +142,7 @@ begin
     'PAYCO-REF-003',
     'TX-998833',
     'Aceptada',
+    '1',
     240000,
     'COP',
     '{"x_test": true, "reactivacion": true}'::jsonb
@@ -168,6 +172,56 @@ begin
   end if;
 
   raise notice '✅ Prueba 6 superada: brecha de fechas cerrada, activo vencido no acepta citas.';
+
+  -- ============================================================================
+  -- PRUEBA 7: Guard "Nadie entra solo" (D-125 / D-138): pago en 'pending' NO auto-activa
+  -- ============================================================================
+  update public.tenant_subscriptions
+  set status = 'pending'
+  where id = v_sub_id;
+
+  select * into v_res
+  from private.beautyos_procesar_evento_epayco(
+    v_tenant_id,
+    'PAYCO-REF-004',
+    'TX-998844',
+    'Aceptada',
+    '1',
+    240000,
+    'COP',
+    '{"x_test": true}'::jsonb
+  );
+
+  if v_res.estado_nuevo != 'pending' then
+    raise exception 'Fallo Prueba 7: un negocio en pending NO debe activarse solo sin aprobacion humana.';
+  end if;
+
+  raise notice '✅ Prueba 7 superada: regla "Nadie entra solo" blindada en base de datos.';
+
+  -- ============================================================================
+  -- PRUEBA 8: Validacion de monto insuficiente contra beautyos_precio_efectivo
+  -- ============================================================================
+  update public.tenant_subscriptions
+  set status = 'trialing'
+  where id = v_sub_id;
+
+  select * into v_res
+  from private.beautyos_procesar_evento_epayco(
+    v_tenant_id,
+    'PAYCO-REF-005',
+    'TX-998855',
+    'Aceptada',
+    '1',
+    50000, -- Monto insuficiente ($50.000 vs $240.000 esperado)
+    'COP',
+    '{"x_test": true}'::jsonb
+  );
+
+  if v_res.estado_nuevo != 'trialing' then
+    raise exception 'Fallo Prueba 8: pago insuficiente no debe activar la suscripcion.';
+  end if;
+
+  raise notice '✅ Prueba 8 superada: monto insuficiente rechazado para activacion.';
 
   raise notice '==================================================';
   raise notice 'TODAS LAS PRUEBAS DEL CONTROL 170 EN VERDE!';

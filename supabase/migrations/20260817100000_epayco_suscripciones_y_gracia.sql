@@ -4,7 +4,8 @@
 -- 1. Actualiza private.beautyos_tenant_accepts_new_commitments para verificar
 --    current_period_end en 'active' y grace_ends_at en 'past_due' / 'grace' (5 dias de gracia).
 -- 2. Crea private.beautyos_procesar_evento_epayco(...) ejecutable solo por service_role
---    con idempotencia en subscription_events y transicion de estados.
+--    con idempotencia en subscription_events, guards de estado (D-125/D-138),
+--    validacion de precio efectivo y transicion de estados.
 -- 3. Actualiza public.get_my_tenant_subscription_status() para exponer current_period_end,
 --    grace_ends_at y el precio efectivo calculado por beautyos_precio_efectivo.
 -- ==============================================================================
@@ -63,13 +64,17 @@ comment on function private.beautyos_tenant_accepts_new_commitments(uuid)
 
 
 -- 2. RPC interna para procesar confirmaciones de ePayco (Ejecutada por Edge Function con service_role)
+drop function if exists private.beautyos_procesar_evento_epayco(uuid, text, text, text, bigint, text, jsonb);
+drop function if exists private.beautyos_procesar_evento_epayco(uuid, text, text, text, text, bigint, text, jsonb);
+
 create or replace function private.beautyos_procesar_evento_epayco(
   p_tenant_id uuid,
   p_x_ref_payco text,
   p_transaction_id text,
   p_transaction_state text,
-  p_amount_cop bigint,
-  p_currency_code text,
+  p_cod_transaction_state text default null,
+  p_amount_cop bigint default 0,
+  p_currency_code text default 'COP',
   p_payload jsonb default '{}'::jsonb
 )
 returns table (
@@ -86,8 +91,11 @@ declare
   v_sub public.tenant_subscriptions%rowtype;
   v_event_id uuid;
   v_state_clean text;
+  v_cod_clean text;
   v_is_accepted boolean;
   v_is_rejected boolean;
+  v_is_reversed boolean;
+  v_expected_price bigint;
 begin
   if p_tenant_id is null or p_x_ref_payco is null or length(trim(p_x_ref_payco)) = 0 then
     raise exception 'Parametros invalidos: tenant_id y x_ref_payco son obligatorios.';
@@ -131,12 +139,33 @@ begin
   end if;
 
   v_state_clean := lower(coalesce(trim(p_transaction_state), ''));
-  v_is_accepted := v_state_clean in ('aceptada', 'aprobada', '1', '4', 'approved', 'success');
-  v_is_rejected := v_state_clean in ('rechazada', 'fallida', '2', 'rejected', 'failed');
+  v_cod_clean := coalesce(trim(p_cod_transaction_state), '');
+
+  -- Mapeo estricto conforme a la documentacion de ePayco
+  -- Cod 1 = Aceptada | Cod 2 = Rechazada | Cod 4 = Fallida | Cod 6 = Reversada
+  v_is_accepted := v_state_clean in ('aceptada', 'aprobada', 'approved', 'success') or v_cod_clean = '1';
+  v_is_rejected := v_state_clean in ('rechazada', 'fallida', 'rejected', 'failed') or v_cod_clean in ('2', '4');
+  v_is_reversed := v_state_clean in ('reversada', 'reversed') or v_cod_clean = '6';
+
+  -- GUARD DE NEGOCIO: "Nadie entra solo" (D-125 / D-138)
+  -- Un negocio en estado 'pending' o 'rejected' requiere aprobacion formal de plataforma antes de activarse
+  if v_sub.status in ('pending', 'rejected') then
+    return query select true, v_sub.status, v_sub.status, 'Pago registrado. El negocio esta en revision/rechazado y requiere aprobacion del platform_owner.'::text;
+    return;
+  end if;
 
   -- MAQUINA DE ESTADOS (D-141)
   if v_is_accepted then
-    -- Transicion a ACTIVE desde cualquier estado previo (pending, trialing, past_due, grace, suspended, cancelled)
+    -- Validacion de monto contra precio efectivo esperado (defensa en profundidad)
+    select pe.precio_cop into v_expected_price
+    from private.beautyos_precio_efectivo(p_tenant_id) pe;
+
+    if v_expected_price is not null and v_expected_price > 0 and p_amount_cop > 0 and p_amount_cop < v_expected_price then
+      return query select true, v_sub.status, v_sub.status, 'Pago recibido con monto menor al precio pactado. Suscripcion no activada.'::text;
+      return;
+    end if;
+
+    -- Transicion a ACTIVE desde trialing, past_due, grace, suspended, cancelled
     update public.tenant_subscriptions
     set
       status = 'active',
@@ -153,8 +182,8 @@ begin
     return query select true, v_sub.status, 'active'::text, 'Pago aceptado. Suscripcion activada/renovada por 1 mes.'::text;
     return;
 
-  elsif v_is_rejected and v_sub.status = 'active' then
-    -- Si el cobro falla sobre un negocio actualmente activo, entra a past_due con 5 dias de gracia
+  elsif (v_is_rejected or v_is_reversed) and v_sub.status = 'active' then
+    -- Si el cobro falla o se revierte sobre un negocio actualmente activo, entra a past_due con 5 dias de gracia
     update public.tenant_subscriptions
     set
       status = 'past_due',
@@ -162,24 +191,24 @@ begin
       updated_at = now()
     where id = v_sub.id;
 
-    return query select true, v_sub.status, 'past_due'::text, 'Pago rechazado. Negocio en mora con 5 dias de gracia.'::text;
+    return query select true, v_sub.status, 'past_due'::text, 'Pago rechazado o revertido. Negocio en mora con 5 dias de gracia.'::text;
     return;
 
   else
-    -- Pagos pendientes o rechazados en prueba no alteran negativamente el estado
+    -- Pagos pendientes o rechazados en periodos no activos no alteran negativamente el estado
     return query select true, v_sub.status, v_sub.status, 'Evento registrado sin alteracion de estado.'::text;
     return;
   end if;
 end;
 $$;
 
-revoke all on function private.beautyos_procesar_evento_epayco(uuid, text, text, text, bigint, text, jsonb)
+revoke all on function private.beautyos_procesar_evento_epayco(uuid, text, text, text, text, bigint, text, jsonb)
   from public, anon, authenticated;
-grant execute on function private.beautyos_procesar_evento_epayco(uuid, text, text, text, bigint, text, jsonb)
+grant execute on function private.beautyos_procesar_evento_epayco(uuid, text, text, text, text, bigint, text, jsonb)
   to service_role;
 
-comment on function private.beautyos_procesar_evento_epayco(uuid, text, text, text, bigint, text, jsonb)
-  is 'Procesa confirmaciones de pago de ePayco con idempotencia estricta en subscription_events y transiciones de suscripcion.';
+comment on function private.beautyos_procesar_evento_epayco(uuid, text, text, text, text, bigint, text, jsonb)
+  is 'Procesa confirmaciones de pago de ePayco con idempotencia estricta, guards de estado D-125/D-138 y transiciones seguras.';
 
 
 -- 3. Actualizacion de get_my_tenant_subscription_status con campos de periodo y precio efectivo

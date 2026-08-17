@@ -74,11 +74,23 @@ void main() {
       expect(uri.queryParameters['x_currency_code'], equals('COP'));
       expect(uri.queryParameters['x_extra1'], equals('tenant-uuid-1234'));
       expect(uri.queryParameters['x_extra2'], equals('business'));
+      expect(uri.queryParameters['x_test_request'], equals('true'));
       expect(uri.queryParameters['x_confirmation_url'], contains('epayco-webhook'));
       expect(uri.queryParameters.containsKey('p_key'), isTrue);
       // Nunca debe contener firma o llave privada en la URL del cliente
       expect(uri.queryParameters.containsKey('x_signature'), isFalse);
       expect(uri.queryParameters.containsKey('private_key'), isFalse);
+    });
+
+    test('buildCheckoutUri rechaza precios nulos o cero', () {
+      final sub = TenantSubscriptionStatus(
+        tenantId: 'tenant-uuid-1234',
+        tenantName: 'Peluquería Glamour',
+        subscriptionStatus: 'trialing',
+        priceCop: null,
+      );
+
+      expect(() => service.buildCheckoutUri(sub), throwsArgumentError);
     });
   });
 }

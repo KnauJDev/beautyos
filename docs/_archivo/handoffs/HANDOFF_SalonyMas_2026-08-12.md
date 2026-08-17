@@ -205,7 +205,7 @@ sustituye a leer los tres documentos: los enumera y avisa de lo que muerde.
 |---|---|---|
 | **`docs/HANDOFF/`** (el más reciente) | ¿Dónde quedamos? | Se reemplaza cada sesión |
 | **`docs/00_producto/PLAN_MAESTRO.md`** | ¿Qué falta y en qué orden? | **El único que manda sobre el plan** |
-| **`docs/00_producto/REGISTRO_DE_DECISIONES.md`** | ¿Por qué está hecho así? | **Solo crece.** Nunca se resume ni se borra una fila. Tiene un **índice** al principio: léelo entero y abre solo las decisiones que necesites |
+| **`docs/00_producto/REGISTRO_DE_DECISIONES.md`** | ¿Por qué está hecho así? | **Solo crece.** Nunca se resume ni se borra una fila. Tiene un **índice** al principio: léelo entero y abre solo las entradas que necesites |
 
 **Si aparece un cuarto documento opinando sobre el plan, está mal.** Siete
 compitiendo causaron dos desviaciones reales (D-063, D-118).
