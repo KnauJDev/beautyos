@@ -1,8 +1,8 @@
-# HANDOFF Salón y Más — 17 de agosto de 2026 (bloque D-147)
+# HANDOFF Salón y Más — 17 de agosto de 2026 (bloque D-148)
 
-**Bloque documentado:** decisión **D-147** · Paso 4.2: Funciones RPC del Tablero de Agenda (`get_ticket_board_counts_v2` y `get_ticket_board_list_v2`)
-**Estado:** Migración SQL `20260817170000_tablero_agenda_conteos_y_lista.sql` aplicada con éxito en `beautyos-dev` y verificada con el Control 173 (5 de 5 pruebas en verde en rollback). 113 de 113 pruebas Flutter en verde, `flutter analyze` 100% limpio (0 errores, 0 advertencias).
-**Reemplaza como handoff vigente a:** la versión anterior de este mismo archivo (bloque D-146, archivada en `docs/_archivo/handoffs/HANDOFF_SalonyMas_2026-08-17_D146.md`)
+**Bloque documentado:** decisión **D-148** · Paso 4.3: Frontend del Tablero de Agenda en Flutter (`AgendaPage` con vistas Día, Semana, Mes, lista Nivel 2 y WhatsApp directo)
+**Estado:** `AgendaPage` 100% implementada y conectada a las RPCs `get_ticket_board_counts_v2` y `get_ticket_board_list_v2`. **121 de 121 pruebas Flutter en verde**, `flutter analyze` 100% limpio (0 errores, 0 advertencias).
+**Reemplaza como handoff vigente a:** la versión anterior de este mismo archivo (bloque D-147, archivada en `docs/_archivo/handoffs/HANDOFF_SalonyMas_2026-08-17_D147.md`)
 
 ---
 
@@ -29,60 +29,56 @@ Fase 3  Poder cobrar                  ✅ CERRADA A NIVEL TÉCNICO (17-ago)
 Fase 4  Pulido módulo a módulo        🔄  ← AQUÍ
         4.1  Consecutivo de ticket        ✅ CERRADO (09-ago / D-117)
         4.2  Funciones del tablero agenda ✅ CERRADO Y APLICADO EN BD (17-ago / D-147)
-        4.3  Tablero Flutter (Día/Sem/Mes)⬜ Siguiente paso
+        4.3  Tablero Flutter (Día/Sem/Mes)✅ CERRADO (17-ago / D-148)
+        4.4  Número de venta al cerrar    ⬜ Siguiente paso (hallazgo P)
 ```
 
 ---
 
-## 2. Qué pasó en este bloque (Paso 4.2 / D-147)
+## 2. Qué pasó en este bloque (Paso 4.3 / D-148)
 
-En Salón y Más la Agenda no es un calendario tradicional (que se rompe con múltiples estilistas y no cabe en celular), sino un **Tablero de Control de Tickets** (D-101 / D-116) con la regla de oro: *"Al final de la jornada todas las columnas deben quedar en cero excepto Cerrado"*. En este bloque se construyeron las 2 funciones RPC del servidor para alimentar las 3 vistas (Día, Semana, Mes) y la lista ampliada de Nivel 2.
+Se construyó la interfaz de usuario completa del **Tablero de Agenda de Salón y Más** (D-101 / D-116 / D-147 / D-148) conforme a la regla de oro: *"Al final de la jornada todas las columnas deben quedar en cero excepto Cerrado"*.
 
 ### Lo que se construyó:
 
-1. **`supabase/migrations/20260817170000_tablero_agenda_conteos_y_lista.sql`:**
-   - **`public.get_ticket_board_counts_v2(p_branch_id, p_start_date, p_end_date, p_granularity)`:** agrupa tickets por cubeta de tiempo (`'15min'`, `'30min'`, `'hour'`, `'day'`) en zona horaria colombiana (`America/Bogota`), retornando `bucket`, `status`, `ticket_count`, `total_price` y `total_pending_balance`.
-   - **`public.get_ticket_board_list_v2(p_branch_id, p_start_date, p_end_date, p_statuses, p_bucket, p_granularity)`:** lista detallada de Nivel 2 al hacer clic en cualquier celda, retornando número de ticket `#0000701` (`ticket_code`, D-117), cliente con teléfono para WhatsApp directo, fecha/hora, servicios concatenados, estilistas, valor total, abonos pagados (`ticket_payments`) y saldo pendiente.
-   - **Seguridad:** ambas funciones aplican `private.beautyos_resolve_branch_access` exigiendo roles `tenant_owner`, `admin` o `assistant`, revocando acceso a `anon`.
+1. **`lib/models/ticket_board.dart`:**
+   - Modelos de datos `TicketBoardCount` (Nivel 1) y `TicketBoardItem` (Nivel 2) con deserialización JSON desde las RPCs.
+   - Formateador de moneda colombiana `formatCOP()` para montos y saldos en pesos (`$ 50.000`).
+   - Agrupaciones semánticas de columnas:
+     * `DayBoardColumn`: 5 columnas (Por confirmar, Confirmado, En proceso, Por cobrar, Cerrado).
+     * `WeekBoardColumn`: 6 columnas discriminadas (Solicitado, Cotizado, Apartado, Confirmado, Por cobrar, Cerrado).
 
-2. **`supabase/sql/173_test_tablero_agenda_conteos_y_lista.sql`:**
-   - Script de control con 5 pruebas en `ROLLBACK`:
-     1. Conteos en intervalos de 15 minutos en hora local Colombia.
-     2. Conteos diarios para vistas de Semana y Mes.
-     3. Lista ampliada de Nivel 2 con ticket_code, teléfono y saldos exactos.
-     4. Aislamiento estricto entre sedes.
-     5. Validaciones de parámetros (fechas invertidas y granularidad inválida).
+2. **`lib/services/agenda_board_service.dart`:**
+   - Invocación tipada a las RPCs `get_ticket_board_counts_v2` y `get_ticket_board_list_v2`.
+   - Soporte para canal Realtime en la tabla `public.tickets` (`agenda_board_<branch_id>`) para actualización automática en vivo.
+
+3. **`lib/pages/agenda_page.dart`:**
+   - **Barra de Controles:** Selector de vista (**Día** | **Semana** | **Mes**), navegación temporal ("Hoy", "Esta semana", "Este mes", flechas y `DatePicker` de calendario), selector de granularidad para la vista Día (`15 min`, `30 min`, `1 hora`), y botón de refresco manual.
+   - **Banner de Resumen Superior:**
+     * Indicador de estado de la regla del cero (*"Jornada al día — Todas las columnas en cero salvo Cerrado"* en verde, o *"X tickets pendientes de cierre comercial"* en ámbar).
+     * Badge independiente de **Canceladas / No asistió** (*"2 canceladas · 1 no asistió"*, D-101) que abre la lista de citas sin efecto al tocarlo sin ensuciar la cuadrícula de trabajo.
+   - **Vista DÍA:** Filas por intervalo horario (de 08:00 a 20:00 o según citas), ceros atenuados (`·`) y conteos en badges de color.
+   - **Vista SEMANA:** 7 filas de Lunes a Domingo con día actual resaltado y 6 columnas discriminadas.
+   - **Vista MES:** Cuadrícula de 35 casillas con total por día y barra horizontal de proporciones de color (Gris, Verde, Azul, Coral, Ámbar). Tocar un día salta directamente a la vista Día de esa fecha.
+   - **Modal de Nivel 2 (`_Level2Sheet`):** Al tocar cualquier celda se despliega la lista con consecutivo `#0000701` (`ticket_code`, D-117), `StatusPill`, cliente, **botón interactivo de WhatsApp (`wa.me`)**, servicios, estilistas, y desglose de dinero (total, abonado y saldo en coral).
+
+4. **Pruebas y Análisis:**
+   - Suite `test/ticket_board_test.dart` con 8 pruebas unitarias y de widgets.
+   - **121 de 121 pruebas automáticas en verde** (`flutter test`).
+   - `flutter analyze` 100% limpio (0 errores, 0 advertencias).
 
 ---
 
 ## 3. Estado técnico
 
-- **Pruebas Flutter:** 113 de 113 en verde (`flutter test`)
-- **Análisis estático:** `flutter analyze` 100% limpio (0 errores, 0 advertencias)
-- **Migración nueva:** `supabase/migrations/20260817170000_tablero_agenda_conteos_y_lista.sql`
-- **Script de control:** `supabase/sql/173_test_tablero_agenda_conteos_y_lista.sql`
+- **Pruebas Flutter:** **121 de 121 en verde** (`flutter test`)
+- **Análisis estático:** 0 errores, 0 advertencias (`flutter analyze`)
+- **Decisiones registradas:** **148 decisiones** (D-001 al D-148)
+- **Base de datos:** Migración 20260817170000 aplicada en `beautyos-dev` y verificada con Control 173 (5 de 5 en verde)
 
 ---
 
-## 4. Instrucción para aplicar (Propietario)
+## 4. Próximos pasos inmediatos
 
-1. **Respaldar la base de datos:**
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File scripts\respaldo_supabase.ps1
-   ```
-2. **Aplicar la migración:**
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\migrations\20260817170000_tablero_agenda_conteos_y_lista.sql"
-   ```
-3. **Verificar con el Control 173:**
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\sql\173_test_tablero_agenda_conteos_y_lista.sql"
-   ```
-
----
-
-## 5. Lo siguiente según el Plan Maestro
-
-1. **Paso 4.3:** Construir el frontend del Tablero de Agenda en Flutter (`AgendaBoardPage` con vistas Día cada 15 min, Semana, Mes, lista Nivel 2 y Realtime híbrido).
-2. **Paso 4.4:** Número de venta al cerrar ticket (hallazgo P).
-3. **Paso 4.5:** Pulido de tickets y StatusPill.
+1. **Paso 4.4:** **Número de venta** al cerrar el ticket (hallazgo P).
+2. **Paso 4.5:** Tickets: pulido del nivel 2 y 3 + cambiar `TicketStatusBadge` por `StatusPill` (hallazgo N).
