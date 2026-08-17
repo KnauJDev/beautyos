@@ -126,8 +126,8 @@ begin
   insert into public.ticket_services (tenant_id, branch_id, ticket_id, service_id, stylist_id, price, duration_minutes, status)
   values (v_tenant_id, v_branch_id, v_ticket_4_id, v_service_2_id, v_stylist_2_id, 35000, 30, 'finalizado');
 
-  insert into public.ticket_payments (tenant_id, branch_id, ticket_id, amount, payment_method, status)
-  values (v_tenant_id, v_branch_id, v_ticket_4_id, 30000, 'nequi', 'registrado');
+  insert into public.ticket_payments (tenant_id, branch_id, ticket_id, amount, method, status, created_by)
+  values (v_tenant_id, v_branch_id, v_ticket_4_id, 30000, 'nequi', 'registrado', v_owner_user_id);
 
   -- ============================================================================
   -- PRUEBA 1: Conteos en vista Día con intervalos de 15 minutos ('15min')
