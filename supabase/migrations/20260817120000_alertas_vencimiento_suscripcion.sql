@@ -134,8 +134,8 @@ begin
     select
       t.id as c_tenant_id,
       t.name as c_tenant_name,
-      coalesce(t.contact_email, do.owner_user_email) as c_recipient_email,
-      coalesce(do.owner_full_name, 'Propietario(a)') as c_owner_name,
+      coalesce(t.contact_email, dow.owner_user_email) as c_recipient_email,
+      coalesce(dow.owner_full_name, 'Propietario(a)') as c_owner_name,
       ts.id as c_subscription_id,
       ts.status as c_subscription_status,
       p.name as c_plan_name,
@@ -203,7 +203,7 @@ begin
     join public.tenant_subscriptions ts on ts.tenant_id = t.id
     join public.plans p on p.id = ts.plan_id
     left join private.beautyos_precio_efectivo(t.id) pe on true
-    left join due_owners do on do.tenant_id = t.id
+    left join due_owners dow on dow.tenant_id = t.id
     where t.is_demo = false -- No alertar salones demo sembrados (D-120)
   )
   select
