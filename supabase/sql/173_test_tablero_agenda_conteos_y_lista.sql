@@ -36,8 +36,8 @@ begin
   -- ============================================================================
   -- PREPARACIÓN: Crear tenant, sedes, cliente, estilista y servicios
   -- ============================================================================
-  insert into public.tenants (name, business_type, contact_email, is_demo, active)
-  values ('Salon Agenda Test', 'peluqueria', 'agenda_test@salonymas.com', true, true)
+  insert into public.tenants (name, business_type, contact_email, whatsapp, is_demo, active)
+  values ('Salon Agenda Test', 'peluqueria', 'agenda_test@salonymas.com', '+573001234567', true, true)
   returning id into v_tenant_id;
 
   insert into auth.users (id, email)
