@@ -211,7 +211,7 @@ Tope antiabuso en la reserva pública, rol Asistente con sus pantallas, 2FA.
 | # | Paso | Quién | Estado |
 |---|---|---|---|
 | 4.1 | Número de ticket consecutivo y ajustable | 🤖 | ✅ D-117 |
-| 4.2 | Las dos funciones del tablero de agenda | 🤖 | ⬜ |
+| 4.2 | Las dos funciones del tablero de agenda | 🤖 | ✅ **CERRADO 17-ago (D-147).** RPCs `get_ticket_board_counts_v2` y `get_ticket_board_list_v2` con granularidad dinámica (15m, 30m, 1h, día), zona horaria `America/Bogota`, lista Nivel 2 con consecutivo `#0000701`, cliente, teléfono para WhatsApp directo y saldos. 5/5 pruebas SQL en verde (Control 173) |
 | 4.3 | **El tablero:** día, semana, mes + buscador múltiple + refresco automático | 🤖 | ⬜ |
 | 4.4 | **Número de venta** al cerrar el ticket (hallazgo P) | 🤖 | ⬜ |
 | 4.5 | Tickets: pulido del nivel 2 y 3 + cambiar `TicketStatusBadge` por `StatusPill` (hallazgo N) | 🤖 | ⬜ |
