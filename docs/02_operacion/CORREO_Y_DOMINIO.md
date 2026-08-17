@@ -13,7 +13,7 @@ falta: eso lo manda el `PLAN_MAESTRO`.
 |---|---|---|
 | **Invitación de equipo** | Nuestra función `send-invitation-email` → Resend | ✅ Funciona |
 | **Alarma de stock bajo** | Nuestra función `send-low-stock-alert` → Resend | ✅ **Arreglada el 11-ago** (D-131) |
-| **Correos de cuenta** (confirmar, recuperar contraseña, cambiar correo…) | **Supabase Auth → SMTP → Resend** | ✅ **Desde el 11-ago** (D-133). ⚠️ **Están en inglés** — hallazgo W, paso 3.13 |
+| **Correos de cuenta** (confirmar, recuperar contraseña, cambiar correo…) | **Supabase Auth → SMTP → Resend** | ✅ **Desde el 11-ago** (D-133). **Ya traducidas al español** (D-146, paso 3.13) — el texto exacto de las 6 plantillas vive en `PLANTILLAS_CORREO_AUTH.md`, listo para pegar en el panel |
 
 > **La confusión que costó dos horas el 10-ago:** el correo de confirmación
 > **no pasaba por Resend**. Salía de `noreply@mail.app.supabase.io`. Verificar el

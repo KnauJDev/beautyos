@@ -1,8 +1,8 @@
-# HANDOFF Salón y Más — 17 de agosto de 2026 (bloque D-145)
+# HANDOFF Salón y Más — 17 de agosto de 2026 (bloque D-146)
 
-**Bloque documentado:** decisión **D-145** · Cierre real del Paso 3.11 (disparador diario) señalado como pendiente en la auditoría del bloque D-143
-**Estado:** migración y script de verificación **escritos, sin aplicar todavía** — regla 16: las migraciones las aplica el propietario. Requiere además un paso manual de Vault, fuera de git.
-**Reemplaza como handoff vigente a:** la versión anterior de este mismo archivo (bloque D-144, archivada en `docs/_archivo/handoffs/HANDOFF_SalonyMas_2026-08-17_D144.md`)
+**Bloque documentado:** decisión **D-146** · Paso 3.13: plantillas de correo de Supabase Auth traducidas al español (hallazgo W)
+**Estado:** documento operativo escrito y verificado contra el código. **Falta el paso manual, fuera de git:** pegar cada una de las 6 plantillas en el panel de Supabase (Authentication → Emails → Templates).
+**Reemplaza como handoff vigente a:** la versión anterior de este mismo archivo (bloque D-145, archivada en `docs/_archivo/handoffs/HANDOFF_SalonyMas_2026-08-17_D145.md`)
 
 ---
 
@@ -22,71 +22,116 @@ Fase 3  Poder cobrar                  🔄  ← AQUÍ
         3.10 Pagos y suscripciones        ✅ CERRADO (17-ago / D-141, D-142)
         3.11 Avisos por correo y gracia   🔄 CÓDIGO LISTO (17-ago / D-143, D-145) — falta aplicar la migración y el paso de Vault
         3.12 Correos de cuenta por Resend ✅
+        3.13 Traducir correos de Auth     ✅ CERRADO 17-ago (D-146) — falta pegar en el panel de Supabase
         3.3  Términos y privacidad        🔄 CONTENIDO TÉCNICO LISTO (17-ago / D-144) — falta revisión legal 👥
         3.2  Contador (DIAN, IVA)         ⬜ 👤
         3.4  Supabase Pro (~25 USD/mes)   ⬜ 👤
-        3.13 Traducir correos de Auth     ⬜ 👥  hallazgo W
 Fase 4  Pulido módulo a módulo        🔄 4.1 ✅
 ```
 
+**Con esto, todo lo técnico de la Fase 3 que dependía de este asistente está
+escrito.** Lo que queda abierto en Fase 3 son tres cosas que no son código:
+aplicar dos piezas ya construidas (3.11 y 3.13, ambas esperando un paso manual
+del propietario fuera de git), y dos que dependen enteramente de él (3.2
+contador, 3.4 Supabase Pro) más la revisión legal de 3.3.
+
 ---
 
-## 2. Qué pasó en este bloque (D-145)
+## 2. Qué pasó en este bloque (Paso 3.13 / D-146)
 
-La auditoría del bloque anterior (sobre D-143) dejó un solo punto pendiente: `send-subscription-expiry-alerts` estaba bien blindada (`CRON_SECRET` fail-closed) pero **nadie la llamaba sola cada día**. Se cerró con `pg_cron` + `pg_net`, ya soportados por Supabase.
+El hallazgo W señalaba que las 6 plantillas de correo de cuenta de Supabase
+Auth seguían en inglés de fábrica — el primer correo que recibe cada dueña de
+salón. Se redactaron las 6 en español colombiano, con la marca de la
+plataforma.
 
 ### Lo que se construyó:
 
-1. **`supabase/migrations/20260817140000_programar_alertas_suscripcion_diarias.sql`:**
-   - Habilita las extensiones `pg_cron` y `pg_net` (`create extension if not exists`).
-   - Reprograma de forma idempotente (`cron.unschedule` si ya existía, luego `cron.schedule`) una tarea diaria **`avisos_vencimiento_suscripcion_diario`** a las **08:00 hora Colombia (`0 13 * * *` UTC)**.
-   - La tarea llama a `send-subscription-expiry-alerts` vía `net.http_post`, con la cabecera `x-cron-secret` leída **por nombre** desde `vault.decrypted_secrets` — **el valor real de `CRON_SECRET` no está escrito en este archivo ni en ningún otro versionado.**
+1. **`docs/02_operacion/PLANTILLAS_CORREO_AUTH.md`** (documento nuevo): las 6
+   plantillas completas — **Confirm signup, Reset Password, Magic Link,
+   Invite user, Change Email Address, Reauthentication** — cada una con su
+   asunto y su HTML exacto, listos para copiar y pegar en Authentication →
+   Emails → Templates. Mismo sistema visual que la app (morado `#7C3AED` /
+   `#2D1B69`, copiado a mano porque el HTML de Supabase no puede importar
+   `AppColors`).
+   - **Reautenticación es distinta a las otras cinco:** usa `{{ .Token }}`
+     (un código de 6 dígitos para escribir de vuelta en la app), no
+     `{{ .ConfirmationURL }}` — es un flujo de código, no de enlace.
+   - **Verificado contra el código, no asumido:** de las 6, hoy **solo
+     "Confirm signup" se dispara de verdad** en la app (`register_page.dart`
+     llama a `auth.signUp`). Las otras cinco quedan listas para cuando
+     existan sus flujos — no hay ningún llamado a `resetPasswordForEmail`,
+     `signInWithOtp`, `admin.inviteUserByEmail`, cambio de correo ni
+     `reauthenticate()` todavía en `lib/`.
+   - Se documentó explícitamente que la plantilla nativa "Invite user" de
+     Supabase **no es** el correo real de invitación de equipo de este
+     proyecto (ese es `send-invitation-email` por Resend, D-062/D-065, ya en
+     español desde que se construyó) — para que nadie las confunda después.
 
-2. **`supabase/sql/172_verify_disparador_alertas_suscripcion.sql`:** control de solo lectura (sin `BEGIN`/`ROLLBACK`, no escribe nada) que confirma extensiones instaladas, la tarea activa con el horario y destino correctos, y **avisa sin fallar** si el secreto de Vault todavía no se guardó, para que ese paso manual no quede invisible.
+2. **`docs/02_operacion/CORREO_Y_DOMINIO.md`:** actualizada la fila de
+   "Correos de cuenta" — ya no dice "están en inglés", apunta al documento
+   nuevo.
 
-### Lo que NO se hizo, a propósito:
-- No se escribió el valor real de `CRON_SECRET` en ningún lado del repositorio. Es un paso manual, ver sección 4.
-- No se pudo aplicar ni verificar contra `beautyos-dev` en esta sesión (sin acceso directo a la base) — es la **primera vez que este proyecto usa `pg_cron`/`pg_net`/Vault**, así que aunque la sintaxis sigue el patrón oficial de Supabase para invocar Edge Functions desde `pg_cron`, el control 172 es la forma real de confirmarlo después de aplicar.
+### Corrección de un error propio encontrado en este mismo bloque:
+
+**Al revisar el registro de decisiones antes de agregar D-146, se encontró
+que la fila completa de D-143 había desaparecido** — sobrevivía su línea de
+índice, pero no el detalle. Comparado contra el commit `c2b5611` (donde sí
+existía completa) contra `670fbce` (donde ya no), quedó claro que se perdió
+durante la edición del bloque D-145 de esta misma sesión: un reemplazo de
+texto que debía insertar la fila de D-145 delante de la de D-144 en realidad
+usó como ancla el texto de D-143, borrándola. **Se restauró carácter por
+carácter desde `c2b5611`** (diff verificado como idéntico) antes de escribir
+nada de D-146. Es exactamente el fallo que la regla 19 del Plan Maestro pide
+evitar — "no se afirma que algo quedó escrito sin haberlo comprobado" — y se
+detectó comprobando, no asumiendo.
+
+**Segundo error propio, encontrado en la auditoría de este mismo bloque:** al
+marcar cerrado el hallazgo **W** en `PLAN_MAESTRO.md`, se reemplazó por
+completo la descripción original del problema (la cita real *"Confirm your
+email address..."* y su razonamiento) por la nota de cierre, en vez de
+conservarla y solo **agregar** el cierre — rompiendo el patrón que sí
+siguieron los hallazgos R, Y y T (descripción original intacta, nota de
+cierre añadida aparte). Se restauró la descripción original y se le agregó
+la nota de cierre de D-146, siguiendo el mismo patrón que esos tres.
+
+**De paso, verificando la integridad del registro completo (D-137 a D-146,
+índice contra fila), se encontró un segundo glitch, mucho más antiguo (12-ago,
+antes de esta sesión): la fila de D-137 quedó pegada sin salto de línea al
+final de la fila de D-136** (`...a proposit| D-137 | ...`), por lo que no se
+renderiza como fila propia de la tabla. **No se tocó**, porque no se pudo
+confirmar si además se perdió una palabra de D-136 al mismo tiempo, y esta
+decisión no es de este bloque ni de esta sesión — queda señalado para que el
+propietario decida cómo repararlo, sin resolverlo por iniciativa propia
+(regla 20).
 
 ---
 
 ## 3. Estado técnico
 
-- **Pruebas Flutter:** sin cambios en este bloque (100% backend/infraestructura) — siguen 113/113 en verde
-- **Migraciones pendientes de aplicar:**
-  * `supabase/migrations/20260817140000_programar_alertas_suscripcion_diarias.sql`
-- **Scripts de verificación:** `172_verify_disparador_alertas_suscripcion.sql`
+- **Sin cambios de código Flutter ni migraciones SQL en este bloque:** es
+  100% documentación operativa.
 - **Proyectos Supabase:** `beautyos-dev` (producción) y `salonymas-ensayo`
 
 ---
 
-## 4. Instrucción para aplicar (Propietario) — dos pasos, en este orden
+## 4. Instrucción para aplicar (Propietario)
 
-1. **Respaldar la base de datos:**
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File scripts\respaldo_supabase.ps1
-   ```
-2. **Aplicar la migración:**
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\migrations\20260817140000_programar_alertas_suscripcion_diarias.sql"
-   ```
-3. **Paso manual obligatorio, fuera de git, en el Editor SQL de Supabase** (una sola vez, con el mismo valor que ya usaste al configurar `CRON_SECRET` en los secretos de la Edge Function):
-   ```sql
-   select vault.create_secret(
-     '<el mismo valor exacto de CRON_SECRET>',
-     'cron_secret_subscription_alerts',
-     'Secreto usado por pg_cron para llamar a send-subscription-expiry-alerts'
-   );
-   ```
-   Si ese nombre ya existiera, usar `vault.update_secret(...)` en su lugar (la migración trae el comando exacto en un comentario).
-4. **Verificar con el control 172** (`supabase/sql/172_verify_disparador_alertas_suscripcion.sql`) — debe confirmar la tarea activa y, si falta el paso 3, avisarlo sin fallar el resto de los controles.
+No hay migración que correr. El único paso es manual, en el panel:
+
+1. Abrir `docs/02_operacion/PLANTILLAS_CORREO_AUTH.md`.
+2. En Supabase → **Authentication → Emails → Templates**, para cada una de
+   las 6 plantillas: pegar el **Subject heading** y el **Message body** de la
+   sección correspondiente, y **Save**.
+3. Probar al menos "Confirm signup" con una cuenta de prueba real (es la
+   única que se dispara hoy) para confirmar que llega bien formateada.
 
 ---
 
 ## 5. Lo siguiente según el Plan Maestro
 
-1. **Aplicar este bloque** (migración + paso de Vault) y confirmar con el control 172.
-2. **Revisión legal humana del paso 3.3** (fuera del alcance de este asistente).
-3. **3.2 — Contador** (DIAN, IVA) — 👤 pendiente del propietario.
-4. **3.4 — Supabase Pro** (~25 USD/mes) — 👤 pendiente del propietario.
-5. **3.13 — Traducir plantillas de correo de Auth a español** (hallazgo W).
+1. **Aplicar 3.11** (migración `pg_cron` + paso de Vault, ver bloque D-145).
+2. **Aplicar 3.13** (pegar las 6 plantillas en el panel, este bloque).
+3. **Revisión legal humana del paso 3.3** (fuera del alcance de este asistente).
+4. **Opcional, señalado, no decidido:** reparar el salto de línea perdido entre D-136 y D-137 en `REGISTRO_DE_DECISIONES.md`.
+5. **3.2 — Contador** (DIAN, IVA) — 👤 pendiente del propietario.
+6. **3.4 — Supabase Pro** (~25 USD/mes) — 👤 pendiente del propietario.
