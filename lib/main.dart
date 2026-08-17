@@ -6,6 +6,7 @@ import 'models/branch_context.dart';
 import 'models/pending_invitation.dart';
 import 'models/tenant_subscription_status.dart';
 import 'services/branch_context_service.dart';
+import 'services/epayco_checkout_service.dart';
 import 'services/monitoreo_service.dart';
 import 'services/my_profile_service.dart';
 import 'services/team_invitations_service.dart';
@@ -847,12 +848,19 @@ class _TrialBanner extends StatefulWidget {
 
 class _TrialBannerState extends State<_TrialBanner> {
   final subscriptionService = const TenantSubscriptionService();
+  final epaycoService = const EpaycoCheckoutService();
   late Future<TenantSubscriptionStatus?> subscriptionFuture;
 
   @override
   void initState() {
     super.initState();
-    subscriptionFuture = subscriptionService.getMySubscription();
+    _recargarSuscripcion();
+  }
+
+  void _recargarSuscripcion() {
+    setState(() {
+      subscriptionFuture = subscriptionService.getMySubscription();
+    });
   }
 
   @override
@@ -866,59 +874,160 @@ class _TrialBannerState extends State<_TrialBanner> {
           return const SizedBox.shrink();
         }
 
-        final daysRemaining = subscription.trialDaysRemaining;
+        // 1. CASO PERIODO DE GRACIA (D-141: Días 1 al 5)
+        if (subscription.isGrace) {
+          final graceDays = subscription.graceDaysRemaining ?? 5;
+          final isUrgent = graceDays <= 2;
+          final backgroundColor = isUrgent ? AppColors.dangerTint : AppColors.warningTint;
+          final foregroundColor = isUrgent ? AppColors.danger : AppColors.warning;
 
-        if (daysRemaining == null || daysRemaining > 10) {
-          return const SizedBox.shrink();
+          final message =
+              'Tienes $graceDays ${graceDays == 1 ? "día" : "días"} de gracia para realizar tu pago y continuar disfrutando de tus servicios sin interrupción.';
+
+          return _buildBannerContainer(
+            backgroundColor: backgroundColor,
+            foregroundColor: foregroundColor,
+            icon: Icons.warning_amber_rounded,
+            message: message,
+            actionLabel: 'Pagar ahora',
+            onAction: () => epaycoService.iniciarPago(
+              context,
+              subscription,
+              onPaymentLaunched: _recargarSuscripcion,
+            ),
+          );
         }
 
-        final expired = daysRemaining < 0;
-        final urgent = !expired && daysRemaining <= 3;
+        // 2. CASO SUSPENDIDO O PRUEBA VENCIDA SIN GRACIA
+        if (subscription.isSuspended) {
+          return _buildBannerContainer(
+            backgroundColor: AppColors.dangerTint,
+            foregroundColor: AppColors.danger,
+            icon: Icons.error_outline,
+            message:
+                'Tu suscripción está suspendida por falta de pago. No se pueden crear reservas ni citas nuevas hasta reactivar tu plan.',
+            actionLabel: 'Reactivar ahora',
+            onAction: () => epaycoService.iniciarPago(
+              context,
+              subscription,
+              onPaymentLaunched: _recargarSuscripcion,
+            ),
+          );
+        }
 
-        final backgroundColor = expired
-            ? AppColors.dangerTint
-            : urgent
-            ? AppColors.warningTint
-            : AppColors.warningTint;
-        final foregroundColor = expired
-            ? AppColors.danger
-            : urgent
-            ? AppColors.warning
-            : AppColors.warning;
+        // 3. CASO PRUEBA GRATIS POR VENCER (<= 10 DÍAS)
+        if (subscription.isTrialing) {
+          final trialDays = subscription.trialDaysRemaining;
+          if (trialDays == null || trialDays > 10) {
+            return const SizedBox.shrink();
+          }
 
-        final message = expired
-            ? 'Tu prueba gratis venció. No se pueden crear reservas ni '
-                  'citas nuevas hasta reactivar tu plan.'
-            : daysRemaining == 0
-            ? 'Tu prueba gratis termina hoy.'
-            : 'Tu prueba gratis termina en $daysRemaining '
-                  '${daysRemaining == 1 ? "día" : "días"}.';
+          final expired = trialDays < 0;
+          final urgent = !expired && trialDays <= 3;
 
-        return Container(
-          width: double.infinity,
-          color: backgroundColor,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Row(
-            children: [
-              Icon(
-                expired ? Icons.error_outline : Icons.info_outline,
-                color: foregroundColor,
-                size: 20,
+          final backgroundColor = expired
+              ? AppColors.dangerTint
+              : urgent
+                  ? AppColors.warningTint
+                  : AppColors.warningTint;
+          final foregroundColor = expired
+              ? AppColors.danger
+              : urgent
+                  ? AppColors.warning
+                  : AppColors.warning;
+
+          final message = expired
+              ? 'Tu prueba gratis venció. Activa tu plan para no perder el acceso a la agenda.'
+              : trialDays == 0
+                  ? 'Tu prueba gratis termina hoy.'
+                  : 'Tu prueba gratis termina en $trialDays ${trialDays == 1 ? "día" : "días"}.';
+
+          return _buildBannerContainer(
+            backgroundColor: backgroundColor,
+            foregroundColor: foregroundColor,
+            icon: expired ? Icons.error_outline : Icons.info_outline,
+            message: message,
+            actionLabel: expired ? 'Pagar ahora' : 'Activar plan',
+            onAction: () => epaycoService.iniciarPago(
+              context,
+              subscription,
+              onPaymentLaunched: _recargarSuscripcion,
+            ),
+          );
+        }
+
+        // 4. CASO SUSCRIPCIÓN ACTIVA POR VENCER (<= 5 DÍAS)
+        if (subscription.isActive) {
+          final periodDays = subscription.periodDaysRemaining;
+          if (periodDays != null && periodDays <= 5 && periodDays >= 0) {
+            final urgent = periodDays <= 2;
+            final backgroundColor = urgent ? AppColors.warningTint : AppColors.brandSurface;
+            final foregroundColor = urgent ? AppColors.warning : AppColors.brand;
+
+            final message = periodDays == 0
+                ? 'Tu mensualidad de Salón y Más vence hoy.'
+                : 'Tu mensualidad de Salón y Más vence en $periodDays ${periodDays == 1 ? "día" : "días"}.';
+
+            return _buildBannerContainer(
+              backgroundColor: backgroundColor,
+              foregroundColor: foregroundColor,
+              icon: Icons.calendar_today_outlined,
+              message: message,
+              actionLabel: 'Renovar mensualidad',
+              onAction: () => epaycoService.iniciarPago(
+                context,
+                subscription,
+                onPaymentLaunched: _recargarSuscripcion,
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  message,
-                  style: TextStyle(
-                    color: foregroundColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
+            );
+          }
+        }
+
+        return const SizedBox.shrink();
       },
+    );
+  }
+
+  Widget _buildBannerContainer({
+    required Color backgroundColor,
+    required Color foregroundColor,
+    required IconData icon,
+    required String message,
+    required String actionLabel,
+    required VoidCallback onAction,
+  }) {
+    return Container(
+      width: double.infinity,
+      color: backgroundColor,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Icon(icon, color: foregroundColor, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: foregroundColor,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: foregroundColor,
+              foregroundColor: Colors.white,
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+            onPressed: onAction,
+            child: Text(actionLabel),
+          ),
+        ],
+      ),
     );
   }
 }

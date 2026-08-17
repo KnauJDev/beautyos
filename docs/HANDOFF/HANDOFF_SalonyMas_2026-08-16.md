@@ -90,22 +90,45 @@ El registro self-serve anterior permitía que cualquier persona que creara cuent
    - **Enrutamiento:** acceso sin sesión vía query param `?planes=1` / `?pricing=1` en `main.dart`, y enlaces directos en `LoginPage` y `RegisterPage`.
    - **Pruebas:** 2 pruebas unitarias añadidas en `test/public_plans_test.dart`. Total: **100 de 100 pruebas en verde**.
 
+7. **Pasarela de Pagos ePayco y Gestión de Suscripciones (Pasos 3.9 y 3.10 / Decisión D-141):**
+   - **`private.beautyos_procesar_evento_epayco(...)`:** función en base de datos ejecutable exclusivamente por `service_role` con bloqueo de fila `FOR UPDATE` e inserción en `subscription_events` con candado único `(provider, provider_event_id)` para garantizar idempotencia estricta. Transiciona a `active` por 1 mes al confirmar pago (reactivación automática). Si falla un cobro en negocio activo, pasa a `past_due` con 5 días de gracia (D-141).
+   - **`private.beautyos_tenant_accepts_new_commitments`:** verificador de compromisos actualizado para comprobar vigencia real de `current_period_end` y `grace_ends_at`.
+   - **Edge Function (`supabase/functions/epayco-webhook/index.ts`):** recibe POST de ePayco, valida firma SHA-256 en el servidor con llaves privadas (cero secretos en cliente) y ejecuta la RPC de activación.
+   - **`EpaycoCheckoutService` (`lib/services/epayco_checkout_service.dart`):** servicio en Flutter para orquestar el checkout de ePayco (PSE, Nequi, Tarjetas) con cálculo de precio efectivo (y descuento Pionero 50%).
+   - **`_TrialBanner` y `ConfiguracionPage`:** banner de alerta con cuenta regresiva día a día durante los 5 días de gracia ("Tienes X días de gracia para realizar tu pago...") y tarjeta dedicada de "Suscripción y Facturación" con botón de pago directo.
+   - **Pruebas:** 3 pruebas unitarias añadidas en `test/epayco_checkout_test.dart`. Total: **103 de 103 pruebas en verde**.
+
 ---
 
 ## 3. Estado técnico
 
-- **Pruebas:** 100 en 13 archivos · `flutter test` y `flutter analyze` 100% limpios
-- **Migraciones aplicadas en producción:**
+- **Pruebas:** 103 en 14 archivos · `flutter test` y `flutter analyze` 100% limpios
+- **Migraciones del bloque:**
   * `supabase/migrations/20260816100000_filtro_aceptacion_registro.sql` (Paso 3.7 / D-138)
   * `supabase/migrations/20260816170000_blindaje_rls_tenants_y_guards_aprobacion.sql` (Blindaje / D-139)
-- **Scripts de prueba SQL:** `168_test_filtro_aceptacion.sql`, `169_test_blindaje_rls_tenants.sql`
+  * `supabase/migrations/20260817100000_epayco_suscripciones_y_gracia.sql` (Pasos 3.9 y 3.10 / D-141)
+- **Edge Functions:** `send-invitation-email`, `send-low-stock-alert`, `epayco-webhook`
+- **Scripts de prueba SQL:** `168_test_filtro_aceptacion.sql`, `169_test_blindaje_rls_tenants.sql`, `170_test_epayco_transicion_y_gracia.sql`
 - **Proyectos Supabase:** `beautyos-dev` (producción) y `salonymas-ensayo`
 
 ---
 
-## 4. Lo siguiente según el Plan Maestro
+## 4. Instrucción para aplicar en base de datos (Propietario)
 
-1. **3.9 y 3.10 — Integración con Pasarela de Pago ePayco** (cobros, webhook seguro en el servidor y activación de suscripciones).
+1. **Respaldar la base de datos:**
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File scripts\respaldo_supabase.ps1
+   ```
+2. **Aplicar la migración SQL:**
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\migrations\20260817100000_epayco_suscripciones_y_gracia.sql"
+   ```
+
+---
+
+## 5. Lo siguiente según el Plan Maestro
+
+1. **3.11 — Avisos de vencimiento por correo** (10, 5 y 3 días antes de corte y durante los 5 días de gracia).
 2. **3.3 — Términos de Servicio y Política de Privacidad** (Ley 1581 / Habeas Data).
-3. **3.11 — Avisos de vencimiento por correo** (10, 5 y 3 días antes).
-4. **3.13 — Traducir plantillas de correo de Auth** (hallazgo W).
+3. **3.13 — Traducir plantillas de correo de Auth a español** (hallazgo W).
+4. **Fase 4 — Pulido módulo a módulo.**

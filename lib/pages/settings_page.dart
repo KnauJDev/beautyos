@@ -12,13 +12,16 @@ import '../models/business_settings.dart';
 import '../models/commission_policy.dart';
 import '../models/stylist_commission_override.dart';
 import '../models/stylist_management_item.dart';
+import '../models/tenant_subscription_status.dart';
 import '../services/appointment_policy_service.dart';
 import '../services/business_hours_service.dart';
 import '../services/business_settings_service.dart';
 import '../services/commission_policy_service.dart';
+import '../services/epayco_checkout_service.dart';
 import '../services/stylists_service.dart';
 import '../services/tenant_cover_upload_service.dart';
 import '../services/tenant_logo_upload_service.dart';
+import '../services/tenant_subscription_service.dart';
 import '../services/app_version_service.dart';
 import '../widgets/app_widgets.dart';
 import '../widgets/theme_selector_card.dart';
@@ -380,6 +383,11 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
             );
           },
         ),
+        if (widget.isOwner) ...[
+          const SizedBox(height: 24),
+          const SectionTitle('Suscripción y Facturación'),
+          const _SubscriptionSettingsCard(),
+        ],
         const SizedBox(height: 24),
         const SectionTitle('Soporte'),
         const _SupportCard(),
@@ -387,6 +395,245 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
         const SectionTitle('Versión'),
         const _VersionStamp(),
       ],
+    );
+  }
+}
+
+/// Tarjeta de gestión de suscripción y pagos con ePayco (D-141).
+class _SubscriptionSettingsCard extends StatefulWidget {
+  const _SubscriptionSettingsCard();
+
+  @override
+  State<_SubscriptionSettingsCard> createState() =>
+      _SubscriptionSettingsCardState();
+}
+
+class _SubscriptionSettingsCardState extends State<_SubscriptionSettingsCard> {
+  final _service = const TenantSubscriptionService();
+  final _epayco = const EpaycoCheckoutService();
+  late Future<TenantSubscriptionStatus?> _subscriptionFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _reload();
+  }
+
+  void _reload() {
+    setState(() {
+      _subscriptionFuture = _service.getMySubscription();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<TenantSubscriptionStatus?>(
+      future: _subscriptionFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Card(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          );
+        }
+
+        final sub = snapshot.data;
+        if (sub == null) {
+          return const InfoPanel(
+            icon: Icons.info_outline,
+            title: 'Sin información de suscripción',
+            description: 'No se pudo cargar el estado de tu suscripción.',
+          );
+        }
+
+        final planName = sub.planName ?? 'Profesional';
+        final priceText = sub.formattedPrice;
+        final isFounder = sub.isFounder;
+
+        return Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: sub.isGrace ? AppColors.warning : AppColors.border,
+              width: sub.isGrace ? 1.5 : 1,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.brandSurface,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.workspace_premium_outlined,
+                        color: AppColors.brand,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'Plan $planName',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: sub.isActive
+                                      ? AppColors.successTint
+                                      : sub.isGrace
+                                          ? AppColors.warningTint
+                                          : sub.isTrialing
+                                              ? AppColors.brandSurface
+                                              : AppColors.dangerTint,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  sub.statusLabel.toUpperCase(),
+                                  style: TextStyle(
+                                    color: sub.isActive
+                                        ? AppColors.success
+                                        : sub.isGrace
+                                            ? AppColors.warning
+                                            : sub.isTrialing
+                                                ? AppColors.brand
+                                                : AppColors.danger,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            priceText,
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: AppColors.brandDeep,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                if (isFounder) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.warningTint,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.warning),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.star_rounded, color: AppColors.warning, size: 20),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '★ Salón Pionero: Tienes 50% de descuento de por vida en tu plan.',
+                            style: TextStyle(
+                              color: AppColors.warning,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                const Divider(height: 1),
+                const SizedBox(height: 16),
+                if (sub.isGrace) ...[
+                  Text(
+                    '⚠️ Periodo de gracia: te quedan ${sub.graceDaysRemaining ?? 5} días para pagar antes de que el servicio sea suspendido.',
+                    style: const TextStyle(
+                      color: AppColors.warning,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ] else if (sub.isTrialing) ...[
+                  Text(
+                    'Prueba gratis activa: ${sub.trialDaysRemaining ?? 0} días restantes.',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ] else if (sub.isActive && sub.currentPeriodEnd != null) ...[
+                  Text(
+                    'Próxima fecha de renovación: ${sub.currentPeriodEnd!.day}/${sub.currentPeriodEnd!.month}/${sub.currentPeriodEnd!.year}',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.brand,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onPressed: () => _epayco.iniciarPago(
+                      context,
+                      sub,
+                      onPaymentLaunched: _reload,
+                    ),
+                    icon: const Icon(Icons.credit_card_outlined, size: 20),
+                    label: Text(
+                      sub.isActive
+                          ? 'Renovar suscripción con ePayco'
+                          : 'Pagar y Activar Plan con ePayco (PSE, Nequi, Tarjetas)',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
