@@ -55,17 +55,31 @@ Fase 4  Pulido módulo a módulo        🔄 4.1 ✅
   * `_TrialBanner` (`lib/main.dart`): adaptado con la cuenta regresiva día a día durante los 5 días de gracia ("Tienes X días de gracia para realizar tu pago y continuar disfrutando de tus servicios sin interrupción [Pagar ahora]") y avisos de renovación.
   * `settings_page.dart`: tarjeta destacada de "Suscripción y Facturación" para dueños con detalle de plan, precio efectivo (incluyendo insignia Pionero 50%), fecha de corte y botón de pago.
 
+### 2.3 Avisos de Vencimiento por Correo y Suspensión Automática (Paso 3.11 / D-143):
+- **Base de Datos (`20260817120000_alertas_vencimiento_suscripcion.sql`):**
+  * `public.subscription_notification_logs`: tabla anti-spam diaria con restricción única `(tenant_id, notification_type, reference_date)`.
+  * `private.beautyos_suspender_suscripciones_vencidas()`: suspende automáticamente negocios que agotaron sus 5 días de gracia (`grace_ends_at < now()`).
+  * `private.beautyos_obtener_alertas_suscripcion_pendientes()`: detecta salones en prueba por vencer (10, 5, 3, 1 días), mensualidades activas por vencer (5, 3, 1 días), cuenta regresiva diaria durante los 5 días de gracia (días 1 al 5) y cuentas recién suspendidas.
+  * `private.beautyos_registrar_alerta_enviada(...)`: registra envíos exitosos para idempotencia.
+- **Servidor (Edge Function `supabase/functions/send-subscription-expiry-alerts/index.ts`):**
+  * Ejecuta la suspensión automática de cuentas vencidas.
+  * Genera plantillas HTML responsivas y dinámicas con enlaces de pago y WhatsApp de soporte.
+  * Envía los correos a través de Resend (`hola@salonymas.com`) y registra cada envío.
+- **Frontend y Pruebas:**
+  * Pruebas unitarias en `test/subscription_alerts_test.dart`. Total: **106 de 106 pruebas en verde**.
+
 ---
 
 ## 3. Estado técnico
 
-- **Pruebas:** 104 pruebas unitarias automáticas en 14 archivos · `flutter test` y `flutter analyze` 100% limpios
+- **Pruebas:** 106 pruebas unitarias automáticas en 15 archivos · `flutter test` y `flutter analyze` 100% limpios
 - **Migraciones aplicadas / listas para producción:**
   * `supabase/migrations/20260816100000_filtro_aceptacion_registro.sql` (Paso 3.7 / D-138)
   * `supabase/migrations/20260816170000_blindaje_rls_tenants_y_guards_aprobacion.sql` (Blindaje / D-139)
-  * `supabase/migrations/20260817100000_epayco_suscripciones_y_gracia.sql` (Pasos 3.9 y 3.10 / D-141)
-- **Edge Functions:** `send-invitation-email`, `send-low-stock-alert`, `epayco-webhook`
-- **Scripts de prueba SQL:** `168_test_filtro_aceptacion.sql`, `169_test_blindaje_rls_tenants.sql`, `170_test_epayco_transicion_y_gracia.sql`
+  * `supabase/migrations/20260817100000_epayco_suscripciones_y_gracia.sql` (Pasos 3.9 y 3.10 / D-141 y D-142)
+  * `supabase/migrations/20260817120000_alertas_vencimiento_suscripcion.sql` (Paso 3.11 / D-143)
+- **Edge Functions:** `send-invitation-email`, `send-low-stock-alert`, `epayco-webhook`, `send-subscription-expiry-alerts`
+- **Scripts de prueba SQL:** `168_test_filtro_aceptacion.sql`, `169_test_blindaje_rls_tenants.sql`, `170_test_epayco_transicion_y_gracia.sql`, `171_test_alertas_suscripcion_y_suspension.sql`
 - **Proyectos Supabase:** `beautyos-dev` (producción) y `salonymas-ensayo`
 
 ---
@@ -76,16 +90,16 @@ Fase 4  Pulido módulo a módulo        🔄 4.1 ✅
    ```powershell
    powershell -ExecutionPolicy Bypass -File scripts\respaldo_supabase.ps1
    ```
-2. **Aplicar la migración SQL:**
+2. **Aplicar la migración SQL de alertas:**
    ```powershell
-   powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\migrations\20260817100000_epayco_suscripciones_y_gracia.sql"
+   powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\migrations\20260817120000_alertas_vencimiento_suscripcion.sql"
    ```
 
 ---
 
 ## 5. Lo siguiente según el Plan Maestro
 
-1. **3.11 — Avisos de vencimiento por correo** (10, 5 y 3 días antes de corte y recordatorios en los 5 días de gracia).
-2. **3.3 — Términos de Servicio y Política de Privacidad** (Ley 1581 / Habeas Data).
-3. **3.13 — Traducir plantillas de correo de Auth a español** (hallazgo W).
+1. **3.3 — Términos de Servicio y Política de Privacidad** (Ley 1581 / Habeas Data).
+2. **3.13 — Traducir plantillas de correo de Auth a español** (hallazgo W).
+3. **3.2 / 3.4 — Contador (DIAN/IVA) y Supabase Pro (~25 USD/mes)**.
 4. **Fase 4 — Pulido módulo a módulo.**
