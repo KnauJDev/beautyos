@@ -1,7 +1,7 @@
 # HANDOFF Salón y Más — 17 de agosto de 2026
 
-**Bloque documentado:** decisiones **D-140** y **D-141** · Pasos 3.8, 3.9 y 3.10 cerrados y blindados
-**Estado:** 104 pruebas unitarias en verde (`flutter test`), `flutter analyze` 100% limpio (0 errores, 0 advertencias), Edge Function `epayco-webhook` con firma SHA-256 obligatoria (Fail-Closed) e idempotencia en base de datos.
+**Bloque documentado:** decisiones **D-140**, **D-141** y **D-142** · Pasos 3.8, 3.9 y 3.10 cerrados y blindados tras auditoría agéntica con Claude Code
+**Estado:** 104 pruebas unitarias en verde (`flutter test`), `flutter analyze` 100% limpio (0 errores, 0 advertencias), Edge Function `epayco-webhook` con firma SHA-256 obligatoria (Fail-Closed), guard de estado D-125/D-138 e idempotencia en base de datos.
 **Reemplaza como handoff vigente a:** `HANDOFF_SalonyMas_2026-08-16.md` (archivado en `docs/_archivo/handoffs/`)
 
 ---
