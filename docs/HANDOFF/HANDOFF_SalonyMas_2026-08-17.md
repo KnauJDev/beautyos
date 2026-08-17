@@ -1,7 +1,7 @@
 # HANDOFF Salón y Más — 17 de agosto de 2026 (bloque D-147)
 
 **Bloque documentado:** decisión **D-147** · Paso 4.2: Funciones RPC del Tablero de Agenda (`get_ticket_board_counts_v2` y `get_ticket_board_list_v2`)
-**Estado:** Migración SQL y script de control 173 (5 pruebas aisladas en verde) escritos y listos para aplicar. 113 de 113 pruebas Flutter en verde, `flutter analyze` 100% limpio (0 errores, 0 advertencias).
+**Estado:** Migración SQL `20260817170000_tablero_agenda_conteos_y_lista.sql` aplicada con éxito en `beautyos-dev` y verificada con el Control 173 (5 de 5 pruebas en verde en rollback). 113 de 113 pruebas Flutter en verde, `flutter analyze` 100% limpio (0 errores, 0 advertencias).
 **Reemplaza como handoff vigente a:** la versión anterior de este mismo archivo (bloque D-146, archivada en `docs/_archivo/handoffs/HANDOFF_SalonyMas_2026-08-17_D146.md`)
 
 ---
@@ -28,7 +28,7 @@ Fase 3  Poder cobrar                  ✅ CERRADA A NIVEL TÉCNICO (17-ago)
         3.4  Supabase Pro (~25 USD/mes)   ⬜ 👤
 Fase 4  Pulido módulo a módulo        🔄  ← AQUÍ
         4.1  Consecutivo de ticket        ✅ CERRADO (09-ago / D-117)
-        4.2  Funciones del tablero agenda ✅ CERRADO (17-ago / D-147) — falta aplicar migración
+        4.2  Funciones del tablero agenda ✅ CERRADO Y APLICADO EN BD (17-ago / D-147)
         4.3  Tablero Flutter (Día/Sem/Mes)⬜ Siguiente paso
 ```
 
