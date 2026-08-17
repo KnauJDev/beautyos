@@ -125,7 +125,10 @@ contador aparte, fuera de la cuadrícula: *"2 canceladas · 1 no asistió"*.
 
 ## 3. Vista DÍA — *"¿qué me falta hoy?"*
 
-**Filas:** las horas de atención del negocio (por ejemplo 8:00 a 20:00).
+> ⚠️ **Enmienda del 17-ago (D-147): granularidad de 15 minutos en vista Día.**
+> Aunque el boceto original agrupaba por horas completas (8:00 a 20:00), el servidor y la interfaz admiten granularidad de 15 minutos (`'15min'`) por defecto para registrar servicios rápidos (cejas, barba, express) y slots de atención precisos sin perder la visión agregada.
+
+**Filas:** las horas y cuartos de hora de atención del negocio (por ejemplo 8:00 a 20:00 en tramos de 15 min).
 **Selector:** por defecto hoy, con opción de elegir otro día.
 
 | Columna | Agrupa los estados | Qué te dice |

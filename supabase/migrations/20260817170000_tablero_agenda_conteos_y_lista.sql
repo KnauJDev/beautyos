@@ -7,8 +7,8 @@
 --   Nivel 2: Lista ampliada de tickets al tocar cualquier casilla del tablero.
 --   Nivel 3: Detalle del ticket y acciones operativas.
 --
--- Ambas funciones operan en zona horaria colombiana (America/Bogota) y validan
--- acceso de sede mediante private.beautyos_resolve_branch_access (D-095/D-131).
+-- Ambas funciones operan según la zona horaria de la sede (coalesce 'America/Bogota')
+-- y validan acceso mediante private.beautyos_resolve_branch_access (D-095/D-131).
 -- ==============================================================================
 
 -- 1. get_ticket_board_counts_v2: Conteo y saldos agregados para el Tablero (Nivel 1)
@@ -31,11 +31,11 @@ set search_path = pg_catalog
 as $$
 declare
   v_tenant_id uuid;
-  v_timezone text := 'America/Bogota';
+  v_timezone text;
 begin
-  -- 1. Validar permisos de sede (tenant_owner, admin, assistant)
-  select r.tenant_id
-    into v_tenant_id
+  -- 1. Validar permisos de sede y obtener zona horaria configurada
+  select r.tenant_id, coalesce(r.timezone, 'America/Bogota')
+    into v_tenant_id, v_timezone
   from private.beautyos_resolve_branch_access(
     p_branch_id,
     array['tenant_owner', 'admin', 'assistant'],
@@ -146,11 +146,11 @@ set search_path = pg_catalog
 as $$
 declare
   v_tenant_id uuid;
-  v_timezone text := 'America/Bogota';
+  v_timezone text;
 begin
-  -- 1. Validar permisos de sede (tenant_owner, admin, assistant)
-  select r.tenant_id
-    into v_tenant_id
+  -- 1. Validar permisos de sede y obtener zona horaria configurada
+  select r.tenant_id, coalesce(r.timezone, 'America/Bogota')
+    into v_tenant_id, v_timezone
   from private.beautyos_resolve_branch_access(
     p_branch_id,
     array['tenant_owner', 'admin', 'assistant'],
@@ -160,6 +160,14 @@ begin
   -- 2. Validar parámetros
   if p_start_date is null or p_end_date is null or p_start_date > p_end_date then
     raise exception 'Rango de fechas invalido.';
+  end if;
+
+  if p_granularity is not null and p_granularity not in ('15min', '30min', 'hour', 'day') then
+    raise exception 'Granularidad invalida. Valores permitidos: 15min, 30min, hour, day.';
+  end if;
+
+  if p_bucket is not null and p_bucket <> '' and p_granularity is null then
+    raise exception 'Debe especificar p_granularity cuando filtra por p_bucket.';
   end if;
 
   return query

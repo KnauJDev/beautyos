@@ -243,9 +243,27 @@ begin
 
   begin
     perform public.get_ticket_board_counts_v2(v_branch_id, v_test_date, v_test_date, 'invalido');
-    raise exception 'Fallo Prueba 5: debio fallar con granularidad desconocida.';
+    raise exception 'Fallo Prueba 5: debio fallar con granularidad desconocida en get_ticket_board_counts_v2.';
   exception when others then
     if sqlerrm not like '%Granularidad invalida%' then
+      raise exception 'Fallo Prueba 5: mensaje de error inesperado: %', sqlerrm;
+    end if;
+  end;
+
+  begin
+    perform public.get_ticket_board_list_v2(v_branch_id, v_test_date, v_test_date, null, '08:15', 'invalido');
+    raise exception 'Fallo Prueba 5: debio fallar con granularidad desconocida en get_ticket_board_list_v2.';
+  exception when others then
+    if sqlerrm not like '%Granularidad invalida%' then
+      raise exception 'Fallo Prueba 5: mensaje de error inesperado: %', sqlerrm;
+    end if;
+  end;
+
+  begin
+    perform public.get_ticket_board_list_v2(v_branch_id, v_test_date, v_test_date, null, '08:15', null);
+    raise exception 'Fallo Prueba 5: debio fallar con bucket sin granularidad en get_ticket_board_list_v2.';
+  exception when others then
+    if sqlerrm not like '%Debe especificar p_granularity%' then
       raise exception 'Fallo Prueba 5: mensaje de error inesperado: %', sqlerrm;
     end if;
   end;
