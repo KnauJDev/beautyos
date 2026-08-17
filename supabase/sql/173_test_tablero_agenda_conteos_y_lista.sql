@@ -65,6 +65,9 @@ begin
   values (v_tenant_id, 'Valentina Estilista', true)
   returning id into v_stylist_id;
 
+  insert into public.branch_stylists (tenant_id, branch_id, stylist_id, active)
+  values (v_tenant_id, v_branch_id, v_stylist_id, true);
+
   insert into public.services (tenant_id, name, price, duration_minutes, active)
   values (v_tenant_id, 'Corte Dama', 45000, 45, true)
   returning id into v_service_1_id;
@@ -72,6 +75,11 @@ begin
   insert into public.services (tenant_id, name, price, duration_minutes, active)
   values (v_tenant_id, 'Cepillado y Secado', 35000, 30, true)
   returning id into v_service_2_id;
+
+  insert into public.branch_services (tenant_id, branch_id, service_id, price, duration_minutes, active)
+  values
+    (v_tenant_id, v_branch_id, v_service_1_id, 45000, 45, true),
+    (v_tenant_id, v_branch_id, v_service_2_id, 35000, 30, true);
 
   -- Crear 4 tickets en distintas horas y estados en la fecha de prueba (2026-08-20)
   -- Nota: en America/Bogota (UTC-5), 08:15 es 13:15 UTC.
@@ -203,10 +211,8 @@ begin
   raise notice '✅ Prueba 3 superada: lista de Nivel 2 devuelve consecutivo, cliente, telefono, servicios y saldos exactos.';
 
   -- ============================================================================
-  -- PRUEBA 4: Aislamiento por sede (Sede Otra sin membresia o sin tickets no debe ver Sede Principal)
+  -- PRUEBA 4: Aislamiento por sede (Sede Otra sin tickets no debe ver los de Sede Principal)
   -- ============================================================================
-  -- Nota: el usuario es owner de v_tenant_id, por lo que tiene acceso a v_other_branch_id,
-  -- pero en v_other_branch_id no hay tickets creados, por lo que el conteo debe dar 0.
   select count(*) > 0 into v_found
   from public.get_ticket_board_counts_v2(v_other_branch_id, v_test_date, v_test_date, '15min');
 
