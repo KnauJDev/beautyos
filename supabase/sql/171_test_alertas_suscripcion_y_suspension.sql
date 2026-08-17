@@ -127,7 +127,16 @@ begin
     raise exception 'Fallo Prueba 4: el estado de la suscripcion debio ser suspended, pero es: %', v_alert.subscription_status;
   end if;
 
-  raise notice '✅ Prueba 4 superada: suspension automatica ejecutada al agotar los 5 dias de gracia.';
+  -- Comprobar auditoria en subscription_events
+  if not exists (
+    select 1 from public.subscription_events
+    where tenant_id = v_tenant_id
+      and event_type = 'auto_suspended_grace_expired'
+  ) then
+    raise exception 'Fallo Prueba 4: no se registro el evento auto_suspended_grace_expired en subscription_events.';
+  end if;
+
+  raise notice '✅ Prueba 4 superada: suspension automatica ejecutada y auditada en subscription_events.';
 
   raise notice '==================================================';
   raise notice 'TODAS LAS PRUEBAS DEL CONTROL 171 EN VERDE!';

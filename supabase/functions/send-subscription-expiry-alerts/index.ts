@@ -1,22 +1,24 @@
 // BeautyOS - Automatizacion de Alertas de Vencimiento de Suscripcion y Gracia (Paso 3.11 / D-143)
 //
-// 1. Ejecuta la suspension automatica de salones con gracia vencida (beautyos_suspender_suscripciones_vencidas).
-// 2. Consulta los salones con notificaciones pendientes (10, 5, 3 dias antes de corte y dias 1 al 5 de gracia).
-// 3. Genera correos en formato HTML responsivo en espanol con enlace directo de pago y contacto WhatsApp.
-// 4. Envia los correos a traves de Resend (hola@salonymas.com) y registra cada envio para evitar repeticiones.
+// 1. Control de Acceso: exige x-cron-secret o Bearer token contra CRON_SECRET (Fail-Closed).
+// 2. Ejecuta la suspension automatica de salones con gracia vencida (beautyos_suspender_suscripciones_vencidas).
+// 3. Consulta los salones con notificaciones pendientes (10, 5, 3 dias antes de corte y dias 1 al 5 de gracia).
+// 4. Genera correos en formato HTML responsivo en espanol con escape de caracteres, enlace directo de pago y WhatsApp.
+// 5. Envia los correos a traves de Resend (hola@salonymas.com) y registra cada envio en logs anti-spam.
 
 import { createClient } from "@supabase/supabase-js";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const CRON_SECRET = Deno.env.get("CRON_SECRET") ?? Deno.env.get("SUBSCRIPTION_CRON_SECRET") ?? "";
 const APP_URL = Deno.env.get("APP_URL") ?? "https://salonymas.com";
 const WHATSAPP_SUPPORT_URL = "https://wa.me/573159780158?text=Hola%20equipo%20de%20Salon%20y%20Mas,%20necesito%20ayuda%20con%20mi%20suscripcion";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 function responder(cuerpo: unknown, status: number) {
@@ -26,20 +28,33 @@ function responder(cuerpo: unknown, status: number) {
   });
 }
 
+function escapeHtml(str: string): string {
+  return (str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function formatearPesosCop(valor?: number | null): string {
   if (!valor || valor === 0) return "Tarifa según plan";
   return "$" + valor.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + " COP / mes";
 }
 
 function generarContenidoCorreo(alerta: Record<string, any>) {
-  const nombreDuenio = alerta.owner_name || "Propietario(a)";
-  const nombreSalon = alerta.tenant_name || "Tu Negocio";
-  const plan = alerta.plan_name || "Profesional";
+  const rawNombreDuenio = alerta.owner_name || "Propietario(a)";
+  const rawNombreSalon = alerta.tenant_name || "Tu Negocio";
+  const rawPlan = alerta.plan_name || "Profesional";
+
+  const nombreDuenio = escapeHtml(rawNombreDuenio);
+  const nombreSalon = escapeHtml(rawNombreSalon);
+  const plan = escapeHtml(rawPlan);
   const precio = formatearPesosCop(alerta.price_cop);
   const tipo = alerta.notification_type || "";
   const dias = alerta.days_remaining ?? 0;
 
-  let asunto = `Aviso sobre tu cuenta en Salón y Más (${nombreSalon})`;
+  let asunto = `Aviso sobre tu cuenta en Salón y Más (${rawNombreSalon})`;
   let encabezado = "Estado de tu suscripción";
   let mensajePrincipal = "";
   let colorBadge = "#6366f1"; // Indigo
@@ -48,33 +63,33 @@ function generarContenidoCorreo(alerta: Record<string, any>) {
   if (tipo.startsWith("trial_")) {
     encabezado = "Tu prueba gratis está por terminar";
     if (dias > 1) {
-      asunto = `Tu prueba gratis de Salón y Más vence en ${dias} días — ${nombreSalon}`;
+      asunto = `Tu prueba gratis de Salón y Más vence en ${dias} días — ${rawNombreSalon}`;
       mensajePrincipal = `Te quedan <strong>${dias} días</strong> de tu periodo de prueba gratis. Para continuar disfrutando de tu agenda, reservas de clientes y reportes sin interrupción, te invitamos a activar tu suscripción.`;
     } else {
-      asunto = `🚨 Tu prueba gratis de Salón y Más termina pronto — ${nombreSalon}`;
+      asunto = `🚨 Tu prueba gratis de Salón y Más termina pronto — ${rawNombreSalon}`;
       mensajePrincipal = `Tu periodo de prueba gratis finaliza hoy o en las próximas horas. ¡Activa tu suscripción para mantener la agenda abierta a tus clientes!`;
       colorBadge = "#e11d48";
     }
   } else if (tipo.startsWith("period_")) {
     encabezado = "Próxima renovación de mensualidad";
     if (dias > 1) {
-      asunto = `Tu suscripción a Salón y Más vence en ${dias} días — ${nombreSalon}`;
+      asunto = `Tu suscripción a Salón y Más vence en ${dias} días — ${rawNombreSalon}`;
       mensajePrincipal = `Te recordamos que tu mensualidad del <strong>Plan ${plan}</strong> vence en <strong>${dias} días</strong>. Realiza tu pago con tiempo para mantener tus servicios al día.`;
     } else {
-      asunto = `Tu mensualidad de Salón y Más vence hoy — ${nombreSalon}`;
+      asunto = `Tu mensualidad de Salón y Más vence hoy — ${rawNombreSalon}`;
       mensajePrincipal = `Hoy vence tu periodo de suscripción mensual del <strong>Plan ${plan}</strong>. Realiza tu pago para evitar que tu servicio entre en periodo de mora.`;
       colorBadge = "#f59e0b";
     }
   } else if (tipo.startsWith("grace_day_")) {
     encabezado = `Periodo de Gracia: Te quedan ${dias} ${dias === 1 ? "día" : "días"}`;
     colorBadge = dias <= 2 ? "#e11d48" : "#f59e0b";
-    asunto = `⚠️ Tienes ${dias} ${dias === 1 ? "día" : "días"} de gracia para realizar tu pago — ${nombreSalon}`;
+    asunto = `⚠️ Tienes ${dias} ${dias === 1 ? "día" : "días"} de gracia para realizar tu pago — ${rawNombreSalon}`;
     mensajePrincipal = `Tienes <strong>${dias} ${dias === 1 ? "día" : "días"} de gracia</strong> para realizar tu pago y continuar disfrutando de tus servicios sin interrupción ni bloqueo de citas.`;
     textoBoton = "Pagar Ahora por PSE / Tarjeta";
   } else if (tipo === "suspended") {
     encabezado = "Suscripción Pausada";
     colorBadge = "#e11d48";
-    asunto = `Tu suscripción a Salón y Más ha sido pausada — ${nombreSalon}`;
+    asunto = `Tu suscripción a Salón y Más ha sido pausada — ${rawNombreSalon}`;
     mensajePrincipal = `Tu periodo de gracia ha finalizado y tu servicio ha sido pausado temporalmente. No podrás agendar nuevas citas ni recibir reservas públicas hasta reactivar tu plan. Tan pronto realices el pago, tu cuenta se reactivará automáticamente.`;
     textoBoton = "Reactivar Mi Cuenta Ahora";
   }
@@ -148,6 +163,28 @@ Deno.serve(async (req) => {
 
   let paso = "inicio";
   try {
+    if (req.method !== "POST") {
+      return responder({ error: "Metodo no permitido. Solo se aceptan solicitudes POST." }, 405);
+    }
+
+    paso = "validar secreto de ejecucion (control de acceso)";
+    // BLINDAJE FAIL-CLOSED: Si CRON_SECRET no esta configurada o el header no coincide, rechaza
+    const headerSecret = req.headers.get("x-cron-secret") ?? "";
+    const authHeader = req.headers.get("authorization") ?? "";
+    const bearerToken = authHeader.startsWith("Bearer ") ? authHeader.substring(7) : "";
+
+    const secretProvided = headerSecret || bearerToken;
+
+    if (!CRON_SECRET) {
+      console.error("CRITICO: Falta configurar CRON_SECRET en las variables de entorno de Supabase.");
+      return responder({ error: "Configuracion de seguridad de ejecucion incompleta en el servidor." }, 500);
+    }
+
+    if (secretProvided !== CRON_SECRET) {
+      console.warn("ALERTA DE SEGURIDAD: Intento de invocacion no autorizada sin secreto valido.");
+      return responder({ error: "No autorizado. Se requiere un secreto valido de cron." }, 401);
+    }
+
     paso = "revisar configuracion";
     if (!RESEND_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       console.error("Configuracion incompleta en variables de entorno (RESEND_API_KEY o SUPABASE)");
