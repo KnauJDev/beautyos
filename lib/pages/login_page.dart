@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 
 import 'public_plans_page.dart';
 import 'register_page.dart';
+import 'terms_and_privacy_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({
@@ -250,6 +251,38 @@ class _LoginPageState extends State<LoginPage> {
                         foregroundColor: AppColors.textSecondary,
                         textStyle: const TextStyle(fontSize: 13),
                       ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  const TermsAndPrivacyPage(initialTab: 0),
+                            ),
+                          ),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.textMuted,
+                            textStyle: const TextStyle(fontSize: 11),
+                          ),
+                          child: const Text('Términos de Servicio'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  const TermsAndPrivacyPage(initialTab: 1),
+                            ),
+                          ),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.textMuted,
+                            textStyle: const TextStyle(fontSize: 11),
+                          ),
+                          child: const Text('Política de Privacidad'),
+                        ),
+                      ],
                     ),
                   ],
                 ),

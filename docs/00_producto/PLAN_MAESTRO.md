@@ -194,7 +194,7 @@ Tope antiabuso en la reserva pública, rol Asistente con sus pantallas, 2FA.
 |---|---|---|---|
 | 3.1 | Confirmar con ePayco si admite **cobros recurrentes** | 👤 | ✅ **CONFIRMADO 09-ago: la cuenta sí admite cobros recurrentes.** Era el mayor riesgo de esta fase y quedó descartado |
 | 3.2 | Consultar a un contador las obligaciones al facturar (DIAN, IVA) | 👤 | ⬜ |
-| 3.3 | Términos de servicio y política de privacidad (Ley 1581) | 👥 | ⬜ **Obligatorio: se manejan datos de terceros** |
+| 3.3 | Términos de servicio y política de privacidad (Ley 1581) | 👥 | 🔄 **Contenido técnico construido 17-ago (D-144).** `TermsAndPrivacyPage`, enrutamiento público, checkbox obligatorio en registro, 113/113 pruebas. **Falta la mitad no técnica:** revisión de un abogado colombiano antes de tratarlo como vinculante |
 | 3.4 | Subir Supabase a plan Pro (~25 USD/mes) | 👤 | ⬜ |
 | 3.5 | Cargar los 3 planes con precios de lista y límites | 🤖 | ✅ **CERRADO 12-ago (D-136).** Precios en **pesos** (160/200/240 mil), columna renombrada a `price_cop`, y **se crearon "sedes" y "cuentas de equipo"**, que no existían como capacidad — sin ellas no se podía ni escribir *"3 sedes pero 25 cuentas"*. **Y se hacen cumplir**: antes `create_branch` no tenía ni una comprobación |
 | 3.6 | **Precio y descuento por cliente** en la suscripción (columnas nuevas) | 🤖 | ✅ **CERRADO 12-ago (D-136).** Precio propio **o** descuento con fecha de fin, motivo obligatorio, y marca de pionero. **El pionero es un descuento sin fecha de fin**: 50% mientras siga activo. La regla de cuánto paga vive en `beautyos_precio_efectivo`, un solo sitio |

@@ -7,6 +7,7 @@ import '../services/public_plans_service.dart';
 import '../theme/app_theme.dart';
 import 'login_page.dart';
 import 'register_page.dart';
+import 'terms_and_privacy_page.dart';
 
 /// Pantalla pública de Planes y Precios de Salón y Más.
 /// Accesible sin autenticación (ej. desde salonymas.com/?planes=1 o desde el login).
@@ -856,6 +857,36 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
             'Salón y Más © 2026 · Software de gestión para centros de estética, barberías y spas en Colombia.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            alignment: WrapAlignment.center,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const TermsAndPrivacyPage(initialTab: 0),
+                  ),
+                ),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.textMuted,
+                  textStyle: const TextStyle(fontSize: 11),
+                ),
+                child: const Text('Términos de Servicio'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const TermsAndPrivacyPage(initialTab: 1),
+                  ),
+                ),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.textMuted,
+                  textStyle: const TextStyle(fontSize: 11),
+                ),
+                child: const Text('Política de Privacidad'),
+              ),
+            ],
           ),
         ],
       ),

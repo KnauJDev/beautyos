@@ -20,6 +20,7 @@ import 'pages/public_booking_page.dart';
 import 'pages/public_plans_page.dart';
 import 'pages/public_review_page.dart';
 import 'pages/tenant_approval_status_page.dart';
+import 'pages/terms_and_privacy_page.dart';
 import 'pages/agenda_page.dart';
 import 'pages/clients_page.dart';
 import 'pages/dashboard_page.dart';
@@ -73,6 +74,13 @@ class BeautyOSApp extends StatelessWidget {
     // Planes publicos (Paso 3.8 / D-140): enlace sin sesion, ej. "?planes=1".
     final isPublicPlans = Uri.base.queryParameters.containsKey('planes') ||
         Uri.base.queryParameters.containsKey('pricing');
+    // Terminos y Privacidad (Paso 3.3): enlace sin sesion, ej. "?terminos=1"
+    // o "?privacidad=1". Cada uno abre directo en su pestana.
+    final isPublicTerms = Uri.base.queryParameters.containsKey('terminos') ||
+        Uri.base.queryParameters.containsKey('terms');
+    final isPublicPrivacy =
+        Uri.base.queryParameters.containsKey('privacidad') ||
+            Uri.base.queryParameters.containsKey('privacy');
 
     // Un solo sitio decide el aspecto de toda la aplicacion (D-102). El tema
     // del negocio no se conoce al arrancar -- llega con los datos de la sede o
@@ -95,6 +103,10 @@ class BeautyOSApp extends StatelessWidget {
           home = PublicReviewPage(ticketId: publicReviewTicketId.trim());
         } else if (isPublicPlans) {
           home = const PublicPlansPage();
+        } else if (isPublicTerms) {
+          home = const TermsAndPrivacyPage(initialTab: 0);
+        } else if (isPublicPrivacy) {
+          home = const TermsAndPrivacyPage(initialTab: 1);
         } else {
           home = const AuthGate(
             authenticatedChild: AuthenticatedRouter(

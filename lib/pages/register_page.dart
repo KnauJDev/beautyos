@@ -1,8 +1,10 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../theme/app_theme.dart';
 import 'public_plans_page.dart';
+import 'terms_and_privacy_page.dart';
 
 /// Crea únicamente el acceso (correo/contraseña) en Supabase Auth. Los
 /// datos del negocio se piden aparte, en CompleteTenantSetupPage, una vez
@@ -28,13 +30,21 @@ class _RegisterPageState extends State<RegisterPage> {
   final passwordController = TextEditingController();
 
   bool isLoading = false;
+  bool acceptedTerms = false;
   String? errorMessage;
   String? confirmationMessage;
+
+  late final _termsTapRecognizer = TapGestureRecognizer()
+    ..onTap = () => _openLegal(context, 0);
+  late final _privacyTapRecognizer = TapGestureRecognizer()
+    ..onTap = () => _openLegal(context, 1);
 
   @override
   void dispose() {
     emailController.dispose();
     passwordController.dispose();
+    _termsTapRecognizer.dispose();
+    _privacyTapRecognizer.dispose();
     super.dispose();
   }
 
@@ -52,6 +62,15 @@ class _RegisterPageState extends State<RegisterPage> {
     if (password.length < 8) {
       setState(() {
         errorMessage = 'La contraseña debe tener al menos 8 caracteres.';
+      });
+      return;
+    }
+
+    if (!acceptedTerms) {
+      setState(() {
+        errorMessage =
+            'Debes aceptar los Términos de Servicio y la Política de '
+            'Privacidad para continuar.';
       });
       return;
     }
@@ -97,6 +116,14 @@ class _RegisterPageState extends State<RegisterPage> {
         });
       }
     }
+  }
+
+  void _openLegal(BuildContext context, int initialTab) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => TermsAndPrivacyPage(initialTab: initialTab),
+      ),
+    );
   }
 
   @override
@@ -202,8 +229,58 @@ class _RegisterPageState extends State<RegisterPage> {
                           ],
                         ),
                       ),
+                      const SizedBox(height: 16),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Checkbox(
+                            value: acceptedTerms,
+                            onChanged: isLoading
+                                ? null
+                                : (value) {
+                                    setState(() {
+                                      acceptedTerms = value ?? false;
+                                    });
+                                  },
+                          ),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 12),
+                              child: Text.rich(
+                                TextSpan(
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  children: [
+                                    const TextSpan(text: 'Acepto los '),
+                                    TextSpan(
+                                      text: 'Términos de Servicio',
+                                      style: TextStyle(
+                                        color: AppColors.brand,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                      recognizer: _termsTapRecognizer,
+                                    ),
+                                    const TextSpan(text: ' y la '),
+                                    TextSpan(
+                                      text: 'Política de Privacidad',
+                                      style: TextStyle(
+                                        color: AppColors.brand,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                      recognizer: _privacyTapRecognizer,
+                                    ),
+                                    const TextSpan(text: '.'),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                       if (errorMessage != null) ...[
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         Text(
                           errorMessage!,
                           textAlign: TextAlign.center,
