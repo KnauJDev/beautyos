@@ -1,9 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../theme/app_theme.dart';
 
+import 'public_plans_page.dart';
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -229,6 +230,26 @@ class _LoginPageState extends State<LoginPage> {
                               }
                             },
                       child: const Text('¿No tienes cuenta? Crea tu negocio'),
+                    ),
+                    const SizedBox(height: 4),
+                    TextButton.icon(
+                      onPressed: isLoading
+                          ? null
+                          : () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => PublicPlansPage(
+                                    onLoginSuccess: widget.onLoginSuccess,
+                                  ),
+                                ),
+                              );
+                            },
+                      icon: const Icon(Icons.sell_outlined, size: 16),
+                      label: const Text('Ver planes y precios'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.textSecondary,
+                        textStyle: const TextStyle(fontSize: 13),
+                      ),
                     ),
                   ],
                 ),

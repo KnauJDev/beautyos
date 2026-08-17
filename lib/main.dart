@@ -16,6 +16,7 @@ import 'pages/auth_gate.dart';
 import 'pages/authenticated_router.dart';
 import 'pages/complete_tenant_setup_page.dart';
 import 'pages/public_booking_page.dart';
+import 'pages/public_plans_page.dart';
 import 'pages/public_review_page.dart';
 import 'pages/tenant_approval_status_page.dart';
 import 'pages/agenda_page.dart';
@@ -68,6 +69,9 @@ class BeautyOSApp extends StatelessWidget {
     // Resena publica (D-058): enlace sin sesion, ej. "?resena=<ticket_id>".
     // Mismo motivo: un cliente anonimo nunca debe pasar por login.
     final publicReviewTicketId = Uri.base.queryParameters['resena'];
+    // Planes publicos (Paso 3.8 / D-140): enlace sin sesion, ej. "?planes=1".
+    final isPublicPlans = Uri.base.queryParameters.containsKey('planes') ||
+        Uri.base.queryParameters.containsKey('pricing');
 
     // Un solo sitio decide el aspecto de toda la aplicacion (D-102). El tema
     // del negocio no se conoce al arrancar -- llega con los datos de la sede o
@@ -88,6 +92,8 @@ class BeautyOSApp extends StatelessWidget {
         } else if (publicReviewTicketId != null &&
             publicReviewTicketId.trim().isNotEmpty) {
           home = PublicReviewPage(ticketId: publicReviewTicketId.trim());
+        } else if (isPublicPlans) {
+          home = const PublicPlansPage();
         } else {
           home = const AuthGate(
             authenticatedChild: AuthenticatedRouter(

@@ -83,36 +83,29 @@ El registro self-serve anterior permitía que cualquier persona que creara cuent
    - **Migración:** `supabase/migrations/20260816170000_blindaje_rls_tenants_y_guards_aprobacion.sql`.
    - **Script de prueba:** `supabase/sql/169_test_blindaje_rls_tenants.sql`.
 
+6. **Pantalla Pública de Planes y Precios (Paso 3.8 / Decisión D-140):**
+   - **`PublicPlan` y `PublicPlanFeature`:** modelos que agrupan dinámicamente las filas de `list_public_plans()`, formatean precios en COP (`$160.000`, `$200.000`, `$240.000`) y resuelven límites.
+   - **`PublicPlansService`:** servicio que consume la RPC pública con catálogo de respaldo estático (D-124 / D-136) para garantizar disponibilidad permanente.
+   - **`PublicPlansPage`:** interfaz pública moderna y responsiva (grid de escritorio / lista en móvil), tarjetas comparativas con Business destacado como "MÁS ELEGIDO", tabla comparativa detallada, sección de FAQ y botones directos a WhatsApp de asesoría y registro rápido.
+   - **Enrutamiento:** acceso sin sesión vía query param `?planes=1` / `?pricing=1` en `main.dart`, y enlaces directos en `LoginPage` y `RegisterPage`.
+   - **Pruebas:** 2 pruebas unitarias añadidas en `test/public_plans_test.dart`. Total: **100 de 100 pruebas en verde**.
+
 ---
 
 ## 3. Estado técnico
 
-- **Pruebas:** 98 en 12 archivos · `flutter analyze` 100% limpio
-- **Migraciones del día:**
+- **Pruebas:** 100 en 13 archivos · `flutter test` y `flutter analyze` 100% limpios
+- **Migraciones aplicadas en producción:**
   * `supabase/migrations/20260816100000_filtro_aceptacion_registro.sql` (Paso 3.7 / D-138)
   * `supabase/migrations/20260816170000_blindaje_rls_tenants_y_guards_aprobacion.sql` (Blindaje / D-139)
 - **Scripts de prueba SQL:** `168_test_filtro_aceptacion.sql`, `169_test_blindaje_rls_tenants.sql`
 - **Proyectos Supabase:** `beautyos-dev` (producción) y `salonymas-ensayo`
-- **Commits del día:** `65bebeb` → `c01b9fc` → `1bdddf1` → `a8434fe` → `8926d34` → `4a8e685`
 
 ---
 
-## 4. Instrucción para aplicar en producción (Propietario)
+## 4. Lo siguiente según el Plan Maestro
 
-1. **Respaldar la base de datos:**
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File scripts\respaldo_supabase.ps1
-   ```
-2. **Aplicar la migración SQL:**
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\migrations\20260816100000_filtro_aceptacion_registro.sql"
-   ```
-
----
-
-## 5. Lo siguiente según el Plan Maestro
-
-1. **3.8 — Pantalla pública de planes** (`list_public_plans` ya adaptada a `price_cop`).
-2. **3.9 y 3.10 — Pasarela ePayco** (cobros y suscripciones automáticas).
-3. **3.3 — Términos y privacidad** (Ley 1581, obligatorio).
-4. **3.13 — Traducir correos de cuenta** (hallazgo W).
+1. **3.9 y 3.10 — Integración con Pasarela de Pago ePayco** (cobros, webhook seguro en el servidor y activación de suscripciones).
+2. **3.3 — Términos de Servicio y Política de Privacidad** (Ley 1581 / Habeas Data).
+3. **3.11 — Avisos de vencimiento por correo** (10, 5 y 3 días antes).
+4. **3.13 — Traducir plantillas de correo de Auth** (hallazgo W).

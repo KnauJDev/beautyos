@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../theme/app_theme.dart';
+import 'public_plans_page.dart';
 
 /// Crea únicamente el acceso (correo/contraseña) en Supabase Auth. Los
 /// datos del negocio se piden aparte, en CompleteTenantSetupPage, una vez
@@ -235,6 +236,24 @@ class _RegisterPageState extends State<RegisterPage> {
                             ? null
                             : () => Navigator.of(context).pop(),
                         child: const Text('Ya tengo cuenta, iniciar sesión'),
+                      ),
+                      const SizedBox(height: 4),
+                      TextButton.icon(
+                        onPressed: isLoading
+                            ? null
+                            : () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const PublicPlansPage(),
+                                  ),
+                                );
+                              },
+                        icon: const Icon(Icons.info_outline, size: 16),
+                        label: const Text('Ver qué incluye cada plan'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.textSecondary,
+                          textStyle: const TextStyle(fontSize: 13),
+                        ),
                       ),
                     ],
                   ],
