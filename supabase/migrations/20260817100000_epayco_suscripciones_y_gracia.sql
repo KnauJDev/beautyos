@@ -160,8 +160,8 @@ begin
     select pe.precio_cop into v_expected_price
     from private.beautyos_precio_efectivo(p_tenant_id) pe;
 
-    if v_expected_price is not null and v_expected_price > 0 and p_amount_cop > 0 and p_amount_cop < v_expected_price then
-      return query select true, v_sub.status, v_sub.status, 'Pago recibido con monto menor al precio pactado. Suscripcion no activada.'::text;
+    if v_expected_price is not null and v_expected_price > 0 and (p_amount_cop <= 0 or p_amount_cop < v_expected_price) then
+      return query select true, v_sub.status, v_sub.status, 'Pago recibido con monto menor o invalido frente al precio pactado. Suscripcion no activada.'::text;
       return;
     end if;
 
