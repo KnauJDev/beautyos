@@ -19,7 +19,8 @@ declare
   v_branch_id uuid;
   v_other_branch_id uuid;
   v_client_id uuid;
-  v_stylist_id uuid;
+  v_stylist_1_id uuid;
+  v_stylist_2_id uuid;
   v_service_1_id uuid;
   v_service_2_id uuid;
   v_ticket_1_id uuid;
@@ -34,7 +35,7 @@ begin
   raise notice 'Iniciando Control 173: Tablero de Agenda (D-147)...';
 
   -- ============================================================================
-  -- PREPARACIÓN: Crear tenant, sedes, cliente, estilista y servicios
+  -- PREPARACIÓN: Crear tenant, sedes, cliente, estilistas y servicios
   -- ============================================================================
   insert into public.tenants (name, business_type, contact_email, whatsapp, is_demo, active)
   values ('Salon Agenda Test', 'peluqueria', 'agenda_test@salonymas.com', '+573001234567', true, true)
@@ -63,10 +64,16 @@ begin
 
   insert into public.stylists (tenant_id, name, active)
   values (v_tenant_id, 'Valentina Estilista', true)
-  returning id into v_stylist_id;
+  returning id into v_stylist_1_id;
+
+  insert into public.stylists (tenant_id, name, active)
+  values (v_tenant_id, 'Camila Manicurista', true)
+  returning id into v_stylist_2_id;
 
   insert into public.branch_stylists (tenant_id, branch_id, stylist_id, active)
-  values (v_tenant_id, v_branch_id, v_stylist_id, true);
+  values
+    (v_tenant_id, v_branch_id, v_stylist_1_id, true),
+    (v_tenant_id, v_branch_id, v_stylist_2_id, true);
 
   insert into public.services (tenant_id, name, price, duration_minutes, active)
   values (v_tenant_id, 'Corte Dama', 45000, 45, true)
@@ -83,29 +90,30 @@ begin
 
   -- Crear 4 tickets en distintas horas y estados en la fecha de prueba (2026-08-20)
   -- Nota: en America/Bogota (UTC-5), 08:15 es 13:15 UTC.
-  -- Ticket 1: 08:15 AM -> 'solicitado', valor 45.000, sin pagos
+  -- Dos estilistas atienden a la vez a las 08:15 (sin choque porque son profesionales distintos)
+  -- Ticket 1: 08:15 AM -> 'solicitado', valor 45.000 (Valentina), sin pagos
   insert into public.tickets (tenant_id, branch_id, client_id, status, channel, scheduled_at)
   values (v_tenant_id, v_branch_id, v_client_id, 'solicitado', 'web', '2026-08-20 08:15:00-05')
   returning id into v_ticket_1_id;
 
   insert into public.ticket_services (tenant_id, branch_id, ticket_id, service_id, stylist_id, price, duration_minutes, status)
-  values (v_tenant_id, v_branch_id, v_ticket_1_id, v_service_1_id, v_stylist_id, 45000, 45, 'pendiente');
+  values (v_tenant_id, v_branch_id, v_ticket_1_id, v_service_1_id, v_stylist_1_id, 45000, 45, 'pendiente');
 
-  -- Ticket 2: 08:15 AM -> 'cotizado', valor 35.000, sin pagos
+  -- Ticket 2: 08:15 AM -> 'cotizado', valor 35.000 (Camila), sin pagos
   insert into public.tickets (tenant_id, branch_id, client_id, status, channel, scheduled_at)
   values (v_tenant_id, v_branch_id, v_client_id, 'cotizado', 'whatsapp', '2026-08-20 08:15:00-05')
   returning id into v_ticket_2_id;
 
   insert into public.ticket_services (tenant_id, branch_id, ticket_id, service_id, stylist_id, price, duration_minutes, status)
-  values (v_tenant_id, v_branch_id, v_ticket_2_id, v_service_2_id, v_stylist_id, 35000, 30, 'pendiente');
+  values (v_tenant_id, v_branch_id, v_ticket_2_id, v_service_2_id, v_stylist_2_id, 35000, 30, 'pendiente');
 
-  -- Ticket 3: 11:30 AM -> 'confirmado', valor 45.000
+  -- Ticket 3: 11:30 AM -> 'confirmado', valor 45.000 (Valentina)
   insert into public.tickets (tenant_id, branch_id, client_id, status, channel, scheduled_at)
   values (v_tenant_id, v_branch_id, v_client_id, 'confirmado', 'manual', '2026-08-20 11:30:00-05')
   returning id into v_ticket_3_id;
 
   insert into public.ticket_services (tenant_id, branch_id, ticket_id, service_id, stylist_id, price, duration_minutes, status)
-  values (v_tenant_id, v_branch_id, v_ticket_3_id, v_service_1_id, v_stylist_id, 45000, 45, 'pendiente');
+  values (v_tenant_id, v_branch_id, v_ticket_3_id, v_service_1_id, v_stylist_1_id, 45000, 45, 'pendiente');
 
   -- Ticket 4: 15:45 (03:45 PM) -> 'finalizado', 2 servicios (45.000 + 35.000 = 80.000), con abono parcial de 30.000 (saldo 50.000)
   insert into public.tickets (tenant_id, branch_id, client_id, status, channel, scheduled_at)
@@ -113,10 +121,10 @@ begin
   returning id into v_ticket_4_id;
 
   insert into public.ticket_services (tenant_id, branch_id, ticket_id, service_id, stylist_id, price, duration_minutes, status)
-  values (v_tenant_id, v_branch_id, v_ticket_4_id, v_service_1_id, v_stylist_id, 45000, 45, 'finalizado');
+  values (v_tenant_id, v_branch_id, v_ticket_4_id, v_service_1_id, v_stylist_1_id, 45000, 45, 'finalizado');
 
   insert into public.ticket_services (tenant_id, branch_id, ticket_id, service_id, stylist_id, price, duration_minutes, status)
-  values (v_tenant_id, v_branch_id, v_ticket_4_id, v_service_2_id, v_stylist_id, 35000, 30, 'finalizado');
+  values (v_tenant_id, v_branch_id, v_ticket_4_id, v_service_2_id, v_stylist_2_id, 35000, 30, 'finalizado');
 
   insert into public.ticket_payments (tenant_id, branch_id, ticket_id, amount, payment_method, status)
   values (v_tenant_id, v_branch_id, v_ticket_4_id, 30000, 'nequi', 'registrado');
