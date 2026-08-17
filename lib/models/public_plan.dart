@@ -18,7 +18,7 @@ class PublicPlanFeature {
     final rawLimit = map['feature_limit'] ?? map['limit_value'];
     int? parsedLimit;
     if (rawLimit != null) {
-      parsedLimit = int.tryParse(rawLimit.toString());
+      parsedLimit = num.tryParse(rawLimit.toString())?.toInt();
     }
 
     return PublicPlanFeature(
@@ -138,7 +138,7 @@ class PublicPlan {
           code: code,
           name: item['plan_name']?.toString() ?? item['name']?.toString() ?? code,
           billingPeriod: item['billing_period']?.toString() ?? 'monthly',
-          priceCop: int.tryParse(item['price_cop']?.toString() ?? '0') ?? 0,
+          priceCop: num.tryParse(item['price_cop']?.toString() ?? '0')?.toInt() ?? 0,
           currencyCode: item['currency_code']?.toString() ?? 'COP',
         ),
       );

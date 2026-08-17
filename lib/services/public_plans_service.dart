@@ -1,10 +1,11 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/public_plan.dart';
+import 'monitoreo_service.dart';
 
 /// Servicio para consultar los planes públicos comerciales de Salón y Más.
 /// Llama a la RPC pública `list_public_plans()` de Supabase (accesible para anon).
-/// Si la conexión tarda o está fuera de línea, incluye un catálogo de respaldo
-/// fiel a los acuerdos de arquitectura (D-124, D-136).
+/// Si la conexión tarda o falla, reporta el error a MonitoreoService y recurre
+/// al catálogo de respaldo (D-124, D-136).
 class PublicPlansService {
   const PublicPlansService({this.client});
 
@@ -21,8 +22,13 @@ class PublicPlansService {
           return plans;
         }
       }
-    } catch (_) {
-      // Si falla la llamada remota, se retorna el catálogo de respaldo para garantizar disponibilidad
+    } catch (error, stackTrace) {
+      // Reportar a MonitoreoService (D-115) para evitar fallos silenciosos
+      MonitoreoService.reportarError(
+        error,
+        stackTrace,
+        motivo: 'Fallo al consultar list_public_plans(), usando catalogo de respaldo',
+      );
     }
 
     return fallbackPlans;

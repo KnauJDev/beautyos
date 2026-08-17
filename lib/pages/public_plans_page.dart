@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/public_plan.dart';
@@ -73,6 +74,7 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 900;
+    final hasActiveSession = Supabase.instance.client.auth.currentSession != null;
 
     return Scaffold(
       backgroundColor: AppColors.brandSurface,
@@ -125,11 +127,24 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
           const SizedBox(width: 4),
           Padding(
             padding: const EdgeInsets.only(right: 16),
-            child: TextButton.icon(
-              onPressed: _navigateToLogin,
-              icon: const Icon(Icons.login_outlined, size: 18),
-              label: const Text('Iniciar sesión'),
-            ),
+            child: hasActiveSession
+                ? TextButton.icon(
+                    onPressed: () {
+                      if (Navigator.of(context).canPop()) {
+                        Navigator.of(context).pop();
+                      } else {
+                        // Si entró directo por URL, refrescar sin ?planes
+                        widget.onLoginSuccess?.call();
+                      }
+                    },
+                    icon: const Icon(Icons.dashboard_outlined, size: 18),
+                    label: const Text('Ir a mi negocio'),
+                  )
+                : TextButton.icon(
+                    onPressed: _navigateToLogin,
+                    icon: const Icon(Icons.login_outlined, size: 18),
+                    label: const Text('Iniciar sesión'),
+                  ),
           ),
         ],
       ),

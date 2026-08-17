@@ -101,6 +101,25 @@ class MonitoreoService {
     await Sentry.configureScope((scope) => scope.clear());
   }
 
+  /// Registra una excepción capturada manualmente con un motivo/mensaje técnico.
+  static Future<void> reportarError(
+    dynamic error,
+    dynamic stackTrace, {
+    String? motivo,
+  }) async {
+    if (!kReleaseMode) {
+      debugPrint('[Monitoreo] $motivo: $error');
+      return;
+    }
+    await Sentry.captureException(
+      error,
+      stackTrace: stackTrace,
+      withScope: (scope) {
+        if (motivo != null) scope.setTag('motivo', motivo);
+      },
+    );
+  }
+
   /// Tapa lo que parezca un correo o un teléfono en cualquier texto del
   /// reporte. **No debería hacer falta nunca**, y precisamente por eso está:
   /// las fugas de datos personales ocurren en el mensaje que nadie reviso.
