@@ -14,6 +14,7 @@ begin;
 
 do $$
 declare
+  v_owner_user_id uuid := gen_random_uuid();
   v_tenant_id uuid;
   v_branch_id uuid;
   v_other_branch_id uuid;
@@ -35,16 +36,25 @@ begin
   -- ============================================================================
   -- PREPARACIÓN: Crear tenant, sedes, cliente, estilista y servicios
   -- ============================================================================
-  insert into public.tenants (name, slug, is_demo)
-  values ('Salon Agenda Test', 'salon-agenda-' || floor(random()*100000)::text, true)
+  insert into public.tenants (name, business_type, contact_email, is_demo, active)
+  values ('Salon Agenda Test', 'peluqueria', 'agenda_test@salonymas.com', true, true)
   returning id into v_tenant_id;
 
-  insert into public.branches (tenant_id, name, is_active)
-  values (v_tenant_id, 'Sede Principal', true)
+  insert into auth.users (id, email)
+  values (v_owner_user_id, 'owner_agenda_' || floor(random()*100000)::text || '@salonymas.com');
+
+  insert into public.tenant_memberships (tenant_id, user_id, role, active)
+  values (v_tenant_id, v_owner_user_id, 'tenant_owner', true);
+
+  perform set_config('request.jwt.claim.sub', v_owner_user_id::text, true);
+  perform set_config('request.jwt.claim.role', 'authenticated', true);
+
+  insert into public.branches (tenant_id, name, slug, timezone, currency_code, is_primary, active)
+  values (v_tenant_id, 'Sede Principal', 'sede-principal-' || floor(random()*100000)::text, 'America/Bogota', 'COP', true, true)
   returning id into v_branch_id;
 
-  insert into public.branches (tenant_id, name, is_active)
-  values (v_tenant_id, 'Sede Otra', true)
+  insert into public.branches (tenant_id, name, slug, timezone, currency_code, is_primary, active)
+  values (v_tenant_id, 'Sede Otra', 'sede-otra-' || floor(random()*100000)::text, 'America/Bogota', 'COP', false, true)
   returning id into v_other_branch_id;
 
   insert into public.clients (tenant_id, name, phone, active)
@@ -193,8 +203,10 @@ begin
   raise notice '✅ Prueba 3 superada: lista de Nivel 2 devuelve consecutivo, cliente, telefono, servicios y saldos exactos.';
 
   -- ============================================================================
-  -- PRUEBA 4: Aislamiento por sede (Sede Otra no debe ver tickets de Sede Principal)
+  -- PRUEBA 4: Aislamiento por sede (Sede Otra sin membresia o sin tickets no debe ver Sede Principal)
   -- ============================================================================
+  -- Nota: el usuario es owner de v_tenant_id, por lo que tiene acceso a v_other_branch_id,
+  -- pero en v_other_branch_id no hay tickets creados, por lo que el conteo debe dar 0.
   select count(*) > 0 into v_found
   from public.get_ticket_board_counts_v2(v_other_branch_id, v_test_date, v_test_date, '15min');
 
