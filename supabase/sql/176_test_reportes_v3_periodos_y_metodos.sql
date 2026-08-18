@@ -64,8 +64,8 @@ begin
   values (v_tenant_id, v_branch_id, v_client_id, (v_prev_date::text || ' 10:00:00-05')::timestamptz, (v_prev_date::text || ' 12:00:00-05')::timestamptz, 'cerrado', 'manual')
   returning id into v_ticket_prev;
 
-  insert into public.ticket_payments (tenant_id, branch_id, ticket_id, amount, method, status, received_at)
-  values (v_tenant_id, v_branch_id, v_ticket_prev, 100000, 'efectivo', 'registrado', (v_prev_date::text || ' 12:00:00-05')::timestamptz);
+  insert into public.ticket_payments (tenant_id, branch_id, ticket_id, amount, method, status, received_at, created_by)
+  values (v_tenant_id, v_branch_id, v_ticket_prev, 100000, 'efectivo', 'registrado', (v_prev_date::text || ' 12:00:00-05')::timestamptz, v_owner_user_id);
 
   insert into public.expenses (tenant_id, branch_id, description, amount, payment_method, expense_date, active)
   values (v_tenant_id, v_branch_id, 'Gasto ayer', 20000, 'cash', v_prev_date, true);
@@ -77,8 +77,8 @@ begin
   returning id into v_ticket_curr1;
   insert into public.ticket_services (tenant_id, branch_id, ticket_id, service_id, stylist_id, price, duration_minutes, status)
   values (v_tenant_id, v_branch_id, v_ticket_curr1, v_service_id, v_stylist_id, 50000, 60, 'finalizado');
-  insert into public.ticket_payments (tenant_id, branch_id, ticket_id, amount, method, status, received_at)
-  values (v_tenant_id, v_branch_id, v_ticket_curr1, 50000, 'efectivo', 'registrado', (v_today::text || ' 10:00:00-05')::timestamptz);
+  insert into public.ticket_payments (tenant_id, branch_id, ticket_id, amount, method, status, received_at, created_by)
+  values (v_tenant_id, v_branch_id, v_ticket_curr1, 50000, 'efectivo', 'registrado', (v_today::text || ' 10:00:00-05')::timestamptz, v_owner_user_id);
 
   -- Ticket 2: Pago Transferencia $80.000 (Nequi)
   insert into public.tickets (tenant_id, branch_id, client_id, scheduled_at, closed_at, status, channel)
@@ -86,8 +86,8 @@ begin
   returning id into v_ticket_curr2;
   insert into public.ticket_services (tenant_id, branch_id, ticket_id, service_id, stylist_id, price, duration_minutes, status)
   values (v_tenant_id, v_branch_id, v_ticket_curr2, v_service_id, v_stylist_id, 80000, 60, 'finalizado');
-  insert into public.ticket_payments (tenant_id, branch_id, ticket_id, amount, method, status, received_at)
-  values (v_tenant_id, v_branch_id, v_ticket_curr2, 80000, 'transferencia', 'registrado', (v_today::text || ' 12:00:00-05')::timestamptz);
+  insert into public.ticket_payments (tenant_id, branch_id, ticket_id, amount, method, status, received_at, created_by)
+  values (v_tenant_id, v_branch_id, v_ticket_curr2, 80000, 'transferencia', 'registrado', (v_today::text || ' 12:00:00-05')::timestamptz, v_owner_user_id);
 
   -- Ticket 3: Pago Tarjeta $70.000
   insert into public.tickets (tenant_id, branch_id, client_id, scheduled_at, closed_at, status, channel)
@@ -95,8 +95,8 @@ begin
   returning id into v_ticket_curr3;
   insert into public.ticket_services (tenant_id, branch_id, ticket_id, service_id, stylist_id, price, duration_minutes, status)
   values (v_tenant_id, v_branch_id, v_ticket_curr3, v_service_id, v_stylist_id, 70000, 60, 'finalizado');
-  insert into public.ticket_payments (tenant_id, branch_id, ticket_id, amount, method, status, received_at)
-  values (v_tenant_id, v_branch_id, v_ticket_curr3, 70000, 'tarjeta', 'registrado', (v_today::text || ' 15:00:00-05')::timestamptz);
+  insert into public.ticket_payments (tenant_id, branch_id, ticket_id, amount, method, status, received_at, created_by)
+  values (v_tenant_id, v_branch_id, v_ticket_curr3, 70000, 'tarjeta', 'registrado', (v_today::text || ' 15:00:00-05')::timestamptz, v_owner_user_id);
 
   -- Compra en efectivo: $30.000
   insert into public.purchases (tenant_id, branch_id, supplier_name, purchase_date, invoice_number, total_amount, payment_method, active)
