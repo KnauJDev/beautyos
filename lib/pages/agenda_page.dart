@@ -8,6 +8,16 @@ import '../services/agenda_board_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_widgets.dart';
 
+/// Construye el enlace de WhatsApp a partir de un teléfono de cliente.
+///
+/// wa.me espera solo dígitos con código de país, sin '+' (mismo criterio que
+/// `public_plans_page.dart` y el soporte de Configuración) — aunque en este
+/// proyecto los teléfonos se guardan con '+', ese carácter se descarta aquí.
+Uri buildWhatsAppUri(String phone) {
+  final cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
+  return Uri.parse('https://wa.me/$cleanPhone');
+}
+
 /// Modos de vista del Tablero de Agenda (D-101 / D-116).
 enum AgendaViewMode {
   dia(titulo: 'Día'),
@@ -31,7 +41,7 @@ const List<String> _meses = [
   'Septiembre',
   'Octubre',
   'Noviembre',
-  'Diciembre'
+  'Diciembre',
 ];
 
 /// Nombres cortos de los días de la semana (Lunes = 1 en Dart DateTime).
@@ -42,16 +52,12 @@ const List<String> _diasSemana = [
   'Jueves',
   'Viernes',
   'Sábado',
-  'Domingo'
+  'Domingo',
 ];
 
 /// Pantalla principal del Tablero de Agenda (D-101 / D-116 / D-147).
 class AgendaPage extends StatefulWidget {
-  const AgendaPage({
-    super.key,
-    required this.branchId,
-    this.agendaService,
-  });
+  const AgendaPage({super.key, required this.branchId, this.agendaService});
 
   final String branchId;
   final AgendaBoardService? agendaService;
@@ -74,8 +80,8 @@ class _AgendaPageState extends State<AgendaPage> {
   @override
   void initState() {
     super.initState();
-    _service = widget.agendaService ??
-        AgendaBoardService(branchId: widget.branchId);
+    _service =
+        widget.agendaService ?? AgendaBoardService(branchId: widget.branchId);
     _loadData();
     _setupRealtime();
   }
@@ -107,8 +113,11 @@ class _AgendaPageState extends State<AgendaPage> {
   }
 
   DateTime _mondayOfWeek(DateTime date) {
-    return DateTime(date.year, date.month, date.day)
-        .subtract(Duration(days: date.weekday - 1));
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+    ).subtract(Duration(days: date.weekday - 1));
   }
 
   DateTime _sundayOfWeek(DateTime date) {
@@ -138,7 +147,11 @@ class _AgendaPageState extends State<AgendaPage> {
 
       switch (_viewMode) {
         case AgendaViewMode.dia:
-          start = DateTime(_selectedDate.year, _selectedDate.month, _selectedDate.day);
+          start = DateTime(
+            _selectedDate.year,
+            _selectedDate.month,
+            _selectedDate.day,
+          );
           end = start;
           gran = _granularity;
           break;
@@ -280,10 +293,12 @@ class _AgendaPageState extends State<AgendaPage> {
 
     // Sumatoria de regla del cero (todas las columnas salvo Cerrado)
     final int pendientesCierre = _counts
-        .where((c) =>
-            c.status != 'cerrado' &&
-            c.status != 'cancelado' &&
-            c.status != 'no_asistio')
+        .where(
+          (c) =>
+              c.status != 'cerrado' &&
+              c.status != 'cancelado' &&
+              c.status != 'no_asistio',
+        )
         .fold(0, (sum, c) => sum + c.ticketCount);
 
     return AppPage(
@@ -371,7 +386,9 @@ class _AgendaPageState extends State<AgendaPage> {
                       visualDensity: VisualDensity.compact,
                       shape: WidgetStatePropertyAll(
                         RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppRadius.control),
+                          borderRadius: BorderRadius.circular(
+                            AppRadius.control,
+                          ),
                         ),
                       ),
                     ),
@@ -429,7 +446,10 @@ class _AgendaPageState extends State<AgendaPage> {
                   IconButton(
                     onPressed: () => _loadData(),
                     tooltip: 'Actualizar tablero',
-                    icon: const Icon(Icons.refresh, color: AppColors.textSecondary),
+                    icon: const Icon(
+                      Icons.refresh,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -455,8 +475,8 @@ class _AgendaPageState extends State<AgendaPage> {
                           _viewMode == AgendaViewMode.dia
                               ? 'Hoy'
                               : (_viewMode == AgendaViewMode.semana
-                                  ? 'Esta semana'
-                                  : 'Este mes'),
+                                    ? 'Esta semana'
+                                    : 'Este mes'),
                         ),
                       ),
                       const SizedBox(width: 4),
@@ -534,10 +554,9 @@ class _AgendaPageState extends State<AgendaPage> {
                   : AppColors.statePendingTint,
               borderRadius: BorderRadius.circular(AppRadius.card),
               border: Border.all(
-                color: (alDia
-                        ? AppColors.stateConfirmed
-                        : AppColors.statePending)
-                    .withValues(alpha: 0.3),
+                color:
+                    (alDia ? AppColors.stateConfirmed : AppColors.statePending)
+                        .withValues(alpha: 0.3),
               ),
             ),
             child: Row(
@@ -593,7 +612,8 @@ class _AgendaPageState extends State<AgendaPage> {
                   break;
               }
               _abrirListaNivel2(
-                titulo: 'Sin efecto ($canceladas canceladas, $noAsistio no asistió)',
+                titulo:
+                    'Sin efecto ($canceladas canceladas, $noAsistio no asistió)',
                 startDate: start,
                 endDate: end,
                 statuses: ['cancelado', 'no_asistio'],
@@ -666,9 +686,7 @@ class _AgendaPageState extends State<AgendaPage> {
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(AppRadius.card),
               ),
-              border: const Border(
-                bottom: BorderSide(color: AppColors.border),
-              ),
+              border: const Border(bottom: BorderSide(color: AppColors.border)),
             ),
             child: Row(
               children: [
@@ -715,10 +733,8 @@ class _AgendaPageState extends State<AgendaPage> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: timeSlots.length,
-            separatorBuilder: (_, _) => const Divider(
-              height: 1,
-              color: AppColors.border,
-            ),
+            separatorBuilder: (_, _) =>
+                const Divider(height: 1, color: AppColors.border),
             itemBuilder: (context, index) {
               final slot = timeSlots[index];
               return Padding(
@@ -739,8 +755,9 @@ class _AgendaPageState extends State<AgendaPage> {
                     ),
                     ...DayBoardColumn.values.map((col) {
                       final count = _counts
-                          .where((c) =>
-                              c.bucket == slot && col.contiene(c.status))
+                          .where(
+                            (c) => c.bucket == slot && col.contiene(c.status),
+                          )
                           .fold(0, (sum, c) => sum + c.ticketCount);
 
                       return Expanded(
@@ -814,9 +831,7 @@ class _AgendaPageState extends State<AgendaPage> {
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(AppRadius.card),
               ),
-              border: const Border(
-                bottom: BorderSide(color: AppColors.border),
-              ),
+              border: const Border(bottom: BorderSide(color: AppColors.border)),
             ),
             child: Row(
               children: [
@@ -855,76 +870,88 @@ class _AgendaPageState extends State<AgendaPage> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: 7,
-            separatorBuilder: (_, _) => const Divider(
-              height: 1,
-              color: AppColors.border,
-            ),
+            separatorBuilder: (_, _) =>
+                const Divider(height: 1, color: AppColors.border),
             itemBuilder: (context, index) {
               final dayDate = days[index];
               final strDate =
                   '${dayDate.year}-${dayDate.month.toString().padLeft(2, '0')}-${dayDate.day.toString().padLeft(2, '0')}';
-              final isToday = dayDate.year == today.year &&
+              final isToday =
+                  dayDate.year == today.year &&
                   dayDate.month == today.month &&
                   dayDate.day == today.day;
+              // Días pasados se atenúan; hoy y los futuros se ven normales (D-101).
+              final isPast = dayDate.isBefore(
+                DateTime(today.year, today.month, today.day),
+              );
 
-              return Container(
-                color: isToday ? AppColors.brandSurface : null,
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 90,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _diasSemana[index],
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight:
-                                  isToday ? FontWeight.bold : FontWeight.w600,
-                              color: isToday
-                                  ? AppColors.brand
-                                  : AppColors.textPrimary,
+              return Opacity(
+                opacity: isPast ? 0.55 : 1.0,
+                child: Container(
+                  color: isToday ? AppColors.brandSurface : null,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 8,
+                  ),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 90,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _diasSemana[index],
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: isToday
+                                    ? FontWeight.bold
+                                    : FontWeight.w600,
+                                color: isToday
+                                    ? AppColors.brand
+                                    : AppColors.textPrimary,
+                              ),
                             ),
-                          ),
-                          Text(
-                            '${dayDate.day} ${_meses[dayDate.month - 1].substring(0, 3)}',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: AppColors.textSecondary,
+                            Text(
+                              '${dayDate.day} ${_meses[dayDate.month - 1].substring(0, 3)}',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textSecondary,
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    ...WeekBoardColumn.values.map((col) {
-                      final count = _counts
-                          .where((c) =>
-                              c.bucket == strDate && col.contiene(c.status))
-                          .fold(0, (sum, c) => sum + c.ticketCount);
-
-                      return Expanded(
-                        child: _WeekGridCell(
-                          count: count,
-                          color: col.color,
-                          onTap: count == 0
-                              ? null
-                              : () {
-                                  _abrirListaNivel2(
-                                    titulo:
-                                        '${_diasSemana[index]} ${dayDate.day} · ${col.titulo}',
-                                    startDate: dayDate,
-                                    endDate: dayDate,
-                                    statuses: col.estados,
-                                    bucket: strDate,
-                                    granularity: 'day',
-                                  );
-                                },
+                          ],
                         ),
-                      );
-                    }),
-                  ],
+                      ),
+                      ...WeekBoardColumn.values.map((col) {
+                        final count = _counts
+                            .where(
+                              (c) =>
+                                  c.bucket == strDate && col.contiene(c.status),
+                            )
+                            .fold(0, (sum, c) => sum + c.ticketCount);
+
+                        return Expanded(
+                          child: _WeekGridCell(
+                            count: count,
+                            color: col.color,
+                            onTap: count == 0
+                                ? null
+                                : () {
+                                    _abrirListaNivel2(
+                                      titulo:
+                                          '${_diasSemana[index]} ${dayDate.day} · ${col.titulo}',
+                                      startDate: dayDate,
+                                      endDate: dayDate,
+                                      statuses: col.estados,
+                                      bucket: strDate,
+                                      granularity: 'day',
+                                    );
+                                  },
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
                 ),
               );
             },
@@ -964,87 +991,98 @@ class _AgendaPageState extends State<AgendaPage> {
       final date = DateTime(_selectedDate.year, _selectedDate.month, d);
       final strDate =
           '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-      final isToday = date.year == today.year &&
+      final isToday =
+          date.year == today.year &&
           date.month == today.month &&
           date.day == today.day;
+      // Días pasados se atenúan; hoy y los futuros se ven normales (D-101).
+      final isPast = date.isBefore(
+        DateTime(today.year, today.month, today.day),
+      );
 
       final dayCounts = _counts.where((c) => c.bucket == strDate).toList();
-      final totalTickets =
-          dayCounts.fold(0, (sum, c) => sum + c.ticketCount);
+      final totalTickets = dayCounts.fold(0, (sum, c) => sum + c.ticketCount);
 
       dayCells.add(
-        InkWell(
-          onTap: () {
-            // Tocar un día en el mes lleva a la vista Día de esa fecha (D-101)
-            setState(() {
-              _selectedDate = date;
-              _viewMode = AgendaViewMode.dia;
-            });
-            _loadData();
-          },
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          child: Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: isToday ? AppColors.brandSurface : AppColors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.control),
-              border: Border.all(
-                color: isToday ? AppColors.brand : AppColors.border,
-                width: isToday ? 1.5 : 1,
+        Opacity(
+          opacity: isPast ? 0.55 : 1.0,
+          child: InkWell(
+            onTap: () {
+              // Tocar un día en el mes lleva a la vista Día de esa fecha (D-101)
+              setState(() {
+                _selectedDate = date;
+                _viewMode = AgendaViewMode.dia;
+              });
+              _loadData();
+            },
+            borderRadius: BorderRadius.circular(AppRadius.control),
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: isToday ? AppColors.brandSurface : AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.control),
+                border: Border.all(
+                  color: isToday ? AppColors.brand : AppColors.border,
+                  width: isToday ? 1.5 : 1,
+                ),
               ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '$d',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight:
-                            isToday ? FontWeight.bold : FontWeight.w600,
-                        color: isToday
-                            ? AppColors.brand
-                            : AppColors.textPrimary,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '$d',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isToday
+                              ? FontWeight.bold
+                              : FontWeight.w600,
+                          color: isToday
+                              ? AppColors.brand
+                              : AppColors.textPrimary,
+                        ),
                       ),
-                    ),
-                    if (totalTickets > 0)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 5,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.brandTint,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          '$totalTickets',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.brandDeep,
+                      if (totalTickets > 0)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.brandTint,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            '$totalTickets',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.brandDeep,
+                            ),
                           ),
                         ),
-                      ),
-                  ],
-                ),
-                if (totalTickets > 0)
-                  _MonthProportionBar(dayCounts: dayCounts, total: totalTickets)
-                else
-                  const Center(
-                    child: Text(
-                      '·',
-                      style: TextStyle(
-                        color: AppColors.textMuted,
-                        fontSize: 16,
+                    ],
+                  ),
+                  if (totalTickets > 0)
+                    _MonthProportionBar(
+                      dayCounts: dayCounts,
+                      total: totalTickets,
+                    )
+                  else
+                    const Center(
+                      child: Text(
+                        '·',
+                        style: TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -1111,11 +1149,7 @@ class _DayGridCell extends StatelessWidget {
   final DayBoardColumn column;
   final VoidCallback? onTap;
 
-  const _DayGridCell({
-    required this.count,
-    required this.column,
-    this.onTap,
-  });
+  const _DayGridCell({required this.count, required this.column, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -1141,9 +1175,7 @@ class _DayGridCell extends StatelessWidget {
         decoration: BoxDecoration(
           color: column.colorFondo,
           borderRadius: BorderRadius.circular(AppRadius.control),
-          border: Border.all(
-            color: column.color.withValues(alpha: 0.4),
-          ),
+          border: Border.all(color: column.color.withValues(alpha: 0.4)),
         ),
         child: Text(
           '$count',
@@ -1164,11 +1196,7 @@ class _WeekGridCell extends StatelessWidget {
   final Color color;
   final VoidCallback? onTap;
 
-  const _WeekGridCell({
-    required this.count,
-    required this.color,
-    this.onTap,
-  });
+  const _WeekGridCell({required this.count, required this.color, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -1194,9 +1222,7 @@ class _WeekGridCell extends StatelessWidget {
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(AppRadius.control),
-          border: Border.all(
-            color: color.withValues(alpha: 0.4),
-          ),
+          border: Border.all(color: color.withValues(alpha: 0.4)),
         ),
         child: Text(
           '$count',
@@ -1216,10 +1242,7 @@ class _MonthProportionBar extends StatelessWidget {
   final List<TicketBoardCount> dayCounts;
   final int total;
 
-  const _MonthProportionBar({
-    required this.dayCounts,
-    required this.total,
-  });
+  const _MonthProportionBar({required this.dayCounts, required this.total});
 
   @override
   Widget build(BuildContext context) {
@@ -1238,10 +1261,12 @@ class _MonthProportionBar extends StatelessWidget {
         .where((c) => c.status == 'finalizado')
         .fold(0, (sum, c) => sum + c.ticketCount);
     final porConfirmar = dayCounts
-        .where((c) =>
-            c.status == 'solicitado' ||
-            c.status == 'cotizado' ||
-            c.status == 'apartado')
+        .where(
+          (c) =>
+              c.status == 'solicitado' ||
+              c.status == 'cotizado' ||
+              c.status == 'apartado',
+        )
         .fold(0, (sum, c) => sum + c.ticketCount);
 
     return ClipRRect(
@@ -1306,8 +1331,7 @@ class _Level2Sheet extends StatelessWidget {
   });
 
   Future<void> _abrirWhatsApp(String phone) async {
-    final cleanPhone = phone.replaceAll(RegExp(r'[^0-9+]'), '');
-    final uri = Uri.parse('https://wa.me/$cleanPhone');
+    final uri = buildWhatsAppUri(phone);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
@@ -1383,9 +1407,7 @@ class _Level2Sheet extends StatelessWidget {
                   ),
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
+                      return const Center(child: CircularProgressIndicator());
                     }
                     if (snapshot.hasError) {
                       return ErrorState(
@@ -1437,10 +1459,7 @@ class _TicketCardNivel2 extends StatelessWidget {
   final TicketBoardItem item;
   final VoidCallback? onWhatsAppTap;
 
-  const _TicketCardNivel2({
-    required this.item,
-    this.onWhatsAppTap,
-  });
+  const _TicketCardNivel2({required this.item, this.onWhatsAppTap});
 
   @override
   Widget build(BuildContext context) {

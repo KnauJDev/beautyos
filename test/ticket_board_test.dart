@@ -118,6 +118,13 @@ void main() {
       expect(WeekBoardColumn.porCobrar.contiene('finalizado'), isTrue);
       expect(WeekBoardColumn.cerrado.contiene('cerrado'), isTrue);
     });
+
+    test('buildWhatsAppUri deja solo dígitos, sin el "+" del teléfono guardado',
+        () {
+      final uri = buildWhatsAppUri('+57 310 987 6543');
+      expect(uri.toString(), 'https://wa.me/573109876543');
+      expect(uri.toString(), isNot(contains('+')));
+    });
   });
 
   group('AgendaPage Widget Tests', () {
@@ -259,6 +266,50 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('LUN'), findsOneWidget);
       expect(find.text('DOM'), findsOneWidget);
+    });
+
+    testWidgets(
+        'Atenúa los días pasados de la semana; hoy y los futuros quedan normales (D-101)',
+        (tester) async {
+      final fakeService = FakeAgendaBoardService();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AgendaPage(
+              branchId: '00000000-0000-0000-0000-000000000001',
+              agendaService: fakeService,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Semana'));
+      await tester.pumpAndSettle();
+
+      // La semana mostrada es la de hoy: de lunes (weekday 1) a domingo.
+      // Días antes de hoy dentro de esa semana deben quedar atenuados
+      // (opacity 0.55); hoy y los que faltan por venir, sin atenuar (1.0).
+      final today = DateTime.now();
+      final diasPasados = today.weekday - 1; // lunes..ayer
+      final diasNoPasados = 7 - diasPasados; // hoy..domingo
+
+      final opacities = tester
+          .widgetList<Opacity>(find.byType(Opacity))
+          .map((o) => o.opacity)
+          .toList();
+
+      expect(
+        opacities.where((o) => o == 0.55).length,
+        diasPasados,
+        reason: 'Días pasados atenuados en la semana',
+      );
+      expect(
+        opacities.where((o) => o == 1.0).length,
+        diasNoPasados,
+        reason: 'Hoy y los días futuros de la semana sin atenuar',
+      );
     });
   });
 }
