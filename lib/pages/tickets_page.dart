@@ -17,7 +17,6 @@ import '../services/clients_service.dart';
 import '../services/tickets_service.dart';
 import '../widgets/add_work_photo_dialog.dart';
 import '../widgets/app_widgets.dart';
-import '../widgets/ticket_status.dart';
 import 'agenda_page.dart' show buildWhatsAppUri;
 
 class TicketsPage extends StatefulWidget {
