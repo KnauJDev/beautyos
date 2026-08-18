@@ -107,8 +107,16 @@ begin
   values (v_tenant_id, v_branch_id, 'domicilios', 'Gasto domicilios', 10000, 'transfer', v_today, true);
 
   -- Comisión de estilista: $40.000
-  insert into public.stylist_commissions (tenant_id, branch_id, stylist_id, ticket_service_id, service_amount, commission_rate, commission_amount, status, generated_at)
-  values (v_tenant_id, v_branch_id, v_stylist_id, gen_random_uuid(), 100000, 0.40, 40000, 'generada', (v_today::text || ' 12:00:00-05')::timestamptz);
+  insert into public.stylist_commissions (
+    tenant_id, branch_id, ticket_id, ticket_service_id, stylist_id,
+    service_amount, commission_type, commission_percentage,
+    fixed_commission_amount, applies_after_discount, commission_amount,
+    status, generated_at, generated_by
+  ) values (
+    v_tenant_id, v_branch_id, v_ticket_curr1, gen_random_uuid(), v_stylist_id,
+    100000, 'percentage', 40.0, 0, false, 40000,
+    'generada', (v_today::text || ' 12:00:00-05')::timestamptz, v_owner_user_id
+  );
 
   -- ==============================================================
   -- VERIFICACIONES
