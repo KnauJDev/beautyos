@@ -1,14 +1,12 @@
--- ==============================================================================
 -- Script de Control 177: Galería de fotos con consecutivo e IDs de filtro (D-156)
 -- ==============================================================================
 -- Verifica que get_work_photos_summary_v2 retorne:
 --   1. ticket_number y ticket_code (#0000001) correctamente vinculados.
 --   2. client_id y stylist_id presentes para soportar filtros en Flutter.
 --
--- Crea su propio tenant de prueba desechable (mismo patrón que los controles
--- 175 y 176), en vez de tomar con "limit 1" un tenant ya existente: así no
--- depende de qué datos haya en la base donde se ejecute, ni arriesga colisionar
--- con el consecutivo real de un negocio real.
+-- Crea su propio tenant de prueba desechable (mismo patrón que el Control 174),
+-- en vez de tomar con "limit 1" un tenant ya existente: así no depende de qué
+-- datos haya en la base donde se ejecute.
 --
 -- El ticket_number y ticket_code NO se insertan a mano: el trigger
 -- tickets_set_number (D-117) los asigna solo al insertar y los congela
@@ -23,7 +21,7 @@ begin;
 do $$
 declare
   v_tenant_id uuid;
-  v_user_id uuid := '00000000-0000-0000-0000-000000000177'::uuid;
+  v_owner_user_id uuid := gen_random_uuid();
   v_branch_id uuid;
   v_client_id uuid;
   v_stylist_id uuid;
@@ -34,30 +32,36 @@ declare
   v_photo_rec record;
 begin
   -- 1. Crear tenant de prueba
-  insert into public.tenants (id, name, slug)
-  values (gen_random_uuid(), 'Tenant Test Control 177', 'tenant-test-177')
+  insert into public.tenants (name, business_type, contact_email, whatsapp, is_demo, active)
+  values ('Centro Estética Control 177', 'peluqueria', 'control177@salonymas.com', '+573001112233', true, true)
   returning id into v_tenant_id;
 
-  -- 2. Crear sede
-  insert into public.branches (tenant_id, name, address)
-  values (v_tenant_id, 'Sede Principal 177', 'Calle 85 # 11-42')
-  returning id into v_branch_id;
+  -- 2. Auth y membresía
+  insert into auth.users (id, email)
+  values (v_owner_user_id, 'owner_177_' || floor(random()*100000)::text || '@salonymas.com');
 
-  -- 3. Crear perfil de owner
-  insert into public.user_profiles (id, tenant_id, user_id, email, full_name, role, active)
-  values (gen_random_uuid(), v_tenant_id, v_user_id, 'owner177@salonymas.com', 'Dueño 177', 'tenant_owner', true);
+  insert into public.tenant_memberships (tenant_id, user_id, role, active)
+  values (v_tenant_id, v_owner_user_id, 'tenant_owner', true);
+
+  perform set_config('request.jwt.claim.sub', v_owner_user_id::text, true);
+  perform set_config('request.jwt.claim.role', 'authenticated', true);
+
+  -- 3. Crear sede
+  insert into public.branches (tenant_id, name, slug, timezone, currency_code, is_primary, active)
+  values (v_tenant_id, 'Sede Principal 177', 'sede-177-' || floor(random()*100000)::text, 'America/Bogota', 'COP', true, true)
+  returning id into v_branch_id;
 
   -- 4. Crear cliente y estilista
   insert into public.clients (tenant_id, name, phone, active)
   values (v_tenant_id, 'Clienta Test 177', '+573009990177', true)
   returning id into v_client_id;
 
-  insert into public.stylists (tenant_id, branch_id, name, active)
-  values (v_tenant_id, v_branch_id, 'Estilista Test 177', true)
+  insert into public.stylists (tenant_id, name, active)
+  values (v_tenant_id, 'Estilista Test 177', true)
   returning id into v_stylist_id;
 
-  -- Simular sesion del usuario de prueba
-  perform set_config('request.jwt.claim.sub', v_user_id::text, true);
+  insert into public.branch_stylists (tenant_id, branch_id, stylist_id, active)
+  values (v_tenant_id, v_branch_id, v_stylist_id, true);
 
   -- 5. Crear ticket. El numero y el codigo los asigna el trigger
   -- tickets_set_number (D-117): no se insertan a mano, se leen de vuelta.
