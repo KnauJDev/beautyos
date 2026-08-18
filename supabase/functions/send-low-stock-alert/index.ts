@@ -143,6 +143,14 @@ Deno.serve(async (req) => {
     paso = "preparar el correo";
     const d = data as Record<string, unknown>;
     const brandText = d.brand ? ` (${d.brand})` : "";
+    const formatUnitQuantity = (qty: unknown, unit: unknown): string => {
+      const num = typeof qty === "number" ? qty : parseFloat(String(qty ?? 0));
+      const u = String(unit ?? "unidad").trim();
+      if (u.toLowerCase() === "unidad" || u.toLowerCase() === "unidades") {
+        return num === 1 ? `${num} unidad` : `${num} unidades`;
+      }
+      return `${qty} ${u}`;
+    };
 
     paso = "enviar por Resend";
     console.log("PASO:", paso, "| para:", d.contact_email);
@@ -170,7 +178,7 @@ Deno.serve(async (req) => {
           to: [d.contact_email],
           subject: `Stock bajo: ${d.product_name} en ${d.business_name}`,
           html: `
-          <p>El producto <strong>${d.product_name}</strong>${brandText} de la sede ${d.branch_name} quedo con <strong>${d.current_stock} ${d.unit}</strong>, en o por debajo del minimo configurado (${d.minimum_stock} ${d.unit}).</p>
+          <p>El producto <strong>${d.product_name}</strong>${brandText} de la sede ${d.branch_name} quedo con <strong>${formatUnitQuantity(d.current_stock, d.unit)}</strong>, en o por debajo del minimo configurado (${formatUnitQuantity(d.minimum_stock, d.unit)}).</p>
           <p>Registra una compra pronto para no quedarte sin stock.</p>
         `,
         }),

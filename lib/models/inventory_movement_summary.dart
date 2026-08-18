@@ -1,4 +1,6 @@
-﻿class InventoryMovementSummary {
+import 'product_management_item.dart' show formatUnitQuantity;
+
+class InventoryMovementSummary {
   final String id;
   final String productName;
   final String productCategory;
@@ -62,9 +64,7 @@
     }
   }
 
-  String get quantityText {
-    return '${quantity.toStringAsFixed(0)} $unit';
-  }
+  String get quantityText => formatUnitQuantity(quantity, unit);
 
   String get formattedUnitCost {
     return '\$${unitCost.toStringAsFixed(0)}';

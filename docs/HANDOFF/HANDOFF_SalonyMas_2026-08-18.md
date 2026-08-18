@@ -1,8 +1,8 @@
-# HANDOFF Salón y Más — 18 de agosto de 2026 (bloque D-154)
+# HANDOFF Salón y Más — 18 de agosto de 2026 (bloque D-155)
 
-**Bloque documentado:** decisión **D-154** · Paso 4.7 cerrado: Reportes V3 con selector temporal dinámico (Hoy/Semana/Mes/Rango), métodos de pago colombianos (Efectivo/Transferencias Nequi-Daviplata/Tarjetas), arqueo de efectivo real, comparación entre períodos y fichas de detalle Nivel 3
-**Estado:** **141 de 141 pruebas unitarias y de widgets en verde** (`flutter test`), `flutter analyze` 100% limpio (0 errores, 0 advertencias).
-**Reemplaza como handoff vigente a:** la versión anterior de este archivo (bloque D-153)
+**Bloque documentado:** decisión **D-155** · Paso 4.8 cerrado: Inventario, Compras y Gastos: pulido visual, buscador reactivo, filtros por estado/método de pago con contadores en vivo y corrección gramatical de unidades en alertas de stock bajo (`formatUnitQuantity`)
+**Estado:** **146 de 146 pruebas unitarias y de widgets en verde** (`flutter test`), `flutter analyze` 100% limpio (0 errores, 0 advertencias).
+**Reemplaza como handoff vigente a:** la versión anterior de este archivo (bloque D-154)
 
 ---
 
@@ -34,44 +34,36 @@ Fase 4  Pulido módulo a módulo        🔄  ← AQUÍ
         4.5  Tickets: Nivel 2 y 3 + Pill  ✅ CERRADO (18-ago / D-152, hallazgo N)
         4.6  Clientes: retorno y valor    ✅ CERRADO (18-ago / D-153)
         4.7  Reportes: nivel 2 y 3        ✅ CERRADO (18-ago / D-154)
-        4.8  Inventario, Compras y Gastos ⬜ Siguiente paso
-        4.9  Servicios, Equipo y Galería  ⬜
+        4.8  Inventario, Compras y Gastos ✅ CERRADO (18-ago / D-155)
+        4.9  Servicios, Equipo y Galería  ⬜ Siguiente paso
         4.10 Barra celular con acciones   ⬜ (hallazgo D)
         4.11 Rediseño panel plataforma    ⬜ (hallazgo O)
 ```
 
 ---
 
-## 2. Qué pasó en este bloque (D-154)
+## 2. Qué pasó en este bloque (D-155)
 
-Se completó el **Paso 4.7** modernizando integralmente el módulo de reportes (`lib/pages/reports_page.dart`):
+Se completó el **Paso 4.8** resolviendo el hallazgo gramatical en alertas de stock bajo y puliendo los módulos de abastecimiento:
 
-1. **Selector temporal flexible (Nivel 2):**
-   - Selección por chips rápidos (*Hoy*, *Esta semana*, *Este mes*) y *Rango personalizado...* con `showDateRangePicker`.
-2. **Base de datos / RPC:**
-   - Migración `20260818160000_reportes_v3_periodos_y_metodos.sql` con la función `public.get_branch_reports_v3(p_branch_id, p_start_date, p_end_date)`.
-   - Calcula de forma atómica en hora de Colombia (`America/Bogota`):
-     * Ingresos por método de pago (`cash_received`, `card_received`, `transfer_received`, `other_received`, `total_received`).
-     * Egresos: compras de insumos, gastos operativos y comisiones de estilistas.
-     * **Arqueo de dinero físico esperado:** `expected_cash = cash_received - cash_purchases - cash_expenses`.
-     * **Resultado neto operativo:** `net_result = total_received - total_purchases - total_expenses - total_commissions`.
-     * Métricas del período anterior de igual duración para cálculo de tendencias (`prev_total_received`, `prev_net_result`, `prev_payments_count`).
-     * Desglose JSON de comisiones por profesional y ventas por servicio/estilista.
-3. **Script de Control 176:**
-   - Creado `supabase/sql/176_test_reportes_v3_periodos_y_metodos.sql` con 4 comprobaciones aisladas en `ROLLBACK`.
-4. **Modelos y Servicios Flutter:**
-   - Modelo `BranchReportV3` en `lib/models/branch_report_v3.dart` con helpers de comparación (`salesGrowthPercent`, `salesGrowthText`, `salesGrowthDelta`), `ReportCommissionItem` y `ReportServiceSaleItem`.
-   - Servicio `BranchReportsService` en `lib/services/branch_reports_service.dart`.
-5. **Frontend Flutter (`ReportesPage`):**
-   - Tarjeta de Resumen Financiero con badge de tendencia comparativa (*"🟢 +16.7% vs período anterior"* o aviso para negocios sin historial previo).
-   - Tarjeta de Métodos de Pago con barras porcentuales proporcionales y arqueo de caja físico destacado en morado.
-   - Listado interactivo de comisiones por estilista y ventas por servicio.
-6. **Nivel 3 (Fichas de Drill-Down):**
-   - Modal deslizable `_StylistCommissionDetailSheet` con detalle de servicios y comisión de cada estilista.
-   - Modal deslizable `_ServiceSalesDetailSheet` con citas, duración acumulada y ventas por servicio.
-7. **Pruebas y Verificación:**
-   - Creado `test/reports_page_test.dart` (3 pruebas unitarias y de modelos).
-   - Total de pruebas del proyecto: **141 de 141 en VERDE**.
+1. **Corrección Gramatical de Unidades (`formatUnitQuantity`):**
+   - Resuelto el hallazgo reportado el 11-ago (*"quedó con 3 unidad"* ➔ *"quedó con 3 unidades"*).
+   - Helper en Edge Function `send-low-stock-alert` (`supabase/functions/send-low-stock-alert/index.ts`) y en los modelos Flutter (`ProductManagementItem`, `PurchaseItemSummary`, `InventoryMovementSummary`).
+   - Conserva intactas las unidades métricas (`ml`, `gr`, `l`, `oz`).
+2. **Inventario (`lib/pages/inventory_page.dart`):**
+   - Buscador universal interactivo (nombre, marca, categoría, SKU).
+   - Chips de filtrado dinámico con contadores en vivo (*Todos*, *🔴 Agotados*, *⚠️ Stock bajo*, *🟢 Normal*, *📦 Insumos*, *🛍️ Para venta*, *⚪ Inactivos*).
+   - `ProductRow` modernizado con badges semánticos de nivel de stock, botón directo de consumo interno y colores del sistema de temas.
+3. **Compras (`lib/pages/purchases_page.dart`):**
+   - Buscador reactivo por proveedor, número de factura o notas.
+   - Chips de filtro por medio de pago (*Efectivo*, *Transferencia*, *Tarjeta*, *Crédito*, *Anuladas*).
+   - `Card` y tablas con `AppColors.surface`.
+4. **Gastos Operativos (`lib/pages/expenses_page.dart`):**
+   - Buscador reactivo por descripción o categoría.
+   - Chips de filtro por medio de pago y `AppColors.surface`.
+5. **Pruebas y Verificación:**
+   - Creado `test/inventory_page_test.dart` (5 pruebas unitarias).
+   - Total de pruebas del proyecto: **146 de 146 en VERDE**.
    - `flutter analyze` 100% limpio (0 errores, 0 advertencias).
    - Guardián `test/sin_colores_sueltos_test.dart` en verde.
 
@@ -79,16 +71,14 @@ Se completó el **Paso 4.7** modernizando integralmente el módulo de reportes (
 
 ## 3. Estado técnico
 
-- **Pruebas Flutter:** **141 de 141 en verde** (`flutter test`)
+- **Pruebas Flutter:** **146 de 146 en verde** (`flutter test`)
 - **Análisis estático:** 0 errores, 0 advertencias (`flutter analyze`)
-- **Decisiones registradas:** **154 decisiones** (D-001 al D-154)
-- **Base de datos:** Migración `20260818160000_reportes_v3_periodos_y_metodos.sql` y Control 176 listos para aplicar por el propietario
+- **Decisiones registradas:** **155 decisiones** (D-001 al D-155)
 
 ---
 
 ## 4. Próximos pasos inmediatos (para la próxima sesión)
 
-1. **Paso 4.8:** Inventario, Compras y Gastos: pulido visual y plural en correos de stock bajo ("3 unidades").
-2. **Paso 4.9:** Servicios, Estilistas y Galería: filtrar por cliente/estilista y producción por estilista.
-3. **Paso 4.10:** Barra inferior de celular con acciones rápidas (Hallazgo D).
-4. **Paso 4.11:** Rediseño del panel de plataforma SaaS (Hallazgo O).
+1. **Paso 4.9:** Servicios, Estilistas y Galería: filtrar por cliente/estilista y producción por estilista.
+2. **Paso 4.10:** Barra inferior de celular con acciones rápidas (Hallazgo D).
+3. **Paso 4.11:** Rediseño del panel de plataforma SaaS (Hallazgo O).

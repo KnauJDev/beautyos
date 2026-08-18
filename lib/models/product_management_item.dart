@@ -1,3 +1,13 @@
+String formatUnitQuantity(num quantity, String unit) {
+  final cleanUnit = unit.trim();
+  final formattedNumber =
+      quantity == quantity.toInt() ? quantity.toInt().toString() : quantity.toString();
+  if (cleanUnit.toLowerCase() == 'unidad' || cleanUnit.toLowerCase() == 'unidades') {
+    return quantity == 1 ? '$formattedNumber unidad' : '$formattedNumber unidades';
+  }
+  return '$formattedNumber $cleanUnit';
+}
+
 class ProductManagementItem {
   const ProductManagementItem({
     required this.id,
@@ -53,9 +63,9 @@ class ProductManagementItem {
     return productType == 'sale' ? 'Producto para venta' : 'Insumo interno';
   }
 
-  String get stockText => '${currentStock.toStringAsFixed(0)} $unit';
+  String get stockText => formatUnitQuantity(currentStock, unit);
 
-  String get minimumStockText => '${minimumStock.toStringAsFixed(0)} $unit';
+  String get minimumStockText => formatUnitQuantity(minimumStock, unit);
 
   String get formattedPurchasePrice => _formatCop(purchasePrice);
 

@@ -1,4 +1,6 @@
-﻿class PurchaseItemSummary {
+import 'product_management_item.dart' show formatUnitQuantity;
+
+class PurchaseItemSummary {
   final String id;
   final String purchaseId;
   final String supplierName;
@@ -52,13 +54,7 @@
     return invoiceNumber!;
   }
 
-  String get quantityText {
-    final cleanQuantity = quantity % 1 == 0
-        ? quantity.toStringAsFixed(0)
-        : quantity.toStringAsFixed(2);
-
-    return '$cleanQuantity $unit';
-  }
+  String get quantityText => formatUnitQuantity(quantity, unit);
 
   String get formattedUnitCost {
     return '\$${unitCost.toStringAsFixed(0)}';

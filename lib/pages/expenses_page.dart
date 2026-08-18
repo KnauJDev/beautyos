@@ -146,7 +146,7 @@ class _GastosPageState extends State<GastosPage> {
   }
 }
 
-class _ExpensesContent extends StatelessWidget {
+class _ExpensesContent extends StatefulWidget {
   final _ExpensesPageData data;
   final VoidCallback onCreate;
   final void Function(ExpenseManagementItem) onEdit;
@@ -160,8 +160,36 @@ class _ExpensesContent extends StatelessWidget {
   });
 
   @override
+  State<_ExpensesContent> createState() => _ExpensesContentState();
+}
+
+class _ExpensesContentState extends State<_ExpensesContent> {
+  String _searchQuery = '';
+  String _selectedMethod = 'all'; // all, cash, transfer, card, credit, voided
+
+  List<ExpenseManagementItem> _filterExpenses(List<ExpenseManagementItem> list) {
+    return list.where((e) {
+      if (_selectedMethod == 'voided') {
+        if (e.active) return false;
+      } else if (_selectedMethod != 'all') {
+        if (!e.active || e.paymentMethod != _selectedMethod) return false;
+      }
+
+      if (_searchQuery.isNotEmpty) {
+        final query = _searchQuery.toLowerCase();
+        final descMatch = e.description.toLowerCase().contains(query);
+        final catMatch = e.category.toLowerCase().contains(query);
+        final notesMatch = (e.notes ?? '').toLowerCase().contains(query);
+        if (!descMatch && !catMatch && !notesMatch) return false;
+      }
+
+      return true;
+    }).toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final expenses = data.expenses;
+    final expenses = widget.data.expenses;
     final activeExpenses = expenses.where((e) => e.active);
 
     final totalExpenses = activeExpenses.length;
@@ -175,6 +203,8 @@ class _ExpensesContent extends StatelessWidget {
         .map((e) => e.paymentMethod)
         .toSet()
         .length;
+
+    final filteredExpenses = _filterExpenses(expenses);
 
     return AppPage(
       title: 'Gastos',
@@ -190,7 +220,7 @@ class _ExpensesContent extends StatelessWidget {
         Align(
           alignment: Alignment.centerLeft,
           child: FilledButton.icon(
-            onPressed: onCreate,
+            onPressed: widget.onCreate,
             icon: const Icon(Icons.add_outlined),
             label: const Text('Registrar gasto'),
           ),
@@ -203,15 +233,82 @@ class _ExpensesContent extends StatelessWidget {
           paymentMethods: paymentMethods,
         ),
         const SizedBox(height: 16),
+
+        // Buscador y Chips de Medios de Pago
+        Card(
+          elevation: 1,
+          color: AppColors.surface,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Buscar por descripción, categoría o notas...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () => setState(() => _searchQuery = ''),
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.border),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  ),
+                  onChanged: (value) => setState(() => _searchQuery = value.trim()),
+                ),
+                const SizedBox(height: 12),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildChip('all', 'Todos (${activeExpenses.length})'),
+                      const SizedBox(width: 8),
+                      _buildChip('cash', '💵 Efectivo'),
+                      const SizedBox(width: 8),
+                      _buildChip('transfer', '📱 Transferencia'),
+                      const SizedBox(width: 8),
+                      _buildChip('card', '💳 Tarjeta'),
+                      const SizedBox(width: 8),
+                      _buildChip('credit', '📄 Crédito'),
+                      const SizedBox(width: 8),
+                      _buildChip('voided', '🚫 Anulados (${expenses.where((e) => !e.active).length})'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
         const SectionTitle('Gastos registrados'),
         const SizedBox(height: 12),
         _ExpensesTable(
-          expenses: expenses,
-          isOwner: data.isOwner,
-          onEdit: onEdit,
-          onToggleActive: onToggleActive,
+          expenses: filteredExpenses,
+          isOwner: widget.data.isOwner,
+          onEdit: widget.onEdit,
+          onToggleActive: widget.onToggleActive,
         ),
       ],
+    );
+  }
+
+  Widget _buildChip(String key, String label) {
+    final isSelected = _selectedMethod == key;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      selectedColor: AppColors.brandTint,
+      onSelected: (selected) {
+        if (selected) {
+          setState(() => _selectedMethod = key);
+        }
+      },
     );
   }
 }
@@ -288,6 +385,7 @@ class _ExpensesTable extends StatelessWidget {
     }
 
     return Card(
+      color: AppColors.surface,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: SingleChildScrollView(

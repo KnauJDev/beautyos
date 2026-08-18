@@ -188,7 +188,7 @@ class _ComprasPageState extends State<ComprasPage> {
   }
 }
 
-class _PurchasesContent extends StatelessWidget {
+class _PurchasesContent extends StatefulWidget {
   final _PurchasesPageData data;
   final VoidCallback onCreatePurchase;
   final void Function(PurchaseManagementItem) onEditHeader;
@@ -202,9 +202,37 @@ class _PurchasesContent extends StatelessWidget {
   });
 
   @override
+  State<_PurchasesContent> createState() => _PurchasesContentState();
+}
+
+class _PurchasesContentState extends State<_PurchasesContent> {
+  String _searchQuery = '';
+  String _selectedMethod = 'all'; // all, cash, transfer, card, credit, voided
+
+  List<PurchaseManagementItem> _filterPurchases(List<PurchaseManagementItem> list) {
+    return list.where((p) {
+      if (_selectedMethod == 'voided') {
+        if (p.active) return false;
+      } else if (_selectedMethod != 'all') {
+        if (!p.active || p.paymentMethod != _selectedMethod) return false;
+      }
+
+      if (_searchQuery.isNotEmpty) {
+        final query = _searchQuery.toLowerCase();
+        final supplierMatch = p.supplierName.toLowerCase().contains(query);
+        final invoiceMatch = (p.invoiceNumber ?? '').toLowerCase().contains(query);
+        final notesMatch = (p.notes ?? '').toLowerCase().contains(query);
+        if (!supplierMatch && !invoiceMatch && !notesMatch) return false;
+      }
+
+      return true;
+    }).toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final purchases = data.purchases;
-    final items = data.items;
+    final purchases = widget.data.purchases;
+    final items = widget.data.items;
 
     final activePurchases = purchases.where((p) => p.active);
     final totalPurchases = activePurchases.length;
@@ -217,6 +245,8 @@ class _PurchasesContent extends StatelessWidget {
         .map((purchase) => purchase.supplierName)
         .toSet()
         .length;
+
+    final filteredPurchases = _filterPurchases(purchases);
 
     return AppPage(
       title: 'Compras',
@@ -232,7 +262,7 @@ class _PurchasesContent extends StatelessWidget {
         Align(
           alignment: Alignment.centerLeft,
           child: FilledButton.icon(
-            onPressed: onCreatePurchase,
+            onPressed: widget.onCreatePurchase,
             icon: const Icon(Icons.add_outlined),
             label: const Text('Registrar compra'),
           ),
@@ -245,19 +275,86 @@ class _PurchasesContent extends StatelessWidget {
           itemLines: items.length,
         ),
         const SizedBox(height: 16),
+
+        // Buscador y Chips de Medios de Pago
+        Card(
+          elevation: 1,
+          color: AppColors.surface,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Buscar por proveedor, número de factura o notas...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () => setState(() => _searchQuery = ''),
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.border),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  ),
+                  onChanged: (value) => setState(() => _searchQuery = value.trim()),
+                ),
+                const SizedBox(height: 12),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildChip('all', 'Todas (${activePurchases.length})'),
+                      const SizedBox(width: 8),
+                      _buildChip('cash', '💵 Efectivo'),
+                      const SizedBox(width: 8),
+                      _buildChip('transfer', '📱 Transferencia'),
+                      const SizedBox(width: 8),
+                      _buildChip('card', '💳 Tarjeta'),
+                      const SizedBox(width: 8),
+                      _buildChip('credit', '📄 Crédito'),
+                      const SizedBox(width: 8),
+                      _buildChip('voided', '🚫 Anuladas (${purchases.where((p) => !p.active).length})'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
         const SectionTitle('Compras registradas'),
         const SizedBox(height: 12),
         _PurchasesTable(
-          purchases: purchases,
-          isOwner: data.isOwner,
-          onEditHeader: onEditHeader,
-          onVoidPurchase: onVoidPurchase,
+          purchases: filteredPurchases,
+          isOwner: widget.data.isOwner,
+          onEditHeader: widget.onEditHeader,
+          onVoidPurchase: widget.onVoidPurchase,
         ),
         const SizedBox(height: 24),
         const SectionTitle('Detalle de productos comprados'),
         const SizedBox(height: 12),
         _PurchaseItemsTable(items: items),
       ],
+    );
+  }
+
+  Widget _buildChip(String key, String label) {
+    final isSelected = _selectedMethod == key;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      selectedColor: AppColors.brandTint,
+      onSelected: (selected) {
+        if (selected) {
+          setState(() => _selectedMethod = key);
+        }
+      },
     );
   }
 }
@@ -334,6 +431,7 @@ class _PurchasesTable extends StatelessWidget {
     }
 
     return Card(
+      color: AppColors.surface,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: SingleChildScrollView(
@@ -438,6 +536,7 @@ class _PurchaseItemsTable extends StatelessWidget {
     }
 
     return Card(
+      color: AppColors.surface,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: SingleChildScrollView(
