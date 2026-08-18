@@ -80,8 +80,13 @@ declare
   v_prefix text;
   v_padding smallint;
 begin
-  -- Solo se ejecuta si el ticket pasa a 'cerrado' y aún no tiene sale_number
-  if new.status = 'cerrado' and (old.status is distinct from 'cerrado' or old.sale_number is null) then
+  -- Solo se ejecuta si el ticket pasa a 'cerrado' y AÚN NO TIENE sale_number.
+  -- A propósito no se vuelve a entrar aqui solo porque el status cambio: un
+  -- ticket que ya tiene numero de venta lo conserva para siempre, sin importar
+  -- cuantas veces se reabra (void_ticket_payment) y se vuelva a cerrar. La
+  -- inmutabilidad contable depende de esto, no solo del trigger de proteccion
+  -- de abajo (D-150 / Hallazgo P, corregido en auditoria).
+  if new.status = 'cerrado' and old.sale_number is null then
     -- 1. Asegurar que existe la fila de configuración para la sede (con lock FOR UPDATE)
     insert into public.branch_sale_numbering (tenant_id, branch_id, prefix, next_number, padding)
     values (new.tenant_id, new.branch_id, 'VTA-', 1, 7)
@@ -115,7 +120,7 @@ drop trigger if exists trg_assign_sale_number_on_close on public.tickets;
 create trigger trg_assign_sale_number_on_close
   before update on public.tickets
   for each row
-  when (new.status = 'cerrado' and (old.status is distinct from 'cerrado' or old.sale_number is null))
+  when (new.status = 'cerrado' and old.sale_number is null)
   execute function private.beautyos_assign_sale_number_on_close();
 
 -- -----------------------------------------------------------------------------

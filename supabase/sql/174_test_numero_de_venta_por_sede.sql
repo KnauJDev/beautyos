@@ -7,8 +7,10 @@
 --   2. Tickets no cerrados (abiertos o cancelados) no reciben número de venta.
 --   3. Independencia y aislamiento estricto de consecutivos entre sedes.
 --   4. Inmutabilidad estricta: intento de modificar sale_number/sale_code falla.
---   5. Configuración de reglas DIAN y validación de next_number.
---   6. get_ticket_board_list_v2 devuelve los campos de venta.
+--   5. Reabrir un ticket cerrado (mismo camino que void_ticket_payment) y
+--      volverlo a cerrar NO reasigna un número de venta nuevo.
+--   6. Configuración de reglas DIAN y validación de next_number.
+--   7. get_ticket_board_list_v2 devuelve los campos de venta.
 -- ==============================================================================
 
 begin;
@@ -185,17 +187,58 @@ begin
   raise notice '✅ Prueba 4 superada: inmutabilidad contable de números de venta probada.';
 
   -- ============================================================================
-  -- PRUEBA 5: Configuración de Resolución DIAN y validación de next_number
+  -- PRUEBA 5: Reabrir un ticket cerrado y volverlo a cerrar NO reasigna número
+  -- ============================================================================
+  -- Mismo camino real que usa void_ticket_payment (079_void_ticket_payment_rpc.sql):
+  -- anular el pago que cerró el ticket lo regresa a 'finalizado'. Si luego se
+  -- vuelve a cerrar, el número de venta original debe conservarse intacto.
+  update public.tickets
+     set status = 'finalizado'
+   where id = v_ticket_1_id;
+
+  select sale_number, sale_code into v_ticket_row
+  from public.tickets where id = v_ticket_1_id;
+
+  if v_ticket_row.sale_number != 1 or v_ticket_row.sale_code != 'VTA-0000001' then
+    raise exception 'Fallo Prueba 5: reabrir el ticket (sin tocar sale_number/sale_code) no debió alterar el numero ya asignado. Obtenido: %, %',
+      v_ticket_row.sale_number, v_ticket_row.sale_code;
+  end if;
+
+  update public.tickets
+     set status = 'cerrado'
+   where id = v_ticket_1_id;
+
+  select sale_number, sale_code into v_ticket_row
+  from public.tickets where id = v_ticket_1_id;
+
+  if v_ticket_row.sale_number != 1 or v_ticket_row.sale_code != 'VTA-0000001' then
+    raise exception 'Fallo Prueba 5: al volver a cerrar el ticket se reasigno un numero de venta nuevo (esperado 1 / VTA-0000001, obtenido % / %). Se rompio la inmutabilidad.',
+      v_ticket_row.sale_number, v_ticket_row.sale_code;
+  end if;
+
+  -- El contador de la sede NO debe haber avanzado por esta reapertura.
+  select next_number into v_cfg_row
+  from public.branch_sale_numbering
+  where tenant_id = v_tenant_id and branch_id = v_branch_1_id;
+
+  if v_cfg_row.next_number != 2 then
+    raise exception 'Fallo Prueba 5: reabrir y volver a cerrar no debio consumir un numero nuevo del contador. next_number obtenido: %', v_cfg_row.next_number;
+  end if;
+
+  raise notice '✅ Prueba 5 superada: reabrir y volver a cerrar un ticket conserva su número de venta original.';
+
+  -- ============================================================================
+  -- PRUEBA 6: Configuración de Resolución DIAN y validación de next_number
   -- ============================================================================
   -- Intentar fijar next_number menor o igual al último emitido (1) -> Debe fallar
   begin
     perform public.set_branch_sale_numbering(
       v_branch_1_id, 'FJ-', 1, 6::smallint, '18764000123', '2026-08-01'::date, 20000, 29999, '2028-08-01'::date
     );
-    raise exception 'Fallo Prueba 5: debió rechazar next_number <= último emitido.';
+    raise exception 'Fallo Prueba 6: debió rechazar next_number <= último emitido.';
   exception when others then
     if sqlerrm not like '%debe ser estrictamente mayor%' then
-      raise exception 'Fallo Prueba 5: mensaje de error inesperado: %', sqlerrm;
+      raise exception 'Fallo Prueba 6: mensaje de error inesperado: %', sqlerrm;
     end if;
   end;
 
@@ -208,13 +251,13 @@ begin
   from public.get_branch_sale_numbering(v_branch_1_id);
 
   if v_cfg_row.prefix != 'FJ-' or v_cfg_row.next_number != 20000 or v_cfg_row.resolution_number != '18764000123' then
-    raise exception 'Fallo Prueba 5: no se guardó la configuración DIAN correctamente.';
+    raise exception 'Fallo Prueba 6: no se guardó la configuración DIAN correctamente.';
   end if;
 
-  raise notice '✅ Prueba 5 superada: configuración de resolución DIAN y validaciones probadas.';
+  raise notice '✅ Prueba 6 superada: configuración de resolución DIAN y validaciones probadas.';
 
   -- ============================================================================
-  -- PRUEBA 6: get_ticket_board_list_v2 devuelve sale_number, sale_code y closed_at
+  -- PRUEBA 7: get_ticket_board_list_v2 devuelve sale_number, sale_code y closed_at
   -- ============================================================================
   v_found := false;
   for v_list_row in (
@@ -225,20 +268,20 @@ begin
     if v_list_row.id = v_ticket_1_id then
       v_found := true;
       if v_list_row.sale_number != 1 or v_list_row.sale_code != 'VTA-0000001' or v_list_row.closed_at is null then
-        raise exception 'Fallo Prueba 6: campos de venta incorrectos en RPC: %, %, %',
+        raise exception 'Fallo Prueba 7: campos de venta incorrectos en RPC: %, %, %',
           v_list_row.sale_number, v_list_row.sale_code, v_list_row.closed_at;
       end if;
     end if;
   end loop;
 
   if not v_found then
-    raise exception 'Fallo Prueba 6: no se encontró el ticket cerrado en get_ticket_board_list_v2.';
+    raise exception 'Fallo Prueba 7: no se encontró el ticket cerrado en get_ticket_board_list_v2.';
   end if;
 
-  raise notice '✅ Prueba 6 superada: RPC de lista Nivel 2 devuelve consecutivo contable exacto.';
+  raise notice '✅ Prueba 7 superada: RPC de lista Nivel 2 devuelve consecutivo contable exacto.';
 
   raise notice '==================================================';
-  raise notice 'CONTROL 174: 6 DE 6 PRUEBAS EN VERDE.';
+  raise notice 'CONTROL 174: 7 DE 7 PRUEBAS EN VERDE.';
   raise notice '==================================================';
 end;
 $$;
