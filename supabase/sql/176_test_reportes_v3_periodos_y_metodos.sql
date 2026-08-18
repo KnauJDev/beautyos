@@ -16,6 +16,7 @@ declare
   v_ticket_curr1 uuid;
   v_ticket_curr2 uuid;
   v_ticket_curr3 uuid;
+  v_ticket_service_id uuid;
   v_res record;
   v_today date := current_date;
   v_prev_date date := current_date - 1;
@@ -76,7 +77,8 @@ begin
   values (v_tenant_id, v_branch_id, v_client_id, (v_today::text || ' 09:00:00-05')::timestamptz, (v_today::text || ' 10:00:00-05')::timestamptz, 'cerrado', 'manual')
   returning id into v_ticket_curr1;
   insert into public.ticket_services (tenant_id, branch_id, ticket_id, service_id, stylist_id, price, duration_minutes, status)
-  values (v_tenant_id, v_branch_id, v_ticket_curr1, v_service_id, v_stylist_id, 50000, 60, 'finalizado');
+  values (v_tenant_id, v_branch_id, v_ticket_curr1, v_service_id, v_stylist_id, 50000, 60, 'finalizado')
+  returning id into v_ticket_service_id;
   insert into public.ticket_payments (tenant_id, branch_id, ticket_id, amount, method, status, received_at, created_by)
   values (v_tenant_id, v_branch_id, v_ticket_curr1, 50000, 'efectivo', 'registrado', (v_today::text || ' 10:00:00-05')::timestamptz, v_owner_user_id);
 
@@ -113,7 +115,7 @@ begin
     fixed_commission_amount, applies_after_discount, commission_amount,
     status, generated_at, generated_by
   ) values (
-    v_tenant_id, v_branch_id, v_ticket_curr1, gen_random_uuid(), v_stylist_id,
+    v_tenant_id, v_branch_id, v_ticket_curr1, v_ticket_service_id, v_stylist_id,
     100000, 'percentage', 40.0, 0, false, 40000,
     'generada', (v_today::text || ' 12:00:00-05')::timestamptz, v_owner_user_id
   );
