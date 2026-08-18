@@ -22,6 +22,8 @@ class _FotosTrabajosPageState extends State<FotosTrabajosPage> {
 
   late Future<List<WorkPhotoSummary>> _workPhotosFuture;
   String _selectedFilter = 'all';
+  String _selectedStylist = 'all';
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -31,16 +33,48 @@ class _FotosTrabajosPageState extends State<FotosTrabajosPage> {
   }
 
   List<WorkPhotoSummary> _filterPhotos(List<WorkPhotoSummary> photos) {
-    switch (_selectedFilter) {
-      case 'visible':
-        return photos.where((photo) => photo.visibleToCustomer).toList();
-      case 'portfolio':
-        return photos.where((photo) => photo.approvedForPortfolio).toList();
-      case 'pending_ai':
-        return photos.where((photo) => photo.aiStatus == 'pending').toList();
-      default:
-        return photos;
-    }
+    return photos.where((photo) {
+      // 1. Filtro por tipo o estado
+      switch (_selectedFilter) {
+        case 'visible':
+          if (!photo.visibleToCustomer) return false;
+          break;
+        case 'portfolio':
+          if (!photo.approvedForPortfolio) return false;
+          break;
+        case 'pending_ai':
+          if (photo.aiStatus != 'pending') return false;
+          break;
+        case 'before':
+        case 'after':
+        case 'final':
+          if (photo.photoType != _selectedFilter) return false;
+          break;
+        case 'all':
+        default:
+          break;
+      }
+
+      // 2. Filtro por estilista
+      if (_selectedStylist != 'all') {
+        if (photo.stylistName != _selectedStylist) return false;
+      }
+
+      // 3. Filtro por texto de búsqueda
+      if (_searchQuery.isNotEmpty) {
+        final query = _searchQuery.toLowerCase();
+        final clientMatch = photo.clientName.toLowerCase().contains(query);
+        final stylistMatch = photo.stylistName.toLowerCase().contains(query);
+        final ticketMatch = (photo.ticketCode ?? '').toLowerCase().contains(query);
+        final captionMatch = (photo.caption ?? '').toLowerCase().contains(query);
+
+        if (!clientMatch && !stylistMatch && !ticketMatch && !captionMatch) {
+          return false;
+        }
+      }
+
+      return true;
+    }).toList();
   }
 
   void _refreshPhotos() {
@@ -119,9 +153,7 @@ class _FotosTrabajosPageState extends State<FotosTrabajosPage> {
     }
   }
 
-  /// Borrar una foto **no se puede deshacer**, y hay que decirlo con esas
-  /// palabras: el respaldo del proyecto guarda la lista de archivos, no los
-  /// archivos, asi que una imagen borrada no esta en ningun respaldo (H-09).
+  /// Borrar una foto no se puede deshacer (H-09).
   Future<void> _deletePhoto(WorkPhotoSummary photo) async {
     final confirmado = await showDialog<bool>(
       context: context,
@@ -203,13 +235,29 @@ class _FotosTrabajosPageState extends State<FotosTrabajosPage> {
         final allPhotos = snapshot.data ?? [];
         final filteredPhotos = _filterPhotos(allPhotos);
 
+        // Estilistas únicos para el filtro
+        final stylists = allPhotos
+            .map((p) => p.stylistName)
+            .where((name) => name.trim().isNotEmpty && name != 'Estilista no asociado')
+            .toSet()
+            .toList()
+          ..sort();
+
         return _WorkPhotosContent(
           allPhotos: allPhotos,
           photos: filteredPhotos,
+          stylists: stylists,
           selectedFilter: _selectedFilter,
-          onFilterChanged: (filter) {
+          selectedStylist: _selectedStylist,
+          searchQuery: _searchQuery,
+          onSearchChanged: (query) => setState(() => _searchQuery = query),
+          onFilterChanged: (filter) => setState(() => _selectedFilter = filter),
+          onStylistChanged: (stylist) => setState(() => _selectedStylist = stylist),
+          onClearFilters: () {
             setState(() {
-              _selectedFilter = filter;
+              _selectedFilter = 'all';
+              _selectedStylist = 'all';
+              _searchQuery = '';
             });
           },
           onRefresh: _refreshPhotos,
@@ -225,20 +273,32 @@ class _FotosTrabajosPageState extends State<FotosTrabajosPage> {
 class _WorkPhotosContent extends StatelessWidget {
   final List<WorkPhotoSummary> allPhotos;
   final List<WorkPhotoSummary> photos;
+  final List<String> stylists;
   final String selectedFilter;
+  final String selectedStylist;
+  final String searchQuery;
+  final ValueChanged<String> onSearchChanged;
   final ValueChanged<String> onFilterChanged;
+  final ValueChanged<String> onStylistChanged;
+  final VoidCallback onClearFilters;
   final VoidCallback onRefresh;
   final Future<void> Function(WorkPhotoSummary photo, bool visible)
-  onSetCustomerVisibility;
+      onSetCustomerVisibility;
   final Future<void> Function(WorkPhotoSummary photo, bool approved)
-  onSetPortfolioApproval;
+      onSetPortfolioApproval;
   final Future<void> Function(WorkPhotoSummary photo) onDelete;
 
   const _WorkPhotosContent({
     required this.allPhotos,
     required this.photos,
+    required this.stylists,
     required this.selectedFilter,
+    required this.selectedStylist,
+    required this.searchQuery,
+    required this.onSearchChanged,
     required this.onFilterChanged,
+    required this.onStylistChanged,
+    required this.onClearFilters,
     required this.onRefresh,
     required this.onSetCustomerVisibility,
     required this.onSetPortfolioApproval,
@@ -261,19 +321,13 @@ class _WorkPhotosContent extends StatelessWidget {
     return AppPage(
       title: 'Fotos de trabajos',
       subtitle:
-          'Portafolio visual, evidencia de servicios y futuras mejoras con IA.',
+          'Portafolio visual, evidencia de servicios con ticket y control de publicación.',
       children: [
         const InfoPanel(
           icon: Icons.photo_library_outlined,
-          title: 'Fotos de trabajos conectadas con Supabase',
+          title: 'Galería conectada a Supabase',
           description:
-              'Aqui veremos las fotos antes, despues, finales y aprobadas para portafolio.',
-        ),
-        const SizedBox(height: 16),
-        OutlinedButton.icon(
-          onPressed: onRefresh,
-          icon: const Icon(Icons.refresh_outlined),
-          label: const Text('Actualizar fotos'),
+              'Visualiza fotos antes, después y finales vinculadas a cada cita (#ticket). Filtra por estilista o cliente y aprueba las mejores para el portafolio público.',
         ),
         const SizedBox(height: 16),
         Wrap(
@@ -307,15 +361,119 @@ class _WorkPhotosContent extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
-        _WorkPhotoFilters(
-          selectedFilter: selectedFilter,
-          onFilterChanged: onFilterChanged,
+
+        // Buscador y Filtros
+        Card(
+          elevation: 1,
+          color: AppColors.surface,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Buscar por cliente, estilista, #cita (ej. #0000701) o notas...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () => onSearchChanged(''),
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: AppColors.border),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  ),
+                  onChanged: onSearchChanged,
+                ),
+                const SizedBox(height: 12),
+
+                // Filtros de Tipo
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildFilterChip('all', 'Todas ($totalPhotos)'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('portfolio', '⭐ Portafolio ($portfolioPhotos)'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('visible', '👁️ Visibles ($visiblePhotos)'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('before', 'Antes'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('after', 'Después'),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('final', 'Final'),
+                      if (pendingAiPhotos > 0) ...[
+                        const SizedBox(width: 8),
+                        _buildFilterChip('pending_ai', '🤖 IA pendiente ($pendingAiPhotos)'),
+                      ],
+                    ],
+                  ),
+                ),
+
+                // Filtro de Estilista (si hay estilistas)
+                if (stylists.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        const Text(
+                          'Estilista: ',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        ChoiceChip(
+                          label: const Text('Todos'),
+                          selected: selectedStylist == 'all',
+                          selectedColor: AppColors.brandTint,
+                          onSelected: (selected) {
+                            if (selected) onStylistChanged('all');
+                          },
+                        ),
+                        for (final stylist in stylists) ...[
+                          const SizedBox(width: 8),
+                          ChoiceChip(
+                            label: Text(stylist),
+                            selected: selectedStylist == stylist,
+                            selectedColor: AppColors.brandTint,
+                            onSelected: (selected) {
+                              if (selected) onStylistChanged(stylist);
+                            },
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
         const SizedBox(height: 16),
-        SectionTitle('Galeria de trabajos (${photos.length})'),
+
+        Row(
+          children: [
+            SectionTitle('Galería de trabajos (${photos.length})'),
+            const Spacer(),
+            OutlinedButton.icon(
+              onPressed: onRefresh,
+              icon: const Icon(Icons.refresh_outlined, size: 18),
+              label: const Text('Actualizar'),
+            ),
+          ],
+        ),
         const SizedBox(height: 12),
         _WorkPhotosGrid(
           photos: photos,
+          onClearFilters: onClearFilters,
           onSetCustomerVisibility: onSetCustomerVisibility,
           onSetPortfolioApproval: onSetPortfolioApproval,
           onDelete: onDelete,
@@ -323,87 +481,32 @@ class _WorkPhotosContent extends StatelessWidget {
       ],
     );
   }
-}
 
-class _WorkPhotoFilters extends StatelessWidget {
-  final String selectedFilter;
-  final ValueChanged<String> onFilterChanged;
-
-  const _WorkPhotoFilters({
-    required this.selectedFilter,
-    required this.onFilterChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: [
-        _FilterChipButton(
-          label: 'Todas',
-          value: 'all',
-          selectedFilter: selectedFilter,
-          onFilterChanged: onFilterChanged,
-        ),
-        _FilterChipButton(
-          label: 'Visibles',
-          value: 'visible',
-          selectedFilter: selectedFilter,
-          onFilterChanged: onFilterChanged,
-        ),
-        _FilterChipButton(
-          label: 'Portafolio',
-          value: 'portfolio',
-          selectedFilter: selectedFilter,
-          onFilterChanged: onFilterChanged,
-        ),
-        _FilterChipButton(
-          label: 'IA pendiente',
-          value: 'pending_ai',
-          selectedFilter: selectedFilter,
-          onFilterChanged: onFilterChanged,
-        ),
-      ],
-    );
-  }
-}
-
-class _FilterChipButton extends StatelessWidget {
-  final String label;
-  final String value;
-  final String selectedFilter;
-  final ValueChanged<String> onFilterChanged;
-
-  const _FilterChipButton({
-    required this.label,
-    required this.value,
-    required this.selectedFilter,
-    required this.onFilterChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isSelected = selectedFilter == value;
-
+  Widget _buildFilterChip(String key, String label) {
+    final isSelected = selectedFilter == key;
     return ChoiceChip(
       label: Text(label),
       selected: isSelected,
-      onSelected: (_) => onFilterChanged(value),
+      selectedColor: AppColors.brandTint,
+      onSelected: (selected) {
+        if (selected) onFilterChanged(key);
+      },
     );
   }
 }
 
 class _WorkPhotosGrid extends StatelessWidget {
   final List<WorkPhotoSummary> photos;
+  final VoidCallback onClearFilters;
   final Future<void> Function(WorkPhotoSummary photo, bool visible)
-  onSetCustomerVisibility;
+      onSetCustomerVisibility;
   final Future<void> Function(WorkPhotoSummary photo, bool approved)
-  onSetPortfolioApproval;
+      onSetPortfolioApproval;
   final Future<void> Function(WorkPhotoSummary photo) onDelete;
 
   const _WorkPhotosGrid({
     required this.photos,
+    required this.onClearFilters,
     required this.onSetCustomerVisibility,
     required this.onSetPortfolioApproval,
     required this.onDelete,
@@ -412,10 +515,28 @@ class _WorkPhotosGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (photos.isEmpty) {
-      return const InfoPanel(
-        icon: Icons.info_outline,
-        title: 'Sin fotos para este filtro',
-        description: 'No hay fotos que coincidan con el filtro seleccionado.',
+      return Card(
+        color: AppColors.surface,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+          child: Center(
+            child: Column(
+              children: [
+                Icon(Icons.photo_library_outlined, size: 48, color: AppColors.textMuted),
+                const SizedBox(height: 12),
+                const Text(
+                  'No hay fotos que coincidan con la búsqueda o filtro.',
+                  style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 10),
+                TextButton(
+                  onPressed: onClearFilters,
+                  child: const Text('Limpiar filtros'),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
     }
 
@@ -425,7 +546,7 @@ class _WorkPhotosGrid extends StatelessWidget {
       children: [
         for (final photo in photos)
           SizedBox(
-            width: 280,
+            width: 290,
             child: _WorkPhotoCard(
               photo: photo,
               onSetCustomerVisibility: onSetCustomerVisibility,
@@ -441,9 +562,9 @@ class _WorkPhotosGrid extends StatelessWidget {
 class _WorkPhotoCard extends StatelessWidget {
   final WorkPhotoSummary photo;
   final Future<void> Function(WorkPhotoSummary photo, bool visible)
-  onSetCustomerVisibility;
+      onSetCustomerVisibility;
   final Future<void> Function(WorkPhotoSummary photo, bool approved)
-  onSetPortfolioApproval;
+      onSetPortfolioApproval;
   final Future<void> Function(WorkPhotoSummary photo) onDelete;
 
   const _WorkPhotoCard({
@@ -457,13 +578,13 @@ class _WorkPhotoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 1,
-      color: Colors.white,
+      color: AppColors.surface,
       clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AspectRatio(
-            aspectRatio: 3 / 4,
+            aspectRatio: 4 / 3,
             child: FotoDeTrabajo(url: photo.displayUrl),
           ),
           Padding(
@@ -471,45 +592,84 @@ class _WorkPhotoCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _PhotoTypeBadge(text: photo.photoTypeText),
+                Row(
+                  children: [
+                    _PhotoTypeBadge(text: photo.photoTypeText),
+                    const Spacer(),
+                    if (photo.ticketCode != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.brandTint,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: AppColors.brand.withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          photo.ticketCode!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.brandDeep,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
                 const SizedBox(height: 10),
                 Text(
                   photo.captionText,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 15,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  'Cliente: ${photo.clientName}',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textStrong,
-                  ),
+                Row(
+                  children: [
+                    const Icon(Icons.person_outline, size: 16, color: AppColors.textSecondary),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        photo.clientName,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textStrong,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  'Estilista: ${photo.stylistName}',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textStrong,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  photo.aiStatusText,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 8),
                 Row(
-                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.content_cut_outlined, size: 16, color: AppColors.textSecondary),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        photo.stylistName,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textStrong,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '${photo.createdDateText} · ${photo.aiStatusText}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                const Divider(height: 18),
+                Row(
                   children: [
                     Switch(
                       value: photo.visibleToCustomer,
@@ -519,13 +679,12 @@ class _WorkPhotoCard extends StatelessWidget {
                     const Expanded(
                       child: Text(
                         'Visible al cliente',
-                        style: TextStyle(fontSize: 13),
+                        style: TextStyle(fontSize: 12),
                       ),
                     ),
                   ],
                 ),
                 Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Switch(
                       value: photo.approvedForPortfolio,
@@ -534,12 +693,10 @@ class _WorkPhotoCard extends StatelessWidget {
                     ),
                     const Expanded(
                       child: Text(
-                        'Aprobada para portafolio',
-                        style: TextStyle(fontSize: 13),
+                        'Aprobada portafolio',
+                        style: TextStyle(fontSize: 12),
                       ),
                     ),
-                    // Borrar va aparte y en rojo: es la unica accion de esta
-                    // tarjeta que no se puede deshacer (H-09).
                     IconButton(
                       onPressed: () => onDelete(photo),
                       icon: const Icon(Icons.delete_outline),
@@ -564,6 +721,21 @@ class _PhotoTypeBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Chip(label: Text(text), visualDensity: VisualDensity.compact);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceAlt,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          color: AppColors.textSecondary,
+        ),
+      ),
+    );
   }
 }

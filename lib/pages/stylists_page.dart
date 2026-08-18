@@ -32,6 +32,8 @@ class _EstilistasPageState extends State<EstilistasPage> {
       const StylistServicesService();
 
   late Future<_StylistsPageData> pageDataFuture;
+  String _searchQuery = '';
+  String _selectedFilter = 'all';
 
   @override
   void initState() {
@@ -146,6 +148,28 @@ class _EstilistasPageState extends State<EstilistasPage> {
     }
   }
 
+  List<StylistManagementItem> _filterStylists(List<StylistManagementItem> list) {
+    return list.where((st) {
+      if (_selectedFilter == 'inactive') {
+        if (st.active) return false;
+      } else if (_selectedFilter != 'all') {
+        if (!st.active || st.specialty != _selectedFilter) return false;
+      } else {
+        if (!st.active && _selectedFilter != 'inactive') return false;
+      }
+
+      if (_searchQuery.isNotEmpty) {
+        final query = _searchQuery.toLowerCase();
+        final nameMatch = st.name.toLowerCase().contains(query);
+        final specMatch = st.specialty.toLowerCase().contains(query);
+        final phoneMatch = st.phone.toLowerCase().contains(query);
+        if (!nameMatch && !specMatch && !phoneMatch) return false;
+      }
+
+      return true;
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppPage(
@@ -154,9 +178,9 @@ class _EstilistasPageState extends State<EstilistasPage> {
       children: [
         const InfoPanel(
           icon: Icons.badge_outlined,
-          title: 'Estilistas conectados con Supabase',
+          title: 'Equipo conectado a Supabase',
           description:
-              'Crea, edita o desactiva estilistas y administra los servicios que puede realizar cada uno.',
+              'Crea, edita o desactiva estilistas y administra los servicios que puede realizar cada profesional.',
         ),
         const SizedBox(height: 16),
         Align(
@@ -172,18 +196,11 @@ class _EstilistasPageState extends State<EstilistasPage> {
           future: pageDataFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Card(
-                elevation: 1,
-                color: Colors.white,
-                child: Padding(
-                  padding: EdgeInsets.all(22),
-                  child: Row(
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(width: 16),
-                      Text('Cargando estilistas desde Supabase...'),
-                    ],
-                  ),
+              return Card(
+                color: AppColors.surface,
+                child: const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Center(child: CircularProgressIndicator()),
                 ),
               );
             }
@@ -197,50 +214,183 @@ class _EstilistasPageState extends State<EstilistasPage> {
             }
 
             final data = snapshot.data;
-            final stylists = data?.stylists ?? [];
+            final allStylists = data?.stylists ?? [];
             final stylistServices = data?.stylistServices ?? [];
+            final activeStylists = allStylists.where((st) => st.active).toList();
+            final inactiveCount = allStylists.where((st) => !st.active).length;
 
-            if (stylists.isEmpty) {
-              return const InfoPanel(
-                icon: Icons.info_outline,
-                title: 'Sin estilistas disponibles',
-                description:
-                    'No hay estilistas para mostrar. Usa "Agregar estilista" para crear el primero.',
-              );
-            }
+            final specialties = activeStylists
+                .map((st) => st.specialty)
+                .where((s) => s.trim().isNotEmpty)
+                .toSet()
+                .toList()
+              ..sort();
 
-            return Card(
-              elevation: 1,
-              color: Colors.white,
-              child: Padding(
-                padding: const EdgeInsets.all(22),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            final filteredStylists = _filterStylists(allStylists);
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Resumen
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
                   children: [
-                    const SectionTitle('Estilistas y servicios asignados'),
-                    const SizedBox(height: 14),
-                    ...stylists.map((stylist) {
-                      final services = stylistServices
-                          .where(
-                            (service) => service.stylistName == stylist.name,
-                          )
-                          .toList();
-
-                      return StylistCard(
-                        stylist: stylist,
-                        services: services,
-                        onManageServices: () => _manageStylistServices(stylist),
-                        onEdit: () => _openEditStylistDialog(stylist),
-                        onToggleActive: () => _toggleActive(stylist),
-                      );
-                    }),
+                    MetricCard(
+                      title: 'Equipo activo',
+                      value: '${activeStylists.length}',
+                      description: 'Profesionales',
+                      icon: Icons.people_outline,
+                    ),
+                    MetricCard(
+                      title: 'Especialidades',
+                      value: '${specialties.length}',
+                      description: 'Áreas de talento',
+                      icon: Icons.auto_awesome_outlined,
+                    ),
+                    MetricCard(
+                      title: 'Servicios vinculados',
+                      value: '${stylistServices.length}',
+                      description: 'Habilidades asignadas',
+                      icon: Icons.content_cut_outlined,
+                    ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 16),
+
+                // Buscador y Chips
+                Card(
+                  elevation: 1,
+                  color: AppColors.surface,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextField(
+                          decoration: InputDecoration(
+                            hintText: 'Buscar por nombre, especialidad o teléfono...',
+                            prefixIcon: const Icon(Icons.search),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear),
+                                    onPressed: () => setState(() => _searchQuery = ''),
+                                  )
+                                : null,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: AppColors.border),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          ),
+                          onChanged: (val) => setState(() => _searchQuery = val.trim()),
+                        ),
+                        const SizedBox(height: 12),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _buildChip('all', 'Todos (${activeStylists.length})'),
+                              for (final spec in specialties) ...[
+                                const SizedBox(width: 8),
+                                _buildChip(spec, spec),
+                              ],
+                              if (inactiveCount > 0) ...[
+                                const SizedBox(width: 8),
+                                _buildChip('inactive', '⚪ Inactivos ($inactiveCount)'),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Listado
+                Card(
+                  elevation: 1,
+                  color: AppColors.surface,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const SectionTitle('Estilistas y servicios asignados'),
+                            const Spacer(),
+                            Text(
+                              '${filteredStylists.length} profesional(es)',
+                              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        if (filteredStylists.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 24),
+                            child: Center(
+                              child: Column(
+                                children: [
+                                  Icon(Icons.badge_outlined, size: 40, color: AppColors.textMuted),
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                    'No hay estilistas que coincidan con el filtro.',
+                                    style: TextStyle(color: AppColors.textSecondary),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _searchQuery = '';
+                                        _selectedFilter = 'all';
+                                      });
+                                    },
+                                    child: const Text('Limpiar filtros'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        else
+                          ...filteredStylists.map((stylist) {
+                            final services = stylistServices
+                                .where(
+                                  (service) => service.stylistName == stylist.name,
+                                )
+                                .toList();
+
+                            return StylistCard(
+                              stylist: stylist,
+                              services: services,
+                              onManageServices: () => _manageStylistServices(stylist),
+                              onEdit: () => _openEditStylistDialog(stylist),
+                              onToggleActive: () => _toggleActive(stylist),
+                            );
+                          }),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             );
           },
         ),
       ],
+    );
+  }
+
+  Widget _buildChip(String key, String label) {
+    final isSelected = _selectedFilter == key;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      selectedColor: AppColors.brandTint,
+      onSelected: (selected) {
+        if (selected) setState(() => _selectedFilter = key);
+      },
     );
   }
 }

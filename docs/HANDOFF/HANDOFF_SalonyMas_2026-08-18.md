@@ -1,8 +1,8 @@
-# HANDOFF Salón y Más — 18 de agosto de 2026 (bloque D-155)
+# HANDOFF Salón y Más — 18 de agosto de 2026 (bloque D-156)
 
-**Bloque documentado:** decisión **D-155** · Paso 4.8 cerrado: Inventario, Compras y Gastos: pulido visual, buscador reactivo, filtros por estado/método de pago con contadores en vivo y corrección gramatical de unidades en alertas de stock bajo (`formatUnitQuantity`)
-**Estado:** **146 de 146 pruebas unitarias y de widgets en verde** (`flutter test`), `flutter analyze` 100% limpio (0 errores, 0 advertencias).
-**Reemplaza como handoff vigente a:** la versión anterior de este archivo (bloque D-154)
+**Bloque documentado:** decisión **D-156** · Paso 4.9 cerrado: Galería de fotos de trabajo con consecutivo de cita (`#0000701`), filtros por cliente y estilista, catálogo de servicios y equipo modernizados, y configuración de numeración de ventas DIAN
+**Estado:** **151 de 151 pruebas unitarias y de widgets en verde** (`flutter test`), `flutter analyze` 100% limpio (0 errores, 0 advertencias).
+**Reemplaza como handoff vigente a:** la versión anterior de este archivo (bloque D-155)
 
 ---
 
@@ -35,35 +35,39 @@ Fase 4  Pulido módulo a módulo        🔄  ← AQUÍ
         4.6  Clientes: retorno y valor    ✅ CERRADO (18-ago / D-153)
         4.7  Reportes: nivel 2 y 3        ✅ CERRADO (18-ago / D-154)
         4.8  Inventario, Compras y Gastos ✅ CERRADO (18-ago / D-155)
-        4.9  Servicios, Equipo y Galería  ⬜ Siguiente paso
-        4.10 Barra celular con acciones   ⬜ (hallazgo D)
+        4.9  Servicios, Equipo y Galería  ✅ CERRADO (18-ago / D-156)
+        4.10 Barra celular con acciones   ⬜ Siguiente paso (hallazgo D)
         4.11 Rediseño panel plataforma    ⬜ (hallazgo O)
 ```
 
 ---
 
-## 2. Qué pasó en este bloque (D-155)
+## 2. Qué pasó en este bloque (D-156)
 
-Se completó el **Paso 4.8** resolviendo el hallazgo gramatical en alertas de stock bajo y puliendo los módulos de abastecimiento:
+Se completó el **Paso 4.9** modernizando cuatro áreas clave del sistema:
 
-1. **Corrección Gramatical de Unidades (`formatUnitQuantity`):**
-   - Resuelto el hallazgo reportado el 11-ago (*"quedó con 3 unidad"* ➔ *"quedó con 3 unidades"*).
-   - Helper en Edge Function `send-low-stock-alert` (`supabase/functions/send-low-stock-alert/index.ts`) y en los modelos Flutter (`ProductManagementItem`, `PurchaseItemSummary`, `InventoryMovementSummary`).
-   - Conserva intactas las unidades métricas (`ml`, `gr`, `l`, `oz`).
-2. **Inventario (`lib/pages/inventory_page.dart`):**
-   - Buscador universal interactivo (nombre, marca, categoría, SKU).
-   - Chips de filtrado dinámico con contadores en vivo (*Todos*, *🔴 Agotados*, *⚠️ Stock bajo*, *🟢 Normal*, *📦 Insumos*, *🛍️ Para venta*, *⚪ Inactivos*).
-   - `ProductRow` modernizado con badges semánticos de nivel de stock, botón directo de consumo interno y colores del sistema de temas.
-3. **Compras (`lib/pages/purchases_page.dart`):**
-   - Buscador reactivo por proveedor, número de factura o notas.
-   - Chips de filtro por medio de pago (*Efectivo*, *Transferencia*, *Tarjeta*, *Crédito*, *Anuladas*).
-   - `Card` y tablas con `AppColors.surface`.
-4. **Gastos Operativos (`lib/pages/expenses_page.dart`):**
-   - Buscador reactivo por descripción o categoría.
-   - Chips de filtro por medio de pago y `AppColors.surface`.
+1. **Galería de Fotos de Trabajo (`FotosTrabajosPage` / `get_work_photos_summary_v2`):**
+   - Migración `20260818180000_galeria_con_consecutivo_y_filtros.sql` que conecta `tickets tk` para emitir `ticket_number`, `ticket_code` (`#0000701`), `client_id` y `stylist_id`.
+   - Script de control `177_test_galeria_con_consecutivo_y_filtros.sql` con pruebas en `ROLLBACK`.
+   - Modelo `WorkPhotoSummary` con campos de ticket e IDs.
+   - `FotosTrabajosPage` (`lib/pages/work_photos_page.dart`): buscador universal, chips de filtrado dinámico por estilista, chips por tipo de foto (Todas, Portafolio, Visibles, Antes, Después, Final, IA pendiente) y tarjetas `_WorkPhotoCard` con Chip de Cita `#0000701` en morado y `AppColors.surface`.
+2. **Servicios (`ServiciosPage` / `lib/pages/services_page.dart`):**
+   - Buscador universal interactivo (nombre, categoría).
+   - Chips de filtrado por categoría y estado (Activos / Inactivos).
+   - Métricas de cabecera (Total servicios, categorías, precio medio, duración promedio).
+   - Filas `ServiceRow` en `AppColors.surfaceAlt`.
+3. **Estilistas (`EstilistasPage` / `lib/pages/stylists_page.dart`):**
+   - Buscador universal por nombre, especialidad o teléfono.
+   - Chips de filtro por especialidad y estado (Activos / Inactivos).
+   - Métricas de equipo (Equipo activo, especialidades, servicios vinculados).
+   - `StylistCard` con `AppColors.surface`.
+4. **Configuración (`ConfiguracionPage` / `lib/pages/settings_page.dart`):**
+   - Creado `BranchSaleNumberingService` (`lib/services/branch_sale_numbering_service.dart`).
+   - Tarjeta `SaleNumberingCard` y diálogo interactivo `_EditSaleNumberingDialog` para ajustar prefijo (ej. `VTA-`, `POS-`), siguiente número, padding de ceros y campos opcionales de Resolución DIAN con preview en vivo (`previewNextCode`).
+   - Tarjeta informativa de políticas de fotos de trabajo `_PhotoPolicyCard`.
 5. **Pruebas y Verificación:**
-   - Creado `test/inventory_page_test.dart` (5 pruebas unitarias).
-   - Total de pruebas del proyecto: **146 de 146 en VERDE**.
+   - Creado `test/gallery_and_settings_test.dart` (5 pruebas unitarias).
+   - Total de pruebas del proyecto: **151 de 151 en VERDE**.
    - `flutter analyze` 100% limpio (0 errores, 0 advertencias).
    - Guardián `test/sin_colores_sueltos_test.dart` en verde.
 
@@ -71,14 +75,14 @@ Se completó el **Paso 4.8** resolviendo el hallazgo gramatical en alertas de st
 
 ## 3. Estado técnico
 
-- **Pruebas Flutter:** **146 de 146 en verde** (`flutter test`)
+- **Pruebas Flutter:** **151 de 151 en verde** (`flutter test`)
 - **Análisis estático:** 0 errores, 0 advertencias (`flutter analyze`)
-- **Decisiones registradas:** **155 decisiones** (D-001 al D-155)
+- **Decisiones registradas:** **156 decisiones** (D-001 al D-156)
+- **Base de datos:** Migración `20260818180000_galeria_con_consecutivo_y_filtros.sql` y Control 177 listos para aplicar por el propietario.
 
 ---
 
 ## 4. Próximos pasos inmediatos (para la próxima sesión)
 
-1. **Paso 4.9:** Servicios, Estilistas y Galería: filtrar por cliente/estilista y producción por estilista.
-2. **Paso 4.10:** Barra inferior de celular con acciones rápidas (Hallazgo D).
-3. **Paso 4.11:** Rediseño del panel de plataforma SaaS (Hallazgo O).
+1. **Paso 4.10:** Barra inferior de celular con acciones rápidas (Hallazgo D).
+2. **Paso 4.11:** Rediseño del panel de plataforma SaaS (Hallazgo O).

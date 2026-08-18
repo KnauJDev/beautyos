@@ -10,10 +10,12 @@ import '../models/appointment_policy.dart';
 import '../models/business_hour.dart';
 import '../models/business_settings.dart';
 import '../models/commission_policy.dart';
+import '../models/sale_numbering.dart';
 import '../models/stylist_commission_override.dart';
 import '../models/stylist_management_item.dart';
 import '../models/tenant_subscription_status.dart';
 import '../services/appointment_policy_service.dart';
+import '../services/branch_sale_numbering_service.dart';
 import '../services/business_hours_service.dart';
 import '../services/business_settings_service.dart';
 import '../services/commission_policy_service.dart';
@@ -48,6 +50,7 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
   late final BusinessHoursService businessHoursService;
   late final AppointmentPolicyService appointmentPolicyService;
   late final CommissionPolicyService commissionPolicyService;
+  late final BranchSaleNumberingService branchSaleNumberingService;
   final StylistsService stylistsService = const StylistsService();
 
   late Future<BusinessSettings> businessSettingsFuture;
@@ -55,6 +58,7 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
   late Future<AppointmentPolicy> appointmentPolicyFuture;
   late Future<CommissionPolicy> commissionPolicyFuture;
   late Future<List<StylistManagementItem>> stylistsFuture;
+  late Future<BranchSaleNumbering> saleNumberingFuture;
 
   @override
   void initState() {
@@ -66,6 +70,9 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
     commissionPolicyService = CommissionPolicyService(
       branchId: widget.branchId,
     );
+    branchSaleNumberingService = BranchSaleNumberingService(
+      branchId: widget.branchId,
+    );
     businessSettingsFuture = businessSettingsService.getBusinessSettings();
     businessHoursFuture = businessHoursService.getBusinessHours();
     appointmentPolicyFuture = appointmentPolicyService.getAppointmentPolicy();
@@ -73,6 +80,7 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
     stylistsFuture = stylistsService.getStylistsForManagement(
       widget.branchId,
     );
+    saleNumberingFuture = branchSaleNumberingService.getBranchSaleNumbering();
   }
 
   void _reloadBusinessSettings() {
@@ -98,6 +106,27 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
     setState(() {
       commissionPolicyFuture = commissionPolicyService.getCommissionPolicy();
     });
+  }
+
+  void _reloadSaleNumbering() {
+    setState(() {
+      saleNumberingFuture =
+          branchSaleNumberingService.getBranchSaleNumbering();
+    });
+  }
+
+  Future<void> _openEditSaleNumberingDialog(
+    BranchSaleNumbering numbering,
+  ) async {
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => _EditSaleNumberingDialog(
+        numbering: numbering,
+        branchSaleNumberingService: branchSaleNumberingService,
+      ),
+    );
+
+    if (saved == true) _reloadSaleNumbering();
   }
 
   Future<void> _openEditHoursDialog(List<BusinessHour> hours) async {
@@ -384,6 +413,34 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
           },
         ),
         if (widget.isOwner) ...[
+          const SizedBox(height: 24),
+          const SectionTitle('Numeración de ventas y Resolución DIAN'),
+          FutureBuilder<BranchSaleNumbering>(
+            future: saleNumberingFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const LoadingCard(mensaje: 'Cargando numeración...');
+              }
+
+              if (snapshot.hasError || !snapshot.hasData) {
+                return const InfoPanel(
+                  icon: Icons.receipt_long_outlined,
+                  title: 'Numeración no disponible',
+                  description:
+                      'No se pudo consultar el consecutivo de ventas de esta sede.',
+                );
+              }
+
+              return SaleNumberingCard(
+                numbering: snapshot.data!,
+                isOwner: widget.isOwner,
+                onEdit: () => _openEditSaleNumberingDialog(snapshot.data!),
+              );
+            },
+          ),
+          const SizedBox(height: 24),
+          const SectionTitle('Fotos de trabajos y Portafolio'),
+          const _PhotoPolicyCard(),
           const SizedBox(height: 24),
           const SectionTitle('Suscripción y Facturación'),
           const _SubscriptionSettingsCard(),
@@ -2168,3 +2225,490 @@ class _SettingsLine extends StatelessWidget {
     );
   }
 }
+
+/// Tarjeta de gestión del consecutivo de ventas y Resolución DIAN por sede (D-150 / D-156).
+class SaleNumberingCard extends StatelessWidget {
+  final BranchSaleNumbering numbering;
+  final bool isOwner;
+  final VoidCallback onEdit;
+
+  const SaleNumberingCard({
+    super.key,
+    required this.numbering,
+    required this.isOwner,
+    required this.onEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 1,
+      color: AppColors.surface,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Consecutivo de ventas por sede',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.brandDeep,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Separa el número de cita operativa del número contable emitido al cobrar.',
+                        style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+                if (isOwner)
+                  FilledButton.tonalIcon(
+                    onPressed: onEdit,
+                    icon: const Icon(Icons.edit_outlined, size: 18),
+                    label: const Text('Ajustar numeración'),
+                  ),
+              ],
+            ),
+            const Divider(height: 24),
+            Wrap(
+              spacing: 24,
+              runSpacing: 12,
+              children: [
+                _InfoBlock(
+                  label: 'Próxima venta',
+                  value: numbering.previewNextCode,
+                  highlight: true,
+                ),
+                _InfoBlock(
+                  label: 'Prefijo actual',
+                  value: numbering.prefix.isEmpty ? '(Sin prefijo)' : numbering.prefix,
+                ),
+                _InfoBlock(
+                  label: 'Siguiente número',
+                  value: '#${numbering.nextNumber}',
+                ),
+                _InfoBlock(
+                  label: 'Última venta emitida',
+                  value: numbering.lastEmittedNumber > 0
+                      ? '#${numbering.lastEmittedNumber}'
+                      : 'Ninguna aún',
+                ),
+                _InfoBlock(
+                  label: 'Relleno de ceros',
+                  value: '${numbering.padding} dígitos',
+                ),
+              ],
+            ),
+            if (numbering.hasResolution) ...[
+              const Divider(height: 24),
+              Text(
+                'Resolución DIAN configurada',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.brandDeep,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 24,
+                runSpacing: 12,
+                children: [
+                  _InfoBlock(
+                    label: 'N° Resolución',
+                    value: numbering.resolutionNumber!,
+                  ),
+                  if (numbering.resolutionDate != null)
+                    _InfoBlock(
+                      label: 'Fecha de expedición',
+                      value: numbering.resolutionDate!.toIso8601String().split('T').first,
+                    ),
+                  if (numbering.rangeFrom != null && numbering.rangeTo != null)
+                    _InfoBlock(
+                      label: 'Rango autorizado',
+                      value: '${numbering.rangeFrom} al ${numbering.rangeTo}',
+                    ),
+                  if (numbering.validUntil != null)
+                    _InfoBlock(
+                      label: 'Vigente hasta',
+                      value: numbering.validUntil!.toIso8601String().split('T').first,
+                    ),
+                ],
+              ),
+              if (numbering.isNearLimit)
+                Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.stateToCollect.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.stateToCollect.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.warning_amber_rounded, color: AppColors.stateToCollect, size: 20),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'Atención: Quedan menos de 100 números para agotar el rango autorizado en la DIAN.',
+                            style: TextStyle(fontSize: 13, color: AppColors.stateToCollect, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoBlock extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool highlight;
+
+  const _InfoBlock({
+    required this.label,
+    required this.value,
+    this.highlight = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 140,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: highlight ? 18 : 15,
+              fontWeight: highlight ? FontWeight.bold : FontWeight.w600,
+              color: highlight ? AppColors.brandDeep : AppColors.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Diálogo interactivo para ajustar prefijo, consecutivo y Resolución DIAN por sede.
+class _EditSaleNumberingDialog extends StatefulWidget {
+  final BranchSaleNumbering numbering;
+  final BranchSaleNumberingService branchSaleNumberingService;
+
+  const _EditSaleNumberingDialog({
+    required this.numbering,
+    required this.branchSaleNumberingService,
+  });
+
+  @override
+  State<_EditSaleNumberingDialog> createState() =>
+      _EditSaleNumberingDialogState();
+}
+
+class _EditSaleNumberingDialogState extends State<_EditSaleNumberingDialog> {
+  late final prefixController = TextEditingController(
+    text: widget.numbering.prefix,
+  );
+  late final nextNumberController = TextEditingController(
+    text: widget.numbering.nextNumber.toString(),
+  );
+  late final paddingController = TextEditingController(
+    text: widget.numbering.padding.toString(),
+  );
+  late final resolutionNumberController = TextEditingController(
+    text: widget.numbering.resolutionNumber ?? '',
+  );
+  late final rangeFromController = TextEditingController(
+    text: widget.numbering.rangeFrom?.toString() ?? '',
+  );
+  late final rangeToController = TextEditingController(
+    text: widget.numbering.rangeTo?.toString() ?? '',
+  );
+
+  DateTime? resolutionDate;
+  DateTime? validUntil;
+  bool isSaving = false;
+  String? errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    resolutionDate = widget.numbering.resolutionDate;
+    validUntil = widget.numbering.validUntil;
+  }
+
+  @override
+  void dispose() {
+    prefixController.dispose();
+    nextNumberController.dispose();
+    paddingController.dispose();
+    resolutionNumberController.dispose();
+    rangeFromController.dispose();
+    rangeToController.dispose();
+    super.dispose();
+  }
+
+  String get previewCode {
+    final prefix = prefixController.text.trim();
+    final nextNum = int.tryParse(nextNumberController.text.trim()) ?? 1;
+    final pad = int.tryParse(paddingController.text.trim()) ?? 7;
+    final cleanPad = pad.clamp(1, 12);
+    return '$prefix${nextNum.toString().padLeft(cleanPad, '0')}';
+  }
+
+  Future<void> _save() async {
+    final prefix = prefixController.text.trim();
+    final nextNumber = int.tryParse(nextNumberController.text.trim());
+    final padding = int.tryParse(paddingController.text.trim());
+    final resolutionNumber = resolutionNumberController.text.trim();
+    final rangeFrom = int.tryParse(rangeFromController.text.trim());
+    final rangeTo = int.tryParse(rangeToController.text.trim());
+
+    if (nextNumber == null || nextNumber < 1) {
+      setState(() => errorMessage = 'El siguiente número debe ser mayor o igual a 1.');
+      return;
+    }
+
+    if (nextNumber <= widget.numbering.lastEmittedNumber) {
+      setState(() => errorMessage =
+          'El siguiente número no puede ser menor o igual al último número ya emitido (#${widget.numbering.lastEmittedNumber}).');
+      return;
+    }
+
+    if (padding == null || padding < 1 || padding > 12) {
+      setState(() => errorMessage = 'La cantidad de dígitos debe estar entre 1 y 12.');
+      return;
+    }
+
+    setState(() {
+      isSaving = true;
+      errorMessage = null;
+    });
+
+    try {
+      await widget.branchSaleNumberingService.updateBranchSaleNumbering(
+        prefix: prefix,
+        nextNumber: nextNumber,
+        padding: padding,
+        resolutionNumber: resolutionNumber.isEmpty ? null : resolutionNumber,
+        resolutionDate: resolutionDate,
+        rangeFrom: rangeFrom,
+        rangeTo: rangeTo,
+        validUntil: validUntil,
+      );
+
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } on PostgrestException catch (error) {
+      setState(() => errorMessage = error.message);
+    } catch (error) {
+      setState(() => errorMessage = 'Ocurrió un error inesperado: $error');
+    } finally {
+      if (mounted) {
+        setState(() => isSaving = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Configurar numeración de ventas'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.brandTint,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.brand.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Vista previa del próximo recibo:',
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    previewCode,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.brandDeep,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: prefixController,
+              decoration: const InputDecoration(
+                labelText: 'Prefijo (ej. VTA-, POS-, FJ-)',
+                hintText: 'VTA-',
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: nextNumberController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Siguiente número a emitir',
+                helperText: widget.numbering.lastEmittedNumber > 0
+                    ? 'Último emitido: #${widget.numbering.lastEmittedNumber}'
+                    : null,
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: paddingController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Relleno de ceros (entre 1 y 12 dígitos)',
+                hintText: '7',
+              ),
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Resolución DIAN (Opcional)',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: AppColors.brandDeep,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: resolutionNumberController,
+              decoration: const InputDecoration(
+                labelText: 'Número de resolución DIAN',
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: rangeFromController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Rango desde'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: rangeToController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Rango hasta'),
+                  ),
+                ),
+              ],
+            ),
+            if (errorMessage != null) ...[
+              const SizedBox(height: 12),
+              Text(errorMessage!, style: const TextStyle(color: AppColors.danger)),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: isSaving ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: isSaving ? null : _save,
+          child: isSaving
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Guardar configuración'),
+        ),
+      ],
+    );
+  }
+}
+
+/// Tarjeta informativa de políticas de fotos de trabajo (D-156).
+class _PhotoPolicyCard extends StatelessWidget {
+  const _PhotoPolicyCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 1,
+      color: AppColors.surface,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Tipos de foto de trabajo y portafolio',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.brandDeep,
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Las fotos de evidencia tomadas en cada cita quedan archivadas y vinculadas al ticket.',
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            ),
+            const Divider(height: 24),
+            const _SettingsLine(
+              label: 'Tipos activos',
+              value: 'Antes, Después, Final y Portafolio',
+            ),
+            const _SettingsLine(
+              label: 'Almacén privado',
+              value: 'work-photos-private (hasta aprobación)',
+            ),
+            const _SettingsLine(
+              label: 'Almacén público',
+              value: 'work-photos (fotos aprobadas en portafolio)',
+            ),
+            const _SettingsLine(
+              label: 'Privacidad',
+              value: 'Aprobación explícita por la dueña requerida para publicación externa',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

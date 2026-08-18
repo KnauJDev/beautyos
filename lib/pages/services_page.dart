@@ -20,6 +20,9 @@ class _ServiciosPageState extends State<ServiciosPage> {
   final ServicesService servicesService = const ServicesService();
   late Future<List<ServiceManagementItem>> servicesFuture;
 
+  String _searchQuery = '';
+  String _selectedCategory = 'all';
+
   @override
   void initState() {
     super.initState();
@@ -78,17 +81,40 @@ class _ServiciosPageState extends State<ServiciosPage> {
     }
   }
 
+  List<ServiceManagementItem> _filterServices(List<ServiceManagementItem> services) {
+    return services.where((s) {
+      // 1. Filtro por categoría o inactivo
+      if (_selectedCategory == 'inactive') {
+        if (s.active) return false;
+      } else if (_selectedCategory != 'all') {
+        if (!s.active || s.category != _selectedCategory) return false;
+      } else {
+        if (!s.active && _selectedCategory != 'inactive') return false;
+      }
+
+      // 2. Filtro por texto
+      if (_searchQuery.isNotEmpty) {
+        final query = _searchQuery.toLowerCase();
+        final nameMatch = s.name.toLowerCase().contains(query);
+        final categoryMatch = s.category.toLowerCase().contains(query);
+        if (!nameMatch && !categoryMatch) return false;
+      }
+
+      return true;
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppPage(
       title: 'Servicios',
-      subtitle: 'Catálogo de servicios leído desde Supabase.',
+      subtitle: 'Catálogo de servicios y precios del negocio.',
       children: [
         const InfoPanel(
-          icon: Icons.cloud_done_outlined,
-          title: 'Conexión activa con Supabase',
+          icon: Icons.spa_outlined,
+          title: 'Catálogo de servicios conectado a Supabase',
           description:
-              'Crea, edita o desactiva los servicios de tu negocio. Los inactivos desaparecen de la agenda pero quedan aquí para reactivarlos.',
+              'Crea, edita o desactiva los servicios de tu centro de estética. Los servicios activos se ofrecen en la agenda y reservas públicas.',
         ),
         const SizedBox(height: 16),
         Align(
@@ -104,18 +130,11 @@ class _ServiciosPageState extends State<ServiciosPage> {
           future: servicesFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Card(
-                elevation: 1,
-                color: Colors.white,
-                child: Padding(
-                  padding: EdgeInsets.all(22),
-                  child: Row(
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(width: 16),
-                      Text('Cargando servicios desde Supabase...'),
-                    ],
-                  ),
+              return Card(
+                color: AppColors.surface,
+                child: const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Center(child: CircularProgressIndicator()),
                 ),
               );
             }
@@ -128,41 +147,320 @@ class _ServiciosPageState extends State<ServiciosPage> {
               );
             }
 
-            final services = snapshot.data ?? [];
+            final allServices = snapshot.data ?? [];
+            final activeServices = allServices.where((s) => s.active).toList();
+            final inactiveCount = allServices.where((s) => !s.active).length;
 
-            if (services.isEmpty) {
-              return const InfoPanel(
-                icon: Icons.info_outline,
-                title: 'Sin servicios disponibles',
-                description:
-                    'No hay servicios para mostrar. Usa "Agregar servicio" para crear el primero.',
-              );
-            }
+            final categories = activeServices
+                .map((s) => s.category)
+                .where((c) => c.trim().isNotEmpty)
+                .toSet()
+                .toList()
+              ..sort();
 
-            return Card(
-              elevation: 1,
-              color: Colors.white,
-              child: Padding(
-                padding: const EdgeInsets.all(22),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            final filteredServices = _filterServices(allServices);
+
+            // Métricas
+            final avgPrice = activeServices.isNotEmpty
+                ? activeServices.fold<num>(0, (sum, s) => sum + s.price) /
+                    activeServices.length
+                : 0;
+            final avgDuration = activeServices.isNotEmpty
+                ? (activeServices.fold<int>(0, (sum, s) => sum + s.durationMinutes) /
+                        activeServices.length)
+                    .round()
+                : 0;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Resumen
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
                   children: [
-                    const SectionTitle('Servicios desde Supabase'),
-                    const SizedBox(height: 14),
-                    ...services.map(
-                      (service) => ServiceRow(
-                        service: service,
-                        onEdit: () => openEditServiceDialog(service),
-                        onToggleActive: () => toggleActive(service),
-                      ),
+                    MetricCard(
+                      title: 'Servicios',
+                      value: '${activeServices.length}',
+                      description: 'Servicios activos',
+                      icon: Icons.content_cut_outlined,
+                    ),
+                    MetricCard(
+                      title: 'Categorías',
+                      value: '${categories.length}',
+                      description: 'Áreas de atención',
+                      icon: Icons.category_outlined,
+                    ),
+                    MetricCard(
+                      title: 'Precio medio',
+                      value: '\$${avgPrice.toStringAsFixed(0)}',
+                      description: 'Promedio por servicio',
+                      icon: Icons.attach_money,
+                    ),
+                    MetricCard(
+                      title: 'Duración media',
+                      value: '$avgDuration min',
+                      description: 'Tiempo estándar',
+                      icon: Icons.schedule_outlined,
                     ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 16),
+
+                // Buscador y Filtros
+                Card(
+                  elevation: 1,
+                  color: AppColors.surface,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextField(
+                          decoration: InputDecoration(
+                            hintText: 'Buscar por servicio o categoría...',
+                            prefixIcon: const Icon(Icons.search),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear),
+                                    onPressed: () => setState(() => _searchQuery = ''),
+                                  )
+                                : null,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: AppColors.border),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          ),
+                          onChanged: (val) => setState(() => _searchQuery = val.trim()),
+                        ),
+                        const SizedBox(height: 12),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _buildChip('all', 'Todos (${activeServices.length})'),
+                              for (final cat in categories) ...[
+                                const SizedBox(width: 8),
+                                _buildChip(cat, cat),
+                              ],
+                              if (inactiveCount > 0) ...[
+                                const SizedBox(width: 8),
+                                _buildChip('inactive', '⚪ Inactivos ($inactiveCount)'),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Listado de Servicios
+                Card(
+                  elevation: 1,
+                  color: AppColors.surface,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const SectionTitle('Catálogo de servicios'),
+                            const Spacer(),
+                            Text(
+                              '${filteredServices.length} servicio(s)',
+                              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        if (filteredServices.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 24),
+                            child: Center(
+                              child: Column(
+                                children: [
+                                  Icon(Icons.spa_outlined, size: 40, color: AppColors.textMuted),
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                    'No hay servicios que coincidan con la búsqueda.',
+                                    style: TextStyle(color: AppColors.textSecondary),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _searchQuery = '';
+                                        _selectedCategory = 'all';
+                                      });
+                                    },
+                                    child: const Text('Limpiar filtros'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        else
+                          ...filteredServices.map(
+                            (service) => ServiceRow(
+                              service: service,
+                              onEdit: () => openEditServiceDialog(service),
+                              onToggleActive: () => toggleActive(service),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             );
           },
         ),
       ],
+    );
+  }
+
+  Widget _buildChip(String key, String label) {
+    final isSelected = _selectedCategory == key;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      selectedColor: AppColors.brandTint,
+      onSelected: (selected) {
+        if (selected) setState(() => _selectedCategory = key);
+      },
+    );
+  }
+}
+
+class ServiceRow extends StatelessWidget {
+  final ServiceManagementItem service;
+  final VoidCallback onEdit;
+  final VoidCallback onToggleActive;
+
+  const ServiceRow({
+    super.key,
+    required this.service,
+    required this.onEdit,
+    required this.onToggleActive,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceAlt,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: service.active ? AppColors.brandTint : AppColors.surface,
+            child: Icon(
+              Icons.content_cut_outlined,
+              size: 18,
+              color: service.active ? AppColors.brandDeep : AppColors.textMuted,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        service.name,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: service.active
+                              ? AppColors.brandDeep
+                              : AppColors.textMuted,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      service.formattedPrice,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: service.active
+                            ? AppColors.textPrimary
+                            : AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Text(
+                        service.category,
+                        style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(Icons.schedule_outlined, size: 14, color: AppColors.textMuted),
+                    const SizedBox(width: 3),
+                    Text(
+                      '${service.durationMinutes} min',
+                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    ),
+                    if (!service.visibleToCustomer) ...[
+                      const SizedBox(width: 8),
+                      const Text(
+                        '· Solo interno',
+                        style: TextStyle(fontSize: 12, color: AppColors.statePending),
+                      ),
+                    ],
+                    if (!service.active) ...[
+                      const SizedBox(width: 8),
+                      const Text(
+                        '· Inactivo',
+                        style: TextStyle(fontSize: 12, color: AppColors.danger),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            tooltip: 'Editar',
+            onPressed: onEdit,
+            icon: const Icon(Icons.edit_outlined, size: 20),
+          ),
+          IconButton(
+            tooltip: service.active ? 'Desactivar' : 'Reactivar',
+            onPressed: onToggleActive,
+            icon: Icon(
+              service.active
+                  ? Icons.pause_circle_outline
+                  : Icons.play_circle_outline,
+              size: 20,
+              color: service.active ? AppColors.danger : AppColors.success,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -305,7 +603,7 @@ class _ServiceFormDialogState extends State<_ServiceFormDialog> {
             const SizedBox(height: 12),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Visible para el cliente'),
+              title: const Text('Visible para reservas públicas'),
               value: visibleToCustomer,
               onChanged: (value) => setState(() => visibleToCustomer = value),
             ),
@@ -332,82 +630,6 @@ class _ServiceFormDialogState extends State<_ServiceFormDialog> {
               : const Text('Guardar'),
         ),
       ],
-    );
-  }
-}
-
-class ServiceRow extends StatelessWidget {
-  final ServiceManagementItem service;
-  final VoidCallback onEdit;
-  final VoidCallback onToggleActive;
-
-  const ServiceRow({
-    super.key,
-    required this.service,
-    required this.onEdit,
-    required this.onToggleActive,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 9),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            service.active ? Icons.check_circle_outline : Icons.pause_circle_outline,
-            size: 22,
-            color: service.active
-                ? AppColors.brand
-                : AppColors.textMuted,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  service.name,
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: service.active
-                        ? AppColors.brandDeep
-                        : AppColors.textMuted,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${service.category} · ${service.durationMinutes} min · ${service.formattedPrice}'
-                  '${service.active ? '' : ' · inactivo'}',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            tooltip: 'Editar',
-            onPressed: onEdit,
-            icon: const Icon(Icons.edit_outlined, size: 20),
-          ),
-          IconButton(
-            tooltip: service.active ? 'Desactivar' : 'Reactivar',
-            onPressed: onToggleActive,
-            icon: Icon(
-              service.active
-                  ? Icons.pause_circle_outline
-                  : Icons.play_circle_outline,
-              size: 20,
-              color: service.active ? AppColors.danger : AppColors.success,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

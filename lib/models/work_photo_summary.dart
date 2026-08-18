@@ -1,7 +1,11 @@
-﻿class WorkPhotoSummary {
+class WorkPhotoSummary {
   final String id;
   final String? ticketId;
+  final int? ticketNumber;
+  final String? ticketCode;
+  final String? clientId;
   final String clientName;
+  final String? stylistId;
   final String stylistName;
 
   /// Direccion publica **permanente**. Tiene valor **solo mientras la foto
@@ -34,7 +38,11 @@
   const WorkPhotoSummary({
     required this.id,
     required this.ticketId,
+    this.ticketNumber,
+    this.ticketCode,
+    this.clientId,
     required this.clientName,
+    this.stylistId,
     required this.stylistName,
     required this.photoUrl,
     required this.storageBucket,
@@ -49,13 +57,28 @@
   });
 
   factory WorkPhotoSummary.fromMap(Map<String, dynamic> map) {
+    final rawTicketNumber = map['ticket_number'];
+    final parsedTicketNumber = rawTicketNumber != null
+        ? int.tryParse(rawTicketNumber.toString())
+        : null;
+
+    final rawTicketCode = map['ticket_code']?.toString();
+    final formattedTicketCode = rawTicketCode ??
+        (parsedTicketNumber != null
+            ? '#${parsedTicketNumber.toString().padLeft(7, '0')}'
+            : null);
+
     return WorkPhotoSummary(
       id: map['id'] as String,
       ticketId: map['ticket_id'] as String?,
+      ticketNumber: parsedTicketNumber,
+      ticketCode: formattedTicketCode,
+      clientId: map['client_id']?.toString(),
       // Tolerante a proposito: si el servidor mandara vacio, la tarjeta se ve
       // incompleta pero la galeria carga. Leerlo como texto obligatorio hacia
       // que **una sola** foto sin estilista tumbara la lista entera.
       clientName: map['client_name']?.toString() ?? 'Cliente no asociado',
+      stylistId: map['stylist_id']?.toString(),
       stylistName: map['stylist_name']?.toString() ?? 'Estilista no asociado',
       photoUrl: map['photo_url'] as String?,
       storageBucket:
@@ -77,7 +100,11 @@
     return WorkPhotoSummary(
       id: id,
       ticketId: ticketId,
+      ticketNumber: ticketNumber,
+      ticketCode: ticketCode,
+      clientId: clientId,
       clientName: clientName,
+      stylistId: stylistId,
       stylistName: stylistName,
       photoUrl: photoUrl,
       storageBucket: storageBucket,
@@ -101,7 +128,7 @@
       case 'before':
         return 'Antes';
       case 'after':
-        return 'Despues';
+        return 'Después';
       case 'final':
         return 'Final';
       case 'portfolio':
@@ -138,7 +165,7 @@
 
   String get captionText {
     if (caption == null || caption!.trim().isEmpty) {
-      return 'Sin descripcion';
+      return 'Sin descripción';
     }
 
     return caption!;
