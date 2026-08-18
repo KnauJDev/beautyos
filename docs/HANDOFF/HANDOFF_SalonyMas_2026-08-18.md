@@ -1,8 +1,8 @@
-# HANDOFF Salón y Más — 18 de agosto de 2026 (bloque D-153)
+# HANDOFF Salón y Más — 18 de agosto de 2026 (bloque D-154)
 
-**Bloque documentado:** decisión **D-153** · Paso 4.6 cerrado: Clientes con análisis de retorno y valor (RFM), cadencia promedio de visita ("cada ~X días"), segmentación automática de clientes en riesgo / VIP y ficha de Nivel 3
-**Estado:** **138 de 138 pruebas unitarias y de widgets en verde** (`flutter test`), `flutter analyze` 100% limpio (0 errores, 0 advertencias).
-**Reemplaza como handoff vigente a:** la versión anterior de este archivo (bloque D-152, archivada en `docs/_archivo/handoffs/HANDOFF_SalonyMas_2026-08-18_D152.md`)
+**Bloque documentado:** decisión **D-154** · Paso 4.7 cerrado: Reportes V3 con selector temporal dinámico (Hoy/Semana/Mes/Rango), métodos de pago colombianos (Efectivo/Transferencias Nequi-Daviplata/Tarjetas), arqueo de efectivo real, comparación entre períodos y fichas de detalle Nivel 3
+**Estado:** **141 de 141 pruebas unitarias y de widgets en verde** (`flutter test`), `flutter analyze` 100% limpio (0 errores, 0 advertencias).
+**Reemplaza como handoff vigente a:** la versión anterior de este archivo (bloque D-153)
 
 ---
 
@@ -33,8 +33,8 @@ Fase 4  Pulido módulo a módulo        🔄  ← AQUÍ
         4.4  Número de venta al cerrar    ✅ CERRADO (17-ago / D-150, corregido D-151)
         4.5  Tickets: Nivel 2 y 3 + Pill  ✅ CERRADO (18-ago / D-152, hallazgo N)
         4.6  Clientes: retorno y valor    ✅ CERRADO (18-ago / D-153)
-        4.7  Reportes: nivel 2 y 3        ⬜ Siguiente paso
-        4.8  Inventario, Compras y Gastos ⬜
+        4.7  Reportes: nivel 2 y 3        ✅ CERRADO (18-ago / D-154)
+        4.8  Inventario, Compras y Gastos ⬜ Siguiente paso
         4.9  Servicios, Equipo y Galería  ⬜
         4.10 Barra celular con acciones   ⬜ (hallazgo D)
         4.11 Rediseño panel plataforma    ⬜ (hallazgo O)
@@ -42,52 +42,53 @@ Fase 4  Pulido módulo a módulo        🔄  ← AQUÍ
 
 ---
 
-## 2. Qué pasó en este bloque (D-153)
+## 2. Qué pasó en este bloque (D-154)
 
-Se completó el **Paso 4.6** transformando el directorio de clientes en una herramienta activa de fidelización y métricas de valor:
+Se completó el **Paso 4.7** modernizando integralmente el módulo de reportes (`lib/pages/reports_page.dart`):
 
-1. **Decisión de arquitectura sobre nombres:** Se mantiene el campo unificado `name` (nombre comercial del cliente, sin exigir campos separados de Nombre y Apellido para evitar fricción en salones de estética) con un extractor reactivo `firstName` en Flutter para redactar saludos personalizados automáticos en WhatsApp.
-2. **Base de datos / RPC:** Migración `20260818140000_clientes_metricas_retorno_y_valor.sql` que actualiza `public.get_clients_management_summary()` para calcular en una sola consulta agregada:
-   - `total_visits`: Total de citas finalizadas o cerradas.
-   - `total_spent`: Gasto total acumulado en servicios.
-   - `average_ticket`: Ticket promedio por visita (`total_spent / total_visits`).
-   - `first_visit_at` y `last_visit_at`: Fechas de primera y última atención.
-   - `days_since_last_visit`: Días transcurridos desde la última cita.
-   - `avg_days_between_visits`: Cadencia promedio de visita (`(last_visit - first_visit) / (total_visits - 1)`).
-   - `balance_amount`: Saldo en mora.
-   - `segment`: `'vip'` ($\ge 3$ visitas, $\le 35$ días), `'recurrente'` ($\ge 2$ visitas, $\le 45$ días), `'nuevo'` (1 visita), `'en_riesgo'` ($> 45$ días sin visitar), `'sin_visitas'`.
-3. **Script de Control 175:** Creado `supabase/sql/175_test_clientes_metricas_retorno_y_valor.sql` con 4 pruebas aisladas en `ROLLBACK`.
-4. **Nivel 2 (Listado y Búsqueda):**
-   - Buscador universal por texto (nombre, teléfono sanitizado, correo).
-   - Chips horizontales de segmentación con contadores en vivo (*Todos*, *⭐ VIP*, *⚠️ En riesgo*, *🟢 Recurrentes*, *🆕 Nuevos*, *🔴 Con saldo*, *Inactivos*).
-   - `ClientRow` modernizado: avatar con iniciales, badge de segmento, métricas compactas (visitas, gasto, cadencia promedio `~X días`, última visita), saldo en mora en coral y botón directo de WhatsApp contextualizado.
-5. **Nivel 3 (Ficha de Detalle interactiva `_ClientDetailSheet`):**
-   - Modal responsivo (BottomSheet en móvil / Drawer centrado en escritorio).
-   - 4 tarjetas de KPIs RFM (Gasto Histórico, Ticket Promedio, Total Visitas, Cadencia Promedio).
-   - Alerta destacada de saldo en mora con botón directo.
-   - Sección de tiempos y frecuencia (última visita, primera visita y fecha de alta).
-   - Notas operativas y preferencias de la clienta.
-   - Botón de editar y gestionar.
-6. **Pruebas y Verificación:**
-   - Creado `test/clients_page_test.dart` (6 pruebas unitarias y de widgets).
-   - Total de pruebas del proyecto: **138 de 138 en VERDE**.
+1. **Selector temporal flexible (Nivel 2):**
+   - Selección por chips rápidos (*Hoy*, *Esta semana*, *Este mes*) y *Rango personalizado...* con `showDateRangePicker`.
+2. **Base de datos / RPC:**
+   - Migración `20260818160000_reportes_v3_periodos_y_metodos.sql` con la función `public.get_branch_reports_v3(p_branch_id, p_start_date, p_end_date)`.
+   - Calcula de forma atómica en hora de Colombia (`America/Bogota`):
+     * Ingresos por método de pago (`cash_received`, `card_received`, `transfer_received`, `other_received`, `total_received`).
+     * Egresos: compras de insumos, gastos operativos y comisiones de estilistas.
+     * **Arqueo de dinero físico esperado:** `expected_cash = cash_received - cash_purchases - cash_expenses`.
+     * **Resultado neto operativo:** `net_result = total_received - total_purchases - total_expenses - total_commissions`.
+     * Métricas del período anterior de igual duración para cálculo de tendencias (`prev_total_received`, `prev_net_result`, `prev_payments_count`).
+     * Desglose JSON de comisiones por profesional y ventas por servicio/estilista.
+3. **Script de Control 176:**
+   - Creado `supabase/sql/176_test_reportes_v3_periodos_y_metodos.sql` con 4 comprobaciones aisladas en `ROLLBACK`.
+4. **Modelos y Servicios Flutter:**
+   - Modelo `BranchReportV3` en `lib/models/branch_report_v3.dart` con helpers de comparación (`salesGrowthPercent`, `salesGrowthText`, `salesGrowthDelta`), `ReportCommissionItem` y `ReportServiceSaleItem`.
+   - Servicio `BranchReportsService` en `lib/services/branch_reports_service.dart`.
+5. **Frontend Flutter (`ReportesPage`):**
+   - Tarjeta de Resumen Financiero con badge de tendencia comparativa (*"🟢 +16.7% vs período anterior"* o aviso para negocios sin historial previo).
+   - Tarjeta de Métodos de Pago con barras porcentuales proporcionales y arqueo de caja físico destacado en morado.
+   - Listado interactivo de comisiones por estilista y ventas por servicio.
+6. **Nivel 3 (Fichas de Drill-Down):**
+   - Modal deslizable `_StylistCommissionDetailSheet` con detalle de servicios y comisión de cada estilista.
+   - Modal deslizable `_ServiceSalesDetailSheet` con citas, duración acumulada y ventas por servicio.
+7. **Pruebas y Verificación:**
+   - Creado `test/reports_page_test.dart` (3 pruebas unitarias y de modelos).
+   - Total de pruebas del proyecto: **141 de 141 en VERDE**.
    - `flutter analyze` 100% limpio (0 errores, 0 advertencias).
+   - Guardián `test/sin_colores_sueltos_test.dart` en verde.
 
 ---
 
 ## 3. Estado técnico
 
-- **Pruebas Flutter:** **138 de 138 en verde** (`flutter test`)
+- **Pruebas Flutter:** **141 de 141 en verde** (`flutter test`)
 - **Análisis estático:** 0 errores, 0 advertencias (`flutter analyze`)
-- **Decisiones registradas:** **153 decisiones** (D-001 al D-153)
-- **Base de datos:** Migración `20260818140000_clientes_metricas_retorno_y_valor.sql` y Control 175 listos para aplicar por el propietario
+- **Decisiones registradas:** **154 decisiones** (D-001 al D-154)
+- **Base de datos:** Migración `20260818160000_reportes_v3_periodos_y_metodos.sql` y Control 176 listos para aplicar por el propietario
 
 ---
 
 ## 4. Próximos pasos inmediatos (para la próxima sesión)
 
-1. **Paso 4.7:** Reportes: nivel 2 y 3, métodos de pago, comparación.
-2. **Paso 4.8:** Inventario, Compras y Gastos: pulido visual y plural en correos de stock bajo ("3 unidades").
-3. **Paso 4.9:** Servicios, Estilistas y Galería: filtrar por cliente/estilista y producción por estilista.
-4. **Paso 4.10:** Barra inferior de celular con acciones rápidas (Hallazgo D).
-5. **Paso 4.11:** Rediseño del panel de plataforma SaaS (Hallazgo O).
+1. **Paso 4.8:** Inventario, Compras y Gastos: pulido visual y plural en correos de stock bajo ("3 unidades").
+2. **Paso 4.9:** Servicios, Estilistas y Galería: filtrar por cliente/estilista y producción por estilista.
+3. **Paso 4.10:** Barra inferior de celular con acciones rápidas (Hallazgo D).
+4. **Paso 4.11:** Rediseño del panel de plataforma SaaS (Hallazgo O).
