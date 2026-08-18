@@ -19,8 +19,6 @@ declare
   v_tenant_id uuid;
   v_branch_1_id uuid;
   v_branch_2_id uuid;
-  v_membership_1_id uuid;
-  v_membership_2_id uuid;
   v_client_id uuid;
   v_service_id uuid;
   v_stylist_id uuid;
@@ -35,33 +33,35 @@ declare
 begin
   raise notice 'Iniciando Control 174: Número de Venta por Sede (D-150)...';
 
-  -- Contexto de sesión
-  perform set_config('request.jwt.claim.sub', v_owner_user_id::text, true);
-
-  -- 1. Crear tenant de prueba
-  insert into public.tenants (name, business_type, whatsapp)
-  values ('Centro Estética Control 174', 'peluqueria', '+573001112233')
+  -- ============================================================================
+  -- 0. Configuración de sesión y datos base
+  -- ============================================================================
+  insert into public.tenants (name, business_type, contact_email, whatsapp, is_demo, active)
+  values ('Centro Estética Control 174', 'peluqueria', 'control174@salonymas.com', '+573001112233', true, true)
   returning id into v_tenant_id;
 
-  -- 2. Crear dos sedes para el tenant
-  insert into public.branches (tenant_id, name, is_main, timezone)
-  values (v_tenant_id, 'Sede Principal 174', true, 'America/Bogota')
+  insert into auth.users (id, email)
+  values (v_owner_user_id, 'owner_174_' || floor(random()*100000)::text || '@salonymas.com');
+
+  insert into public.tenant_memberships (tenant_id, user_id, role, active)
+  values (v_tenant_id, v_owner_user_id, 'tenant_owner', true);
+
+  perform set_config('request.jwt.claim.sub', v_owner_user_id::text, true);
+  perform set_config('request.jwt.claim.role', 'authenticated', true);
+
+  insert into public.branches (tenant_id, name, slug, timezone, currency_code, is_primary, active)
+  values (v_tenant_id, 'Sede Principal 174', 'sede-174-1-' || floor(random()*100000)::text, 'America/Bogota', 'COP', true, true)
   returning id into v_branch_1_id;
 
-  insert into public.branches (tenant_id, name, is_main, timezone)
-  values (v_tenant_id, 'Sede Poblado 174', false, 'America/Bogota')
+  insert into public.branches (tenant_id, name, slug, timezone, currency_code, is_primary, active)
+  values (v_tenant_id, 'Sede Poblado 174', 'sede-174-2-' || floor(random()*100000)::text, 'America/Bogota', 'COP', false, true)
   returning id into v_branch_2_id;
 
-  -- 3. Membresías para el owner
-  insert into public.branch_memberships (tenant_id, branch_id, user_id, role)
-  values (v_tenant_id, v_branch_1_id, v_owner_user_id, 'tenant_owner')
-  returning id into v_membership_1_id;
+  insert into public.branch_memberships (tenant_id, branch_id, user_id, role, active)
+  values
+    (v_tenant_id, v_branch_1_id, v_owner_user_id, 'tenant_owner', true),
+    (v_tenant_id, v_branch_2_id, v_owner_user_id, 'tenant_owner', true);
 
-  insert into public.branch_memberships (tenant_id, branch_id, user_id, role)
-  values (v_tenant_id, v_branch_2_id, v_owner_user_id, 'tenant_owner')
-  returning id into v_membership_2_id;
-
-  -- 4. Cliente, servicio y estilista
   insert into public.clients (tenant_id, name, phone, active)
   values (v_tenant_id, 'Clienta Prueba 174', '+573009998877', true)
   returning id into v_client_id;
@@ -70,7 +70,7 @@ begin
   values (v_tenant_id, 'Corte y Peinado', 45, 60000, true)
   returning id into v_service_id;
 
-  insert into public.branch_services (tenant_id, branch_id, service_id, price, duration_minutes, is_available)
+  insert into public.branch_services (tenant_id, branch_id, service_id, price, duration_minutes, active)
   values
     (v_tenant_id, v_branch_1_id, v_service_id, 60000, 45, true),
     (v_tenant_id, v_branch_2_id, v_service_id, 60000, 45, true);
@@ -92,6 +92,9 @@ begin
   ) values (
     v_tenant_id, v_branch_1_id, v_client_id, '2026-08-17 10:00:00-05', 'finalizado', 'manual'
   ) returning id into v_ticket_1_id;
+
+  insert into public.ticket_services (tenant_id, branch_id, ticket_id, service_id, stylist_id, price, duration_minutes, status)
+  values (v_tenant_id, v_branch_1_id, v_ticket_1_id, v_service_id, v_stylist_id, 60000, 45, 'finalizado');
 
   -- Verificar que en 'finalizado' aún no tiene número de venta
   select sale_number, sale_code into v_ticket_row
@@ -151,6 +154,9 @@ begin
   ) values (
     v_tenant_id, v_branch_2_id, v_client_id, '2026-08-17 10:00:00-05', 'finalizado', 'manual'
   ) returning id into v_ticket_branch2_id;
+
+  insert into public.ticket_services (tenant_id, branch_id, ticket_id, service_id, stylist_id, price, duration_minutes, status)
+  values (v_tenant_id, v_branch_2_id, v_ticket_branch2_id, v_service_id, v_stylist_id, 60000, 45, 'finalizado');
 
   update public.tickets
      set status = 'cerrado'
