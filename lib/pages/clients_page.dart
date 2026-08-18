@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
-
 import '../models/client_summary.dart';
-import '../models/ticket_payment.dart' show formatMoney;
 import '../services/clients_service.dart';
 import '../widgets/app_widgets.dart';
+import 'agenda_page.dart' show buildWhatsAppUri;
 
 class ClientesPage extends StatefulWidget {
   const ClientesPage({super.key});
@@ -18,10 +18,20 @@ class _ClientesPageState extends State<ClientesPage> {
   final ClientsService clientsService = const ClientsService();
   late Future<List<ClientSummary>> clientsFuture;
 
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _selectedSegmentFilter = 'todos'; // 'todos', 'vip', 'en_riesgo', 'recurrente', 'nuevo', 'con_saldo', 'inactivos'
+
   @override
   void initState() {
     super.initState();
     clientsFuture = clientsService.getClientsManagementSummary();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _refreshClients() {
@@ -30,15 +40,58 @@ class _ClientesPageState extends State<ClientesPage> {
     });
   }
 
+  List<ClientSummary> _filterClients(List<ClientSummary> allClients) {
+    return allClients.where((client) {
+      // 1. Buscador por texto
+      if (_searchQuery.isNotEmpty) {
+        final query = _searchQuery.toLowerCase().trim();
+        final name = client.name.toLowerCase();
+        final phone = client.phone.replaceAll(RegExp(r'[^0-9]'), '');
+        final queryPhone = query.replaceAll(RegExp(r'[^0-9]'), '');
+        final email = (client.email ?? '').toLowerCase();
+
+        final matches = name.contains(query) ||
+            (queryPhone.isNotEmpty && phone.contains(queryPhone)) ||
+            email.contains(query);
+
+        if (!matches) return false;
+      }
+
+      // 2. Filtro por segmento
+      if (_selectedSegmentFilter != 'todos') {
+        switch (_selectedSegmentFilter) {
+          case 'vip':
+            if (client.segment != 'vip' || !client.active) return false;
+            break;
+          case 'en_riesgo':
+            if (client.segment != 'en_riesgo' || !client.active) return false;
+            break;
+          case 'recurrente':
+            if (client.segment != 'recurrente' || !client.active) return false;
+            break;
+          case 'nuevo':
+            if (client.segment != 'nuevo' || !client.active) return false;
+            break;
+          case 'con_saldo':
+            if (!client.hasPendingBalance) return false;
+            break;
+          case 'inactivos':
+            if (client.active) return false;
+            break;
+        }
+      }
+
+      return true;
+    }).toList();
+  }
+
   Future<void> _openCreateClientDialog() async {
     final formData = await showDialog<_ClientFormData>(
       context: context,
       builder: (context) => const _CreateClientDialog(),
     );
 
-    if (formData == null) {
-      return;
-    }
+    if (formData == null) return;
 
     try {
       final createdClient = await clientsService.createClient(
@@ -48,9 +101,7 @@ class _ClientesPageState extends State<ClientesPage> {
         notes: formData.notes,
       );
 
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       if (createdClient == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -68,10 +119,7 @@ class _ClientesPageState extends State<ClientesPage> {
       );
       _refreshClients();
     } catch (error) {
-      if (!mounted) {
-        return;
-      }
-
+      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error creando cliente: $error')));
@@ -84,9 +132,7 @@ class _ClientesPageState extends State<ClientesPage> {
       builder: (context) => _EditClientDialog(client: client),
     );
 
-    if (formData == null) {
-      return;
-    }
+    if (formData == null) return;
 
     try {
       final updatedClient = await clientsService.updateClient(
@@ -98,9 +144,7 @@ class _ClientesPageState extends State<ClientesPage> {
         active: formData.active,
       );
 
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       if (updatedClient == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -120,36 +164,49 @@ class _ClientesPageState extends State<ClientesPage> {
       );
       _refreshClients();
     } catch (error) {
-      if (!mounted) {
-        return;
-      }
-
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error actualizando cliente: $error')),
       );
     }
   }
 
+  Future<void> _openClientDetailSheet(ClientSummary client) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _ClientDetailSheet(
+        client: client,
+        onEdit: () {
+          Navigator.of(context).pop();
+          _openEditClientDialog(client);
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppPage(
       title: 'Clientes',
-      subtitle: 'Historial, contacto y preferencias de cada cliente.',
+      subtitle: 'Fidelización, historial de valor, frecuencia de visitas y contacto.',
       children: [
-        const InfoPanel(
-          icon: Icons.people_outline,
-          title: 'Clientes conectados con Supabase',
-          description:
-              'Administra datos de contacto y desactiva clientes sin borrar su historial.',
-        ),
-        const SizedBox(height: 16),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: FilledButton.icon(
-            onPressed: _openCreateClientDialog,
-            icon: const Icon(Icons.person_add_alt_1_outlined),
-            label: const Text('Nuevo cliente'),
-          ),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            FilledButton.icon(
+              onPressed: _openCreateClientDialog,
+              icon: const Icon(Icons.person_add_alt_1_outlined),
+              label: const Text('Nuevo cliente'),
+            ),
+            OutlinedButton.icon(
+              onPressed: _refreshClients,
+              icon: const Icon(Icons.refresh_outlined),
+              label: const Text('Actualizar'),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         FutureBuilder<List<ClientSummary>>(
@@ -180,39 +237,853 @@ class _ClientesPageState extends State<ClientesPage> {
               );
             }
 
-            final clients = snapshot.data ?? [];
+            final allClients = snapshot.data ?? [];
+            final filteredClients = _filterClients(allClients);
 
-            if (clients.isEmpty) {
-              return const InfoPanel(
-                icon: Icons.info_outline,
-                title: 'Sin clientes disponibles',
-                description: 'No hay clientes registrados en este momento.',
-              );
-            }
+            // Contadores por segmento para los chips
+            final vipCount = allClients.where((c) => c.segment == 'vip' && c.active).length;
+            final inRiskCount = allClients.where((c) => c.segment == 'en_riesgo' && c.active).length;
+            final recurrentCount = allClients.where((c) => c.segment == 'recurrente' && c.active).length;
+            final newCount = allClients.where((c) => c.segment == 'nuevo' && c.active).length;
+            final withBalanceCount = allClients.where((c) => c.hasPendingBalance).length;
+            final inactiveCount = allClients.where((c) => !c.active).length;
 
-            return Card(
-              elevation: 1,
-              color: Colors.white,
-              child: Padding(
-                padding: const EdgeInsets.all(22),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SectionTitle('Clientes del centro'),
-                    const SizedBox(height: 14),
-                    ...clients.map(
-                      (client) => ClientRow(
-                        client: client,
-                        onEdit: () => _openEditClientDialog(client),
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Panel de Búsqueda y Filtros Rápidos (Nivel 2)
+                Card(
+                  elevation: 1,
+                  color: Colors.white,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 1. Buscador universal
+                        TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: 'Buscar por nombre, teléfono o email...',
+                            prefixIcon: const Icon(Icons.search, size: 20),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear, size: 18),
+                                    onPressed: () {
+                                      setState(() {
+                                        _searchController.clear();
+                                        _searchQuery = '';
+                                      });
+                                    },
+                                  )
+                                : null,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: AppColors.border),
+                            ),
+                          ),
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 12),
+
+                        // 2. Chips de Segmentación Inteligente
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _buildSegmentChip('todos', 'Todos (${allClients.length})', null),
+                              const SizedBox(width: 8),
+                              _buildSegmentChip('vip', '⭐ VIP ($vipCount)', AppColors.brand),
+                              const SizedBox(width: 8),
+                              _buildSegmentChip('en_riesgo', '⚠️ En riesgo ($inRiskCount)', AppColors.stateToCollect),
+                              const SizedBox(width: 8),
+                              _buildSegmentChip('recurrente', '🟢 Recurrentes ($recurrentCount)', AppColors.stateConfirmed),
+                              const SizedBox(width: 8),
+                              _buildSegmentChip('nuevo', '🆕 Nuevos ($newCount)', AppColors.stateInProgress),
+                              if (withBalanceCount > 0) ...[
+                                const SizedBox(width: 8),
+                                _buildSegmentChip('con_saldo', '🔴 Con saldo ($withBalanceCount)', AppColors.danger),
+                              ],
+                              if (inactiveCount > 0) ...[
+                                const SizedBox(width: 8),
+                                _buildSegmentChip('inactivos', 'Inactivos ($inactiveCount)', AppColors.textSecondary),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Lista de Clientes (Nivel 2)
+                if (filteredClients.isEmpty)
+                  Card(
+                    elevation: 1,
+                    color: Colors.white,
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            const Icon(
+                              Icons.person_search_outlined,
+                              size: 48,
+                              color: AppColors.textMuted,
+                            ),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'No se encontraron clientes con los filtros actuales.',
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            OutlinedButton.icon(
+                              onPressed: () {
+                                setState(() {
+                                  _searchController.clear();
+                                  _searchQuery = '';
+                                  _selectedSegmentFilter = 'todos';
+                                });
+                              },
+                              icon: const Icon(Icons.clear_all),
+                              label: const Text('Limpiar filtros'),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ],
-                ),
-              ),
+                  )
+                else
+                  Card(
+                    elevation: 1,
+                    color: Colors.white,
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'Clientes (${filteredClients.length})',
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.brandDeep,
+                                ),
+                              ),
+                              const Spacer(),
+                              const Text(
+                                'Toca un cliente para ver su ficha de valor',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textMuted,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          ...filteredClients.map(
+                            (client) => ClientRow(
+                              client: client,
+                              onTap: () => _openClientDetailSheet(client),
+                              onEdit: () => _openEditClientDialog(client),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             );
           },
         ),
       ],
+    );
+  }
+
+  Widget _buildSegmentChip(String value, String label, Color? color) {
+    final isSelected = _selectedSegmentFilter == value;
+    return ChoiceChip(
+      avatar: color != null
+          ? Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            )
+          : null,
+      label: Text(label),
+      selected: isSelected,
+      selectedColor: color?.withValues(alpha: 0.18) ?? AppColors.brandTint,
+      onSelected: (selected) {
+        if (selected) {
+          setState(() {
+            _selectedSegmentFilter = value;
+          });
+        }
+      },
+    );
+  }
+}
+
+class ClientRow extends StatelessWidget {
+  const ClientRow({
+    super.key,
+    required this.client,
+    this.onTap,
+    required this.onEdit,
+  });
+
+  final ClientSummary client;
+  final VoidCallback? onTap;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final (badgeBg, badgeFg) = client.segmentColors;
+
+    // Iniciales para el avatar
+    final initials = client.name.trim().isNotEmpty
+        ? client.name
+            .trim()
+            .split(RegExp(r'\s+'))
+            .take(2)
+            .map((p) => p.isNotEmpty ? p[0].toUpperCase() : '')
+            .join()
+        : '?';
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: client.active ? AppColors.surfaceAlt : AppColors.surfaceAlt.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: client.hasPendingBalance ? AppColors.stateToCollect.withValues(alpha: 0.4) : AppColors.border,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Avatar con iniciales
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: AppColors.brandTint,
+                  child: Text(
+                    initials,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.brandDeep,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+
+                // Datos principales
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              client.name,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: client.active ? AppColors.brandDeep : AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                          if (client.active)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: badgeBg,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                client.segmentLabel,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: badgeFg,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+
+                      // Teléfono y WhatsApp
+                      Row(
+                        children: [
+                          Icon(Icons.phone_outlined, size: 14, color: AppColors.textSecondary),
+                          const SizedBox(width: 4),
+                          Text(
+                            client.phone,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          if (client.email != null && client.email!.isNotEmpty) ...[
+                            const SizedBox(width: 10),
+                            const Text('·', style: TextStyle(color: AppColors.textMuted)),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                client.email!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Botón de WhatsApp directo
+                if (client.phone.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(
+                      Icons.chat_bubble_outline,
+                      color: AppColors.whatsapp,
+                      size: 20,
+                    ),
+                    tooltip: 'WhatsApp a ${client.firstName}',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () {
+                      final greeting = client.segment == 'en_riesgo'
+                          ? 'Hola ${client.firstName}, ¡te extrañamos en el salón! Queríamos saludarte y saber cómo estás.'
+                          : (client.hasPendingBalance
+                              ? 'Hola ${client.firstName}, te escribimos para recordarte tu saldo pendiente de ${client.formattedBalanceAmount}.'
+                              : 'Hola ${client.firstName}, te escribimos de Salón y Más.');
+                      launchUrl(
+                        buildWhatsAppUri(client.phone, text: greeting),
+                        mode: LaunchMode.externalApplication,
+                      );
+                    },
+                  ),
+              ],
+            ),
+
+            const SizedBox(height: 10),
+            const Divider(height: 1),
+            const SizedBox(height: 8),
+
+            // Métricas RFM (Visitas, Gasto total, Cadencia, Última visita, Saldo)
+            Wrap(
+              spacing: 12,
+              runSpacing: 6,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                // Visitas
+                _buildMetricItem(
+                  Icons.event_repeat_outlined,
+                  '${client.totalVisits} ${client.totalVisits == 1 ? "visita" : "visitas"}',
+                ),
+                // Gasto Total
+                if (client.totalSpent > 0)
+                  _buildMetricItem(
+                    Icons.payments_outlined,
+                    'Gasto: ${client.formattedTotalSpent}',
+                    isBold: true,
+                    color: AppColors.success,
+                  ),
+                // Cadencia promedio
+                _buildMetricItem(
+                  Icons.timelapse_outlined,
+                  client.cadenceText,
+                ),
+                // Última visita
+                _buildMetricItem(
+                  Icons.history_outlined,
+                  'Última: ${client.lastVisitText}',
+                  color: client.segment == 'en_riesgo' ? AppColors.stateToCollect : AppColors.textSecondary,
+                ),
+                // Saldo pendiente
+                if (client.hasPendingBalance)
+                  _buildMetricItem(
+                    Icons.error_outline,
+                    'Debe: ${client.formattedBalanceAmount}',
+                    isBold: true,
+                    color: AppColors.stateToCollect,
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMetricItem(IconData icon, String text, {bool isBold = false, Color? color}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 13, color: color ?? AppColors.textSecondary),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+            color: color ?? AppColors.textSecondary,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ClientDetailSheet extends StatelessWidget {
+  const _ClientDetailSheet({
+    required this.client,
+    required this.onEdit,
+  });
+
+  final ClientSummary client;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isDesktop = size.width > 700;
+    final (badgeBg, badgeFg) = client.segmentColors;
+
+    final initials = client.name.trim().isNotEmpty
+        ? client.name
+            .trim()
+            .split(RegExp(r'\s+'))
+            .take(2)
+            .map((p) => p.isNotEmpty ? p[0].toUpperCase() : '')
+            .join()
+        : '?';
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: size.height * 0.90,
+        maxWidth: isDesktop ? 600 : double.infinity,
+      ),
+      margin: isDesktop ? const EdgeInsets.symmetric(vertical: 24) : null,
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: isDesktop
+            ? BorderRadius.circular(24)
+            : const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle bar
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: AppColors.brandTint,
+                  child: Text(
+                    initials,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.brandDeep,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        client.name,
+                        style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: badgeBg,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              client.segmentLabel,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: badgeFg,
+                              ),
+                            ),
+                          ),
+                          if (!client.active) ...[
+                            const SizedBox(width: 6),
+                            const Text(
+                              '(Inactivo)',
+                              style: TextStyle(fontSize: 12, color: AppColors.danger),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.of(context).pop(),
+                  tooltip: 'Cerrar',
+                ),
+              ],
+            ),
+          ),
+
+          const Divider(height: 1),
+
+          // Body
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 1. Datos de Contacto y WhatsApp
+                  _buildSectionCard(
+                    title: 'Contacto y Comunicación',
+                    icon: Icons.contact_phone_outlined,
+                    child: Column(
+                      children: [
+                        _buildDetailRow('Teléfono:', client.phone),
+                        if (client.email != null && client.email!.isNotEmpty)
+                          _buildDetailRow('Email:', client.email!),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          children: [
+                            if (client.phone.isNotEmpty)
+                              OutlinedButton.icon(
+                                onPressed: () {
+                                  launchUrl(
+                                    buildWhatsAppUri(client.phone),
+                                    mode: LaunchMode.externalApplication,
+                                  );
+                                },
+                                icon: const Icon(
+                                  Icons.chat_bubble_outline,
+                                  size: 16,
+                                  color: AppColors.whatsapp,
+                                ),
+                                label: const Text(
+                                  'WhatsApp',
+                                  style: TextStyle(
+                                    color: AppColors.success,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: AppColors.whatsapp),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                              ),
+                            if (client.phone.isNotEmpty)
+                              OutlinedButton.icon(
+                                onPressed: () {
+                                  launchUrl(Uri.parse('tel:${client.phone}'));
+                                },
+                                icon: const Icon(Icons.phone_outlined, size: 16),
+                                label: const Text('Llamar'),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 2. Tarjetas de Métricas Financieras y Retorno (RFM)
+                  _buildSectionCard(
+                    title: 'Análisis de Retorno y Valor (RFM)',
+                    icon: Icons.insights_outlined,
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildKpiBox(
+                                label: 'Gasto Histórico',
+                                value: client.formattedTotalSpent,
+                                color: AppColors.success,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _buildKpiBox(
+                                label: 'Ticket Promedio',
+                                value: client.formattedAverageTicket,
+                                color: AppColors.brand,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildKpiBox(
+                                label: 'Total Visitas',
+                                value: '${client.totalVisits}',
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _buildKpiBox(
+                                label: 'Frecuencia Promedio',
+                                value: client.cadenceText,
+                                color: AppColors.stateConfirmed,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (client.hasPendingBalance) ...[
+                          const SizedBox(height: 10),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppColors.stateToCollectTint,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: AppColors.stateToCollect),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.warning_amber_rounded, color: AppColors.stateToCollect, size: 20),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'Saldo en mora:',
+                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.stateToCollect),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  client.formattedBalanceAmount,
+                                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.stateToCollect),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 3. Frecuencia y Antigüedad
+                  _buildSectionCard(
+                    title: 'Frecuencia y Tiempos',
+                    icon: Icons.access_time_outlined,
+                    child: Column(
+                      children: [
+                        _buildDetailRow('Última visita:', client.lastVisitText),
+                        if (client.firstVisitAt != null)
+                          _buildDetailRow(
+                            'Primera visita:',
+                            '${client.firstVisitAt!.day}/${client.firstVisitAt!.month}/${client.firstVisitAt!.year}',
+                          ),
+                        if (client.createdAt != null)
+                          _buildDetailRow(
+                            'Registrado desde:',
+                            '${client.createdAt!.day}/${client.createdAt!.month}/${client.createdAt!.year}',
+                          ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 4. Notas y Preferencias
+                  _buildSectionCard(
+                    title: 'Notas y Preferencias',
+                    icon: Icons.notes_outlined,
+                    child: Text(
+                      (client.notes != null && client.notes!.trim().isNotEmpty)
+                          ? client.notes!
+                          : 'Sin notas ni preferencias registradas.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontStyle: (client.notes == null || client.notes!.trim().isEmpty) ? FontStyle.italic : FontStyle.normal,
+                        color: (client.notes == null || client.notes!.trim().isEmpty) ? AppColors.textMuted : AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // 5. Botonera de Acciones
+                  const Text(
+                    'Acciones',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 10,
+                    children: [
+                      FilledButton.icon(
+                        onPressed: onEdit,
+                        icon: const Icon(Icons.edit_outlined, size: 16),
+                        label: const Text('Gestionar / Editar'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildKpiBox({
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceAlt,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+          const SizedBox(height: 3),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionCard({
+    required String title,
+    required IconData icon,
+    required Widget child,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: AppColors.brand),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.brandDeep,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 130,
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -241,9 +1112,7 @@ class _CreateClientDialogState extends State<_CreateClientDialog> {
   }
 
   void _submit() {
-    if (!formKey.currentState!.validate()) {
-      return;
-    }
+    if (!formKey.currentState!.validate()) return;
 
     Navigator.of(context).pop(
       _ClientFormData(
@@ -312,9 +1181,7 @@ class _EditClientDialogState extends State<_EditClientDialog> {
   }
 
   void _submit() {
-    if (!formKey.currentState!.validate()) {
-      return;
-    }
+    if (!formKey.currentState!.validate()) return;
 
     Navigator.of(context).pop(
       _ClientFormData(
@@ -388,8 +1255,9 @@ class _ClientDialogForm extends StatelessWidget {
                 TextFormField(
                   controller: nameController,
                   decoration: const InputDecoration(
-                    labelText: 'Nombre',
+                    labelText: 'Nombre comercial',
                     prefixIcon: Icon(Icons.person_outline),
+                    hintText: 'Ej. Camila Restrepo, Dra. Patricia',
                   ),
                   textInputAction: TextInputAction.next,
                   validator: (value) => value == null || value.trim().isEmpty
@@ -400,13 +1268,13 @@ class _ClientDialogForm extends StatelessWidget {
                 TextFormField(
                   controller: phoneController,
                   decoration: const InputDecoration(
-                    labelText: 'Telefono',
+                    labelText: 'Teléfono / WhatsApp',
                     prefixIcon: Icon(Icons.phone_outlined),
                   ),
                   keyboardType: TextInputType.phone,
                   textInputAction: TextInputAction.next,
                   validator: (value) => value == null || value.trim().isEmpty
-                      ? 'Escribe el telefono del cliente'
+                      ? 'Escribe el teléfono del cliente'
                       : null,
                 ),
                 const SizedBox(height: 12),
@@ -423,8 +1291,9 @@ class _ClientDialogForm extends StatelessWidget {
                 TextFormField(
                   controller: notesController,
                   decoration: const InputDecoration(
-                    labelText: 'Notas opcionales',
+                    labelText: 'Notas y preferencias opcionales',
                     prefixIcon: Icon(Icons.notes_outlined),
+                    hintText: 'Alergias a tintes, bebidas favoritas, etc.',
                   ),
                   minLines: 2,
                   maxLines: 4,
@@ -440,8 +1309,8 @@ class _ClientDialogForm extends StatelessWidget {
                     ),
                     subtitle: Text(
                       active!
-                          ? 'Puede seleccionarse para nuevos tickets.'
-                          : 'Conserva su historial, pero no puede usarse en tickets nuevos.',
+                          ? 'Puede seleccionarse para nuevas citas.'
+                          : 'Conserva su historial, pero no aparece en citas nuevas.',
                     ),
                   ),
                 ],
@@ -479,92 +1348,4 @@ class _ClientFormData {
   final String? email;
   final String? notes;
   final bool active;
-}
-
-class ClientRow extends StatelessWidget {
-  const ClientRow({super.key, required this.client, required this.onEdit});
-
-  final ClientSummary client;
-  final VoidCallback onEdit;
-
-  @override
-  Widget build(BuildContext context) {
-    return Opacity(
-      opacity: client.active ? 1 : 0.58,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 9),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              Icons.person_outline,
-              size: 22,
-              color: AppColors.brand,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    client.name,
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.brandDeep,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    client.phone,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  if (client.email != null) ...[
-                    const SizedBox(height: 3),
-                    Text(
-                      client.email!,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                  if (client.balanceAmount > 0) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      'Saldo pendiente: ${formatMoney(client.balanceAmount)}',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.warning,
-                      ),
-                    ),
-                  ],
-                  if (!client.active) ...[
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Inactivo: no disponible para nuevos tickets',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            OutlinedButton.icon(
-              onPressed: onEdit,
-              icon: const Icon(Icons.edit_outlined, size: 18),
-              label: const Text('Gestionar'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

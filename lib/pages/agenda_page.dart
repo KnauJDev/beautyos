@@ -13,8 +13,11 @@ import '../widgets/app_widgets.dart';
 /// wa.me espera solo dígitos con código de país, sin '+' (mismo criterio que
 /// `public_plans_page.dart` y el soporte de Configuración) — aunque en este
 /// proyecto los teléfonos se guardan con '+', ese carácter se descarta aquí.
-Uri buildWhatsAppUri(String phone) {
+Uri buildWhatsAppUri(String phone, {String? text}) {
   final cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
+  if (text != null && text.trim().isNotEmpty) {
+    return Uri.https('wa.me', '/$cleanPhone', {'text': text.trim()});
+  }
   return Uri.parse('https://wa.me/$cleanPhone');
 }
 
