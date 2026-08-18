@@ -185,7 +185,7 @@ begin
   -- Asegurar registro base si no existía
   insert into public.branch_sale_numbering (tenant_id, branch_id, prefix, next_number, padding)
   values (v_tenant_id, p_branch_id, 'VTA-', 1, 7)
-  on conflict (tenant_id, branch_id) do nothing;
+  on conflict on constraint branch_sale_numbering_pkey do nothing;
 
   return query
   select
