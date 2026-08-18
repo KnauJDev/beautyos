@@ -55,6 +55,9 @@ class TicketBoardItem {
   final String id;
   final int? ticketNumber;
   final String ticketCode;
+  final int? saleNumber;
+  final String? saleCode;
+  final DateTime? closedAt;
   final String? clientId;
   final String clientName;
   final String clientPhone;
@@ -73,6 +76,9 @@ class TicketBoardItem {
     required this.id,
     this.ticketNumber,
     required this.ticketCode,
+    this.saleNumber,
+    this.saleCode,
+    this.closedAt,
     this.clientId,
     required this.clientName,
     required this.clientPhone,
@@ -94,10 +100,18 @@ class TicketBoardItem {
       parsedDate = DateTime.tryParse(map['scheduled_at'].toString());
     }
 
+    DateTime? parsedClosedAt;
+    if (map['closed_at'] != null) {
+      parsedClosedAt = DateTime.tryParse(map['closed_at'].toString());
+    }
+
     return TicketBoardItem(
       id: map['id']?.toString() ?? '',
       ticketNumber: (map['ticket_number'] as num?)?.toInt(),
       ticketCode: map['ticket_code']?.toString() ?? '',
+      saleNumber: (map['sale_number'] as num?)?.toInt(),
+      saleCode: map['sale_code']?.toString(),
+      closedAt: parsedClosedAt,
       clientId: map['client_id']?.toString(),
       clientName: map['client_name']?.toString() ?? 'Cliente sin nombre',
       clientPhone: map['client_phone']?.toString() ?? '',

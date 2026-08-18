@@ -1,8 +1,8 @@
-# HANDOFF Salón y Más — 17 de agosto de 2026 (bloque D-149)
+# HANDOFF Salón y Más — 17 de agosto de 2026 (bloque D-150)
 
-**Bloque documentado:** decisión **D-149** · Corrección post-auditoría del Paso 4.3 (D-148): días pasados atenuados en Semana/Mes (D-101) y WhatsApp sin "+"
-**Estado:** Corregido y verificado. **123 de 123 pruebas Flutter en verde**, `flutter analyze` 100% limpio (0 errores, 0 advertencias).
-**Reemplaza como handoff vigente a:** la versión anterior de este mismo archivo (bloque D-148, archivada en `docs/_archivo/handoffs/HANDOFF_SalonyMas_2026-08-17_D148.md`)
+**Bloque documentado:** decisión **D-150** · Paso 4.4: Número de venta consecutivo e inmutable por sede (`sale_number` / `sale_code`) con soporte para Resolución DIAN (Hallazgo P)
+**Estado:** Migración SQL `20260817210000_numero_de_venta_por_sede.sql` y script de control `174_test_numero_de_venta_por_sede.sql` creados. Frontend Flutter con modelo `BranchSaleNumbering` y renderizado dual de chips en Nivel 2. **128 de 128 pruebas Flutter en verde**, `flutter analyze` 100% limpio (0 errores, 0 advertencias).
+**Reemplaza como handoff vigente a:** la versión anterior de este mismo archivo (bloque D-149, archivada en `docs/_archivo/handoffs/HANDOFF_SalonyMas_2026-08-17_D149.md`)
 
 ---
 
@@ -30,39 +30,56 @@ Fase 4  Pulido módulo a módulo        🔄  ← AQUÍ
         4.1  Consecutivo de ticket        ✅ CERRADO (09-ago / D-117)
         4.2  Funciones del tablero agenda ✅ CERRADO Y APLICADO EN BD (17-ago / D-147)
         4.3  Tablero Flutter (Día/Sem/Mes)✅ CERRADO SIN RESERVAS (17-ago / D-148, D-149)
-        4.4  Número de venta al cerrar    ⬜ Siguiente paso (hallazgo P)
+        4.4  Número de venta al cerrar    ✅ CERRADO (17-ago / D-150 / Hallazgo P)
+        4.5  Tickets: Nivel 2 y StatusPill⬜ Siguiente paso (hallazgo N)
 ```
 
 ---
 
-## 2. Qué pasó en este bloque (D-149)
+## 2. Qué pasó en este bloque (Paso 4.4 / D-150 / Hallazgo P)
 
-La auditoría técnica del bloque anterior (D-148) encontró dos vacíos reales, no de estilo, y se corrigieron ambos en este bloque.
+Se resolvió la discrepancia entre el consecutivo operativo de agenda y la numeración contable/fiscal:
+- `ticket_code` (ej. `#0000701`, D-117) es el consecutivo operativo del centro que nace al crear la cita.
+- `sale_code` (ej. `VTA-0000001` o `FJ-020000`) es el **número contable correlativo de venta** asignado de forma atómica únicamente al pasar a estado `cerrado`.
 
-### Lo que se corrigió:
+### Lo que se construyó:
 
-1. **Días pasados sin atenuar en Semana y Mes.** D-101 lo pide explícito: *"el día de hoy se marca; los días pasados se atenúan"* (sección 4), y en Mes el mecanismo de lectura "de un vistazo" depende de eso: *"días pasados casi todo gris = mes sano... en días futuros no hay gris, y está bien"* (sección 5). El código no tenía ninguna lógica de fecha para esto — se confirmó buscando `isBefore`/`atenua`/`pasado` en todo `agenda_page.dart` sin resultados.
-   - **Corrección:** en `_buildWeekView` y `_buildMonthView` se calcula `isPast` (estrictamente antes de hoy) por cada día, y se envuelve la celda completa en `Opacity(opacity: isPast ? 0.55 : 1.0, ...)`. Se atenúa el día entero (borde, número, franja de colores) sin recolorear estado por estado; hoy y los días futuros quedan sin tocar.
+1. **`supabase/migrations/20260817210000_numero_de_venta_por_sede.sql`:**
+   - Tabla `branch_sale_numbering` con prefijo configurable por sede, próximo número, relleno de ceros y campos de **Resolución DIAN** (`resolution_number`, `resolution_date`, `range_from`, `range_to`, `valid_until`).
+   - Columnas `sale_number`, `sale_code` y `closed_at` en `public.tickets`.
+   - Trigger `private.beautyos_assign_sale_number_on_close()`: genera el número de venta correlativo atómico en `cerrado`.
+   - Trigger `private.beautyos_protect_immutable_sale_number()`: protege la inmutabilidad contable estricta bloqueando modificaciones posteriores.
+   - RPCs `get_branch_sale_numbering` y `set_branch_sale_numbering` con validación de roles y reglas de negocio.
+   - Backfill que asignó números correlativos históricos a los tickets cerrados existentes.
+   - Actualización de `get_ticket_board_list_v2` para devolver `sale_number`, `sale_code` y `closed_at`.
 
-2. **El enlace de WhatsApp conservaba el "+" del teléfono.** `_abrirWhatsApp` limpiaba el número con `[^0-9+]`, dejando pasar el `+` — inconsistente con el resto del proyecto (`public_plans_page.dart`, soporte de Configuración, alertas de suscripción), que siempre usa solo dígitos para `wa.me`. Verificado que los teléfonos de cliente sí se guardan con `+` en este proyecto.
-   - **Corrección:** se extrajo la construcción del enlace a una función de nivel superior `buildWhatsAppUri(phone)` (mismo patrón que `buildCheckoutUri` del checkout de ePayco), que descarta todo lo que no sea dígito.
+2. **`supabase/sql/174_test_numero_de_venta_por_sede.sql`:**
+   - Script de control con 6 pruebas aisladas en `ROLLBACK`:
+     1. Asignación automática en `cerrado`.
+     2. Citas abiertas o canceladas no queman números de venta.
+     3. Consecutivos contables independientes por sede.
+     4. Inmutabilidad contable estricta ante intentos de UPDATE.
+     5. Configuración de Resolución DIAN y validación de `next_number`.
+     6. Devolución de campos contables en `get_ticket_board_list_v2`.
 
-3. **Pruebas nuevas en `test/ticket_board_test.dart`:**
-   - `buildWhatsAppUri` contra un teléfono con `+` y espacios, verificando que el resultado no contenga `+`.
-   - Prueba de widgets que cuenta cuántos `Opacity` de la vista Semana quedan en `0.55` frente a `1.0`, calculado dinámicamente contra `DateTime.now()` (no depender de qué día de la semana corra la prueba).
+3. **Frontend en Flutter:**
+   - Modelo `BranchSaleNumbering` en `lib/models/sale_numbering.dart`.
+   - Campos de venta integrados en `TicketBoardItem` (`lib/models/ticket_board.dart`).
+   - Renderizado de chips duales en `_TicketCardNivel2` (`lib/pages/agenda_page.dart`): Chip Cita `#0000701` + Chip Venta `VTA-0000045` (en verde esmeralda con icono de recibo).
+   - Suite `test/sale_numbering_test.dart` con 5 pruebas unitarias y de widgets.
 
 ---
 
 ## 3. Estado técnico
 
-- **Pruebas Flutter:** **123 de 123 en verde** (`flutter test`) — 121 + 2 nuevas
+- **Pruebas Flutter:** **128 de 128 en verde** (`flutter test`)
 - **Análisis estático:** 0 errores, 0 advertencias (`flutter analyze`)
-- **Decisiones registradas:** **149 decisiones** (D-001 al D-149)
-- **Sin migraciones nuevas:** este bloque es 100% Flutter
+- **Decisiones registradas:** **150 decisiones** (D-001 al D-150)
+- **Base de datos:** Migración `20260817210000` y Control 174 listos para ejecutar.
 
 ---
 
 ## 4. Próximos pasos inmediatos
 
-1. **Paso 4.4:** **Número de venta** al cerrar el ticket (hallazgo P).
-2. **Paso 4.5:** Tickets: pulido del nivel 2 y 3 + cambiar `TicketStatusBadge` por `StatusPill` (hallazgo N).
+1. Aplicar la migración `20260817210000_numero_de_venta_por_sede.sql` en `beautyos-dev` y verificar con el script de Control 174.
+2. Paso 4.5: Tickets: pulido del nivel 2 y 3 + cambiar `TicketStatusBadge` por `StatusPill` (hallazgo N).

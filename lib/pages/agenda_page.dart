@@ -1478,6 +1478,7 @@ class _TicketCardNivel2 extends StatelessWidget {
             children: [
               Row(
                 children: [
+                  // Chip Consecutivo Operativo (D-117)
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 8,
@@ -1500,6 +1501,41 @@ class _TicketCardNivel2 extends StatelessWidget {
                       ),
                     ),
                   ),
+                  // Chip Consecutivo Contable de Venta (D-150 / Hallazgo P)
+                  if (item.saleCode != null && item.saleCode!.isNotEmpty) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.stateConfirmedTint,
+                        borderRadius: BorderRadius.circular(AppRadius.control),
+                        border: Border.all(color: AppColors.stateConfirmed),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.receipt_long,
+                            size: 12,
+                            color: AppColors.stateConfirmed,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            item.saleCode!,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.stateConfirmed,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(width: 8),
                   StatusPill(status: item.ticketStatus),
                 ],
