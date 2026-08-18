@@ -324,6 +324,8 @@ grant execute on function public.set_branch_sale_numbering(uuid, text, bigint, s
 -- -----------------------------------------------------------------------------
 -- 6. Actualización de get_ticket_board_list_v2 para incluir número de venta
 -- -----------------------------------------------------------------------------
+drop function if exists public.get_ticket_board_list_v2(uuid, date, date, text[], text, text);
+
 create or replace function public.get_ticket_board_list_v2(
   p_branch_id uuid,
   p_start_date date,
