@@ -14,13 +14,36 @@ class TicketsService {
   final String branchId;
 
   Future<List<TicketSummary>> getTicketsSummary() async {
+    try {
+      final response = await Supabase.instance.client.rpc(
+        'get_ticket_board_list_v2',
+        params: {
+          'p_branch_id': branchId,
+          'p_start_date': null,
+          'p_end_date': null,
+        },
+      );
+
+      if (response is List) {
+        return (response)
+            .map<TicketSummary>(
+              (item) => TicketSummary.fromMap(item as Map<String, dynamic>),
+            )
+            .toList();
+      }
+    } catch (_) {
+      // Fallback a get_tickets_summary_v2 si fuera necesario
+    }
+
     final response = await Supabase.instance.client.rpc(
       'get_tickets_summary_v2',
       params: {'p_branch_id': branchId},
     );
 
-    return response
-        .map<TicketSummary>((item) => TicketSummary.fromMap(item))
+    return (response as List<dynamic>)
+        .map<TicketSummary>(
+          (item) => TicketSummary.fromMap(item as Map<String, dynamic>),
+        )
         .toList();
   }
 

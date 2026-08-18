@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
 
@@ -16,6 +17,8 @@ import '../services/clients_service.dart';
 import '../services/tickets_service.dart';
 import '../widgets/add_work_photo_dialog.dart';
 import '../widgets/app_widgets.dart';
+import '../widgets/ticket_status.dart';
+import 'agenda_page.dart' show buildWhatsAppUri;
 
 class TicketsPage extends StatefulWidget {
   const TicketsPage({
@@ -41,11 +44,24 @@ class _TicketsPageState extends State<TicketsPage> {
   late final TicketsService ticketsService;
   late Future<List<TicketSummary>> ticketsFuture;
 
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String _selectedDateFilter = 'todos'; // 'hoy', 'semana', 'mes', 'todos', 'personalizado'
+  DateTimeRange? _customDateRange;
+  String _selectedStateFilter = 'todos'; // 'todos', 'por_confirmar', 'confirmado', 'en_proceso', 'por_cobrar', 'cerrado', 'cancelado'
+  String _selectedStylist = 'todos';
+
   @override
   void initState() {
     super.initState();
     ticketsService = TicketsService(branchId: widget.branchId);
     ticketsFuture = ticketsService.getTicketsSummary();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _refreshTickets() {
@@ -582,20 +598,173 @@ class _TicketsPageState extends State<TicketsPage> {
     );
   }
 
+  List<TicketSummary> _filterTickets(List<TicketSummary> allTickets) {
+    return allTickets.where((ticket) {
+      // 1. Buscador de texto: ticketCode, saleCode, clientName, clientPhone, serviceNames, stylistNames
+      if (_searchQuery.isNotEmpty) {
+        final query = _searchQuery.toLowerCase().trim();
+        final code = ticket.ticketCode.toLowerCase();
+        final sale = (ticket.saleCode ?? '').toLowerCase();
+        final client = ticket.clientName.toLowerCase();
+        final phone = ticket.clientPhone.replaceAll(RegExp(r'[^0-9]'), '');
+        final queryPhone = query.replaceAll(RegExp(r'[^0-9]'), '');
+        final services = ticket.serviceNames.toLowerCase();
+        final stylists = ticket.stylistNames.toLowerCase();
+
+        final matches = code.contains(query) ||
+            sale.contains(query) ||
+            client.contains(query) ||
+            (queryPhone.isNotEmpty && phone.contains(queryPhone)) ||
+            services.contains(query) ||
+            stylists.contains(query);
+
+        if (!matches) return false;
+      }
+
+      // 2. Filtro de fecha
+      if (ticket.scheduledAt != null) {
+        final sched = ticket.scheduledAt!.toLocal();
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        final schedDay = DateTime(sched.year, sched.month, sched.day);
+
+        if (_selectedDateFilter == 'hoy') {
+          if (schedDay != today) return false;
+        } else if (_selectedDateFilter == 'semana') {
+          final startOfWeek = today.subtract(Duration(days: today.weekday - 1));
+          final endOfWeek = startOfWeek.add(const Duration(days: 6));
+          if (schedDay.isBefore(startOfWeek) || schedDay.isAfter(endOfWeek)) return false;
+        } else if (_selectedDateFilter == 'mes') {
+          if (sched.year != now.year || sched.month != now.month) return false;
+        } else if (_selectedDateFilter == 'personalizado' && _customDateRange != null) {
+          final start = DateTime(
+            _customDateRange!.start.year,
+            _customDateRange!.start.month,
+            _customDateRange!.start.day,
+          );
+          final end = DateTime(
+            _customDateRange!.end.year,
+            _customDateRange!.end.month,
+            _customDateRange!.end.day,
+          );
+          if (schedDay.isBefore(start) || schedDay.isAfter(end)) return false;
+        }
+      }
+
+      // 3. Filtro de estado
+      if (_selectedStateFilter != 'todos') {
+        final st = ticket.ticketStatus;
+        switch (_selectedStateFilter) {
+          case 'por_confirmar':
+            if (st != TicketStatus.solicitado &&
+                st != TicketStatus.cotizado &&
+                st != TicketStatus.apartado) {
+              return false;
+            }
+            break;
+          case 'confirmado':
+            if (st != TicketStatus.confirmado &&
+                st != TicketStatus.enEspera) {
+              return false;
+            }
+            break;
+          case 'en_proceso':
+            if (st != TicketStatus.enProceso) return false;
+            break;
+          case 'por_cobrar':
+            if (st != TicketStatus.finalizado) return false;
+            break;
+          case 'cerrado':
+            if (st != TicketStatus.cerrado) return false;
+            break;
+          case 'cancelado':
+            if (st != TicketStatus.cancelado &&
+                st != TicketStatus.noAsistio) {
+              return false;
+            }
+            break;
+        }
+      }
+
+      // 4. Filtro por estilista
+      if (_selectedStylist != 'todos') {
+        if (!ticket.stylistNames
+            .toLowerCase()
+            .contains(_selectedStylist.toLowerCase())) {
+          return false;
+        }
+      }
+
+      return true;
+    }).toList();
+  }
+
+  Future<void> _openTicketDetailSheet(TicketSummary ticket) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _TicketDetailSheet(
+        ticket: ticket,
+        isOwnerOrAdmin: widget.isOwnerOrAdmin,
+        branchId: widget.branchId,
+        ticketsService: ticketsService,
+        onAddService: _canAddServices(ticket)
+            ? () {
+                Navigator.of(context).pop();
+                _openAddTicketServiceDialog(ticket);
+              }
+            : null,
+        onManageServices: _canManageServices(ticket)
+            ? () {
+                Navigator.of(context).pop();
+                _openManageTicketServicesDialog(ticket);
+              }
+            : null,
+        onReschedule: _canReschedule(ticket)
+            ? () {
+                Navigator.of(context).pop();
+                _openRescheduleTicketDialog(ticket);
+              }
+            : null,
+        onChangeStatus: _canChangeStatus(ticket)
+            ? () {
+                Navigator.of(context).pop();
+                _openChangeTicketStatusDialog(ticket);
+              }
+            : null,
+        onCorrectCompletion: _canCorrectCompletion(ticket)
+            ? () {
+                Navigator.of(context).pop();
+                _openCorrectCompletionDialog(ticket);
+              }
+            : null,
+        onManagePayments: _canManagePayments(ticket)
+            ? () {
+                Navigator.of(context).pop();
+                _openPaymentsDialog(ticket);
+              }
+            : null,
+        onCopyReviewLink: _canCopyReviewLink(ticket)
+            ? () => _copyReviewLink(ticket)
+            : null,
+        onAddWorkPhoto: _canAddWorkPhoto(ticket)
+            ? () {
+                Navigator.of(context).pop();
+                _openAddWorkPhotoDialog(ticket);
+              }
+            : null,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppPage(
-      title: 'Tickets',
+      title: 'Tickets de Atención',
       subtitle:
-          'Seguimiento de cada solicitud desde WhatsApp hasta finalizaci\u00f3n.',
+          'Control operativo de citas, sala de espera, servicios, pagos y trazabilidad contable.',
       children: [
-        const InfoPanel(
-          icon: Icons.confirmation_number_outlined,
-          title: 'Tickets conectados con Supabase',
-          description:
-              'Este m\u00f3dulo ahora consulta tickets resumidos mediante una funci\u00f3n segura, sin abrir directamente las tablas sensibles.',
-        ),
-        const SizedBox(height: 16),
         Wrap(
           spacing: 12,
           runSpacing: 12,
@@ -641,62 +810,373 @@ class _TicketsPageState extends State<TicketsPage> {
               );
             }
 
-            final tickets = snapshot.data ?? [];
+            final allTickets = snapshot.data ?? [];
+            final filteredTickets = _filterTickets(allTickets);
 
-            if (tickets.isEmpty) {
-              return const InfoPanel(
-                icon: Icons.info_outline,
-                title: 'Sin tickets disponibles',
-                description: 'No hay tickets para mostrar en este momento.',
-              );
+            // Obtener lista de estilistas únicos para el filtro
+            final stylistsSet = <String>{};
+            for (final t in allTickets) {
+              if (t.stylistNames.isNotEmpty && t.stylistNames != 'Sin estilista') {
+                for (final s in t.stylistNames.split(',')) {
+                  final trimmed = s.trim();
+                  if (trimmed.isNotEmpty) stylistsSet.add(trimmed);
+                }
+              }
             }
+            final availableStylists = stylistsSet.toList()..sort();
 
-            return Card(
-              elevation: 1,
-              color: Colors.white,
-              child: Padding(
-                padding: const EdgeInsets.all(22),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SectionTitle('Tickets desde Supabase'),
-                    const SizedBox(height: 14),
-                    ...tickets.map(
-                      (ticket) => TicketRow(
-                        ticket: ticket,
-                        onAddService: _canAddServices(ticket)
-                            ? () => _openAddTicketServiceDialog(ticket)
-                            : null,
-                        onManageServices: _canManageServices(ticket)
-                            ? () => _openManageTicketServicesDialog(ticket)
-                            : null,
-                        onReschedule: _canReschedule(ticket)
-                            ? () => _openRescheduleTicketDialog(ticket)
-                            : null,
-                        onChangeStatus: _canChangeStatus(ticket)
-                            ? () => _openChangeTicketStatusDialog(ticket)
-                            : null,
-                        onCorrectCompletion: _canCorrectCompletion(ticket)
-                            ? () => _openCorrectCompletionDialog(ticket)
-                            : null,
-                        onManagePayments: _canManagePayments(ticket)
-                            ? () => _openPaymentsDialog(ticket)
-                            : null,
-                        onCopyReviewLink: _canCopyReviewLink(ticket)
-                            ? () => _copyReviewLink(ticket)
-                            : null,
-                        onAddWorkPhoto: _canAddWorkPhoto(ticket)
-                            ? () => _openAddWorkPhotoDialog(ticket)
-                            : null,
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Panel de Búsqueda y Filtros Rápidos (Nivel 2)
+                Card(
+                  elevation: 1,
+                  color: Colors.white,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 1. Buscador universal
+                        TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: 'Buscar por cliente, teléfono, #cita o venta...',
+                            prefixIcon: const Icon(Icons.search, size: 20),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear, size: 18),
+                                    onPressed: () {
+                                      setState(() {
+                                        _searchController.clear();
+                                        _searchQuery = '';
+                                      });
+                                    },
+                                  )
+                                : null,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: AppColors.border),
+                            ),
+                          ),
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 12),
+
+                        // 2. Filtro de Fechas Rápido
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _buildDateFilterChip('todos', 'Todas las fechas'),
+                              const SizedBox(width: 8),
+                              _buildDateFilterChip('hoy', 'Hoy'),
+                              const SizedBox(width: 8),
+                              _buildDateFilterChip('semana', 'Esta semana'),
+                              const SizedBox(width: 8),
+                              _buildDateFilterChip('mes', 'Este mes'),
+                              const SizedBox(width: 8),
+                              ActionChip(
+                                avatar: const Icon(Icons.date_range, size: 16),
+                                label: Text(
+                                  _selectedDateFilter == 'personalizado' &&
+                                          _customDateRange != null
+                                      ? '${_customDateRange!.start.day}/${_customDateRange!.start.month} - ${_customDateRange!.end.day}/${_customDateRange!.end.month}'
+                                      : 'Rango...',
+                                ),
+                                backgroundColor:
+                                    _selectedDateFilter == 'personalizado'
+                                        ? AppColors.brandTint
+                                        : null,
+                                onPressed: () async {
+                                  final picked = await showDateRangePicker(
+                                    context: context,
+                                    firstDate: DateTime(2025),
+                                    lastDate: DateTime(2030),
+                                    initialDateRange: _customDateRange ??
+                                        DateTimeRange(
+                                          start: DateTime.now().subtract(
+                                            const Duration(days: 7),
+                                          ),
+                                          end: DateTime.now(),
+                                        ),
+                                  );
+                                  if (picked != null) {
+                                    setState(() {
+                                      _selectedDateFilter = 'personalizado';
+                                      _customDateRange = picked;
+                                    });
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // 3. Chips de Estado Semánticos
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              _buildStateFilterChip(
+                                'todos',
+                                'Todos (${allTickets.length})',
+                                null,
+                              ),
+                              const SizedBox(width: 8),
+                              _buildStateFilterChip(
+                                'por_confirmar',
+                                'Por confirmar',
+                                AppColors.statePending,
+                              ),
+                              const SizedBox(width: 8),
+                              _buildStateFilterChip(
+                                'confirmado',
+                                'Confirmados',
+                                AppColors.stateConfirmed,
+                              ),
+                              const SizedBox(width: 8),
+                              _buildStateFilterChip(
+                                'en_proceso',
+                                'En proceso',
+                                AppColors.stateInProgress,
+                              ),
+                              const SizedBox(width: 8),
+                              _buildStateFilterChip(
+                                'por_cobrar',
+                                'Por cobrar',
+                                AppColors.stateToCollect,
+                              ),
+                              const SizedBox(width: 8),
+                              _buildStateFilterChip(
+                                'cerrado',
+                                'Cerrados',
+                                AppColors.stateClosed,
+                              ),
+                              const SizedBox(width: 8),
+                              _buildStateFilterChip(
+                                'cancelado',
+                                'Cancelados',
+                                AppColors.danger,
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // 4. Filtro por Estilista (si hay estilistas registrados)
+                        if (availableStylists.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.person_outline,
+                                size: 16,
+                                color: AppColors.textSecondary,
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Estilista:',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              DropdownButton<String>(
+                                value: _selectedStylist,
+                                isDense: true,
+                                underline: const SizedBox.shrink(),
+                                items: [
+                                  const DropdownMenuItem(
+                                    value: 'todos',
+                                    child: Text('Todos los estilistas'),
+                                  ),
+                                  ...availableStylists.map(
+                                    (st) => DropdownMenuItem(
+                                      value: st,
+                                      child: Text(st),
+                                    ),
+                                  ),
+                                ],
+                                onChanged: (val) {
+                                  if (val != null) {
+                                    setState(() {
+                                      _selectedStylist = val;
+                                    });
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Lista de Tickets (Nivel 2)
+                if (filteredTickets.isEmpty)
+                  Card(
+                    elevation: 1,
+                    color: Colors.white,
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            const Icon(
+                              Icons.search_off,
+                              size: 48,
+                              color: AppColors.textMuted,
+                            ),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'No se encontraron tickets con los filtros actuales.',
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            OutlinedButton.icon(
+                              onPressed: () {
+                                setState(() {
+                                  _searchController.clear();
+                                  _searchQuery = '';
+                                  _selectedDateFilter = 'todos';
+                                  _selectedStateFilter = 'todos';
+                                  _selectedStylist = 'todos';
+                                  _customDateRange = null;
+                                });
+                              },
+                              icon: const Icon(Icons.clear_all),
+                              label: const Text('Limpiar filtros'),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ],
-                ),
-              ),
+                  )
+                else
+                  Card(
+                    elevation: 1,
+                    color: Colors.white,
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'Tickets (${filteredTickets.length})',
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.brandDeep,
+                                ),
+                              ),
+                              const Spacer(),
+                              const Text(
+                                'Toca un ticket para ver su ficha',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textMuted,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          ...filteredTickets.map(
+                            (ticket) => TicketRow(
+                              ticket: ticket,
+                              onTap: () => _openTicketDetailSheet(ticket),
+                              onAddService: _canAddServices(ticket)
+                                  ? () => _openAddTicketServiceDialog(ticket)
+                                  : null,
+                              onManageServices: _canManageServices(ticket)
+                                  ? () => _openManageTicketServicesDialog(ticket)
+                                  : null,
+                              onReschedule: _canReschedule(ticket)
+                                  ? () => _openRescheduleTicketDialog(ticket)
+                                  : null,
+                              onChangeStatus: _canChangeStatus(ticket)
+                                  ? () => _openChangeTicketStatusDialog(ticket)
+                                  : null,
+                              onCorrectCompletion: _canCorrectCompletion(ticket)
+                                  ? () => _openCorrectCompletionDialog(ticket)
+                                  : null,
+                              onManagePayments: _canManagePayments(ticket)
+                                  ? () => _openPaymentsDialog(ticket)
+                                  : null,
+                              onCopyReviewLink: _canCopyReviewLink(ticket)
+                                  ? () => _copyReviewLink(ticket)
+                                  : null,
+                              onAddWorkPhoto: _canAddWorkPhoto(ticket)
+                                  ? () => _openAddWorkPhotoDialog(ticket)
+                                  : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
             );
           },
         ),
       ],
+    );
+  }
+
+  Widget _buildDateFilterChip(String value, String label) {
+    final isSelected = _selectedDateFilter == value;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      selectedColor: AppColors.brandTint,
+      onSelected: (selected) {
+        if (selected) {
+          setState(() {
+            _selectedDateFilter = value;
+          });
+        }
+      },
+    );
+  }
+
+  Widget _buildStateFilterChip(String value, String label, Color? color) {
+    final isSelected = _selectedStateFilter == value;
+    return ChoiceChip(
+      avatar: color != null
+          ? Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            )
+          : null,
+      label: Text(label),
+      selected: isSelected,
+      selectedColor: color?.withValues(alpha: 0.18) ?? AppColors.brandTint,
+      onSelected: (selected) {
+        if (selected) {
+          setState(() {
+            _selectedStateFilter = value;
+          });
+        }
+      },
     );
   }
 }
@@ -3430,6 +3910,7 @@ String _ticketStatusLabel(String status) =>
 
 class TicketRow extends StatelessWidget {
   final TicketSummary ticket;
+  final VoidCallback? onTap;
   final VoidCallback? onAddService;
   final VoidCallback? onManageServices;
   final VoidCallback? onReschedule;
@@ -3442,6 +3923,7 @@ class TicketRow extends StatelessWidget {
   const TicketRow({
     super.key,
     required this.ticket,
+    this.onTap,
     required this.onAddService,
     required this.onManageServices,
     required this.onReschedule,
@@ -3454,121 +3936,665 @@ class TicketRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceAlt,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.receipt_long_outlined,
-            size: 28,
-            color: AppColors.brand,
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceAlt,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Cabecera: Consecutivos y StatusPill
+            Row(
               children: [
-                // El consecutivo va primero y por encima del nombre (D-117):
-                // es como se nombra el ticket por telefono o en un papel, y
-                // hasta hoy lo unico que lo identificaba era un uuid.
-                if (ticket.ticketCode.isNotEmpty)
-                  Text(
-                    'Ticket ${ticket.ticketCode}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                      color: AppColors.textMuted,
+                Expanded(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      if (ticket.ticketCode.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Text(
+                            '#${ticket.ticketCode}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      if (ticket.saleCode != null && ticket.saleCode!.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.successTint,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: AppColors.success),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.receipt_outlined,
+                                size: 12,
+                                color: AppColors.success,
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                ticket.saleCode!,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.success,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      StatusPill(status: ticket.ticketStatus),
+                    ],
+                  ),
+                ),
+                Text(
+                  ticket.scheduledAtText,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            // Cliente y WhatsApp
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    ticket.clientName,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.brandDeep,
                     ),
                   ),
-                if (ticket.ticketCode.isNotEmpty)
-                  const SizedBox(height: AppSpacing.xs),
+                ),
+                if (ticket.clientPhone.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(
+                      Icons.chat_bubble_outline,
+                      color: AppColors.whatsapp,
+                      size: 20,
+                    ),
+                    tooltip: 'WhatsApp a ${ticket.clientName}',
+                    visualDensity: VisualDensity.compact,
+                    onPressed: () {
+                      launchUrl(
+                        buildWhatsAppUri(ticket.clientPhone),
+                        mode: LaunchMode.externalApplication,
+                      );
+                    },
+                  ),
+              ],
+            ),
+            const SizedBox(height: 4),
+
+            // Servicios y Estilista
+            Text(
+              ticket.serviceNames,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(
+                  Icons.person_outline,
+                  size: 14,
+                  color: AppColors.textSecondary,
+                ),
+                const SizedBox(width: 4),
                 Text(
-                  ticket.clientName,
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.brandDeep,
+                  ticket.stylistNames,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(width: 12),
+                const Icon(
+                  Icons.schedule,
+                  size: 14,
+                  color: AppColors.textSecondary,
+                ),
+                const SizedBox(width: 4),
                 Text(
-                  ticket.serviceNames,
+                  '${ticket.totalDurationMinutes} min',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+
+            // Finanzas
+            Row(
+              children: [
+                Text(
+                  ticket.formattedPrice,
                   style: const TextStyle(
                     fontSize: 15,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Estilista: ${ticket.stylistNames}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Fecha: ${ticket.scheduledAtText} \u00b7 Canal: ${ticket.channel}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '${ticket.formattedPrice} \u00b7 ${ticket.totalDurationMinutes} min',
-                  style: const TextStyle(
-                    fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: AppColors.success,
                   ),
                 ),
                 if (ticket.showsPaymentInfo) ...[
-                  const SizedBox(height: 6),
+                  const SizedBox(width: 10),
                   Text(
-                    'Pagado: ${ticket.formattedPaidAmount} · '
-                    'Saldo: ${ticket.formattedBalanceAmount}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: ticket.balanceAmount == 0
-                          ? AppColors.success
-                          : AppColors.warning,
+                    '·  Pagado: ${ticket.formattedPaidAmount}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
                     ),
                   ),
+                  if (ticket.hasPendingBalance) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      'Saldo: ${ticket.formattedBalanceAmount}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.stateToCollect,
+                      ),
+                    ),
+                  ],
                 ],
-                if (onAddService != null ||
-                    onManageServices != null ||
-                    onReschedule != null ||
-                    onChangeStatus != null ||
-                    onCorrectCompletion != null ||
-                    onManagePayments != null ||
-                    onCopyReviewLink != null ||
-                    onAddWorkPhoto != null) ...[
-                  const SizedBox(height: 12),
+                const Spacer(),
+                const Icon(
+                  Icons.chevron_right,
+                  color: AppColors.textMuted,
+                  size: 20,
+                ),
+              ],
+            ),
+
+            if (onManagePayments != null ||
+                onChangeStatus != null ||
+                onAddService != null) ...[
+              const SizedBox(height: 10),
+              const Divider(height: 1),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: onTap,
+                    icon: const Icon(Icons.visibility_outlined, size: 15),
+                    label: const Text('Ver ficha'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                  if (onManagePayments != null)
+                    FilledButton.tonalIcon(
+                      onPressed: onManagePayments,
+                      icon: const Icon(Icons.payments_outlined, size: 15),
+                      label: Text(
+                        ticket.status == 'cerrado'
+                            ? 'Ver pagos'
+                            : 'Pagos y saldo',
+                      ),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                  if (onChangeStatus != null)
+                    OutlinedButton.icon(
+                      onPressed: onChangeStatus,
+                      icon: const Icon(Icons.swap_horiz_outlined, size: 15),
+                      label: const Text('Estado'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TicketDetailSheet extends StatelessWidget {
+  const _TicketDetailSheet({
+    required this.ticket,
+    required this.isOwnerOrAdmin,
+    required this.branchId,
+    required this.ticketsService,
+    required this.onAddService,
+    required this.onManageServices,
+    required this.onReschedule,
+    required this.onChangeStatus,
+    required this.onCorrectCompletion,
+    required this.onManagePayments,
+    required this.onCopyReviewLink,
+    required this.onAddWorkPhoto,
+  });
+
+  final TicketSummary ticket;
+  final bool isOwnerOrAdmin;
+  final String branchId;
+  final TicketsService ticketsService;
+  final VoidCallback? onAddService;
+  final VoidCallback? onManageServices;
+  final VoidCallback? onReschedule;
+  final VoidCallback? onChangeStatus;
+  final VoidCallback? onCorrectCompletion;
+  final VoidCallback? onManagePayments;
+  final VoidCallback? onCopyReviewLink;
+  final VoidCallback? onAddWorkPhoto;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isDesktop = size.width > 700;
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: size.height * 0.90,
+        maxWidth: isDesktop ? 650 : double.infinity,
+      ),
+      margin: isDesktop ? const EdgeInsets.symmetric(vertical: 24) : null,
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: isDesktop
+            ? BorderRadius.circular(24)
+            : const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle bar
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+
+          // Header
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      if (ticket.ticketCode.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceAlt,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.border),
+                          ),
+                          child: Text(
+                            'Cita #${ticket.ticketCode}',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      if (ticket.saleCode != null && ticket.saleCode!.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.successTint,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.success),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.receipt_outlined,
+                                size: 14,
+                                color: AppColors.success,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                ticket.saleCode!,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.success,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      StatusPill(status: ticket.ticketStatus),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.of(context).pop(),
+                  tooltip: 'Cerrar',
+                ),
+              ],
+            ),
+          ),
+
+          const Divider(height: 1),
+
+          // Scrollable Body
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 1. Cliente Card
+                  _buildSectionCard(
+                    title: 'Cliente',
+                    icon: Icons.person_outline,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          ticket.clientName,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        if (ticket.clientPhone.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            ticket.clientPhone,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            children: [
+                              OutlinedButton.icon(
+                                onPressed: () {
+                                  launchUrl(
+                                    buildWhatsAppUri(ticket.clientPhone),
+                                    mode: LaunchMode.externalApplication,
+                                  );
+                                },
+                                icon: const Icon(
+                                  Icons.chat_bubble_outline,
+                                  size: 16,
+                                  color: AppColors.whatsapp,
+                                ),
+                                label: const Text(
+                                  'WhatsApp',
+                                  style: TextStyle(
+                                    color: AppColors.success,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(
+                                    color: AppColors.whatsapp,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                ),
+                              ),
+                              OutlinedButton.icon(
+                                onPressed: () {
+                                  launchUrl(
+                                    Uri.parse('tel:${ticket.clientPhone}'),
+                                  );
+                                },
+                                icon: const Icon(Icons.phone_outlined, size: 16),
+                                label: const Text('Llamar'),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 2. Horario & Canal Card
+                  _buildSectionCard(
+                    title: 'Programación y Canal',
+                    icon: Icons.calendar_today_outlined,
+                    child: Column(
+                      children: [
+                        _buildDetailRow(
+                          'Fecha agendada:',
+                          ticket.scheduledAtText,
+                        ),
+                        if (ticket.closedAtText.isNotEmpty)
+                          _buildDetailRow(
+                            'Cierre contable:',
+                            ticket.closedAtText,
+                          ),
+                        _buildDetailRow(
+                          'Canal de reserva:',
+                          ticket.channel.toUpperCase(),
+                        ),
+                        _buildDetailRow(
+                          'Duración total estimada:',
+                          '${ticket.totalDurationMinutes} min',
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 3. Servicios y Estilista Card
+                  _buildSectionCard(
+                    title: 'Servicios y Equipo',
+                    icon: Icons.content_cut_outlined,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildDetailRow('Servicios:', ticket.serviceNames),
+                        _buildDetailRow(
+                          'Estilista asignado:',
+                          ticket.stylistNames,
+                        ),
+                        if (onAddService != null ||
+                            onManageServices != null) ...[
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            children: [
+                              if (onAddService != null)
+                                OutlinedButton.icon(
+                                  onPressed: onAddService,
+                                  icon: const Icon(Icons.add, size: 16),
+                                  label: const Text('Agregar servicio'),
+                                ),
+                              if (onManageServices != null)
+                                OutlinedButton.icon(
+                                  onPressed: onManageServices,
+                                  icon: const Icon(
+                                    Icons.tune_outlined,
+                                    size: 16,
+                                  ),
+                                  label: const Text('Gestionar'),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 4. Finanzas y Pagos Card
+                  _buildSectionCard(
+                    title: 'Finanzas y Pagos',
+                    icon: Icons.payments_outlined,
+                    child: Column(
+                      children: [
+                        _buildDetailRow(
+                          'Total servicios:',
+                          ticket.formattedPrice,
+                          isBold: true,
+                        ),
+                        _buildDetailRow(
+                          'Total abonado:',
+                          ticket.formattedPaidAmount,
+                          color: AppColors.success,
+                        ),
+                        _buildDetailRow(
+                          'Saldo pendiente:',
+                          ticket.formattedBalanceAmount,
+                          isBold: true,
+                          color: ticket.hasPendingBalance
+                              ? AppColors.stateToCollect
+                              : AppColors.success,
+                        ),
+                        if (onManagePayments != null) ...[
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton.icon(
+                              onPressed: onManagePayments,
+                              icon: const Icon(Icons.payment_outlined),
+                              label: Text(
+                                ticket.isClosed
+                                    ? 'Ver historial de pagos'
+                                    : 'Registrar pago / Gestionar saldo',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // 5. Galería de Fotos del Trabajo
+                  _buildSectionCard(
+                    title: 'Fotos del Trabajo',
+                    icon: Icons.camera_alt_outlined,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Registro visual del antes y después del servicio prestado.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        if (onAddWorkPhoto != null)
+                          OutlinedButton.icon(
+                            onPressed: onAddWorkPhoto,
+                            icon: const Icon(
+                              Icons.add_a_photo_outlined,
+                              size: 16,
+                            ),
+                            label: const Text('Agregar foto del trabajo'),
+                          ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // 6. Botonera de Acciones
+                  const Text(
+                    'Acciones del Ticket',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                   Wrap(
                     spacing: 10,
-                    runSpacing: 8,
+                    runSpacing: 10,
                     children: [
-                      if (onAddService != null)
-                        OutlinedButton.icon(
-                          onPressed: onAddService,
-                          icon: const Icon(Icons.add_outlined),
-                          label: const Text('Agregar servicio'),
-                        ),
-                      if (onManageServices != null)
-                        OutlinedButton.icon(
-                          onPressed: onManageServices,
-                          icon: const Icon(Icons.tune_outlined),
-                          label: const Text('Gestionar servicios'),
+                      if (onChangeStatus != null)
+                        FilledButton.tonalIcon(
+                          onPressed: onChangeStatus,
+                          icon: const Icon(Icons.swap_horiz_outlined),
+                          label: const Text('Cambiar estado'),
                         ),
                       if (onReschedule != null)
                         OutlinedButton.icon(
@@ -3576,27 +4602,11 @@ class TicketRow extends StatelessWidget {
                           icon: const Icon(Icons.event_repeat_outlined),
                           label: const Text('Reprogramar'),
                         ),
-                      if (onChangeStatus != null)
-                        OutlinedButton.icon(
-                          onPressed: onChangeStatus,
-                          icon: const Icon(Icons.swap_horiz_outlined),
-                          label: const Text('Cambiar estado'),
-                        ),
                       if (onCorrectCompletion != null)
                         OutlinedButton.icon(
                           onPressed: onCorrectCompletion,
                           icon: const Icon(Icons.restart_alt_outlined),
                           label: const Text('Corregir finalización'),
-                        ),
-                      if (onManagePayments != null)
-                        FilledButton.icon(
-                          onPressed: onManagePayments,
-                          icon: const Icon(Icons.payments_outlined),
-                          label: Text(
-                            ticket.status == 'cerrado'
-                                ? 'Ver pagos'
-                                : 'Pagos y saldo',
-                          ),
                         ),
                       if (onCopyReviewLink != null)
                         OutlinedButton.icon(
@@ -3604,83 +4614,87 @@ class TicketRow extends StatelessWidget {
                           icon: const Icon(Icons.link_outlined),
                           label: const Text('Copiar enlace de reseña'),
                         ),
-                      if (onAddWorkPhoto != null)
-                        OutlinedButton.icon(
-                          onPressed: onAddWorkPhoto,
-                          icon: const Icon(Icons.add_a_photo_outlined),
-                          label: const Text('Agregar foto'),
-                        ),
                     ],
                   ),
+                  const SizedBox(height: 20),
                 ],
-              ],
+              ),
             ),
           ),
-          const SizedBox(width: 12),
-          TicketStatusBadge(status: ticket.status, label: ticket.statusLabel),
         ],
       ),
     );
   }
-}
 
-class TicketStatusBadge extends StatelessWidget {
-  final String status;
-  final String label;
-
-  const TicketStatusBadge({
-    super.key,
-    required this.status,
-    required this.label,
-  });
-
-  /// Benchmarking 2026-07-28 (AgendaPro), punto 5: un color distinto por
-  /// cada uno de los 10 estados de ticket (antes todos usaban el mismo
-  /// morado). Devuelve (fondo, texto).
-  (Color, Color) get _colors {
-    switch (status.toLowerCase()) {
-      case 'solicitado':
-        return (AppColors.warningTint, AppColors.warning);
-      case 'cotizado':
-        return (AppColors.infoTint, AppColors.info);
-      case 'apartado':
-        return (AppColors.infoTint, AppColors.info);
-      case 'confirmado':
-        return (AppColors.successTint, AppColors.info);
-      case 'en_espera':
-        return (AppColors.warningTint, AppColors.warning);
-      case 'en_proceso':
-        return (AppColors.brandTint, AppColors.brandDark);
-      case 'finalizado':
-        return (AppColors.infoTint, AppColors.info);
-      case 'cerrado':
-        return (AppColors.successTint, AppColors.success);
-      case 'cancelado':
-        return (AppColors.dangerTint, AppColors.danger);
-      case 'no_asistio':
-        return (AppColors.border, AppColors.textStrong);
-      default:
-        return (AppColors.brandTint, AppColors.brandDark);
-    }
+  Widget _buildSectionCard({
+    required String title,
+    required IconData icon,
+    required Widget child,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: AppColors.brand),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.brandDeep,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
+    );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final (background, foreground) = _colors;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-          color: foreground,
-        ),
+  Widget _buildDetailRow(
+    String label,
+    String value, {
+    bool isBold = false,
+    Color? color,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+                color: color ?? AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

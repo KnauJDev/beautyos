@@ -1,8 +1,8 @@
-# HANDOFF Salón y Más — 17 de agosto de 2026 (bloque D-151)
+# HANDOFF Salón y Más — 18 de agosto de 2026 (bloque D-152)
 
-**Bloque documentado:** decisión **D-151** · Corrección post-auditoría del Paso 4.4 (D-150): el disparador de número de venta reasignaba un número nuevo al reabrir y volver a cerrar un ticket
-**Estado:** Corregido en la migración `20260817210000_numero_de_venta_por_sede.sql` y verificado con una prueba nueva en el Control 174 (ahora 7 pruebas). **128 de 128 pruebas Flutter en verde** (sin cambios de Dart en este bloque), `flutter analyze` 100% limpio.
-**Reemplaza como handoff vigente a:** la versión anterior de este mismo archivo (bloque D-150, archivada en `docs/_archivo/handoffs/HANDOFF_SalonyMas_2026-08-17_D150.md`)
+**Bloque documentado:** decisión **D-152** · Paso 4.5 cerrado: Pulido de Tickets Nivel 2 y Nivel 3, buscador universal, filtros rápidos de fecha, estado y estilista, chips duales y estandarización completa de `StatusPill` (Hallazgo N)
+**Estado:** **132 de 132 pruebas unitarias y de widgets en verde** (`flutter test`), `flutter analyze` 100% limpio (0 errores, 0 advertencias).
+**Reemplaza como handoff vigente a:** la versión anterior de este archivo (bloque D-151, archivada en `docs/_archivo/handoffs/HANDOFF_SalonyMas_2026-08-17_D151.md`)
 
 ---
 
@@ -31,49 +31,62 @@ Fase 4  Pulido módulo a módulo        🔄  ← AQUÍ
         4.2  Funciones del tablero agenda ✅ CERRADO Y APLICADO EN BD (17-ago / D-147)
         4.3  Tablero Flutter (Día/Sem/Mes)✅ CERRADO SIN RESERVAS (17-ago / D-148, D-149)
         4.4  Número de venta al cerrar    ✅ CERRADO (17-ago / D-150, corregido D-151)
-        4.5  Tickets: Nivel 2 y StatusPill⬜ Siguiente paso (hallazgo N)
+        4.5  Tickets: Nivel 2 y 3 + Pill  ✅ CERRADO (18-ago / D-152, hallazgo N)
+        4.6  Clientes: retorno y valor    ⬜ Siguiente paso
+        4.7  Reportes: nivel 2 y 3        ⬜
+        4.8  Inventario, Compras y Gastos ⬜
+        4.9  Servicios, Equipo y Galería  ⬜
+        4.10 Barra celular con acciones   ⬜ (hallazgo D)
+        4.11 Rediseño panel plataforma    ⬜ (hallazgo O)
 ```
 
 ---
 
-## 2. Qué pasó en este bloque (D-151)
+## 2. Qué pasó en este bloque (D-152)
 
-La auditoría técnica del bloque anterior (D-150) encontró que la promesa central de la función — "el número de venta es inmutable" — tenía un hueco real, no teórico, contra un flujo que **ya existía antes de este bloque**.
+Se completó el pulido integral de los Niveles 2 y 3 del módulo de Tickets (`lib/pages/tickets_page.dart`):
 
-### El problema encontrado:
-
-El disparador `private.beautyos_assign_sale_number_on_close` se activaba con:
-```sql
-new.status = 'cerrado' and (old.status is distinct from 'cerrado' or old.sale_number is null)
-```
-Un ticket que **ya tenía** `sale_number` asignado, si pasaba de `'cerrado'` a otro estado y volvía a `'cerrado'`, entraba de nuevo a esa condición (por el `or old.status is distinct from 'cerrado'`) y recibía un **número de venta nuevo**, dejando el original huérfano sin ningún rastro — no existe una tabla de auditoría de números de venta.
-
-**Y esa reapertura ya existe y está en uso:** `supabase/sql/079_void_ticket_payment_rpc.sql` (`void_ticket_payment`, anterior a D-150) regresa un ticket de `'cerrado'` a `'finalizado'` cuando `owner`/`admin` anula un pago registrado por error — una operación real, no un ataque hipotético. Si después se vuelve a cobrar y cerrar, el hueco se activaba solo.
-
-### Lo que se corrigió:
-
-1. **`supabase/migrations/20260817210000_numero_de_venta_por_sede.sql`:** se redujo la condición a `new.status = 'cerrado' and old.sale_number is null`, tanto en el `when` del trigger `trg_assign_sale_number_on_close` como en el `if` del cuerpo de la función. Un ticket que ya tiene número de venta lo conserva para siempre, sin importar cuántas veces se reabra y se vuelva a cerrar.
-
-2. **`supabase/sql/174_test_numero_de_venta_por_sede.sql`:** se agregó la **Prueba 5** (renumerando las dos siguientes a 6 y 7): reabre el ticket ya cerrado en la Prueba 1 por el mismo camino que usa `void_ticket_payment` (`UPDATE ... SET status = 'finalizado'`, sin tocar `sale_number`/`sale_code`), lo vuelve a cerrar, y verifica que **conserva** `sale_number = 1` / `sale_code = 'VTA-0000001'`, y que `branch_sale_numbering.next_number` no avanzó de más. El Control 174 pasa de 6 a **7 pruebas**.
-
-### Sobre la contradicción de estado señalada en la auditoría:
-
-El HANDOFF del bloque D-150 decía "migración lista para ejecutar" mientras se reportó como ya aplicada en `beautyos-dev`. **Sigue sin confirmarse cuál era el estado real** — pero no importa para aplicar esta corrección: los cambios de este bloque son seguros de re-aplicar sin importar si D-150 ya corrió antes (`create or replace function`, `drop trigger if exists` + `create trigger`, y el backfill ya filtra por `sale_number is null`). Re-ejecutar el archivo completo de la migración es seguro en cualquiera de los dos casos.
+1. **Estandarización de badges (Hallazgo N):** Se eliminó por completo la clase `TicketStatusBadge` (que usaba colores obsoletos de D-082) y se estandarizó el uso de `StatusPill` de `lib/widgets/ticket_status.dart` en todas las vistas de tickets.
+2. **Nivel 2 (Listado y Navegación rápida):**
+   - **Buscador universal reactivo:** Búsqueda en tiempo real por nombre de cliente, celular (sanitizado), `#0000701`, `VTA-0000045`, servicios y estilistas.
+   - **Filtro temporal rápido:** Segmentación por *Todas las fechas*, *Hoy*, *Esta semana*, *Este mes* y *Rango personalizado*.
+   - **Chips de estado semánticos:** Filtrado por estado con contadores dinámicos (*Todos*, *Por confirmar*, *Confirmados*, *En proceso*, *Por cobrar*, *Cerrados*, *Cancelados*).
+   - **Filtro por estilista:** Menú desplegable reactivo si existen estilistas asignados.
+   - **Chips duales:** Renderiza correlativo de cita (`#0000701`) y correlativo de venta contable (`VTA-0000045` en verde) al cerrar el ticket.
+   - **WhatsApp directo:** Botón contextual para abrir chat con la clienta usando `buildWhatsAppUri`.
+3. **Nivel 3 (Ficha de Detalle interactiva `_TicketDetailSheet`):**
+   - Modal deslizante responsivo (BottomSheet en móvil / Drawer centrado en escritorio).
+   - Scroll continuo estructurado en 6 tarjetas modulares con estilo `AppColors`/`AppTheme`:
+     * Cabecera: Consecutivos duales y `StatusPill`.
+     * Cliente: Nombre, celular, WhatsApp directo y Llamar.
+     * Programación y Canal: Cita agendada, canal y hora de cierre contable.
+     * Servicios y Equipo: Lista de servicios, estilistas asignados, botones para agregar/gestionar servicios.
+     * Finanzas y Pagos: Total, abonos y saldo pendiente en color coral (`AppColors.stateToCollect`) con botón directo a registrar pagos/ver historial.
+     * Fotos del Trabajo: Registro fotográfico del servicio antes y después.
+     * Botonera de acciones: Cambiar estado, Reprogramar, Corregir finalización, Copiar enlace de reseña.
+4. **Backend y Modelos:**
+   - Enriquecido `TicketSummary` (`saleNumber`, `saleCode`, `closedAt`, `clientPhone`, `clientId`, `ticketStatus`, `isClosed`, `hasPendingBalance`).
+   - `TicketsService.getTicketsSummary()` optimizado para consultar `get_ticket_board_list_v2` con fallback resiliente.
+5. **Pruebas y Verificación:**
+   - Creado `test/tickets_page_test.dart` (4 pruebas unitarias y de widgets).
+   - Total de pruebas en verde: **132 de 132**.
+   - `flutter analyze` 100% limpio (0 errores, 0 advertencias).
 
 ---
 
 ## 3. Estado técnico
 
-- **Pruebas Flutter:** **128 de 128 en verde** (sin cambios de Dart en este bloque)
+- **Pruebas Flutter:** **132 de 132 en verde** (`flutter test`)
 - **Análisis estático:** 0 errores, 0 advertencias (`flutter analyze`)
-- **Decisiones registradas:** **151 decisiones** (D-001 al D-151)
-- **Control 174:** **7 de 7 pruebas en VERDE** ejecutadas y confirmadas contra `beautyos-dev` en ROLLBACK
+- **Decisiones registradas:** **152 decisiones** (D-001 al D-152)
 - **Base de datos:** Migración `20260817210000_numero_de_venta_por_sede.sql` aplicada y confirmada (`COMMIT`) en `beautyos-dev`
 
 ---
 
 ## 4. Próximos pasos inmediatos (para la próxima sesión)
 
-1. **Paso 4.5:** Tickets: pulido del nivel 2 y 3 + cambiar `TicketStatusBadge` por `StatusPill` (hallazgo N).
-2. **Paso 4.6:** Clientes: análisis de retorno y valor. Decidir si se separa el apellido.
-3. **Paso 4.7:** Reportes: nivel 2 y 3, métodos de pago, comparación.
+1. **Paso 4.6:** Clientes: análisis de retorno y valor. Decidir si se separa el apellido.
+2. **Paso 4.7:** Reportes: nivel 2 y 3, métodos de pago, comparación.
+3. **Paso 4.8:** Inventario, Compras y Gastos: pulido visual y plural en correos de stock bajo ("3 unidades").
+4. **Paso 4.9:** Servicios, Estilistas y Galería: filtrar por cliente/estilista y producción por estilista.
+5. **Paso 4.10:** Barra inferior de celular con acciones rápidas (Hallazgo D).
