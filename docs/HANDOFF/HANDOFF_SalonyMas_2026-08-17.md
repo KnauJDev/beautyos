@@ -67,27 +67,13 @@ El HANDOFF del bloque D-150 decía "migración lista para ejecutar" mientras se 
 - **Pruebas Flutter:** **128 de 128 en verde** (sin cambios de Dart en este bloque)
 - **Análisis estático:** 0 errores, 0 advertencias (`flutter analyze`)
 - **Decisiones registradas:** **151 decisiones** (D-001 al D-151)
-- **Control 174:** ahora 7 pruebas (antes 6) — pendiente de correr contra `beautyos-dev`
+- **Control 174:** **7 de 7 pruebas en VERDE** ejecutadas y confirmadas contra `beautyos-dev` en ROLLBACK
+- **Base de datos:** Migración `20260817210000_numero_de_venta_por_sede.sql` aplicada y confirmada (`COMMIT`) en `beautyos-dev`
 
 ---
 
-## 4. Instrucción para aplicar (Propietario)
-
-1. **Respaldar la base de datos** si no se hizo ya para este bloque:
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File scripts\respaldo_supabase.ps1
-   ```
-2. **Aplicar (o re-aplicar) la migración corregida:**
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\migrations\20260817210000_numero_de_venta_por_sede.sql"
-   ```
-3. **Verificar con el Control 174 (ahora 7 pruebas):**
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\sql\174_test_numero_de_venta_por_sede.sql"
-   ```
-
----
-
-## 5. Próximos pasos inmediatos
+## 4. Próximos pasos inmediatos (para la próxima sesión)
 
 1. **Paso 4.5:** Tickets: pulido del nivel 2 y 3 + cambiar `TicketStatusBadge` por `StatusPill` (hallazgo N).
+2. **Paso 4.6:** Clientes: análisis de retorno y valor. Decidir si se separa el apellido.
+3. **Paso 4.7:** Reportes: nivel 2 y 3, métodos de pago, comparación.
