@@ -157,7 +157,7 @@ begin
     raise exception 'Fallo Prueba 5: el salon reactivado debe aceptar compromisos de inmediato.';
   end if;
 
-  raise notice '✅ Prueba 5 superada: reactivacion automatica 100% inmediata tras pago.';
+  raise notice '✅ Prueba 5 superada: reactivacion automatica inmediata tras pago.';
 
   -- ============================================================================
   -- PRUEBA 6: Bloqueo de commitments en 'active' si current_period_end ya vencio
