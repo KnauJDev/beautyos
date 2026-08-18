@@ -57,11 +57,6 @@ begin
   values (v_tenant_id, 'Sede Poblado 174', 'sede-174-2-' || floor(random()*100000)::text, 'America/Bogota', 'COP', false, true)
   returning id into v_branch_2_id;
 
-  insert into public.branch_memberships (tenant_id, branch_id, user_id, role, active)
-  values
-    (v_tenant_id, v_branch_1_id, v_owner_user_id, 'tenant_owner', true),
-    (v_tenant_id, v_branch_2_id, v_owner_user_id, 'tenant_owner', true);
-
   insert into public.clients (tenant_id, name, phone, active)
   values (v_tenant_id, 'Clienta Prueba 174', '+573009998877', true)
   returning id into v_client_id;
