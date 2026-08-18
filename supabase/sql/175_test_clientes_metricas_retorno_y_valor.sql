@@ -37,10 +37,13 @@ begin
   values (v_tenant_id, 'Sede Principal 175', 'sede-175-' || floor(random()*100000)::text, 'America/Bogota', 'COP', true, true)
   returning id into v_branch_id;
 
-  -- 4. Crear un servicio
+  -- 4. Crear un servicio y vincularlo a la sede
   insert into public.services (tenant_id, name, price, duration_minutes, active)
   values (v_tenant_id, 'Corte Control 175', 50000, 45, true)
   returning id into v_service_id;
+
+  insert into public.branch_services (tenant_id, branch_id, service_id, price, duration_minutes, active)
+  values (v_tenant_id, v_branch_id, v_service_id, 50000, 45, true);
 
   -- 5. Crear clientes
   -- Cliente 1: Sin visitas
@@ -57,11 +60,11 @@ begin
   values (v_tenant_id, v_branch_id, v_client2_id, now() - interval '5 days', now() - interval '5 days', 'cerrado', 'manual')
   returning id into v_ticket_id;
 
-  insert into public.ticket_services (tenant_id, ticket_id, service_id, price, duration_minutes, status)
-  values (v_tenant_id, v_ticket_id, v_service_id, 50000, 45, 'finalizado');
+  insert into public.ticket_services (tenant_id, branch_id, ticket_id, service_id, price, duration_minutes, status)
+  values (v_tenant_id, v_branch_id, v_ticket_id, v_service_id, 50000, 45, 'finalizado');
 
-  insert into public.ticket_payments (tenant_id, ticket_id, amount, method, status)
-  values (v_tenant_id, v_ticket_id, 50000, 'efectivo', 'registrado');
+  insert into public.ticket_payments (tenant_id, branch_id, ticket_id, amount, method, status)
+  values (v_tenant_id, v_branch_id, v_ticket_id, 50000, 'efectivo', 'registrado');
 
   -- Cliente 3: 3 visitas espaciadas (Día -40 $60.000, Día -20 $80.000, Día -2 $100.000)
   insert into public.clients (tenant_id, name, phone, active)
@@ -72,28 +75,28 @@ begin
   insert into public.tickets (tenant_id, branch_id, client_id, scheduled_at, closed_at, status, channel)
   values (v_tenant_id, v_branch_id, v_client3_id, now() - interval '40 days', now() - interval '40 days', 'cerrado', 'manual')
   returning id into v_ticket_id;
-  insert into public.ticket_services (tenant_id, ticket_id, service_id, price, duration_minutes, status)
-  values (v_tenant_id, v_ticket_id, v_service_id, 60000, 45, 'finalizado');
-  insert into public.ticket_payments (tenant_id, ticket_id, amount, method, status)
-  values (v_tenant_id, v_ticket_id, 60000, 'efectivo', 'registrado');
+  insert into public.ticket_services (tenant_id, branch_id, ticket_id, service_id, price, duration_minutes, status)
+  values (v_tenant_id, v_branch_id, v_ticket_id, v_service_id, 60000, 45, 'finalizado');
+  insert into public.ticket_payments (tenant_id, branch_id, ticket_id, amount, method, status)
+  values (v_tenant_id, v_branch_id, v_ticket_id, 60000, 'efectivo', 'registrado');
 
   -- Visita 2 (-20 días)
   insert into public.tickets (tenant_id, branch_id, client_id, scheduled_at, closed_at, status, channel)
   values (v_tenant_id, v_branch_id, v_client3_id, now() - interval '20 days', now() - interval '20 days', 'cerrado', 'manual')
   returning id into v_ticket_id;
-  insert into public.ticket_services (tenant_id, ticket_id, service_id, price, duration_minutes, status)
-  values (v_tenant_id, v_ticket_id, v_service_id, 80000, 45, 'finalizado');
-  insert into public.ticket_payments (tenant_id, ticket_id, amount, method, status)
-  values (v_tenant_id, v_ticket_id, 80000, 'efectivo', 'registrado');
+  insert into public.ticket_services (tenant_id, branch_id, ticket_id, service_id, price, duration_minutes, status)
+  values (v_tenant_id, v_branch_id, v_ticket_id, v_service_id, 80000, 45, 'finalizado');
+  insert into public.ticket_payments (tenant_id, branch_id, ticket_id, amount, method, status)
+  values (v_tenant_id, v_branch_id, v_ticket_id, 80000, 'efectivo', 'registrado');
 
   -- Visita 3 (-2 días)
   insert into public.tickets (tenant_id, branch_id, client_id, scheduled_at, closed_at, status, channel)
   values (v_tenant_id, v_branch_id, v_client3_id, now() - interval '2 days', now() - interval '2 days', 'cerrado', 'manual')
   returning id into v_ticket_id;
-  insert into public.ticket_services (tenant_id, ticket_id, service_id, price, duration_minutes, status)
-  values (v_tenant_id, v_ticket_id, v_service_id, 100000, 45, 'finalizado');
-  insert into public.ticket_payments (tenant_id, ticket_id, amount, method, status)
-  values (v_tenant_id, v_ticket_id, 100000, 'efectivo', 'registrado');
+  insert into public.ticket_services (tenant_id, branch_id, ticket_id, service_id, price, duration_minutes, status)
+  values (v_tenant_id, v_branch_id, v_ticket_id, v_service_id, 100000, 45, 'finalizado');
+  insert into public.ticket_payments (tenant_id, branch_id, ticket_id, amount, method, status)
+  values (v_tenant_id, v_branch_id, v_ticket_id, 100000, 'efectivo', 'registrado');
 
   -- Cliente 4: 1 visita hace 60 días (En riesgo) + Saldo pendiente de $30.000
   insert into public.clients (tenant_id, name, phone, active)
@@ -103,11 +106,11 @@ begin
   insert into public.tickets (tenant_id, branch_id, client_id, scheduled_at, closed_at, status, channel)
   values (v_tenant_id, v_branch_id, v_client4_id, now() - interval '60 days', now() - interval '60 days', 'finalizado', 'manual')
   returning id into v_ticket_id;
-  insert into public.ticket_services (tenant_id, ticket_id, service_id, price, duration_minutes, status)
-  values (v_tenant_id, v_ticket_id, v_service_id, 70000, 45, 'finalizado');
+  insert into public.ticket_services (tenant_id, branch_id, ticket_id, service_id, price, duration_minutes, status)
+  values (v_tenant_id, v_branch_id, v_ticket_id, v_service_id, 70000, 45, 'finalizado');
   -- Pagó solo $40.000, debe $30.000
-  insert into public.ticket_payments (tenant_id, ticket_id, amount, method, status)
-  values (v_tenant_id, v_ticket_id, 40000, 'efectivo', 'registrado');
+  insert into public.ticket_payments (tenant_id, branch_id, ticket_id, amount, method, status)
+  values (v_tenant_id, v_branch_id, v_ticket_id, 40000, 'efectivo', 'registrado');
 
   -- ==============================================================
   -- VERIFICACIONES

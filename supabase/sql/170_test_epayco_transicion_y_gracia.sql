@@ -23,8 +23,8 @@ begin
   end if;
 
   -- 2. Crear tenant de prueba
-  insert into public.tenants (name, slug)
-  values ('Salon Test ePayco', 'salon-test-epayco-' || floor(random()*100000)::text)
+  insert into public.tenants (name, business_type, contact_email, whatsapp, is_demo, active)
+  values ('Salon Test ePayco', 'peluqueria', 'epayco_test@salonymas.com', '+573001234567', true, true)
   returning id into v_tenant_id;
 
   -- 3. Crear suscripcion en 'trialing'

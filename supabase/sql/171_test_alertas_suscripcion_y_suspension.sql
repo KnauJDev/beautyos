@@ -24,8 +24,8 @@ begin
   end if;
 
   -- 2. Crear tenant de prueba con contacto de correo
-  insert into public.tenants (name, slug, contact_email, is_demo)
-  values ('Salon Alertas Test', 'salon-alertas-' || floor(random()*100000)::text, 'owner@salonalertas.com', false)
+  insert into public.tenants (name, business_type, contact_email, whatsapp, is_demo, active)
+  values ('Salon Alertas Test', 'peluqueria', 'owner@salonalertas.com', '+573001234567', false, true)
   returning id into v_tenant_id;
 
   -- 3. Crear suscripcion en 'trialing' con vencimiento en 5 dias

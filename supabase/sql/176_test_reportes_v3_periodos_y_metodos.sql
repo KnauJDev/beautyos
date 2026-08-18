@@ -45,6 +45,9 @@ begin
   values (v_tenant_id, 'Balayage Control 176', 150000, 120, true)
   returning id into v_service_id;
 
+  insert into public.branch_services (tenant_id, branch_id, service_id, price, duration_minutes, active)
+  values (v_tenant_id, v_branch_id, v_service_id, 150000, 120, true);
+
   insert into public.stylists (tenant_id, name, active)
   values (v_tenant_id, 'Estilista Estrella 176', true)
   returning id into v_stylist_id;
