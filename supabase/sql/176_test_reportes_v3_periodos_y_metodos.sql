@@ -67,8 +67,8 @@ begin
   insert into public.ticket_payments (tenant_id, branch_id, ticket_id, amount, method, status, received_at, created_by)
   values (v_tenant_id, v_branch_id, v_ticket_prev, 100000, 'efectivo', 'registrado', (v_prev_date::text || ' 12:00:00-05')::timestamptz, v_owner_user_id);
 
-  insert into public.expenses (tenant_id, branch_id, description, amount, payment_method, expense_date, active)
-  values (v_tenant_id, v_branch_id, 'Gasto ayer', 20000, 'cash', v_prev_date, true);
+  insert into public.expenses (tenant_id, branch_id, category, description, amount, payment_method, expense_date, active)
+  values (v_tenant_id, v_branch_id, 'servicios', 'Gasto ayer', 20000, 'cash', v_prev_date, true);
 
   -- 6. Insertar datos en el PERIODO ACTUAL (Hoy)
   -- Ticket 1: Pago Efectivo $50.000
@@ -103,8 +103,8 @@ begin
   values (v_tenant_id, v_branch_id, 'Proveedor Tintes', v_today, 'FAC-101', 30000, 'cash', true);
 
   -- Gasto operativo no en efectivo: $10.000
-  insert into public.expenses (tenant_id, branch_id, description, amount, payment_method, expense_date, active)
-  values (v_tenant_id, v_branch_id, 'Gasto domicilios', 10000, 'transfer', v_today, true);
+  insert into public.expenses (tenant_id, branch_id, category, description, amount, payment_method, expense_date, active)
+  values (v_tenant_id, v_branch_id, 'domicilios', 'Gasto domicilios', 10000, 'transfer', v_today, true);
 
   -- Comisión de estilista: $40.000
   insert into public.stylist_commissions (tenant_id, branch_id, stylist_id, ticket_service_id, service_amount, commission_rate, commission_amount, status, generated_at)
