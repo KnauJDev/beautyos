@@ -47,8 +47,8 @@ Fase 4  Pulido módulo a módulo        🔄  ← AQUÍ
 Se completó el **Paso 4.9** modernizando cuatro áreas clave del sistema:
 
 1. **Galería de Fotos de Trabajo (`FotosTrabajosPage` / `get_work_photos_summary_v2`):**
-   - Migración `20260818180000_galeria_con_consecutivo_y_filtros.sql` que conecta `tickets tk` para emitir `ticket_number`, `ticket_code` (`#0000701`), `client_id` y `stylist_id`.
-   - Script de control `177_test_galeria_con_consecutivo_y_filtros.sql` con pruebas en `ROLLBACK`.
+   - Migración `20260818180000_galeria_con_consecutivo_y_filtros.sql` que conecta `tickets tk` para emitir `ticket_number`, `ticket_code` (`#0000701`), `client_id` y `stylist_id` (corregida referencia a `tk.ticket_number`).
+   - Script de control `177_test_galeria_con_consecutivo_y_filtros.sql` con aislamiento total de tenant y captura dinámica del trigger `tickets_set_number` en `ROLLBACK`.
    - Modelo `WorkPhotoSummary` con campos de ticket e IDs.
    - `FotosTrabajosPage` (`lib/pages/work_photos_page.dart`): buscador universal, chips de filtrado dinámico por estilista, chips por tipo de foto (Todas, Portafolio, Visibles, Antes, Después, Final, IA pendiente) y tarjetas `_WorkPhotoCard` con Chip de Cita `#0000701` en morado y `AppColors.surface`.
 2. **Servicios (`ServiciosPage` / `lib/pages/services_page.dart`):**

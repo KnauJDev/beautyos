@@ -2,8 +2,8 @@
 -- Migración: Galería de fotos con consecutivo de ticket (#0000701) e IDs para filtros (Paso 4.9 / D-156)
 -- ==============================================================================
 -- Actualiza public.get_work_photos_summary_v2 para incluir:
---   - ticket_number (consecutive_number)
---   - ticket_code ('#' || lpad(consecutive_number, 7, '0'))
+--   - ticket_number (public.tickets.ticket_number, D-117)
+--   - ticket_code ('#' || lpad(ticket_number, 7, '0'))
 --   - client_id
 --   - stylist_id
 -- Permitiendo filtrar la galería por cliente y estilista, y mostrando el chip
@@ -52,9 +52,9 @@ begin
   select
     wp.id,
     wp.ticket_id,
-    tk.consecutive_number as ticket_number,
+    tk.ticket_number as ticket_number,
     case
-      when tk.consecutive_number is not null then '#' || lpad(tk.consecutive_number::text, 7, '0')
+      when tk.ticket_number is not null then '#' || lpad(tk.ticket_number::text, 7, '0')
       else null
     end as ticket_code,
     wp.client_id,
