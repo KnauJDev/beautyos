@@ -62,7 +62,9 @@ begin
   end if;
 
   -- 4. Verificar que beautyos_precio_efectivo retorne $30.000 COP
-  v_effective_price := private.beautyos_precio_efectivo(v_tenant_id);
+  select pe.precio_cop into v_effective_price
+  from private.beautyos_precio_efectivo(v_tenant_id) pe;
+
   if v_effective_price != 30000 then
     raise exception 'Fallo prueba 2: beautyos_precio_efectivo devolvió % en vez de 30000', v_effective_price;
   end if;
