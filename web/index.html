@@ -46,8 +46,47 @@
     proposito, en vez de descargarlo de una release de GitHub en cada visita
     como se hacia antes (D-089): asi no dependemos de un tercero en tiempo de
     ejecucion. Al subir de version `supabase_flutter`, hay que regenerarlo.
-  -->
   <script src="passkeys_bundle.js"></script>
+  <!-- SDK Oficial de Checkout de ePayco (D-141) -->
+  <script type="text/javascript" src="https://checkout.epayco.co/checkout.js"></script>
+  <script>
+    window.openEpaycoCheckout = function(data) {
+      if (typeof ePayco === 'undefined') {
+        alert('No se pudo cargar la pasarela de ePayco. Por favor verifica tu conexión o desactiva bloqueadores de anuncios.');
+        return;
+      }
+      try {
+        var handler = ePayco.checkout.configure({
+          key: data.publicKey,
+          test: data.testMode === true
+        });
+        handler.open({
+          name: data.name,
+          description: data.description,
+          invoice: data.invoice,
+          currency: 'cop',
+          amount: data.amount,
+          tax_base: '0',
+          tax: '0',
+          country: 'co',
+          lang: 'es',
+          extra1: data.extra1,
+          extra2: data.extra2,
+          extra3: data.extra3,
+          confirmation: data.confirmation,
+          response: data.response,
+          name_billing: data.nameBilling || '',
+          email_billing: data.emailBilling || '',
+          mobilephone_billing: data.phoneBilling || '',
+          external: false,
+          autoclick: false
+        });
+      } catch (err) {
+        console.error('Error al abrir ePayco checkout:', err);
+        alert('Error al abrir la pasarela de ePayco: ' + err);
+      }
+    };
+  </script>
 </head>
 <body>
   <!--

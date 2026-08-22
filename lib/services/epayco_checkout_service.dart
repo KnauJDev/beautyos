@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../models/tenant_subscription_status.dart';
 import '../theme/app_colors.dart';
+import 'epayco_modal_launcher.dart';
 import 'monitoreo_service.dart';
 
 /// Servicio para orquestar el inicio del Checkout seguro de ePayco (D-141 / D-158).
@@ -37,7 +37,7 @@ class EpaycoCheckoutService {
   static const String confirmationWebhookUrl =
       'https://eogppgbdnwxdtcbctaol.supabase.co/functions/v1/epayco-webhook';
 
-  /// Construye la URL del Checkout hospedado o estándar de ePayco.
+  /// Construye la URL parametrizada para ePayco.
   Uri buildCheckoutUri(
     TenantSubscriptionStatus subscription, {
     String? selectedPlanCode,
@@ -302,17 +302,24 @@ class EpaycoCheckoutService {
     final finalAmount = result['amount'] as int;
 
     try {
-      final uri = buildCheckoutUri(
-        subscription,
-        selectedPlanCode: finalPlanCode,
-        selectedPlanName: finalPlanName,
-        customAmount: finalAmount,
+      final invoice = 'SUB-${subscription.tenantId.replaceAll('-', '').substring(0, 8).toUpperCase()}-${DateTime.now().millisecondsSinceEpoch}';
+      final launched = await lanzarEpaycoModal(
+        publicKey: defaultPublicKey,
+        testMode: defaultTestMode,
+        name: 'Suscripción Salón y Más',
+        description: 'Plan $finalPlanName - ${subscription.tenantName}',
+        invoice: invoice,
+        amount: finalAmount,
+        extra1: subscription.tenantId,
+        extra2: finalPlanCode,
+        extra3: 'beautyos_app',
+        confirmationUrl: confirmationWebhookUrl,
+        responseUrl: 'https://salonymas.com',
       );
-      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (launched) {
         onPaymentLaunched?.call();
       } else {
-        throw Exception('No se pudo abrir el navegador para ePayco.');
+        throw Exception('No se pudo inicializar la pasarela de ePayco.');
       }
     } catch (e, st) {
       MonitoreoService.reportarError(
