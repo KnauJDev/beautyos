@@ -53,6 +53,54 @@ class PlatformTenantSummary {
   bool get isTrialing => subscriptionStatus == 'trialing';
   bool get isActive => subscriptionStatus == 'active';
   bool get isRejected => subscriptionStatus == 'rejected';
+  bool get isGrace => subscriptionStatus == 'grace';
+  bool get isPastDue => subscriptionStatus == 'past_due';
+  bool get isSuspended => subscriptionStatus == 'suspended';
+  bool get isCancelled => subscriptionStatus == 'cancelled';
+
+  String get planNameFormatted {
+    switch (planCode?.toLowerCase()) {
+      case 'basico':
+        return 'Básico';
+      case 'business':
+        return 'Business';
+      case 'profesional':
+        return 'Profesional';
+      default:
+        return planCode ?? 'Profesional';
+    }
+  }
+
+  int get effectivePriceCop {
+    if (priceCop != null && priceCop! > 0) {
+      return priceCop!;
+    }
+    int basePrice = 240000;
+    if (planCode == 'basico') basePrice = 160000;
+    if (planCode == 'business') basePrice = 200000;
+
+    if (isFounder) {
+      return (basePrice * 0.5).round();
+    }
+    if (discountPercent != null && discountPercent! > 0) {
+      return (basePrice * (1.0 - (discountPercent! / 100.0))).round();
+    }
+    return basePrice;
+  }
+
+  String get formattedEffectivePrice {
+    final price = effectivePriceCop;
+    final digits = price.toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < digits.length; i++) {
+      final pos = digits.length - i;
+      buffer.write(digits[i]);
+      if (pos > 1 && pos % 3 == 1) {
+        buffer.write('.');
+      }
+    }
+    return '\$$buffer COP/mes';
+  }
 
   factory PlatformTenantSummary.fromMap(Map<String, dynamic> map) {
     return PlatformTenantSummary(
