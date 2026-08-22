@@ -15,11 +15,16 @@ declare
 begin
   raise notice 'Control 178: Iniciando pruebas de modificación de tarifa especial e historial...';
 
-  -- 1. Setup de plataforma
+  -- 1. Setup de usuario de auth y operador de plataforma
+  insert into auth.users (id, email)
+  values (v_owner_user_id, 'platform_owner_test178@salonymas.com')
+  on conflict (id) do nothing;
+
   insert into public.platform_operators (user_id, role, active)
   values (v_owner_user_id, 'platform_owner', true)
   on conflict (user_id) do update set role = 'platform_owner', active = true;
 
+  perform set_config('request.jwt.claim.sub', v_owner_user_id::text, true);
   perform set_config('request.jwt.claims', json_build_object('sub', v_owner_user_id::text)::text, true);
 
   -- 2. Crear tenant de prueba
@@ -83,7 +88,7 @@ begin
     raise exception 'Fallo prueba 4: se esperaban al menos 2 eventos en el historial, hay %', v_history_count;
   end if;
 
-  raise notice 'Control 178: Todas las comprobaciones de modificación de tarifa pasaron exitosamente en verde.';
+  raise notice 'Control 178: Todas las 4 comprobaciones de modificación de tarifa pasaron exitosamente en VERDE.';
 end $$;
 
 rollback;
