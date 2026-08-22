@@ -98,4 +98,34 @@ class PlatformService {
       },
     );
   }
+
+  Future<void> updateTenantPricing({
+    required String tenantId,
+    required String planCode,
+    required bool isFounder,
+    int? priceCop,
+    double? discountPercent,
+    String? priceReason,
+  }) async {
+    await Supabase.instance.client.rpc(
+      'platform_update_tenant_pricing',
+      params: {
+        'p_tenant_id': tenantId,
+        'p_plan_code': planCode,
+        'p_is_founder': isFounder,
+        'p_price_cop': priceCop,
+        'p_discount_percent': discountPercent,
+        'p_price_reason': priceReason,
+      },
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getTenantSubscriptionHistory(String tenantId) async {
+    final response = await Supabase.instance.client.rpc(
+      'platform_get_tenant_subscription_history',
+      params: {'p_tenant_id': tenantId},
+    );
+    return (response as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
 }
+

@@ -157,8 +157,8 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
                         controller: priceController,
                         keyboardType: TextInputType.number,
                         decoration: const InputDecoration(
-                          labelText: 'Precio especial en COP (ej. 60000)',
-                          hintText: 'Ej. 60000',
+                          labelText: 'Precio especial en COP (ej. 30000 o 60000)',
+                          hintText: 'Ej. 30000',
                           border: OutlineInputBorder(),
                         ),
                       ),
@@ -177,7 +177,7 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
                         controller: reasonController,
                         decoration: const InputDecoration(
                           labelText: 'Motivo del precio especial *',
-                          hintText: 'Ej. Tarifa acordada en WhatsApp',
+                          hintText: 'Ej. Tarifa acordada en WhatsApp / Amigo',
                           border: OutlineInputBorder(),
                         ),
                       ),
@@ -272,6 +272,180 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
       );
     } on PostgrestException catch (error) {
       _showError(error.message);
+    }
+  }
+
+  Future<void> handleUpdatePricing(PlatformTenantSummary tenant) async {
+    String selectedPlan = tenant.planCode ?? 'profesional';
+    bool isFounder = tenant.isFounder;
+    final priceController = TextEditingController(
+      text: tenant.priceCop != null ? tenant.priceCop.toString() : '',
+    );
+    final discountController = TextEditingController(
+      text: tenant.discountPercent != null && !isFounder ? tenant.discountPercent.toString() : '',
+    );
+    final reasonController = TextEditingController(
+      text: isFounder ? 'Pionero (50% de por vida)' : '',
+    );
+    bool customPricing = tenant.priceCop != null || (tenant.discountPercent != null && !isFounder);
+
+    final updated = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => AlertDialog(
+          title: Text('Modificar Precio o Plan: ${tenant.tenantName}'),
+          content: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 460),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Ajusta el plan asignado o fija una tarifa especial en COP (ej. \$30.000, \$50.000, \$70.000).',
+                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                  ),
+                  const Divider(height: 24),
+                  const Text('Plan Asignado:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedPlan,
+                    decoration: const InputDecoration(border: OutlineInputBorder()),
+                    items: const [
+                      DropdownMenuItem(value: 'basico', child: Text('Básico — \$160.000/mes (1 sede, 5 cuentas)')),
+                      DropdownMenuItem(value: 'business', child: Text('Business — \$200.000/mes (3 sedes, 15 cuentas)')),
+                      DropdownMenuItem(value: 'profesional', child: Text('Profesional — \$240.000/mes (Ilimitado + IA)')),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) setModalState(() => selectedPlan = val);
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Precio Pionero (50% de por vida)', style: TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: const Text('Aplica el 50% de descuento vitalicio sobre el plan elegido.'),
+                    value: isFounder,
+                    onChanged: (val) {
+                      setModalState(() {
+                        isFounder = val;
+                        if (isFounder) {
+                          customPricing = false;
+                          priceController.clear();
+                          reasonController.text = 'Pionero (50% de por vida)';
+                        }
+                      });
+                    },
+                  ),
+                  if (!isFounder) ...[
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Fijar Tarifa Especial Personalizada en COP'),
+                      subtitle: const Text('Para cobrarle un valor pactado (ej. \$30.000, \$50.000, \$70.000).'),
+                      value: customPricing,
+                      onChanged: (val) => setModalState(() => customPricing = val ?? false),
+                    ),
+                    if (customPricing) ...[
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: priceController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Precio mensual exacto en COP (ej. 30000)',
+                          hintText: 'Ej. 30000',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: discountController,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Descuento en % (opcional si ya fijó precio en COP)',
+                          hintText: 'Ej. 30',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: reasonController,
+                        decoration: const InputDecoration(
+                          labelText: 'Motivo del precio especial *',
+                          hintText: 'Ej. Convenio especial amigo / Acuerdo comercial',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ],
+                  ],
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton.icon(
+              onPressed: () {
+                if (customPricing && !isFounder) {
+                  final price = priceController.text.trim();
+                  final discount = discountController.text.trim();
+                  final reason = reasonController.text.trim();
+                  if ((price.isNotEmpty || discount.isNotEmpty) && reason.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Debes ingresar un motivo para el precio especial.')),
+                    );
+                    return;
+                  }
+                }
+                Navigator.of(context).pop(true);
+              },
+              icon: const Icon(Icons.save_outlined),
+              label: const Text('Guardar Tarifa'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (updated != true || !mounted) return;
+
+    try {
+      int? priceCop;
+      double? discountPercent;
+      String? priceReason;
+
+      if (isFounder) {
+        discountPercent = 50.0;
+        priceReason = 'Pionero (50% de por vida)';
+      } else if (customPricing) {
+        priceCop = int.tryParse(priceController.text.trim());
+        discountPercent = double.tryParse(discountController.text.trim());
+        priceReason = reasonController.text.trim();
+      }
+
+      await platformService.updateTenantPricing(
+        tenantId: tenant.tenantId,
+        planCode: selectedPlan,
+        isFounder: isFounder,
+        priceCop: priceCop,
+        discountPercent: discountPercent,
+        priceReason: priceReason,
+      );
+
+      reload();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('¡Tarifa de "${tenant.tenantName}" actualizada exitosamente!'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } on PostgrestException catch (error) {
+      _showError(error.message);
+    } catch (e) {
+      _showError('No se pudo actualizar la tarifa: $e');
     }
   }
 
@@ -376,6 +550,7 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
       builder: (context) => _TenantDetailSheet(
         tenant: tenant,
         isOwner: isOwner,
+        platformService: platformService,
         onApprove: (t) {
           Navigator.of(context).pop();
           handleApprove(t);
@@ -395,6 +570,10 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
         onExtendTrial: (t) {
           Navigator.of(context).pop();
           handleExtendTrial(t);
+        },
+        onUpdatePricing: (t) {
+          Navigator.of(context).pop();
+          handleUpdatePricing(t);
         },
         onViewSupportData: (t) {
           Navigator.of(context).pop();
@@ -596,6 +775,7 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
                           onTap: () => _openTenantDetail(filtered[index]),
                           onApprove: handleApprove,
                           onReject: handleReject,
+                          onUpdatePricing: handleUpdatePricing,
                           onViewSupportData: (t) {
                             Navigator.of(context).push(
                               MaterialPageRoute(
@@ -865,6 +1045,7 @@ class _TenantCard extends StatelessWidget {
     required this.onTap,
     required this.onApprove,
     required this.onReject,
+    required this.onUpdatePricing,
     required this.onViewSupportData,
   });
 
@@ -873,6 +1054,7 @@ class _TenantCard extends StatelessWidget {
   final VoidCallback onTap;
   final ValueChanged<PlatformTenantSummary> onApprove;
   final ValueChanged<PlatformTenantSummary> onReject;
+  final ValueChanged<PlatformTenantSummary> onUpdatePricing;
   final ValueChanged<PlatformTenantSummary> onViewSupportData;
 
   Color _statusColor(String? status) {
@@ -1053,7 +1235,7 @@ class _TenantCard extends StatelessWidget {
                       status == 'pending'
                           ? 'Solicitado: ${_formatDate(tenant.createdAt)}'
                           : status == 'trialing'
-                              ? 'Prueba hasta: ${_formatDate(tenant.trialEndsAt)}'
+                              ? 'Prueba: ${_formatDate(tenant.createdAt)} al ${_formatDate(tenant.trialEndsAt)}'
                               : 'Vence: ${_formatDate(tenant.currentPeriodEnd)}',
                       style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                     ),
@@ -1063,7 +1245,7 @@ class _TenantCard extends StatelessWidget {
 
               const SizedBox(height: AppSpacing.sm),
 
-              // Fila 3: Botones de Acción Rápida (WhatsApp, Llamar, Ver Ficha)
+              // Fila 3: Botones de Acción Rápida (WhatsApp, Llamar, Modificar Tarifa, Ver Ficha)
               Row(
                 children: [
                   if (tenant.whatsapp != null && tenant.whatsapp!.isNotEmpty) ...[
@@ -1119,10 +1301,22 @@ class _TenantCard extends StatelessWidget {
                       ),
                     ),
                   ] else ...[
+                    if (isOwner) ...[
+                      OutlinedButton.icon(
+                        onPressed: () => onUpdatePricing(tenant),
+                        icon: const Icon(Icons.edit_outlined, size: 14),
+                        label: const Text('Precio / Plan'),
+                        style: OutlinedButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                    ],
                     TextButton.icon(
                       onPressed: onTap,
                       icon: const Icon(Icons.info_outline, size: 16),
-                      label: const Text('Ver Ficha y Gestión →'),
+                      label: const Text('Ver Ficha →'),
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.brand,
                         visualDensity: VisualDensity.compact,
@@ -1146,21 +1340,25 @@ class _TenantDetailSheet extends StatelessWidget {
   const _TenantDetailSheet({
     required this.tenant,
     required this.isOwner,
+    required this.platformService,
     required this.onApprove,
     required this.onReject,
     required this.onSuspend,
     required this.onReactivate,
     required this.onExtendTrial,
+    required this.onUpdatePricing,
     required this.onViewSupportData,
   });
 
   final PlatformTenantSummary tenant;
   final bool isOwner;
+  final PlatformService platformService;
   final ValueChanged<PlatformTenantSummary> onApprove;
   final ValueChanged<PlatformTenantSummary> onReject;
   final ValueChanged<PlatformTenantSummary> onSuspend;
   final ValueChanged<PlatformTenantSummary> onReactivate;
   final ValueChanged<PlatformTenantSummary> onExtendTrial;
+  final ValueChanged<PlatformTenantSummary> onUpdatePricing;
   final ValueChanged<PlatformTenantSummary> onViewSupportData;
 
   String _formatDate(DateTime? date) {
@@ -1180,7 +1378,7 @@ class _TenantDetailSheet extends StatelessWidget {
       ),
       child: SafeArea(
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
           child: Column(
             children: [
               // Header del Sheet
@@ -1291,6 +1489,7 @@ class _TenantDetailSheet extends StatelessWidget {
                       icon: Icons.sell_outlined,
                       children: [
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
                               child: Column(
@@ -1328,9 +1527,31 @@ class _TenantDetailSheet extends StatelessWidget {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 10),
+                        if (isOwner)
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: OutlinedButton.icon(
+                              onPressed: () => onUpdatePricing(tenant),
+                              icon: const Icon(Icons.edit_outlined, size: 15),
+                              label: const Text('Modificar Precio o Plan'),
+                              style: OutlinedButton.styleFrom(
+                                visualDensity: VisualDensity.compact,
+                                foregroundColor: AppColors.brand,
+                              ),
+                            ),
+                          ),
                         const Divider(height: 20),
-                        _buildInfoRow('Prueba Gratis:', 'Hasta el ${_formatDate(tenant.trialEndsAt)}'),
-                        _buildInfoRow('Periodo Activo:', 'Válido hasta el ${_formatDate(tenant.currentPeriodEnd)}'),
+                        _buildInfoRow(
+                          'Prueba Gratis:',
+                          'Desde el ${_formatDate(tenant.createdAt)} hasta el ${_formatDate(tenant.trialEndsAt)}',
+                        ),
+                        _buildInfoRow(
+                          'Periodo Activo:',
+                          tenant.currentPeriodEnd != null
+                              ? 'Válido hasta el ${_formatDate(tenant.currentPeriodEnd)}'
+                              : 'Pendiente de primer pago tras finalizar prueba',
+                        ),
                         if (tenant.graceEndsAt != null)
                           _buildInfoRow('Periodo de Gracia:', 'Hasta el ${_formatDate(tenant.graceEndsAt)}'),
                       ],
@@ -1367,6 +1588,11 @@ class _TenantDetailSheet extends StatelessWidget {
                               label: const Text('Ver Datos (Soporte)'),
                             ),
                             if (!isPending && isOwner) ...[
+                              OutlinedButton.icon(
+                                onPressed: () => onUpdatePricing(tenant),
+                                icon: const Icon(Icons.price_change_outlined, size: 18),
+                                label: const Text('Cambiar Tarifa / Plan'),
+                              ),
                               if (status == 'rejected')
                                 FilledButton.icon(
                                   onPressed: () => onApprove(tenant),
@@ -1413,26 +1639,70 @@ class _TenantDetailSheet extends StatelessWidget {
                             borderRadius: BorderRadius.circular(AppRadius.control),
                           ),
                           child: DataTable(
-                            columnSpacing: 16,
-                            horizontalMargin: 12,
+                            columnSpacing: 12,
+                            horizontalMargin: 10,
                             headingRowHeight: 36,
                             dataRowMinHeight: 38,
                             dataRowMaxHeight: 44,
                             columns: const [
-                              DataColumn(label: Text('Fecha', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                              DataColumn(label: Text('Plan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                              DataColumn(label: Text('Válido Hasta', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                              DataColumn(label: Text('Valor', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                              DataColumn(label: Text('Fecha', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5))),
+                              DataColumn(label: Text('Plan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5))),
+                              DataColumn(label: Text('Válido Hasta', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5))),
+                              DataColumn(label: Text('Valor', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5))),
                             ],
                             rows: [
+                              // Fila 1: Período de prueba registrado
                               DataRow(
                                 cells: [
-                                  DataCell(Text(_formatDate(tenant.createdAt), style: const TextStyle(fontSize: 12))),
-                                  DataCell(Text(tenant.planNameFormatted, style: const TextStyle(fontSize: 12))),
-                                  DataCell(Text(_formatDate(tenant.currentPeriodEnd ?? tenant.trialEndsAt), style: const TextStyle(fontSize: 12))),
-                                  DataCell(Text(tenant.formattedEffectivePrice, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
+                                  DataCell(Text(_formatDate(tenant.createdAt), style: const TextStyle(fontSize: 11.5))),
+                                  DataCell(
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(tenant.planNameFormatted, style: const TextStyle(fontSize: 11.5)),
+                                        const SizedBox(width: 4),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.brandTintSoft,
+                                            borderRadius: BorderRadius.circular(3),
+                                          ),
+                                          child: const Text('Prueba', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700)),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  DataCell(Text(_formatDate(tenant.trialEndsAt), style: const TextStyle(fontSize: 11.5))),
+                                  DataCell(
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.successTint,
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Text(
+                                        'GRATIS (Prueba)',
+                                        style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: AppColors.success),
+                                      ),
+                                    ),
+                                  ),
                                 ],
                               ),
+                              // Fila 2: Período activo de pago (si ya terminó prueba o ya pagó)
+                              if (tenant.currentPeriodEnd != null)
+                                DataRow(
+                                  cells: [
+                                    DataCell(Text(_formatDate(tenant.trialEndsAt ?? tenant.createdAt), style: const TextStyle(fontSize: 11.5))),
+                                    DataCell(Text(tenant.planNameFormatted, style: const TextStyle(fontSize: 11.5))),
+                                    DataCell(Text(_formatDate(tenant.currentPeriodEnd), style: const TextStyle(fontSize: 11.5))),
+                                    DataCell(
+                                      Text(
+                                        tenant.formattedEffectivePrice,
+                                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                             ],
                           ),
                         ),
