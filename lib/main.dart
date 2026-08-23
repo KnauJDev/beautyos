@@ -162,6 +162,23 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
   }
 
   Future<_HomeContextData> _loadHomeContext() async {
+    // Si la URL contiene una confirmación de pago de ePayco (ej. ?ref_payco=...), verificarla
+    final refPayco = Uri.base.queryParameters['ref_payco'];
+    if (refPayco != null && refPayco.isNotEmpty) {
+      try {
+        await Supabase.instance.client.functions.invoke(
+          'verify-epayco-transaction',
+          body: {'ref_payco': refPayco},
+        );
+      } catch (e, st) {
+        MonitoreoService.reportarError(
+          e,
+          st,
+          motivo: 'Fallo al verificar confirmación ePayco $refPayco',
+        );
+      }
+    }
+
     final profile = await myProfileService.getMyProfile();
 
     if (profile == null) {

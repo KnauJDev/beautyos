@@ -88,7 +88,25 @@ Deno.serve(async (req) => {
     const xSignature = (payload.x_signature ?? "").toString().trim();
     const xTransactionState = (payload.x_transaction_state ?? payload.x_response ?? "").toString().trim();
     const xCodTransactionState = (payload.x_cod_transaction_state ?? "").toString().trim();
-    const xTenantId = (payload.x_extra1 ?? payload.extra1 ?? "").toString().trim();
+    let xTenantId = (payload.x_extra1 ?? payload.extra1 ?? payload.extras?.extra1 ?? "").toString().trim();
+    const xInvoice = (payload.x_id_invoice ?? payload.x_id_factura ?? "").toString().trim();
+
+    if (!xTenantId && xInvoice) {
+      const match = xInvoice.match(/SUB-([0-9A-Fa-f]{8})-/);
+      if (match) {
+        const prefix = match[1].toLowerCase();
+        const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        const { data: matchedTenant } = await supabaseAdmin
+          .from("tenants")
+          .select("id")
+          .ilike("id", `${prefix}%`)
+          .limit(1)
+          .maybeSingle();
+        if (matchedTenant?.id) {
+          xTenantId = matchedTenant.id;
+        }
+      }
+    }
 
     console.log(
       `PASO: ${paso} | ref: ${xRefPayco} | tx: ${xTransactionId} | estado: ${xTransactionState} (cod: ${xCodTransactionState}) | monto: ${xAmount} | tenant: ${xTenantId}`
