@@ -2,7 +2,7 @@
 
 **Bloque documentado:** decisión **D-160** · Ciclos de facturación de 30 días anclados al primer pago, precedencia absoluta del plan/precio pactado por el owner, y dos bugs corregidos de paso (`plan_id` no se actualizaba; el candado de pactado no cubría descuento-sin-precio-fijo).
 
-**Estado:** `flutter analyze` 100% limpio (0/0), **156 de 156 pruebas en verde**. Migración `20260823150000` **aplicada en Supabase** por el propietario, Control 180 (9 pruebas) **en verde contra la base real**. Edge Function `create-epayco-session` **redesplegada** (v7). **Pendiente y bloqueante para que se vea en producción: falta el `git push`** — Flutter Web se publica solo con push a Cloudflare Pages (`docs/02_operacion/MAPA_TECNICO.md`), a diferencia de las Edge Functions que se despliegan aparte. Sin ese push, el checkout sigue mostrando el selector de 3 planes incluso para tenants con precio pactado.
+**Estado:** `flutter analyze` 100% limpio (0/0), **156 de 156 pruebas en verde**. Migración `20260823150000` **aplicada en Supabase** por el propietario, Control 180 (9 pruebas) **en verde contra la base real**. Edge Function `create-epayco-session` **redesplegada** (v7). `git push` **hecho y confirmado en producción** (commit `5aa9fce`): se descargó `main.dart.js` desde `salonymas.com` y el texto nuevo del checkout con precio pactado ("Tu plan y tarifa fueron acordados con Salón y Más") ya está publicado. **Este bloque quedó cerrado sin pendientes.**
 
 ---
 
@@ -46,7 +46,7 @@ Antes de escribir una sola línea, se hizo una revisión de diseño en dos pasos
 
 ## 3. Qué quedó a medias / fuera de este bloque
 
-- **Bloqueante para producción: falta `git push`.** Los cambios de Flutter (`tenant_subscription_status.dart`, `epayco_checkout_service.dart`) están commiteados/por commitear localmente pero **no publicados** — Cloudflare Pages solo compila con push (`MAPA_TECNICO.md`). Hasta que eso pase, el checkout en producción sigue mostrando el dropdown de 3 planes incluso para tenants con precio pactado (aunque el servidor ya ignora cualquier plan que el cliente mande cuando hay pactado — defensa en profundidad, no es un hueco de seguridad, solo de UX).
+- El `git push` que este HANDOFF marcaba como bloqueante **ya se hizo y se verificó en producción** (sesión del 23-ago, después de escrito este documento): `curl` sobre `https://salonymas.com/main.dart.js` + `grep` del texto nuevo del checkout confirmó 1 coincidencia. Procedimiento en `MAPA_TECNICO.md`.
 - Los commits de la migración a Smart Checkout V2 (bloque anterior a D-159) siguen sin registrarse individualmente como decisiones — mencionado también en el HANDOFF de D-159, sigue pendiente si el propietario lo quiere.
 - No se construyó código promocional — descartado a propósito, no es un pendiente.
 
@@ -62,19 +62,14 @@ Antes de escribir una sola línea, se hizo una revisión de diseño en dos pasos
 
 ```
 Lee el HANDOFF más reciente en docs/HANDOFF/ (bloque D-160, ciclo de
-facturación anclado). La lógica de servidor ya está aplicada y verificada de
-punta a punta: migración en Supabase, Control 180 contra la base real, y
-create-epayco-session redesplegada. Lo único que falta es el git push para
-que Cloudflare Pages publique los cambios de Flutter (el checkout con el
-selector de plan bloqueado cuando hay precio pactado).
+facturación anclado). Está cerrado sin pendientes: migración en Supabase,
+Control 180 contra la base real, create-epayco-session redesplegada, y el
+git push ya verificado en producción (curl + grep sobre main.dart.js
+publicado).
 
-1. Revisa `git status` y `git log` para confirmar qué quedó comprometido y
-   qué no.
-2. Si el propietario confirma que quiere publicar, haz el push a la rama
-   principal y verifica que salió de verdad (MAPA_TECNICO.md tiene el
-   procedimiento con curl + grep sobre el JS publicado).
-3. Si quiere, sigue con los hilos abiertos de D-159/D-160: registrar los
-   commits de la migración a Smart Checkout V2 como decisiones separadas.
+Si quieres, sigue con el único hilo abierto que queda de D-159/D-160:
+registrar los commits de la migración a Smart Checkout V2 (bloque anterior
+a D-159) como decisiones separadas en REGISTRO_DE_DECISIONES.md.
 
 No reintroduzcas comparación de now() en vivo contra grace_ends_at para
 decidir la rama de facturación, ni dupliques la lógica de precio en
