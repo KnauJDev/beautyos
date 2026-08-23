@@ -23,7 +23,7 @@ class EpaycoCheckoutService {
   // Llave pública de ePayco para checkout (NUNCA la llave privada P_KEY)
   static const String defaultPublicKey = String.fromEnvironment(
     'EPAYCO_PUBLIC_KEY',
-    defaultValue: '248dfeb1765c82eb5c21f2bb406cf658',
+    defaultValue: 'a20a90e36c84335c754a73fba80a0978',
   );
 
   // Modo de prueba de ePayco (activo mientras la cuenta de ePayco esté en Explorar/Pruebas)
