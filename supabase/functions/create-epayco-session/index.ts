@@ -114,31 +114,34 @@ Deno.serve(async (req) => {
       }
     }
 
-    paso = "calcular monto efectivo";
-    let amount = 240000;
-    if (planCode === "basico") amount = 160000;
-    if (planCode === "business") amount = 200000;
+    // El monto y el plan a cobrar los calcula SIEMPRE el servidor, con la
+    // misma función que valida el pago al confirmarlo (fuente de verdad
+    // única). Si el tenant tiene plan/precio pactado por el owner, esta
+    // función ignora por completo el planCode que mandó el cliente — el
+    // dropdown de Flutter ya no lo muestra en ese caso, pero esto es
+    // defensa en profundidad, no depende de que el cliente se comporte.
+    paso = "calcular monto y periodo a cobrar";
+    const { data: calcData, error: calcError } = await supabaseAdmin.rpc(
+      "beautyos_calcular_cargo_epayco",
+      { p_tenant_id: tenantId, p_plan_code: planCode },
+    );
 
-    // Consultar suscripción y tarifas pactadas en BD
-    const { data: subData } = await supabaseAdmin
-      .from("tenant_subscriptions")
-      .select("price_cop, is_founder, discount_percent, plan_id, plans(code)")
-      .eq("tenant_id", tenantId)
-      .maybeSingle();
-
-    if (subData) {
-      if (subData.price_cop && subData.price_cop > 0) {
-        amount = subData.price_cop;
-      } else if (subData.is_founder) {
-        amount = Math.round(amount * 0.5);
-      } else if (subData.discount_percent && subData.discount_percent > 0) {
-        amount = Math.round(amount * (1 - subData.discount_percent / 100));
-      }
+    if (calcError || !calcData || calcData.length === 0) {
+      console.error("Error al calcular el cargo de ePayco:", calcError);
+      return responder({ error: "No se pudo calcular el monto a cobrar para este negocio." }, 500);
     }
 
-    let planName = "Profesional";
-    if (planCode === "basico") planName = "Básico";
-    if (planCode === "business") planName = "Business";
+    const calc = calcData[0];
+    const amount = calc.monto_cop;
+
+    const { data: planData } = await supabaseAdmin
+      .from("plans")
+      .select("code, name")
+      .eq("id", calc.plan_id_resuelto)
+      .maybeSingle();
+
+    const planCodeResuelto = planData?.code || planCode;
+    const planName = planData?.name || "Profesional";
 
     paso = "autenticar con ePayco Apify";
     const basicAuth = btoa(`${EPAYCO_PUBLIC_KEY}:${EPAYCO_PRIVATE_KEY}`);
@@ -177,7 +180,7 @@ Deno.serve(async (req) => {
       country: "CO",
       lang: "ES",
       extra1: tenantId,
-      extra2: planCode,
+      extra2: planCodeResuelto,
       extra3: "beautyos_app",
       confirmation_url: "https://eogppgbdnwxdtcbctaol.supabase.co/functions/v1/epayco-webhook",
       response_url: "https://salonymas.com",
@@ -214,8 +217,9 @@ Deno.serve(async (req) => {
       success: true,
       sessionId: sessionId,
       amount: amount,
-      planCode: planCode,
+      planCode: planCodeResuelto,
       planName: planName,
+      motivo: calc.motivo,
       testMode: EPAYCO_TEST_MODE,
     }, 200);
   } catch (error) {

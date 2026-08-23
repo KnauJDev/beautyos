@@ -14,6 +14,8 @@ class TenantSubscriptionStatus {
     this.discountPercent,
     this.rejectionReason,
     this.createdAt,
+    this.hasPactadoPrice = false,
+    this.priceReason,
   });
 
   final String tenantId;
@@ -30,6 +32,8 @@ class TenantSubscriptionStatus {
   final double? discountPercent;
   final String? rejectionReason;
   final DateTime? createdAt;
+  final bool hasPactadoPrice;
+  final String? priceReason;
 
   bool get isPending => subscriptionStatus == 'pending';
   bool get isTrialing => subscriptionStatus == 'trialing';
@@ -116,6 +120,8 @@ class TenantSubscriptionStatus {
       discountPercent: _parseDouble(map['discount_percent']),
       rejectionReason: map['rejection_reason']?.toString(),
       createdAt: _parseDate(map['created_at']),
+      hasPactadoPrice: map['has_pactado_price'] == true,
+      priceReason: map['price_reason']?.toString(),
     );
   }
 

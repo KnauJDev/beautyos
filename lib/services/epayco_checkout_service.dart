@@ -158,39 +158,46 @@ class EpaycoCheckoutService {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Elige el plan que mejor se adapte a tu salón:',
-                      style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Selector de Plan
-                    DropdownButtonFormField<String>(
-                      initialValue: chosenPlanCode,
-                      decoration: const InputDecoration(
-                        labelText: 'Plan a contratar',
-                        border: OutlineInputBorder(),
+                    if (subscription.hasPactadoPrice) ...[
+                      Text(
+                        'Tu plan y tarifa fueron acordados con Salón y Más:',
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                       ),
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'basico',
-                          child: Text('Básico (1 sede, hasta 5 cuentas)'),
+                    ] else ...[
+                      Text(
+                        'Elige el plan que mejor se adapte a tu salón:',
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Selector de Plan
+                      DropdownButtonFormField<String>(
+                        initialValue: chosenPlanCode,
+                        decoration: const InputDecoration(
+                          labelText: 'Plan a contratar',
+                          border: OutlineInputBorder(),
                         ),
-                        DropdownMenuItem(
-                          value: 'business',
-                          child: Text('Business (Hasta 3 sedes, 15 cuentas)'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'profesional',
-                          child: Text('Profesional (Ilimitado + IA & Marketing)'),
-                        ),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) {
-                          setModalState(() => chosenPlanCode = val);
-                        }
-                      },
-                    ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'basico',
+                            child: Text('Básico (1 sede, hasta 5 cuentas)'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'business',
+                            child: Text('Business (Hasta 3 sedes, 15 cuentas)'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'profesional',
+                            child: Text('Profesional (Ilimitado + IA & Marketing)'),
+                          ),
+                        ],
+                        onChanged: (val) {
+                          if (val != null) {
+                            setModalState(() => chosenPlanCode = val);
+                          }
+                        },
+                      ),
+                    ],
                     const SizedBox(height: 12),
 
                     // Tarjeta de Valor a Pagar
@@ -217,6 +224,11 @@ class EpaycoCheckoutService {
                               fontWeight: FontWeight.w800,
                               fontSize: 16,
                             ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Si pagas antes o después de tu fecha de corte, el monto exacto se confirma en la pantalla de ePayco.',
+                            style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
                           ),
                           if (subscription.isFounder) ...[
                             const SizedBox(height: 6),
