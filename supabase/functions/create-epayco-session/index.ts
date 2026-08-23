@@ -47,6 +47,7 @@ Deno.serve(async (req) => {
       return responder({ error: "Error de configuración de base de datos." }, 500);
     }
 
+    paso = "verificar sesión autenticada";
     const autorizacion = req.headers.get("Authorization");
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -61,33 +62,36 @@ Deno.serve(async (req) => {
       }
     }
 
+    if (!userId) {
+      return responder({ error: "Se requiere una sesión autenticada para generar la sesión de pago." }, 401);
+    }
+
     paso = "leer parámetros de solicitud";
-    let body: { tenantId?: string; planCode?: string; amount?: number } = {};
+    let body: { planCode?: string } = {};
     try {
       body = await req.json();
     } catch {
       // Body vacío
     }
 
-    let tenantId = body.tenantId;
     const planCode = (body.planCode || "profesional").toLowerCase();
 
-    // Si tenantId no vino en el body, resolverlo desde la membresía activa del usuario autenticado
-    if (!tenantId && userId) {
-      const { data: memData } = await supabaseAdmin
-        .from("tenant_memberships")
-        .select("tenant_id")
-        .eq("user_id", userId)
-        .eq("active", true)
-        .limit(1)
-        .maybeSingle();
-      if (memData?.tenant_id) {
-        tenantId = memData.tenant_id;
-      }
-    }
+    // El tenantId NUNCA se toma del cliente: se resuelve exclusivamente desde
+    // la membresía activa del usuario autenticado, para que nadie pueda pagar
+    // (ni de menos, ni a nombre de otro negocio) suplantando un tenantId ajeno.
+    paso = "resolver negocio del usuario autenticado";
+    const { data: memData } = await supabaseAdmin
+      .from("tenant_memberships")
+      .select("tenant_id")
+      .eq("user_id", userId)
+      .eq("active", true)
+      .limit(1)
+      .maybeSingle();
+
+    const tenantId = memData?.tenant_id;
 
     if (!tenantId) {
-      return responder({ error: "No se pudo identificar el negocio (tenantId)." }, 400);
+      return responder({ error: "El usuario autenticado no tiene un negocio activo asociado." }, 403);
     }
 
     paso = "consultar datos del tenant";
@@ -130,11 +134,6 @@ Deno.serve(async (req) => {
       } else if (subData.discount_percent && subData.discount_percent > 0) {
         amount = Math.round(amount * (1 - subData.discount_percent / 100));
       }
-    }
-
-    // Permitir monto solicitado expresamente si es válido
-    if (body.amount && typeof body.amount === "number" && body.amount >= 10000) {
-      amount = body.amount;
     }
 
     let planName = "Profesional";

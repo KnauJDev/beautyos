@@ -76,6 +76,7 @@ Deno.serve(async (req) => {
     const xTransactionState = (data.x_transaction_state ?? data.x_response ?? data.x_respuesta ?? "").toString().trim();
     const xCodTransactionState = (data.x_cod_transaction_state ?? data.x_cod_response ?? data.x_cod_respuesta ?? "").toString().trim();
     const xInvoice = (data.x_id_invoice ?? data.x_id_factura ?? "").toString().trim();
+    const xPlanCode = (data.x_extra2 ?? data.extra2 ?? "").toString().trim();
 
     paso = "resolver tenant_id";
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -88,19 +89,35 @@ Deno.serve(async (req) => {
       const match = xInvoice.match(/SUB-([0-9A-Fa-f]{8})-/);
       if (match) {
         const prefix = match[1].toLowerCase();
-        const { data: allTenants } = await supabaseAdmin
-          .from("tenants")
-          .select("id, name");
-        const matched = allTenants?.find((t) => t.id.replace(/-/g, "").toLowerCase().startsWith(prefix));
-        if (matched?.id) {
-          tenantId = matched.id;
-          console.log(`Tenant identificado por prefijo de factura ${prefix}: ${tenantId} (${matched.name})`);
+        // Buscar en tenant_subscriptions
+        const { data: allSubs } = await supabaseAdmin
+          .from("tenant_subscriptions")
+          .select("tenant_id");
+        const matchedSub = allSubs?.find((s) => s.tenant_id.replace(/-/g, "").toLowerCase().startsWith(prefix));
+        if (matchedSub?.tenant_id) {
+          tenantId = matchedSub.tenant_id;
+        } else {
+          // Buscar en tenants
+          const { data: allTenants } = await supabaseAdmin
+            .from("tenants")
+            .select("id");
+          const matchedTenant = allTenants?.find((t) => t.id.replace(/-/g, "").toLowerCase().startsWith(prefix));
+          if (matchedTenant?.id) {
+            tenantId = matchedTenant.id;
+          }
         }
       }
     }
 
+    // FALLA CERRADO A PROPÓSITO: si x_extra1 y el prefijo de la factura no
+    // permiten identificar con certeza el negocio, no se adivina. Antes esto
+    // caía al tenant_subscription más reciente de TODA la plataforma, lo que
+    // podía activar el negocio equivocado con el pago de otro. Si esto pasa,
+    // el webhook servidor-a-servidor (que sí valida firma SHA-256) sigue
+    // siendo la vía de activación; esta ruta es solo una verificación
+    // inmediata al volver de la pasarela, no la única.
     if (!tenantId) {
-      return responder({ error: `No se pudo identificar el negocio asociado a la factura (${xInvoice}).` }, 404);
+      return responder({ error: `No se pudo identificar con certeza el negocio asociado a la factura (${xInvoice}).` }, 404);
     }
 
     paso = "ejecutar beautyos_procesar_evento_epayco";
@@ -113,6 +130,7 @@ Deno.serve(async (req) => {
       p_amount_cop: Math.round(xAmount),
       p_currency_code: xCurrencyCode,
       p_payload: data,
+      p_plan_code: xPlanCode || null,
     });
 
     if (rpcError) {

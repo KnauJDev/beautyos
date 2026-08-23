@@ -297,7 +297,6 @@ class EpaycoCheckoutService {
     if (result == null) return;
 
     final finalPlanCode = result['planCode'] as String;
-    final finalAmount = result['amount'] as int;
 
     // Mostrar diálogo de carga mientras el backend genera la sesión segura
     if (!context.mounted) return;
@@ -328,14 +327,15 @@ class EpaycoCheckoutService {
         headers['Authorization'] = 'Bearer ${currentSession!.accessToken}';
       }
 
-      // 1. Invocar Edge Function para crear sesión de pago en ePayco Apify
+      // 1. Invocar Edge Function para crear sesión de pago en ePayco Apify.
+      // El tenantId y el monto a cobrar los calcula el servidor a partir de la
+      // sesión autenticada y del precio pactado: nunca se envían desde el
+      // cliente, para que no puedan manipularse.
       final sessionResponse = await Supabase.instance.client.functions.invoke(
         'create-epayco-session',
         headers: headers,
         body: {
-          'tenantId': subscription.tenantId,
           'planCode': finalPlanCode,
-          'amount': finalAmount,
         },
       );
 

@@ -90,6 +90,7 @@ Deno.serve(async (req) => {
     const xCodTransactionState = (payload.x_cod_transaction_state ?? "").toString().trim();
     let xTenantId = (payload.x_extra1 ?? payload.extra1 ?? payload.extras?.extra1 ?? "").toString().trim();
     const xInvoice = (payload.x_id_invoice ?? payload.x_id_factura ?? "").toString().trim();
+    const xPlanCode = (payload.x_extra2 ?? payload.extra2 ?? payload.extras?.extra2 ?? "").toString().trim();
 
     if (!xTenantId && xInvoice) {
       const match = xInvoice.match(/SUB-([0-9A-Fa-f]{8})-/);
@@ -152,6 +153,7 @@ Deno.serve(async (req) => {
       p_amount_cop: amountNum,
       p_currency_code: xCurrencyCode,
       p_payload: payload,
+      p_plan_code: xPlanCode || null,
     });
 
     if (error) {
