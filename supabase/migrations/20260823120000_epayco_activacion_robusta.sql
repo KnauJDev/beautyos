@@ -6,6 +6,8 @@
 
 begin;
 
+drop function if exists private.beautyos_procesar_evento_epayco(uuid, text, text, text, text, bigint, text, jsonb);
+
 create or replace function private.beautyos_procesar_evento_epayco(
   p_tenant_id uuid,
   p_x_ref_payco text,
