@@ -23,16 +23,18 @@ Se pidió una auditoría técnica de todo ese trabajo. Lo que encontró, leyendo
 3. **Fallback inseguro en `verify-epayco-transaction`.** Si no lograba resolver el tenant por `x_extra1` o por el prefijo de la factura, asociaba el evento de pago al `tenant_subscription` creado **más recientemente en toda la plataforma** — podía activar el negocio equivocado con el pago de otro.
 4. **Bug adicional, no relacionado con seguridad pero igual de grave:** `20260823120000` insertaba en `subscription_events` con la columna `subscription_id`, que no existe (la real es `tenant_subscription_id`, definida el 22-jul). Todo evento de pago habría fallado con una excepción de Postgres desde que esa migración se desplegó, con o sin el problema de precio.
 
-El propietario pidió aplicar las correcciones. Se hizo en el mismo bloque:
+El propietario pidió aplicar las correcciones. Se hizo en este bloque, en tres tandas:
 
-- **`supabase/migrations/20260823130000_epayco_validar_precio_por_plan.sql`** (nueva, aún no aplicada en Supabase): restaura la validación de monto contra el precio pactado o el precio de lista del plan que se está pagando (ahora recibe `p_plan_code`, para respetar el selector de plan de D-158), con el piso de $10.000 como red adicional, no como sustituto. Corrige también el nombre de columna del punto 4.
+- **`supabase/migrations/20260823130000_epayco_validar_precio_por_plan.sql`**: restaura la validación de monto contra el precio pactado o el precio de lista del plan que se está pagando (ahora recibe `p_plan_code`, para respetar el selector de plan de D-158), con el piso de $10.000 como red adicional, no como sustituto. Corrige también el nombre de columna del punto 4. **Aplicada en Supabase por el propietario** vía `aplicar_sql.ps1` (pide la contraseña de la base de forma interactiva y oculta; el asistente no la ve ni la maneja).
 - **`supabase/functions/create-epayco-session/index.ts`**: exige sesión autenticada (401 si no hay), resuelve `tenantId` **solo** desde `tenant_memberships` del usuario autenticado (403 si no tiene negocio activo), y ya no acepta `amount` del body.
 - **`supabase/functions/epayco-webhook/index.ts`** y **`verify-epayco-transaction/index.ts`**: ahora extraen `x_extra2` (el plan elegido) y se lo pasan a la RPC como `p_plan_code`.
 - **`verify-epayco-transaction/index.ts`**: se retiró el fallback de "última suscripción creada". Ahora falla cerrado (404) si no puede identificar el negocio con certeza; el webhook con firma SHA-256 sigue siendo la vía de respaldo para esos casos.
 - **`lib/services/epayco_checkout_service.dart`**: ya no envía `tenantId` ni `amount` al invocar `create-epayco-session`, solo `planCode`. Se quitó la variable `finalAmount`, que quedó sin uso.
 - **`supabase/sql/179_test_epayco_activacion_robusta.sql`**: reescrito. Antes "certificaba" el hueco (pagaba $10.000 y esperaba `active`). Ahora prueba que un pago insuficiente **no** activa y que el pago por el precio real del plan **sí** lo hace. Sigue con `ROLLBACK`, no toca datos reales.
 
-Verificado con `flutter analyze` (0/0) y `flutter test` (156/156). **No se verificó la migración SQL contra Postgres real** porque no se aplicó — ver sección 4.
+Verificado con `flutter analyze` (0/0) y `flutter test` (156/156). La migración se verificó contra Postgres real: el propietario la aplicó con `aplicar_sql.ps1` y corrió el Control 179, que confirmó las dos mitades (rechazo y activación).
+
+**Hueco encontrado al cerrar el bloque:** las 3 Edge Functions editadas seguían corriendo el código de *antes* de esta auditoría — `npx supabase functions list` mostró su último despliegue a las 12:37 del 23-ago, es decir, del bloque anterior (Smart Checkout V2 / modo producción), no de estas correcciones. El fix de base de datos ya bloqueaba el pago insuficiente, pero `create-epayco-session` seguía en producción sin exigir sesión ni verificar dueño del `tenantId`, y `verify-epayco-transaction` seguía con el fallback inseguro. Se desplegaron las 3 en este mismo bloque con `npx supabase functions deploy <nombre> --project-ref eogppgbdnwxdtcbctaol --use-api --workdir C:/Proyectos/salonymas` (autorizado sin permiso previo desde D-131) y se confirmaron las versiones nuevas: `create-epayco-session` v5→v6, `epayco-webhook` v4→v5, `verify-epayco-transaction` v6→v7.
 
 ---
 
@@ -47,36 +49,36 @@ Verificado con `flutter analyze` (0/0) y `flutter test` (156/156). **No se verif
 
 - **No** volver a aceptar `amount` o `tenantId` del cliente en `create-epayco-session` "para simplificar" — es exactamente el hueco que se cerró hoy.
 - **No** reintroducir un fallback de "adivinar el tenant" en `verify-epayco-transaction`. Si el negocio no se puede identificar con certeza, es mejor que falle y lo resuelva el webhook (con firma) que activar al tenant equivocado.
-- **No** dar por buena la migración `20260823130000` sin aplicarla antes en Supabase y correr el control 179 contra la base real (ver siguiente sección).
+- **No** asumir que un cambio en `supabase/functions/*` ya está en producción solo porque está en `main`. Las Edge Functions **no salen con el `push`** (ver `MAPA_TECNICO.md` sección 2) — hay que desplegarlas aparte con `supabase functions deploy <nombre>`, y conviene confirmarlo con `supabase functions list` (columna `version`/`updated_at`) antes de dar un bloque por cerrado. Fue justo lo que faltó a mitad de este bloque.
+- **No** volver a pedir ni manejar la contraseña de la base de datos desde el asistente: la aplica el propietario a mano con `aplicar_sql.ps1`.
 
 ---
 
-## 4. Prompt exacto para retomar
+## 4. Estado final de este bloque — nada bloqueante pendiente
+
+Los dos pasos que quedaban (aplicar la migración y correr el Control 179) ya se hicieron y se verificaron contra la base real. Las 3 Edge Functions ya están desplegadas con el código corregido. Lo que sigue es opcional, a criterio del propietario:
 
 ```
-Lee el HANDOFF más reciente en docs/HANDOFF/. Quedaron dos cosas pendientes
-del bloque D-159 (corrección de la activación de ePayco):
+Lee el HANDOFF más reciente en docs/HANDOFF/ (bloque D-159, ePayco). La
+corrección ya está aplicada y verificada de punta a punta: migración en
+Supabase, Control 179 contra la base real, y las 3 Edge Functions
+redesplegadas. No hay nada bloqueante pendiente de ese bloque.
 
-1. Aplicar en Supabase la migración
-   supabase/migrations/20260823130000_epayco_validar_precio_por_plan.sql
-   (usa el mismo mecanismo que las migraciones anteriores — revisa
-   docs/02_operacion/MAPA_TECNICO.md para el camino de publicación vigente).
+Si el propietario quiere seguir, hay tres hilos abiertos, ninguno urgente:
 
-2. Correr supabase/sql/179_test_epayco_activacion_robusta.sql contra la base
-   real (usa ROLLBACK, no deja rastro) y confirmar que:
-   - un pago de $10.000 COP en un tenant cuyo plan cuesta más NO activa la
-     suscripción,
-   - un pago por el precio real del plan SÍ la activa.
-
-Después de eso, decide con el propietario si quiere:
-- revisar subscription_events (provider = 'epayco') por si hubo algún pago
-  real procesado en la ventana sin validación de precio del 23-ago,
-- registrar los commits de la migración a Smart Checkout V2 como sus propias
-  decisiones D-,
-- resolver el hallazgo abierto de que el selector de planes del checkout no
-  actualiza tenant_subscriptions.plan_id al confirmar el pago.
+1. Revisar subscription_events (provider = 'epayco') por si hubo algún pago
+   real procesado en la ventana sin validación de precio del 23-ago (entre
+   el despliegue de 20260823120000 y el de 20260823130000).
+2. Registrar los commits de la migración a Smart Checkout V2 (a73562f...
+   antes de este bloque) como sus propias decisiones D-, si el propietario
+   quiere el detalle separado de D-159.
+3. Resolver el hallazgo abierto de que el selector de planes del checkout
+   (D-158) no actualiza tenant_subscriptions.plan_id al confirmar el pago:
+   el tenant paga el precio del plan elegido pero queda formalmente en su
+   plan anterior.
 
 No reintroduzcas validación de amount/tenantId desde el cliente en
 create-epayco-session, ni un fallback que adivine el tenant en
-verify-epayco-transaction: son exactamente los huecos que D-159 cerró.
+verify-epayco-transaction: son exactamente los huecos que D-159 cerró. Y si
+tocas cualquier Edge Function, despliégala aparte — no sale con el push.
 ```
