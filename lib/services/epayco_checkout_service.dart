@@ -27,10 +27,10 @@ class EpaycoCheckoutService {
     defaultValue: 'a20a90e36c84335c754a73fba80a0978',
   );
 
-  // Modo de prueba de ePayco (activo mientras la cuenta de ePayco esté en Explorar/Pruebas)
+  // Modo de prueba de ePayco (false = Modo Producción con dinero real)
   static const bool defaultTestMode = bool.fromEnvironment(
     'EPAYCO_TEST_MODE',
-    defaultValue: true,
+    defaultValue: false,
   );
 
   // URL del webhook de confirmación en Supabase Edge Functions
