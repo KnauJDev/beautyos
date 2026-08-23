@@ -11,7 +11,6 @@ const EPAYCO_TEST_MODE = (Deno.env.get("EPAYCO_TEST_MODE") ?? "true").toLowerCas
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -49,52 +48,69 @@ Deno.serve(async (req) => {
     }
 
     const autorizacion = req.headers.get("Authorization");
-    if (!autorizacion) {
-      return responder({ error: "No autorizado: falta encabezado de autenticación." }, 401);
-    }
-
-    paso = "validar usuario autenticado";
-    const token = autorizacion.replace(/^Bearer\s+/i, "").trim();
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
     let userId: string | null = null;
-    if (token) {
-      const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
-      if (userData?.user) {
-        userId = userData.user.id;
-      } else {
-        console.warn("No se pudo resolver usuario por token:", userError?.message);
+    if (autorizacion) {
+      const token = autorizacion.replace(/^Bearer\s+/i, "").trim();
+      if (token) {
+        const { data: userData } = await supabaseAdmin.auth.getUser(token);
+        userId = userData?.user?.id ?? null;
       }
     }
 
     paso = "leer parámetros de solicitud";
-    let body: { tenantId?: string; planCode?: string; amount?: number };
+    let body: { tenantId?: string; planCode?: string; amount?: number } = {};
     try {
       body = await req.json();
     } catch {
-      return responder({ error: "Cuerpo de solicitud inválido." }, 400);
+      // Body vacío
     }
 
-    const tenantId = body.tenantId;
+    let tenantId = body.tenantId;
     const planCode = (body.planCode || "profesional").toLowerCase();
 
-    if (!tenantId) {
-      return responder({ error: "Falta el tenantId en la solicitud." }, 400);
+    // Si tenantId no vino en el body, resolverlo desde la membresía activa del usuario autenticado
+    if (!tenantId && userId) {
+      const { data: memData } = await supabaseAdmin
+        .from("tenant_memberships")
+        .select("tenant_id")
+        .eq("user_id", userId)
+        .eq("active", true)
+        .limit(1)
+        .maybeSingle();
+      if (memData?.tenant_id) {
+        tenantId = memData.tenant_id;
+      }
     }
 
-    paso = "consultar datos y precio efectivo del tenant";
-    const { data: tenantData, error: tenantError } = await supabaseAdmin
+    if (!tenantId) {
+      return responder({ error: "No se pudo identificar el negocio (tenantId)." }, 400);
+    }
+
+    paso = "consultar datos del tenant";
+    let tenantName = "Mi Negocio";
+    let tenantEmail = "facturacion@salonymas.com";
+    let tenantPhone = "3000000000";
+
+    const { data: tenantData } = await supabaseAdmin
       .from("tenants")
       .select("id, name, contact_email, whatsapp")
       .eq("id", tenantId)
-      .single();
+      .maybeSingle();
 
-    if (tenantError || !tenantData) {
-      return responder({ error: "No se encontró el negocio especificado." }, 404);
+    if (tenantData) {
+      if (tenantData.name) tenantName = tenantData.name;
+      if (tenantData.contact_email) tenantEmail = tenantData.contact_email;
+      if (tenantData.whatsapp) {
+        const digits = tenantData.whatsapp.replace(/[^0-9]/g, "");
+        if (digits.length >= 7) tenantPhone = digits;
+      }
     }
 
+    paso = "calcular monto efectivo";
     let amount = 240000;
     if (planCode === "basico") amount = 160000;
     if (planCode === "business") amount = 200000;
@@ -104,7 +120,7 @@ Deno.serve(async (req) => {
       .from("tenant_subscriptions")
       .select("price_cop, is_founder, discount_percent, plan_id, plans(code)")
       .eq("tenant_id", tenantId)
-      .single();
+      .maybeSingle();
 
     if (subData) {
       if (subData.price_cop && subData.price_cop > 0) {
@@ -149,10 +165,12 @@ Deno.serve(async (req) => {
     }
 
     paso = "crear sesión de Smart Checkout V2 en ePayco";
+    const invoiceNumber = `SUB-${tenantId.replace(/-/g, "").substring(0, 8).toUpperCase()}-${Date.now()}`;
     const sessionPayload = {
       checkout_version: "2",
       name: `Suscripción Salón y Más - ${planName}`,
-      description: `Plan ${planName} - ${tenantData.name}`,
+      description: `Plan ${planName} - ${tenantName}`,
+      invoice: invoiceNumber,
       currency: "COP",
       amount: amount,
       tax_base: 0,
@@ -166,11 +184,13 @@ Deno.serve(async (req) => {
       response_url: "https://salonymas.com",
       test: EPAYCO_TEST_MODE,
       billing: {
-        email: tenantData.contact_email || "facturacion@salonymas.com",
-        name: tenantData.name,
-        mobilePhone: (tenantData.whatsapp || "3000000000").replace(/[^0-9]/g, ""),
+        email: tenantEmail,
+        name: tenantName,
+        mobilePhone: tenantPhone,
       },
     };
+
+    console.log("Enviando sesión a ePayco:", JSON.stringify(sessionPayload));
 
     const sessionRes = await fetch("https://apify.epayco.co/payment/session/create", {
       method: "POST",
@@ -185,7 +205,7 @@ Deno.serve(async (req) => {
     if (!sessionRes.ok || !sessionJson?.data?.sessionId) {
       console.error("Error al crear sesión en ePayco:", sessionJson);
       return responder({
-        error: sessionJson?.textResponse || sessionJson?.message || "No se pudo generar la sesión de pago.",
+        error: sessionJson?.textResponse || sessionJson?.message || "No se pudo generar la sesión de pago en ePayco.",
       }, 502);
     }
 
