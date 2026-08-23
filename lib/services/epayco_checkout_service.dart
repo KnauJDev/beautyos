@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter/material.dart';
 
 import '../models/tenant_subscription_status.dart';
@@ -18,7 +17,7 @@ class EpaycoCheckoutService {
   // ID público de comercio ePayco (configurable por variables de entorno)
   static const String defaultCustId = String.fromEnvironment(
     'EPAYCO_PUBLIC_CUST_ID',
-    defaultValue: '1302824',
+    defaultValue: '1588792',
   );
 
   // Llave pública de ePayco para checkout (NUNCA la llave privada P_KEY)
@@ -27,10 +26,10 @@ class EpaycoCheckoutService {
     defaultValue: '248dfeb1765c82eb5c21f2bb406cf658',
   );
 
-  // Modo de prueba de ePayco (activo en debug/ensayo, apagado en producción)
+  // Modo de prueba de ePayco (activo mientras la cuenta de ePayco esté en Explorar/Pruebas)
   static const bool defaultTestMode = bool.fromEnvironment(
     'EPAYCO_TEST_MODE',
-    defaultValue: !kReleaseMode,
+    defaultValue: true,
   );
 
   // URL del webhook de confirmación en Supabase Edge Functions
