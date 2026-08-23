@@ -2,7 +2,7 @@
 
 **Bloque documentado:** decisión **D-159** · Auditoría técnica de la integración ePayco Smart Checkout V2 y corrección de una regresión crítica de cobro introducida el mismo día.
 
-**Estado:** `flutter analyze` 100% limpio (0 errores, 0 advertencias), **156 de 156 pruebas en verde** (`flutter test`). La migración SQL de la corrección **está escrita pero NO se ha aplicado en Supabase todavía** — ver sección 4.
+**Estado:** `flutter analyze` 100% limpio (0 errores, 0 advertencias), **156 de 156 pruebas en verde** (`flutter test`). La migración SQL `20260823130000_epayco_validar_precio_por_plan.sql` **fue aplicada en Supabase por el propietario** (`aplicar_sql.ps1`) y el Control 179 corrió contra la base real: rechazó un pago de $10.000 COP en un tenant cuyo precio real (Profesional + 50% Pionero) es $120.000, y activó correctamente con $240.000. **Las 3 Edge Functions tocadas (`create-epayco-session` v6, `epayco-webhook` v5, `verify-epayco-transaction` v7) se desplegaron en este mismo bloque** — hasta ese momento seguían corriendo el código de antes de la auditoría (`functions list` mostró su último despliegue a las 12:37 del 23-ago, previo a estas correcciones); confirmado con `npx supabase functions list`.
 
 ---
 
