@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/tenant_subscription_status.dart';
 import '../theme/app_colors.dart';
 import 'epayco_modal_launcher.dart';
 import 'monitoreo_service.dart';
 
-/// Servicio para orquestar el inicio del Checkout seguro de ePayco (D-141 / D-158).
+/// Servicio para orquestar el inicio del Smart Checkout V2 seguro de ePayco (D-141 / D-158).
 ///
 /// **Regla de seguridad fundamental (AGENTS.md):**
-/// En Flutter solo se manejan credenciales públicas o enlaces parametrizados.
-/// Las llaves privadas (P_KEY) y la validación criptográfica SHA-256 residen
-/// exclusivamente en la Edge Function `epayco-webhook` de Supabase.
+/// En Flutter solo se manejan credenciales públicas y sesiones creadas por el servidor.
+/// Las llaves privadas (PRIVATE_KEY / P_KEY) residen exclusivamente en las Edge Functions
+/// de Supabase (`create-epayco-session` y `epayco-webhook`).
 class EpaycoCheckoutService {
   const EpaycoCheckoutService();
 
@@ -36,7 +37,7 @@ class EpaycoCheckoutService {
   static const String confirmationWebhookUrl =
       'https://eogppgbdnwxdtcbctaol.supabase.co/functions/v1/epayco-webhook';
 
-  /// Construye la URL parametrizada para ePayco.
+  /// Construye la URL parametrizada para ePayco (compatibilidad y pruebas).
   Uri buildCheckoutUri(
     TenantSubscriptionStatus subscription, {
     String? selectedPlanCode,
@@ -89,7 +90,7 @@ class EpaycoCheckoutService {
   }
 
   /// Muestra el selector interactivo de planes con cálculo de descuento Pionero
-  /// y abre el Checkout de ePayco con el plan y precio seleccionado.
+  /// y abre el Smart Checkout V2 de ePayco mediante sesión segura generada en backend.
   Future<void> iniciarPago(
     BuildContext context,
     TenantSubscriptionStatus subscription, {
@@ -99,7 +100,6 @@ class EpaycoCheckoutService {
     if (chosenPlanCode.isEmpty) chosenPlanCode = 'profesional';
 
     int calculatePlanPrice(String planCode) {
-      // Si el tenant tiene un precio personalizado fijo guardado en BD y elige el plan actual:
       if (subscription.priceCop != null &&
           subscription.priceCop! > 0 &&
           planCode == subscription.planCode) {
@@ -297,34 +297,79 @@ class EpaycoCheckoutService {
     if (result == null) return;
 
     final finalPlanCode = result['planCode'] as String;
-    final finalPlanName = result['planName'] as String;
     final finalAmount = result['amount'] as int;
 
+    // Mostrar diálogo de carga mientras el backend genera la sesión segura
+    if (!context.mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Conectando con ePayco Smart Checkout...'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
     try {
-      final invoice = 'SUB-${subscription.tenantId.replaceAll('-', '').substring(0, 8).toUpperCase()}-${DateTime.now().millisecondsSinceEpoch}';
-      final launched = await lanzarEpaycoModal(
-        publicKey: defaultPublicKey,
-        testMode: defaultTestMode,
-        name: 'Suscripción Salón y Más',
-        description: 'Plan $finalPlanName - ${subscription.tenantName}',
-        invoice: invoice,
-        amount: finalAmount,
-        extra1: subscription.tenantId,
-        extra2: finalPlanCode,
-        extra3: 'beautyos_app',
-        confirmationUrl: confirmationWebhookUrl,
-        responseUrl: 'https://salonymas.com',
+      // 1. Invocar Edge Function para crear sesión de pago en ePayco Apify
+      final sessionResponse = await Supabase.instance.client.functions.invoke(
+        'create-epayco-session',
+        body: {
+          'tenantId': subscription.tenantId,
+          'planCode': finalPlanCode,
+          'amount': finalAmount,
+        },
       );
+
+      // Cerrar modal de carga
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
+      if (sessionResponse.status != 200 || sessionResponse.data == null) {
+        final errorMsg = sessionResponse.data?['error'] ?? 'Error desconocido al crear sesión de pago.';
+        throw Exception(errorMsg);
+      }
+
+      final sessionId = sessionResponse.data['sessionId'] as String?;
+      final testMode = sessionResponse.data['testMode'] as bool? ?? defaultTestMode;
+
+      if (sessionId == null || sessionId.isEmpty) {
+        throw Exception('ePayco no retornó un identificador de sesión válido.');
+      }
+
+      // 2. Abrir Smart Checkout V2 oficial en el frontend
+      final launched = await lanzarEpaycoSmartCheckout(
+        sessionId: sessionId,
+        testMode: testMode,
+      );
+
       if (launched) {
         onPaymentLaunched?.call();
       } else {
-        throw Exception('No se pudo inicializar la pasarela de ePayco.');
+        throw Exception('No se pudo abrir el componente de ePayco.');
       }
     } catch (e, st) {
+      // Cerrar modal de carga si sigue abierto
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).maybePop();
+      }
+
       MonitoreoService.reportarError(
         e,
         st,
-        motivo: 'Fallo al abrir Checkout de ePayco para tenant ${subscription.tenantId}',
+        motivo: 'Fallo al inicializar Smart Checkout ePayco para tenant ${subscription.tenantId}',
       );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
