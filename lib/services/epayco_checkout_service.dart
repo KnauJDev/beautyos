@@ -322,9 +322,16 @@ class EpaycoCheckoutService {
     );
 
     try {
+      final currentSession = Supabase.instance.client.auth.currentSession;
+      final headers = <String, String>{};
+      if (currentSession?.accessToken != null) {
+        headers['Authorization'] = 'Bearer ${currentSession!.accessToken}';
+      }
+
       // 1. Invocar Edge Function para crear sesión de pago en ePayco Apify
       final sessionResponse = await Supabase.instance.client.functions.invoke(
         'create-epayco-session',
+        headers: headers,
         body: {
           'tenantId': subscription.tenantId,
           'planCode': finalPlanCode,

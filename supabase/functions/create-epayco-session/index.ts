@@ -11,6 +11,7 @@ const EPAYCO_TEST_MODE = (Deno.env.get("EPAYCO_TEST_MODE") ?? "true").toLowerCas
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -42,22 +43,40 @@ Deno.serve(async (req) => {
       return responder({ error: "La pasarela de pago no está configurada en el servidor." }, 500);
     }
 
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      console.error("Falta SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY en el servidor.");
+      return responder({ error: "Error de configuración de base de datos." }, 500);
+    }
+
+    const autorizacion = req.headers.get("Authorization");
+    if (!autorizacion) {
       return responder({ error: "No autorizado: falta encabezado de autenticación." }, 401);
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
     paso = "validar usuario autenticado";
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !userData?.user) {
-      return responder({ error: "No autorizado: sesión de usuario inválida." }, 401);
+    const token = autorizacion.replace(/^Bearer\s+/i, "").trim();
+    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+
+    let userId: string | null = null;
+    if (token) {
+      const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
+      if (userData?.user) {
+        userId = userData.user.id;
+      } else {
+        console.warn("No se pudo resolver usuario por token:", userError?.message);
+      }
     }
 
     paso = "leer parámetros de solicitud";
-    const body = await req.json();
+    let body: { tenantId?: string; planCode?: string; amount?: number };
+    try {
+      body = await req.json();
+    } catch {
+      return responder({ error: "Cuerpo de solicitud inválido." }, 400);
+    }
+
     const tenantId = body.tenantId;
     const planCode = (body.planCode || "profesional").toLowerCase();
 
@@ -66,7 +85,7 @@ Deno.serve(async (req) => {
     }
 
     paso = "consultar datos y precio efectivo del tenant";
-    const { data: tenantData, error: tenantError } = await supabase
+    const { data: tenantData, error: tenantError } = await supabaseAdmin
       .from("tenants")
       .select("id, name, contact_email, whatsapp")
       .eq("id", tenantId)
@@ -76,17 +95,12 @@ Deno.serve(async (req) => {
       return responder({ error: "No se encontró el negocio especificado." }, 404);
     }
 
-    // Obtener precio efectivo del tenant
-    const { data: priceData, error: priceError } = await supabase.rpc(
-      "get_my_tenant_subscription_status"
-    );
-
     let amount = 240000;
     if (planCode === "basico") amount = 160000;
     if (planCode === "business") amount = 200000;
 
-    // Si viene suscripción con precio personalizado o pionero en base de datos:
-    const { data: subData } = await supabase
+    // Consultar suscripción y tarifas pactadas en BD
+    const { data: subData } = await supabaseAdmin
       .from("tenant_subscriptions")
       .select("price_cop, is_founder, discount_percent, plan_id, plans(code)")
       .eq("tenant_id", tenantId)
@@ -102,7 +116,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Permitir monto custom validado si se solicita expresamente
+    // Permitir monto solicitado expresamente si es válido
     if (body.amount && typeof body.amount === "number" && body.amount >= 10000) {
       amount = body.amount;
     }
