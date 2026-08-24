@@ -2,7 +2,7 @@
 
 **Bloque documentado:** decisión **D-161** · Píldora de plan activo en el header, edición del nombre de contacto titular (Panel de Plataforma y autoservicio del salón desde Configuración) e historial de suscripción con período comprometido y medio de pago, a pedido del propietario tras pruebas reales del 23-ago y un bosquejo visual suyo.
 
-**Estado:** `flutter analyze` 100% limpio (0/0), **156 de 156 pruebas en verde**. Migración `20260823160000` **aplicada en Supabase** por el propietario, Control 181 **en verde contra la base real** (incluye aserciones de aislamiento entre tenants para la RPC de autoservicio). `git push` **pendiente de confirmar en producción al cerrar este documento** — ver abajo.
+**Estado:** `flutter analyze` 100% limpio (0/0), **156 de 156 pruebas en verde**. Migración `20260823160000` **aplicada en Supabase** por el propietario, Control 181 **en verde contra la base real** (incluye aserciones de aislamiento entre tenants para la RPC de autoservicio). `git push` **hecho y confirmado en producción** (commit `fba144c`): `curl` sobre `https://salonymas.com/main.dart.js` encontró "Editar Contacto" (×2), "Guardar Contacto" y "Agregar sede" — los tres textos nuevos de este bloque ya están publicados. **Este bloque quedó cerrado sin pendientes bloqueantes.**
 
 ---
 
@@ -55,8 +55,10 @@ Tres decisiones se confirmaron explícitamente con el propietario antes de const
 ```
 Lee el HANDOFF más reciente en docs/HANDOFF/ (bloque D-161: header con plan
 activo, edición del nombre de contacto titular, historial de suscripción
-completo). Quedó cerrado: migración 20260823160000 en Supabase, Control 181
-contra la base real, flutter analyze 0/0, flutter test 156/156.
+completo). Está cerrado sin pendientes: migración 20260823160000 en Supabase,
+Control 181 contra la base real, flutter analyze 0/0, flutter test 156/156,
+y el git push ya verificado en producción (curl + grep sobre main.dart.js
+publicado, commit fba144c).
 
 Pendiente conocido (no bloqueante): el selector de sedes del header no se
 refresca solo tras crear una sede desde la nueva tarjeta "Sedes" en
