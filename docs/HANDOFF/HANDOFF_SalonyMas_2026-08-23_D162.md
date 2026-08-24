@@ -2,7 +2,7 @@
 
 **Bloque documentado:** decisión **D-162** · Refinamiento arquitectónico a pedido del propietario: el salón edita Instagram y Facebook desde su propia Configuración, y el Panel de Plataforma deja de mostrar el "Equipo Estimado"/"Sedes Estimadas" del formulario de registro para mostrar la capacidad operativa REAL en vivo (sedes activas, equipo activo con desglose por rol).
 
-**Estado:** `flutter analyze` 100% limpio (0/0), **156 de 156 pruebas en verde**. Migración `20260823170000` **aplicada en Supabase** por el propietario, Control 182 **en verde contra la base real**. `git push` **pendiente de confirmar en producción al cerrar este documento** — ver abajo.
+**Estado:** `flutter analyze` 100% limpio (0/0), **156 de 156 pruebas en verde**. Migración `20260823170000` **aplicada en Supabase** por el propietario, Control 182 **en verde contra la base real**. `git push` **hecho y confirmado en producción** (commit `9b678fb`): `curl` sobre `https://salonymas.com/main.dart.js` encontró "Capacidad Operativa Real", "colaboradores activos" y el hint "@naguaradeunas" del campo Instagram — los tres textos nuevos de este bloque ya están publicados. **Este bloque quedó cerrado sin pendientes bloqueantes.**
 
 ---
 
@@ -51,8 +51,10 @@ Dos decisiones se confirmaron explícitamente con el propietario antes de constr
 ```
 Lee el HANDOFF más reciente en docs/HANDOFF/ (bloque D-162: redes sociales
 editables desde Configuración, capacidad operativa real en vivo en el Panel
-de Plataforma). Migración 20260823170000 aplicada en Supabase, Control 182
-en verde contra la base real, flutter analyze 0/0, flutter test 156/156.
+de Plataforma). Está cerrado sin pendientes bloqueantes: migración
+20260823170000 en Supabase, Control 182 contra la base real, flutter
+analyze 0/0, flutter test 156/156, y el git push ya verificado en
+producción (curl + grep sobre main.dart.js publicado, commit 9b678fb).
 
 Pendientes conocidos (no bloqueantes): _TenantCard sigue mostrando cifras
 estimadas en vez de reales en su subtítulo; el selector de sedes del header
