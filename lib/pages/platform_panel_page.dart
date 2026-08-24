@@ -1506,6 +1506,21 @@ class _TenantDetailSheet extends StatelessWidget {
     return '\$$buffer COP';
   }
 
+  String _pluralize(int count, String singular, String plural) =>
+      count == 1 ? singular : plural;
+
+  Widget _buildSubsectionLabel(String text) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w800,
+        color: AppColors.textSecondary,
+        letterSpacing: 0.5,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final status = tenant.subscriptionStatus;
@@ -1589,7 +1604,10 @@ class _TenantDetailSheet extends StatelessWidget {
                       title: '1. Datos de Identificación y Contacto',
                       icon: Icons.badge_outlined,
                       children: [
+                        _buildSubsectionLabel('A. Contacto Administrativo'),
+                        const SizedBox(height: 6),
                         _buildInfoRow('Negocio:', tenant.tenantName),
+                        _buildInfoRow('Tipo de Negocio:', tenant.businessType ?? 'Peluquería / Salón'),
                         _buildInfoRow('Contacto Titular:', tenant.contactName ?? 'Sin registrar'),
                         _buildInfoRow(
                           'WhatsApp:',
@@ -1611,13 +1629,10 @@ class _TenantDetailSheet extends StatelessWidget {
                               : null,
                         ),
                         _buildInfoRow('Correo:', tenant.contactEmail),
-                        _buildInfoRow('Tipo de Negocio:', tenant.businessType ?? 'Peluquería / Salón'),
-                        _buildInfoRow('Sedes Estimadas:', tenant.estimatedBranches.toString()),
-                        _buildInfoRow('Equipo Estimado:', '${tenant.estimatedTeamSize} colaboradores'),
-                        _buildInfoRow(
-                          'Recomendado por / Origen:',
-                          tenant.referralSource ?? 'Registro directo web',
-                        ),
+                        _buildInfoRow('Teléfono:', tenant.contactPhone ?? 'Sin registrar'),
+                        _buildInfoRow('Ciudad:', tenant.city ?? 'Sin registrar'),
+                        _buildInfoRow('Instagram:', tenant.instagram ?? 'Sin registrar'),
+                        _buildInfoRow('Facebook:', tenant.facebook ?? 'Sin registrar'),
                         if (isOwner) ...[
                           const SizedBox(height: 10),
                           Align(
@@ -1633,6 +1648,22 @@ class _TenantDetailSheet extends StatelessWidget {
                             ),
                           ),
                         ],
+                        const Divider(height: 24),
+                        _buildSubsectionLabel('B. Capacidad Operativa Real (en vivo)'),
+                        const SizedBox(height: 6),
+                        _buildInfoRow(
+                          'Sedes Activas:',
+                          '${tenant.realBranchesCount} ${_pluralize(tenant.realBranchesCount, 'sede registrada', 'sedes registradas')}',
+                        ),
+                        _buildInfoRow(
+                          'Equipo Activo:',
+                          '${tenant.realTeamCount} ${_pluralize(tenant.realTeamCount, 'colaborador activo', 'colaboradores activos')}: '
+                              '${tenant.teamBreakdown ?? 'Sin colaboradores activos'}',
+                        ),
+                        _buildInfoRow(
+                          'Origen / Registro:',
+                          tenant.referralSource ?? 'Registro directo web',
+                        ),
                       ],
                     ),
 

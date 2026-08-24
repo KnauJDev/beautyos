@@ -10,7 +10,13 @@ class PlatformTenantSummary {
     this.referralSource,
     this.rejectionReason,
     required this.contactEmail,
+    this.contactPhone,
     required this.whatsapp,
+    this.instagram,
+    this.facebook,
+    this.realBranchesCount = 0,
+    this.realTeamCount = 0,
+    this.teamBreakdown,
     required this.tenantActive,
     required this.isDemo,
     required this.planCode,
@@ -37,7 +43,23 @@ class PlatformTenantSummary {
   final String? referralSource;
   final String? rejectionReason;
   final String contactEmail;
+  final String? contactPhone;
   final String? whatsapp;
+  final String? instagram;
+  final String? facebook;
+
+  /// Sedes activas contadas en vivo desde `branches` (D-162), no lo que el
+  /// negocio declaró al registrarse (`estimatedBranches`).
+  final int realBranchesCount;
+
+  /// Equipo activo contado en vivo desde `user_profiles` (D-162), no lo
+  /// declarado al registrarse (`estimatedTeamSize`).
+  final int realTeamCount;
+
+  /// Desglose por rol ya formateado por la RPC, ej. "1 dueño, 2 admins, 3
+  /// estilistas". Null solo si la RPC vieja todavía no lo envía.
+  final String? teamBreakdown;
+
   final bool tenantActive;
 
   /// Negocio de prueba del propietario de la plataforma, no un cliente
@@ -119,7 +141,13 @@ class PlatformTenantSummary {
       referralSource: map['referral_source']?.toString(),
       rejectionReason: map['rejection_reason']?.toString(),
       contactEmail: map['contact_email']?.toString() ?? '',
+      contactPhone: map['contact_phone']?.toString(),
       whatsapp: map['whatsapp']?.toString(),
+      instagram: map['instagram']?.toString(),
+      facebook: map['facebook']?.toString(),
+      realBranchesCount: _parseInt(map['real_branches_count']) ?? 0,
+      realTeamCount: _parseInt(map['real_team_count']) ?? 0,
+      teamBreakdown: map['team_breakdown']?.toString(),
       tenantActive: map['tenant_active'] == true,
       isDemo: map['is_demo'] == true,
       planCode: map['plan_code']?.toString(),

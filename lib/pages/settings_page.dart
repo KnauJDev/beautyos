@@ -882,8 +882,6 @@ class BusinessSettingsCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             _SettingsLine(label: 'Correo', value: settings.contactEmail),
-            _SettingsLine(label: 'Instagram', value: settings.instagram),
-            _SettingsLine(label: 'Facebook', value: settings.facebook),
           ],
         ),
       ),
@@ -913,6 +911,8 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
   late final TextEditingController _businessTypeController;
   late final TextEditingController _phoneController;
   late final TextEditingController _whatsappController;
+  late final TextEditingController _instagramController;
+  late final TextEditingController _facebookController;
   bool _isSaving = false;
 
   @override
@@ -927,6 +927,12 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
     );
     _whatsappController = TextEditingController(
       text: _editableOrEmpty(widget.settings.whatsapp, 'Sin WhatsApp'),
+    );
+    _instagramController = TextEditingController(
+      text: _editableOrEmpty(widget.settings.instagram, 'Sin Instagram'),
+    );
+    _facebookController = TextEditingController(
+      text: _editableOrEmpty(widget.settings.facebook, 'Sin Facebook'),
     );
   }
 
@@ -943,6 +949,8 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
     _businessTypeController.dispose();
     _phoneController.dispose();
     _whatsappController.dispose();
+    _instagramController.dispose();
+    _facebookController.dispose();
     super.dispose();
   }
 
@@ -954,6 +962,8 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
         businessType: _businessTypeController.text.trim(),
         contactPhone: _phoneController.text.trim(),
         whatsapp: _whatsappController.text.trim(),
+        instagram: _instagramController.text.trim(),
+        facebook: _facebookController.text.trim(),
       );
       if (!mounted) return;
       widget.onChanged();
@@ -1005,6 +1015,23 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
           keyboardType: TextInputType.phone,
           decoration: const InputDecoration(
             labelText: 'WhatsApp',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: _instagramController,
+          decoration: const InputDecoration(
+            labelText: 'Instagram',
+            hintText: '@naguaradeunas',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: _facebookController,
+          decoration: const InputDecoration(
+            labelText: 'Facebook',
             border: OutlineInputBorder(),
           ),
         ),
