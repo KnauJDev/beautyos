@@ -2,6 +2,7 @@ class PlatformTenantSummary {
   const PlatformTenantSummary({
     required this.tenantId,
     required this.tenantName,
+    this.contactName,
     this.businessType,
     this.city,
     this.estimatedBranches = 1,
@@ -25,6 +26,10 @@ class PlatformTenantSummary {
 
   final String tenantId;
   final String tenantName;
+
+  /// Nombre real del titular (user_profiles.full_name del owner). Null si el
+  /// negocio todavía no tiene un owner con perfil activo.
+  final String? contactName;
   final String? businessType;
   final String? city;
   final int estimatedBranches;
@@ -106,6 +111,7 @@ class PlatformTenantSummary {
     return PlatformTenantSummary(
       tenantId: map['tenant_id'].toString(),
       tenantName: map['tenant_name']?.toString() ?? 'Sin nombre',
+      contactName: map['contact_name']?.toString(),
       businessType: map['business_type']?.toString(),
       city: map['city']?.toString(),
       estimatedBranches: _parseInt(map['estimated_branches']) ?? 1,

@@ -19,6 +19,79 @@ import '../widgets/add_work_photo_dialog.dart';
 import '../widgets/app_widgets.dart';
 import 'agenda_page.dart' show buildWhatsAppUri;
 
+/// Abre el diálogo de crear cita para [branchId] y devuelve `true` si la
+/// cita se creó. Compartido entre [TicketsPage] (su propio botón "Nueva
+/// cita") y la acción rápida "+ Nueva Cita" del header (`main.dart`), para
+/// que ambos abran exactamente el mismo diálogo sin duplicar la lógica de
+/// carga de clientes/servicios.
+Future<bool> openCreateAppointmentDialog(
+  BuildContext context,
+  String branchId,
+) async {
+  final clientsService = const ClientsService();
+  final ticketsService = TicketsService(branchId: branchId);
+
+  try {
+    final clientsFuture = clientsService.getClientsSummary();
+    final optionsFuture = ticketsService.getTicketServiceOptions();
+    final clients = await clientsFuture;
+    final options = await optionsFuture;
+
+    if (!context.mounted) {
+      return false;
+    }
+
+    if (options.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No hay servicios activos disponibles.'),
+        ),
+      );
+      return false;
+    }
+
+    final created = await showDialog<bool>(
+      context: context,
+      builder: (context) => CreateAppointmentDialog(
+        clients: clients,
+        clientsService: clientsService,
+        ticketsService: ticketsService,
+        options: options,
+      ),
+    );
+
+    if (created != true) {
+      return false;
+    }
+
+    if (!context.mounted) {
+      return false;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Reserva creada correctamente y pendiente de confirmación.',
+        ),
+      ),
+    );
+    return true;
+  } catch (error) {
+    if (!context.mounted) {
+      return false;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'No se pudo crear la reserva: ${_friendlyError(error)}',
+        ),
+      ),
+    );
+    return false;
+  }
+}
+
 class TicketsPage extends StatefulWidget {
   const TicketsPage({
     super.key,
@@ -70,63 +143,9 @@ class _TicketsPageState extends State<TicketsPage> {
   }
 
   Future<void> _openCreateAppointmentDialog() async {
-    try {
-      final clientsFuture = clientsService.getClientsSummary();
-      final optionsFuture = ticketsService.getTicketServiceOptions();
-      final clients = await clientsFuture;
-      final options = await optionsFuture;
-
-      if (!mounted) {
-        return;
-      }
-
-      if (options.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No hay servicios activos disponibles.'),
-          ),
-        );
-        return;
-      }
-
-      final created = await showDialog<bool>(
-        context: context,
-        builder: (context) => _CreateAppointmentDialog(
-          clients: clients,
-          clientsService: clientsService,
-          ticketsService: ticketsService,
-          options: options,
-        ),
-      );
-
-      if (created != true) {
-        return;
-      }
-
-      if (!mounted) {
-        return;
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Reserva creada correctamente y pendiente de confirmación.',
-          ),
-        ),
-      );
+    final created = await openCreateAppointmentDialog(context, widget.branchId);
+    if (created) {
       _refreshTickets();
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'No se pudo crear la reserva: ${_friendlyError(error)}',
-          ),
-        ),
-      );
     }
   }
 
@@ -1180,8 +1199,9 @@ class _TicketsPageState extends State<TicketsPage> {
   }
 }
 
-class _CreateAppointmentDialog extends StatefulWidget {
-  const _CreateAppointmentDialog({
+class CreateAppointmentDialog extends StatefulWidget {
+  const CreateAppointmentDialog({
+    super.key,
     required this.clients,
     required this.clientsService,
     required this.ticketsService,
@@ -1194,11 +1214,11 @@ class _CreateAppointmentDialog extends StatefulWidget {
   final List<TicketServiceOption> options;
 
   @override
-  State<_CreateAppointmentDialog> createState() =>
-      _CreateAppointmentDialogState();
+  State<CreateAppointmentDialog> createState() =>
+      CreateAppointmentDialogState();
 }
 
-class _CreateAppointmentDialogState extends State<_CreateAppointmentDialog> {
+class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
   final formKey = GlobalKey<FormState>();
   final notesController = TextEditingController();
 

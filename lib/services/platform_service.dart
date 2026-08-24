@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/platform_tenant_summary.dart';
+import '../models/tenant_subscription_history_entry.dart';
 
 class PlatformService {
   const PlatformService();
@@ -120,12 +121,39 @@ class PlatformService {
     );
   }
 
-  Future<List<Map<String, dynamic>>> getTenantSubscriptionHistory(String tenantId) async {
+  Future<List<TenantSubscriptionHistoryEntry>> getTenantSubscriptionHistory(String tenantId) async {
     final response = await Supabase.instance.client.rpc(
       'platform_get_tenant_subscription_history',
       params: {'p_tenant_id': tenantId},
     );
-    return (response as List).map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    return (response as List)
+        .map(
+          (item) => TenantSubscriptionHistoryEntry.fromMap(
+            Map<String, dynamic>.from(item as Map),
+          ),
+        )
+        .toList();
+  }
+
+  Future<void> updateTenantContact({
+    required String tenantId,
+    required String contactName,
+    required String contactEmail,
+    String? whatsapp,
+    String? businessType,
+    String? city,
+  }) async {
+    await Supabase.instance.client.rpc(
+      'platform_update_tenant_contact',
+      params: {
+        'p_tenant_id': tenantId,
+        'p_contact_name': contactName,
+        'p_contact_email': contactEmail,
+        'p_whatsapp': whatsapp,
+        'p_business_type': businessType,
+        'p_city': city,
+      },
+    );
   }
 }
 

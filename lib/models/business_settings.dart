@@ -1,6 +1,10 @@
 ﻿class BusinessSettings {
   final String id;
   final String name;
+
+  /// Nombre real del titular (user_profiles.full_name del owner). Null si el
+  /// negocio todavía no tiene un owner con perfil activo.
+  final String? contactName;
   final String businessType;
   final String contactEmail;
   final String contactPhone;
@@ -20,6 +24,7 @@
   const BusinessSettings({
     required this.id,
     required this.name,
+    this.contactName,
     required this.businessType,
     required this.contactEmail,
     required this.contactPhone,
@@ -36,6 +41,7 @@
     return BusinessSettings(
       id: map['id']?.toString() ?? '',
       name: map['name']?.toString() ?? 'Sin nombre',
+      contactName: map['contact_name']?.toString(),
       businessType: map['business_type']?.toString() ?? 'Sin tipo de negocio',
       contactEmail: map['contact_email']?.toString() ?? 'Sin correo',
       contactPhone: map['contact_phone']?.toString() ?? 'Sin teléfono',

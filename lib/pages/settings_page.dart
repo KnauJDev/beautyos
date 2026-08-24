@@ -26,6 +26,7 @@ import '../services/tenant_logo_upload_service.dart';
 import '../services/tenant_subscription_service.dart';
 import '../services/app_version_service.dart';
 import '../widgets/app_widgets.dart';
+import '../widgets/create_branch_dialog.dart';
 import '../widgets/theme_selector_card.dart';
 import '../widgets/update_banner.dart';
 
@@ -219,6 +220,11 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
             );
           },
         ),
+        if (widget.isOwner) ...[
+          const SizedBox(height: 16),
+          const SectionTitle('Sedes'),
+          const _SedesCard(),
+        ],
         // Los colores son del negocio, no de la sede (D-093c), y solo los
         // cambia el propietario, igual que el logo. Un admin no ve esta
         // seccion: la identidad visual no es una preferencia de quien esta en
@@ -869,15 +875,202 @@ class BusinessSettingsCard extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 12),
-            _SettingsLine(
-              label: 'Tipo de negocio',
-              value: settings.businessType,
+            _ContactInfoEditor(
+              settings: settings,
+              businessSettingsService: businessSettingsService,
+              onChanged: onLogoChanged,
             ),
+            const SizedBox(height: 8),
             _SettingsLine(label: 'Correo', value: settings.contactEmail),
-            _SettingsLine(label: 'Teléfono', value: settings.contactPhone),
-            _SettingsLine(label: 'WhatsApp', value: settings.whatsapp),
             _SettingsLine(label: 'Instagram', value: settings.instagram),
             _SettingsLine(label: 'Facebook', value: settings.facebook),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Autoservicio: owner o admin del propio negocio mantienen actualizados el
+/// nombre del titular, tipo de negocio, teléfono y WhatsApp (D-161).
+class _ContactInfoEditor extends StatefulWidget {
+  const _ContactInfoEditor({
+    required this.settings,
+    required this.businessSettingsService,
+    required this.onChanged,
+  });
+
+  final BusinessSettings settings;
+  final BusinessSettingsService businessSettingsService;
+  final VoidCallback onChanged;
+
+  @override
+  State<_ContactInfoEditor> createState() => _ContactInfoEditorState();
+}
+
+class _ContactInfoEditorState extends State<_ContactInfoEditor> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _businessTypeController;
+  late final TextEditingController _phoneController;
+  late final TextEditingController _whatsappController;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.settings.contactName ?? '');
+    _businessTypeController = TextEditingController(
+      text: _editableOrEmpty(widget.settings.businessType, 'Sin tipo de negocio'),
+    );
+    _phoneController = TextEditingController(
+      text: _editableOrEmpty(widget.settings.contactPhone, 'Sin teléfono'),
+    );
+    _whatsappController = TextEditingController(
+      text: _editableOrEmpty(widget.settings.whatsapp, 'Sin WhatsApp'),
+    );
+  }
+
+  /// [BusinessSettings] rellena estos campos con un texto de reemplazo
+  /// ("Sin teléfono", etc.) para mostrarlos en solo lectura en el resto de
+  /// la pantalla. Aquí, donde el campo es editable, ese texto de reemplazo
+  /// no debe aparecer precargado como si fuera un valor real.
+  String _editableOrEmpty(String value, String placeholder) =>
+      value == placeholder ? '' : value;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _businessTypeController.dispose();
+    _phoneController.dispose();
+    _whatsappController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() => _isSaving = true);
+    try {
+      await widget.businessSettingsService.updateContactInfo(
+        fullName: _nameController.text.trim(),
+        businessType: _businessTypeController.text.trim(),
+        contactPhone: _phoneController.text.trim(),
+        whatsapp: _whatsappController.text.trim(),
+      );
+      if (!mounted) return;
+      widget.onChanged();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Datos del negocio actualizados.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo guardar: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: _nameController,
+          decoration: const InputDecoration(
+            labelText: 'Nombre de contacto titular',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: _businessTypeController,
+          decoration: const InputDecoration(
+            labelText: 'Tipo de negocio',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: _phoneController,
+          keyboardType: TextInputType.phone,
+          decoration: const InputDecoration(
+            labelText: 'Teléfono',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: _whatsappController,
+          keyboardType: TextInputType.phone,
+          decoration: const InputDecoration(
+            labelText: 'WhatsApp',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Align(
+          alignment: Alignment.centerRight,
+          child: FilledButton.icon(
+            onPressed: _isSaving ? null : _save,
+            icon: _isSaving
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.save_outlined, size: 16),
+            label: const Text('Guardar cambios'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Único punto de entrada a [CreateBranchDialog] tras retirarlo del header
+/// (D-161): la gestión de sedes vive ordenadamente dentro de Configuración.
+class _SedesCard extends StatelessWidget {
+  const _SedesCard();
+
+  Future<void> _openCreateBranchDialog(BuildContext context) async {
+    final created = await showDialog<bool>(
+      context: context,
+      builder: (context) => const CreateBranchDialog(),
+    );
+
+    if (created != true || !context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Sede creada. Ya puedes asignarle servicios y estilistas desde '
+          'sus propias pantallas.',
+        ),
+        duration: Duration(seconds: 6),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(Icons.add_business_outlined, color: AppColors.brand),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                'Agrega una nueva sede de tu negocio.',
+                style: TextStyle(fontSize: 13),
+              ),
+            ),
+            OutlinedButton(
+              onPressed: () => _openCreateBranchDialog(context),
+              child: const Text('Agregar sede'),
+            ),
           ],
         ),
       ),

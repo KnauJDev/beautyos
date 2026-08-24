@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
 import '../models/platform_tenant_summary.dart';
+import '../models/tenant_subscription_history_entry.dart';
 import '../services/platform_service.dart';
 import '../widgets/security_settings_dialog.dart';
 import '../widgets/update_banner.dart';
@@ -449,6 +450,118 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
     }
   }
 
+  Future<void> handleUpdateContact(PlatformTenantSummary tenant) async {
+    final nameController = TextEditingController(text: tenant.contactName ?? '');
+    final emailController = TextEditingController(text: tenant.contactEmail);
+    final whatsappController = TextEditingController(text: tenant.whatsapp ?? '');
+    final businessTypeController = TextEditingController(text: tenant.businessType ?? '');
+    final cityController = TextEditingController(text: tenant.city ?? '');
+
+    final updated = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Editar Contacto: ${tenant.tenantName}'),
+        content: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 460),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre de contacto titular *',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: 'Correo de contacto *',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: whatsappController,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: 'WhatsApp',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: businessTypeController,
+                  decoration: const InputDecoration(
+                    labelText: 'Tipo de negocio',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: cityController,
+                  decoration: const InputDecoration(
+                    labelText: 'Ciudad',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton.icon(
+            onPressed: () {
+              if (nameController.text.trim().isEmpty || emailController.text.trim().isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('El nombre de contacto y el correo no pueden estar vacíos.')),
+                );
+                return;
+              }
+              Navigator.of(context).pop(true);
+            },
+            icon: const Icon(Icons.save_outlined),
+            label: const Text('Guardar Contacto'),
+          ),
+        ],
+      ),
+    );
+
+    if (updated != true || !mounted) return;
+
+    try {
+      await platformService.updateTenantContact(
+        tenantId: tenant.tenantId,
+        contactName: nameController.text.trim(),
+        contactEmail: emailController.text.trim(),
+        whatsapp: whatsappController.text.trim(),
+        businessType: businessTypeController.text.trim(),
+        city: cityController.text.trim(),
+      );
+
+      reload();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('¡Contacto de "${tenant.tenantName}" actualizado exitosamente!'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } on PostgrestException catch (error) {
+      _showError(error.message);
+    } catch (e) {
+      _showError('No se pudo actualizar el contacto: $e');
+    }
+  }
+
   Future<void> handleReject(PlatformTenantSummary tenant) async {
     final reason = await askReason(
       'Rechazar solicitud: "${tenant.tenantName}"',
@@ -574,6 +687,10 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
         onUpdatePricing: (t) {
           Navigator.of(context).pop();
           handleUpdatePricing(t);
+        },
+        onUpdateContact: (t) {
+          Navigator.of(context).pop();
+          handleUpdateContact(t);
         },
         onViewSupportData: (t) {
           Navigator.of(context).pop();
@@ -1347,6 +1464,7 @@ class _TenantDetailSheet extends StatelessWidget {
     required this.onReactivate,
     required this.onExtendTrial,
     required this.onUpdatePricing,
+    required this.onUpdateContact,
     required this.onViewSupportData,
   });
 
@@ -1359,11 +1477,33 @@ class _TenantDetailSheet extends StatelessWidget {
   final ValueChanged<PlatformTenantSummary> onReactivate;
   final ValueChanged<PlatformTenantSummary> onExtendTrial;
   final ValueChanged<PlatformTenantSummary> onUpdatePricing;
+  final ValueChanged<PlatformTenantSummary> onUpdateContact;
   final ValueChanged<PlatformTenantSummary> onViewSupportData;
 
   String _formatDate(DateTime? date) {
     if (date == null) return '—';
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
+  String _formatDateTime(DateTime? date) {
+    if (date == null) return '—';
+    final local = date.toLocal();
+    final fecha = _formatDate(local);
+    final hora = '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+    return '$fecha $hora';
+  }
+
+  String _formatCop(int cop) {
+    final digits = cop.toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < digits.length; i++) {
+      final pos = digits.length - i;
+      buffer.write(digits[i]);
+      if (pos > 1 && pos % 3 == 1) {
+        buffer.write('.');
+      }
+    }
+    return '\$$buffer COP';
   }
 
   @override
@@ -1450,7 +1590,7 @@ class _TenantDetailSheet extends StatelessWidget {
                       icon: Icons.badge_outlined,
                       children: [
                         _buildInfoRow('Negocio:', tenant.tenantName),
-                        _buildInfoRow('Contacto Titular:', tenant.contactEmail.split('@').first),
+                        _buildInfoRow('Contacto Titular:', tenant.contactName ?? 'Sin registrar'),
                         _buildInfoRow(
                           'WhatsApp:',
                           tenant.whatsapp ?? 'Sin registrar',
@@ -1478,6 +1618,21 @@ class _TenantDetailSheet extends StatelessWidget {
                           'Recomendado por / Origen:',
                           tenant.referralSource ?? 'Registro directo web',
                         ),
+                        if (isOwner) ...[
+                          const SizedBox(height: 10),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: OutlinedButton.icon(
+                              onPressed: () => onUpdateContact(tenant),
+                              icon: const Icon(Icons.edit_outlined, size: 15),
+                              label: const Text('Editar Contacto'),
+                              style: OutlinedButton.styleFrom(
+                                visualDensity: VisualDensity.compact,
+                                foregroundColor: AppColors.brand,
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
 
@@ -1627,84 +1782,79 @@ class _TenantDetailSheet extends StatelessWidget {
 
                     const SizedBox(height: AppSpacing.md),
 
-                    // TARJETA 4: HISTORIAL DE PERIODOS Y PAGOS (SEGÚN BOSQUEJO)
+                    // TARJETA 4: HISTORIAL COMPLETO DE TRANSACCIONES Y PERÍODOS
                     _buildSectionCard(
                       title: '4. Historial de Periodos Registrados',
                       icon: Icons.history,
                       children: [
-                        Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: AppColors.border),
-                            borderRadius: BorderRadius.circular(AppRadius.control),
-                          ),
-                          child: DataTable(
-                            columnSpacing: 12,
-                            horizontalMargin: 10,
-                            headingRowHeight: 36,
-                            dataRowMinHeight: 38,
-                            dataRowMaxHeight: 44,
-                            columns: const [
-                              DataColumn(label: Text('Fecha', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5))),
-                              DataColumn(label: Text('Plan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5))),
-                              DataColumn(label: Text('Válido Hasta', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5))),
-                              DataColumn(label: Text('Valor', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5))),
-                            ],
-                            rows: [
-                              // Fila 1: Período de prueba registrado
-                              DataRow(
-                                cells: [
-                                  DataCell(Text(_formatDate(tenant.createdAt), style: const TextStyle(fontSize: 11.5))),
-                                  DataCell(
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(tenant.planNameFormatted, style: const TextStyle(fontSize: 11.5)),
-                                        const SizedBox(width: 4),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.brandTintSoft,
-                                            borderRadius: BorderRadius.circular(3),
-                                          ),
-                                          child: const Text('Prueba', style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w700)),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  DataCell(Text(_formatDate(tenant.trialEndsAt), style: const TextStyle(fontSize: 11.5))),
-                                  DataCell(
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.successTint,
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: const Text(
-                                        'GRATIS (Prueba)',
-                                        style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w800, color: AppColors.success),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                        FutureBuilder<List<TenantSubscriptionHistoryEntry>>(
+                          future: platformService.getTenantSubscriptionHistory(tenant.tenantId),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 16),
+                                child: Center(child: CircularProgressIndicator()),
+                              );
+                            }
+
+                            if (snapshot.hasError) {
+                              return Text(
+                                'No se pudo cargar el historial: ${snapshot.error}',
+                                style: const TextStyle(fontSize: 12, color: AppColors.danger),
+                              );
+                            }
+
+                            final history = snapshot.data ?? const [];
+                            if (history.isEmpty) {
+                              return const Text(
+                                'Sin eventos registrados todavía.',
+                                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                              );
+                            }
+
+                            return Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                border: Border.all(color: AppColors.border),
+                                borderRadius: BorderRadius.circular(AppRadius.control),
                               ),
-                              // Fila 2: Período activo de pago (si ya terminó prueba o ya pagó)
-                              if (tenant.currentPeriodEnd != null)
-                                DataRow(
-                                  cells: [
-                                    DataCell(Text(_formatDate(tenant.trialEndsAt ?? tenant.createdAt), style: const TextStyle(fontSize: 11.5))),
-                                    DataCell(Text(tenant.planNameFormatted, style: const TextStyle(fontSize: 11.5))),
-                                    DataCell(Text(_formatDate(tenant.currentPeriodEnd), style: const TextStyle(fontSize: 11.5))),
-                                    DataCell(
-                                      Text(
-                                        tenant.formattedEffectivePrice,
-                                        style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: DataTable(
+                                  columnSpacing: 14,
+                                  horizontalMargin: 10,
+                                  headingRowHeight: 36,
+                                  dataRowMinHeight: 38,
+                                  dataRowMaxHeight: 48,
+                                  columns: const [
+                                    DataColumn(label: Text('Fecha y Hora', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5))),
+                                    DataColumn(label: Text('Plan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5))),
+                                    DataColumn(label: Text('Período Comprometido', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5))),
+                                    DataColumn(label: Text('Valor / Medio / Ref', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5))),
                                   ],
+                                  rows: history.map((entry) {
+                                    final periodo = entry.periodStart != null && entry.periodEnd != null
+                                        ? '${_formatDate(entry.periodStart)} al ${_formatDate(entry.periodEnd)}'
+                                        : (entry.periodEnd != null
+                                            ? 'Hasta ${_formatDate(entry.periodEnd)}'
+                                            : '—');
+                                    final detalle = entry.paymentDetail ?? entry.description ?? '—';
+                                    final valor = entry.amountCop != null
+                                        ? '${_formatCop(entry.amountCop!)} · $detalle'
+                                        : detalle;
+                                    return DataRow(
+                                      cells: [
+                                        DataCell(Text(_formatDateTime(entry.createdAt), style: const TextStyle(fontSize: 11.5))),
+                                        DataCell(Text(entry.planName ?? '—', style: const TextStyle(fontSize: 11.5))),
+                                        DataCell(Text(periodo, style: const TextStyle(fontSize: 11.5))),
+                                        DataCell(Text(valor, style: const TextStyle(fontSize: 11.5))),
+                                      ],
+                                    );
+                                  }).toList(),
                                 ),
-                            ],
-                          ),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),

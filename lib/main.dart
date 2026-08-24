@@ -30,7 +30,6 @@ import 'pages/my_stylist_agenda_page.dart';
 import 'pages/my_stylist_reviews_page.dart';
 import 'pages/my_stylist_work_photos_page.dart';
 import 'pages/work_photos_page.dart';
-import 'widgets/create_branch_dialog.dart';
 import 'widgets/security_settings_dialog.dart';
 import 'theme/app_theme.dart';
 import 'widgets/update_banner.dart';
@@ -230,30 +229,6 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
     AppBrand.aplicar(null, null);
     await MonitoreoService.olvidarContexto();
     await Supabase.instance.client.auth.signOut();
-  }
-
-  Future<void> _openCreateBranchDialog(BuildContext context) async {
-    final created = await showDialog<bool>(
-      context: context,
-      builder: (context) => const CreateBranchDialog(),
-    );
-
-    if (created != true) return;
-
-    setState(() {
-      homeContextFuture = _loadHomeContext();
-    });
-
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Sede creada. Ya puedes asignarle servicios y estilistas desde '
-          'sus propias pantallas.',
-        ),
-        duration: Duration(seconds: 6),
-      ),
-    );
   }
 
   List<BeautyModule> _modulesForProfile(
@@ -750,12 +725,8 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                         Padding(
                           padding: const EdgeInsets.only(right: AppSpacing.sm),
                           child: FilledButton.icon(
-                            onPressed: () {
-                              // Ir directamente al Tablero de Agenda (índice 0)
-                              setState(() {
-                                selectedIndex = 0;
-                              });
-                            },
+                            onPressed: () =>
+                                openCreateAppointmentDialog(context, branch.branchId),
                             icon: const Icon(Icons.add, size: 18),
                             label: Text(isWide ? 'Nueva Cita' : 'Cita'),
                             style: FilledButton.styleFrom(
@@ -787,17 +758,6 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                               homeContextFuture = _loadHomeContext();
                             });
                           },
-                        ),
-
-                      if (profile.role == 'owner')
-                        IconButton(
-                          tooltip: 'Agregar nueva sede',
-                          onPressed: () => _openCreateBranchDialog(context),
-                          icon: const Icon(
-                            Icons.add_business_outlined,
-                            color: AppColors.textSecondary,
-                            size: 20,
-                          ),
                         ),
 
                       // Avatar de Usuario & Menú de Perfil
@@ -1090,7 +1050,43 @@ class _TrialHeaderBadge extends StatelessWidget {
       }
     }
 
+    if (status.isActive) {
+      return Padding(
+        padding: const EdgeInsets.only(right: AppSpacing.sm),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          decoration: BoxDecoration(
+            color: AppColors.successTint,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.success),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('🟢', style: TextStyle(fontSize: 11)),
+              const SizedBox(width: 5),
+              Text(
+                'Plan ${status.planName ?? "Profesional"} · Vence '
+                '${_formatFechaCorta(status.currentPeriodEnd)}',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.success,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return const SizedBox.shrink();
+  }
+
+  static String _formatFechaCorta(DateTime? date) {
+    if (date == null) return '—';
+    return '${date.day.toString().padLeft(2, '0')}/'
+        '${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 }
 

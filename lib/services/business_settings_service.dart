@@ -43,4 +43,23 @@ class BusinessSettingsService {
       params: {'p_cover_photo_url': coverPhotoUrl},
     );
   }
+
+  /// Autoservicio: el owner o admin del propio negocio actualiza el nombre
+  /// del titular, tipo de negocio, teléfono y WhatsApp.
+  Future<void> updateContactInfo({
+    required String fullName,
+    String? businessType,
+    String? contactPhone,
+    String? whatsapp,
+  }) async {
+    await Supabase.instance.client.rpc(
+      'update_tenant_contact_info',
+      params: {
+        'p_full_name': fullName,
+        'p_business_type': businessType,
+        'p_contact_phone': contactPhone,
+        'p_whatsapp': whatsapp,
+      },
+    );
+  }
 }
