@@ -31,11 +31,12 @@ Dos decisiones se confirmaron explícitamente con el propietario antes de constr
 
 **Verificado:** `flutter analyze` (0/0), `flutter test` (156/156), migración aplicada en Supabase, Control 182 en verde contra la base real.
 
+**Ajuste posterior, mismo día:** el propietario pidió que `_TenantCard` (la tarjeta compacta de la lista del panel) también mostrara cifras reales en vez de estimadas. Cambio de una línea: `tenant.estimatedBranches`/`estimatedTeamSize` → `tenant.realBranchesCount`/`realTeamCount` en su subtítulo ("Ciudad: X · Sedes: Y · Equipo: Z"). No ameritó una decisión nueva — es la conclusión directa de D-162, no una decisión de arquitectura distinta. `flutter analyze` (0/0) y `flutter test` (156/156) verificados de nuevo tras el cambio.
+
 ---
 
 ## 3. Qué quedó a medias / fuera de este bloque
 
-- `_TenantCard` (la tarjeta compacta en la lista del panel, no la Ficha Nivel 3) todavía muestra `estimatedBranches`/`estimatedTeamSize` en su subtítulo ("Ciudad: X · Sedes: Y · Equipo: Z") — el pedido era específicamente sobre la Tarjeta 1 de la Ficha Nivel 3, así que no se tocó. Si el propietario lo quiere consistente con los números reales, es un ajuste menor para otro bloque.
 - Sigue pendiente (heredado de D-161) que el selector de sedes del header no se refresca solo tras crear una sede desde Configuración.
 
 ## Qué NO hacer
@@ -56,10 +57,8 @@ de Plataforma). Está cerrado sin pendientes bloqueantes: migración
 analyze 0/0, flutter test 156/156, y el git push ya verificado en
 producción (curl + grep sobre main.dart.js publicado, commit 9b678fb).
 
-Pendientes conocidos (no bloqueantes): _TenantCard sigue mostrando cifras
-estimadas en vez de reales en su subtítulo; el selector de sedes del header
-no se refresca solo tras crear una sede desde Configuración (heredado de
-D-161).
+Pendiente conocido (no bloqueante, heredado de D-161): el selector de sedes
+del header no se refresca solo tras crear una sede desde Configuración.
 
 No uses tenant_memberships para contar equipo — usa user_profiles. No
 amplíes platform_update_tenant_contact con teléfono/redes sin confirmar de

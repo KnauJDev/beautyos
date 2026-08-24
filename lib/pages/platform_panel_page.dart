@@ -113,7 +113,7 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
                   if (tenant.city != null) ...[
                     const SizedBox(height: 2),
                     Text(
-                      'Ciudad: ${tenant.city} · Sedes: ${tenant.estimatedBranches} · Equipo: ${tenant.estimatedTeamSize}',
+                      'Ciudad: ${tenant.city} · Sedes: ${tenant.realBranchesCount} · Equipo: ${tenant.realTeamCount}',
                       style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
                     ),
                   ],
