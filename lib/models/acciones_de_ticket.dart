@@ -63,8 +63,12 @@ class AccionesDeTicket {
     return {'en_proceso', 'finalizado'}.contains(estado);
   }
 
+  /// El salon cobra abonos/anticipos desde que la cita se solicita, no solo
+  /// cuando ya se atendio (D-163): lo unico que de verdad no admite cobro es
+  /// una cita cancelada o a la que no se asistio. El servidor aplica la
+  /// misma regla en `register_ticket_payment` (D-163).
   static bool puedeGestionarPagos(String estado) {
-    return _conDinero.contains(estado);
+    return !{'cancelado', 'no_asistio'}.contains(estado);
   }
 
   static bool puedeCopiarEnlaceResena(String estado) {

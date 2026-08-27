@@ -199,8 +199,20 @@ void main() {
       // El asistente cobra desde D-092; lo que no puede es deshacer.
       expect(AccionesDeTicket.puedeGestionarPagos('finalizado'), isTrue);
       expect(AccionesDeTicket.puedeGestionarPagos('cerrado'), isTrue);
-      expect(AccionesDeTicket.puedeGestionarPagos('confirmado'), isFalse);
-      expect(AccionesDeTicket.puedeGestionarPagos('solicitado'), isFalse);
+    });
+
+    test('los abonos se permiten en cualquier cita activa (D-163)', () {
+      // Los clientes abonan o pagan anticipos desde que la cita se
+      // solicita, no solo cuando ya se atendio: el salon cobra en vivo.
+      // El servidor aplica la misma regla en register_ticket_payment.
+      expect(AccionesDeTicket.puedeGestionarPagos('solicitado'), isTrue);
+      expect(AccionesDeTicket.puedeGestionarPagos('cotizado'), isTrue);
+      expect(AccionesDeTicket.puedeGestionarPagos('apartado'), isTrue);
+      expect(AccionesDeTicket.puedeGestionarPagos('confirmado'), isTrue);
+      expect(AccionesDeTicket.puedeGestionarPagos('en_espera'), isTrue);
+      expect(AccionesDeTicket.puedeGestionarPagos('en_proceso'), isTrue);
+      expect(AccionesDeTicket.puedeGestionarPagos('cancelado'), isFalse);
+      expect(AccionesDeTicket.puedeGestionarPagos('no_asistio'), isFalse);
     });
 
     test('un ticket ya atendido no admite cambios de servicios ni de hora', () {

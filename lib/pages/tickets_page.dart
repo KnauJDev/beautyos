@@ -97,6 +97,8 @@ class TicketsPage extends StatefulWidget {
     super.key,
     required this.branchId,
     required this.isOwnerOrAdmin,
+    this.openTicketId,
+    this.onTicketOpened,
   });
 
   final String branchId;
@@ -106,6 +108,15 @@ class TicketsPage extends StatefulWidget {
   /// reservadas: anular un pago y corregir un servicio ya finalizado. El
   /// asistente cobra y atiende, pero no deshace.
   final bool isOwnerOrAdmin;
+
+  /// Ticket que hay que abrir apenas cargue la lista, sin que el usuario lo
+  /// busque (D-163: navegacion directa desde el Tablero de Agenda). Lo pone
+  /// el shell (`main.dart`) cuando se toca una tarjeta en Agenda.
+  final String? openTicketId;
+
+  /// Avisa al shell que ya se consumio `openTicketId`, para que no lo vuelva
+  /// a mandar en el proximo build y reabra el mismo ticket.
+  final VoidCallback? onTicketOpened;
 
   @override
   State<TicketsPage> createState() => _TicketsPageState();
@@ -128,12 +139,53 @@ class _TicketsPageState extends State<TicketsPage> {
     super.initState();
     ticketsService = TicketsService(branchId: widget.branchId);
     ticketsFuture = ticketsService.getTicketsSummary();
+    _maybeOpenPendingTicket();
+  }
+
+  @override
+  void didUpdateWidget(covariant TicketsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.openTicketId != null &&
+        widget.openTicketId != oldWidget.openTicketId) {
+      _maybeOpenPendingTicket();
+    }
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  /// Abre la Ficha Completa de `widget.openTicketId` sin que el usuario lo
+  /// busque (D-163: navegacion directa desde el Tablero de Agenda). El
+  /// `await` deja pasar el build en curso antes de avisarle al shell que ya
+  /// se consumio -- llamar `onTicketOpened` de forma sincrona aqui rompería
+  /// con "setState() called during build".
+  Future<void> _maybeOpenPendingTicket() async {
+    final ticketId = widget.openTicketId;
+    if (ticketId == null) {
+      return;
+    }
+
+    final tickets = await ticketsFuture;
+    if (!mounted) {
+      return;
+    }
+
+    widget.onTicketOpened?.call();
+
+    TicketSummary? ticket;
+    for (final t in tickets) {
+      if (t.id == ticketId) {
+        ticket = t;
+        break;
+      }
+    }
+
+    if (ticket != null) {
+      await _openTicketDetailSheet(ticket);
+    }
   }
 
   void _refreshTickets() {
@@ -3554,8 +3606,11 @@ class _PaymentsDialogState extends State<_PaymentsDialog> {
   final notesController = TextEditingController();
   String method = 'efectivo';
 
+  // D-163: el servidor ya acepta abonos en cualquier estado activo
+  // (`register_ticket_payment`); el formulario tiene que reflejar la misma
+  // regla que `AccionesDeTicket.puedeGestionarPagos`, no solo 'finalizado'.
   bool get canRegisterPayment {
-    return widget.ticket.status == 'finalizado' &&
+    return !{'cancelado', 'no_asistio'}.contains(widget.ticket.status) &&
         widget.summary.balanceAmount > 0;
   }
 
@@ -4346,7 +4401,17 @@ class _TicketDetailSheet extends StatelessWidget {
                             ],
                           ),
                         ),
-                      StatusPill(status: ticket.ticketStatus),
+                      if (onChangeStatus != null)
+                        InkWell(
+                          onTap: onChangeStatus,
+                          borderRadius: BorderRadius.circular(20),
+                          child: Tooltip(
+                            message: 'Cambiar estado',
+                            child: StatusPill(status: ticket.ticketStatus),
+                          ),
+                        )
+                      else
+                        StatusPill(status: ticket.ticketStatus),
                     ],
                   ),
                 ),
@@ -4552,9 +4617,11 @@ class _TicketDetailSheet extends StatelessWidget {
                               onPressed: onManagePayments,
                               icon: const Icon(Icons.payment_outlined),
                               label: Text(
-                                ticket.isClosed
+                                ticket.isClosed ||
+                                        (ticket.paidAmount > 0 &&
+                                            !ticket.hasPendingBalance)
                                     ? 'Ver historial de pagos'
-                                    : 'Registrar pago / Gestionar saldo',
+                                    : 'Registrar pago / Abono',
                               ),
                             ),
                           ),

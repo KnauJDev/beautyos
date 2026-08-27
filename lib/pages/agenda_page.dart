@@ -60,10 +60,20 @@ const List<String> _diasSemana = [
 
 /// Pantalla principal del Tablero de Agenda (D-101 / D-116 / D-147).
 class AgendaPage extends StatefulWidget {
-  const AgendaPage({super.key, required this.branchId, this.agendaService});
+  const AgendaPage({
+    super.key,
+    required this.branchId,
+    this.agendaService,
+    this.onOpenTicket,
+  });
 
   final String branchId;
   final AgendaBoardService? agendaService;
+
+  /// Abre la Ficha Completa Nivel 3 de un ticket sin pasar por la pestaña de
+  /// Tickets (D-163). Vive en el shell (`main.dart`), que es quien puede
+  /// cambiar de pestaña y avisarle a `TicketsPage` cual ticket abrir.
+  final void Function(String ticketId)? onOpenTicket;
 
   @override
   State<AgendaPage> createState() => _AgendaPageState();
@@ -279,6 +289,7 @@ class _AgendaPageState extends State<AgendaPage> {
           statuses: statuses,
           bucket: bucket,
           granularity: granularity,
+          onOpenTicket: widget.onOpenTicket,
         );
       },
     );
@@ -1322,6 +1333,7 @@ class _Level2Sheet extends StatelessWidget {
   final List<String>? statuses;
   final String? bucket;
   final String? granularity;
+  final void Function(String ticketId)? onOpenTicket;
 
   const _Level2Sheet({
     required this.service,
@@ -1331,6 +1343,7 @@ class _Level2Sheet extends StatelessWidget {
     this.statuses,
     this.bucket,
     this.granularity,
+    this.onOpenTicket,
   });
 
   Future<void> _abrirWhatsApp(String phone) async {
@@ -1444,6 +1457,12 @@ class _Level2Sheet extends StatelessWidget {
                           onWhatsAppTap: item.clientPhone.isNotEmpty
                               ? () => _abrirWhatsApp(item.clientPhone)
                               : null,
+                          onTap: onOpenTicket != null
+                              ? () {
+                                  Navigator.of(context).pop();
+                                  onOpenTicket!(item.id);
+                                }
+                              : null,
                         );
                       },
                     );
@@ -1461,8 +1480,9 @@ class _Level2Sheet extends StatelessWidget {
 class _TicketCardNivel2 extends StatelessWidget {
   final TicketBoardItem item;
   final VoidCallback? onWhatsAppTap;
+  final VoidCallback? onTap;
 
-  const _TicketCardNivel2({required this.item, this.onWhatsAppTap});
+  const _TicketCardNivel2({required this.item, this.onWhatsAppTap, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -1472,6 +1492,7 @@ class _TicketCardNivel2 extends StatelessWidget {
 
     return AppCard(
       padding: const EdgeInsets.all(AppSpacing.md),
+      onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

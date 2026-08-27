@@ -142,6 +142,11 @@ class _HomeContextData {
 class _BeautyOSHomeState extends State<BeautyOSHome> {
   int selectedIndex = 0;
 
+  /// Ticket que Agenda pidio abrir en la pestana de Tickets (D-163). Se
+  /// consume una sola vez: `TicketsPage` avisa con `onTicketOpened` y este
+  /// campo vuelve a null para no reabrir el mismo ticket despues.
+  String? _pendingOpenTicketId;
+
   final MyProfileService myProfileService = const MyProfileService();
   final BranchContextService branchContextService =
       const BranchContextService();
@@ -251,6 +256,16 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         page: AgendaPage(
           key: ValueKey('agenda-${branch.branchId}'),
           branchId: branch.branchId,
+          // Agenda y Tickets comparten exactamente los mismos allowedRoles
+          // y son adyacentes en esta lista: Tickets siempre queda en el
+          // indice inmediatamente siguiente al de Agenda, para cualquier
+          // rol que vea Agenda (D-163).
+          onOpenTicket: (ticketId) {
+            setState(() {
+              _pendingOpenTicketId = ticketId;
+              selectedIndex = selectedIndex + 1;
+            });
+          },
         ),
         allowedRoles: const <String>{'owner', 'admin', 'assistant'},
       ),
@@ -264,6 +279,8 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           key: ValueKey('tickets-${branch.branchId}'),
           branchId: branch.branchId,
           isOwnerOrAdmin: role == 'owner' || role == 'admin',
+          openTicketId: _pendingOpenTicketId,
+          onTicketOpened: () => setState(() => _pendingOpenTicketId = null),
         ),
         allowedRoles: const <String>{'owner', 'admin', 'assistant'},
       ),
