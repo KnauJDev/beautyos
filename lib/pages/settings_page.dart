@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -257,6 +259,30 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
             },
           ),
         ],
+        const SizedBox(height: 16),
+        const SectionTitle('Enlace web de tu negocio'),
+        FutureBuilder<BusinessSettings>(
+          future: businessSettingsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const LoadingCard(mensaje: 'Cargando tu enlace...');
+            }
+
+            if (snapshot.hasError || !snapshot.hasData) {
+              return const InfoPanel(
+                icon: Icons.link_outlined,
+                title: 'No se pudo cargar tu enlace',
+                description: 'Vuelve a abrir Configuración para intentarlo de nuevo.',
+              );
+            }
+
+            return PublicSalonLinkCard(
+              settings: snapshot.data!,
+              businessSettingsService: businessSettingsService,
+              onChanged: _reloadBusinessSettings,
+            );
+          },
+        ),
         const SizedBox(height: 16),
         const SectionTitle('Reserva pública'),
         PublicBookingLinkCard(branchId: widget.branchId),
@@ -1402,6 +1428,341 @@ class PublicBookingLinkCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Enlace público del negocio (D-098, D-164): `salonymas.com/<slug>`. A
+/// diferencia de [PublicBookingLinkCard] (el enlace feo por UUID de la
+/// reserva directa), este es el que se pone en Instagram/WhatsApp.
+class PublicSalonLinkCard extends StatelessWidget {
+  const PublicSalonLinkCard({
+    super.key,
+    required this.settings,
+    required this.businessSettingsService,
+    required this.onChanged,
+  });
+
+  final BusinessSettings settings;
+  final BusinessSettingsService businessSettingsService;
+  final VoidCallback onChanged;
+
+  String get _link => '${Uri.base.origin}/${settings.slug ?? ''}';
+
+  Future<void> _copyLink(BuildContext context) async {
+    await Clipboard.setData(ClipboardData(text: _link));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Enlace copiado.')));
+  }
+
+  Future<void> _shareOnWhatsApp() async {
+    final message = 'Visita la página de ${settings.name} 👉 $_link';
+    final uri = Uri.https('wa.me', '/', {'text': message});
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> _openEditDialog(BuildContext context) async {
+    final changed = await showDialog<bool>(
+      context: context,
+      builder: (_) => _EditSlugDialog(
+        currentSlug: settings.slug ?? '',
+        businessSettingsService: businessSettingsService,
+      ),
+    );
+
+    if (changed == true) onChanged();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (settings.slug == null || settings.slug!.trim().isEmpty) {
+      return const InfoPanel(
+        icon: Icons.link_off_outlined,
+        title: 'Todavía no tienes un enlace',
+        description:
+            'Vuelve a abrir Configuración en unos minutos: se asigna solo '
+            'a partir del nombre de tu negocio.',
+      );
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Este es el enlace público de tu negocio. Compártelo en tu '
+              'perfil de Instagram, WhatsApp o donde quieras: tus clientes '
+              'lo abren sin crear cuenta ni contraseña.',
+              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceAlt,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _link,
+                      style: const TextStyle(fontSize: 14),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Copiar enlace',
+                    icon: const Icon(Icons.copy_outlined),
+                    onPressed: () => _copyLink(context),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: _shareOnWhatsApp,
+                  icon: const Icon(
+                    Icons.chat_bubble_outline,
+                    size: 16,
+                    color: AppColors.whatsapp,
+                  ),
+                  label: const Text('Compartir en WhatsApp'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.whatsapp,
+                  ),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => _openEditDialog(context),
+                  icon: const Icon(Icons.edit_outlined, size: 16),
+                  label: const Text('Modificar enlace'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EditSlugDialog extends StatefulWidget {
+  const _EditSlugDialog({
+    required this.currentSlug,
+    required this.businessSettingsService,
+  });
+
+  final String currentSlug;
+  final BusinessSettingsService businessSettingsService;
+
+  @override
+  State<_EditSlugDialog> createState() => _EditSlugDialogState();
+}
+
+enum _SlugCheckStatus { idle, checking, available, taken, invalid }
+
+class _EditSlugDialogState extends State<_EditSlugDialog> {
+  late final TextEditingController _controller;
+  Timer? _debounce;
+  _SlugCheckStatus _status = _SlugCheckStatus.idle;
+  bool _isSaving = false;
+  String? _saveError;
+
+  static final _formatoValido = RegExp(r'^[a-z0-9]+(-[a-z0-9]+)*$');
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.currentSlug);
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onChanged(String value) {
+    _debounce?.cancel();
+    setState(() => _saveError = null);
+
+    final candidate = value.trim().toLowerCase();
+    if (candidate == widget.currentSlug) {
+      setState(() => _status = _SlugCheckStatus.idle);
+      return;
+    }
+
+    if (candidate.isEmpty ||
+        candidate.length < 3 ||
+        candidate.length > 50 ||
+        !_formatoValido.hasMatch(candidate)) {
+      setState(() => _status = _SlugCheckStatus.invalid);
+      return;
+    }
+
+    setState(() => _status = _SlugCheckStatus.checking);
+
+    _debounce = Timer(const Duration(milliseconds: 400), () async {
+      try {
+        final disponible = await widget.businessSettingsService
+            .checkSlugAvailability(candidate);
+        if (!mounted || _controller.text.trim().toLowerCase() != candidate) {
+          return;
+        }
+        setState(() {
+          _status = disponible
+              ? _SlugCheckStatus.available
+              : _SlugCheckStatus.taken;
+        });
+      } catch (_) {
+        if (!mounted) return;
+        setState(() => _status = _SlugCheckStatus.invalid);
+      }
+    });
+  }
+
+  bool get _canSave {
+    final candidate = _controller.text.trim().toLowerCase();
+    return !_isSaving &&
+        candidate != widget.currentSlug &&
+        _status == _SlugCheckStatus.available;
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      _isSaving = true;
+      _saveError = null;
+    });
+
+    try {
+      await widget.businessSettingsService.updateTenantSlug(
+        _controller.text.trim().toLowerCase(),
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _isSaving = false;
+        _saveError = error.toString();
+      });
+    }
+  }
+
+  Widget _buildStatusLine() {
+    switch (_status) {
+      case _SlugCheckStatus.idle:
+        return const SizedBox.shrink();
+      case _SlugCheckStatus.checking:
+        return const Row(
+          children: [
+            SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            SizedBox(width: 8),
+            Text('Comprobando disponibilidad...'),
+          ],
+        );
+      case _SlugCheckStatus.available:
+        return const Row(
+          children: [
+            Icon(Icons.check_circle_outline, size: 16, color: AppColors.success),
+            SizedBox(width: 6),
+            Text('Disponible', style: TextStyle(color: AppColors.success)),
+          ],
+        );
+      case _SlugCheckStatus.taken:
+        return const Row(
+          children: [
+            Icon(Icons.cancel_outlined, size: 16, color: AppColors.danger),
+            SizedBox(width: 6),
+            Text('Ya está en uso', style: TextStyle(color: AppColors.danger)),
+          ],
+        );
+      case _SlugCheckStatus.invalid:
+        return const Row(
+          children: [
+            Icon(Icons.error_outline, size: 16, color: AppColors.danger),
+            SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                'Entre 3 y 50 caracteres: minúsculas, números y guiones.',
+                style: TextStyle(color: AppColors.danger, fontSize: 12),
+              ),
+            ),
+          ],
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Modificar enlace'),
+      content: SizedBox(
+        width: 420,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${Uri.base.origin}/',
+              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+            ),
+            TextField(
+              controller: _controller,
+              autofocus: true,
+              onChanged: _onChanged,
+              decoration: const InputDecoration(
+                hintText: 'nombre-de-tu-negocio',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 10),
+            _buildStatusLine(),
+            if (_saveError != null) ...[
+              const SizedBox(height: 10),
+              Text(
+                _saveError!,
+                style: const TextStyle(color: AppColors.danger, fontSize: 13),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isSaving ? null : () => Navigator.of(context).pop(false),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: _canSave ? _save : null,
+          child: _isSaving
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Guardar'),
+        ),
+      ],
     );
   }
 }

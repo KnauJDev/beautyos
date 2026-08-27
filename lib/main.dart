@@ -19,6 +19,7 @@ import 'pages/complete_tenant_setup_page.dart';
 import 'pages/public_booking_page.dart';
 import 'pages/public_plans_page.dart';
 import 'pages/public_review_page.dart';
+import 'pages/public_salon_page.dart';
 import 'pages/tenant_approval_status_page.dart';
 import 'pages/terms_and_privacy_page.dart';
 import 'pages/agenda_page.dart';
@@ -79,6 +80,32 @@ class BeautyOSApp extends StatelessWidget {
     final isPublicPrivacy =
         Uri.base.queryParameters.containsKey('privacidad') ||
             Uri.base.queryParameters.containsKey('privacy');
+    // Pagina publica del negocio por slug (D-098 / D-164): sin sesion, ej.
+    // "salonymas.com/naguaradeunas" o, de respaldo, "?salon=<slug>". Mismo
+    // motivo que las rutas de arriba: un visitante anonimo nunca debe pasar
+    // por login para ver la vitrina de un negocio.
+    //
+    // Esta lista de rutas reservadas debe coincidir con la del CHECK
+    // `tenants_slug_format_check` y las funciones `check_slug_availability`/
+    // `update_tenant_slug` en la migracion de D-164 (buscar 'login',
+    // 'register', 'auth' ahi para encontrarlas).
+    final pathSegments = Uri.base.pathSegments;
+    final pathSlug =
+        pathSegments.length == 1 && pathSegments.first.trim().isNotEmpty
+        ? pathSegments.first.trim().toLowerCase()
+        : null;
+    final queryParamSlug = Uri.base.queryParameters['salon']?.trim().toLowerCase();
+    const rutasReservadas = <String>{
+      'login', 'register', 'auth', 'planes', 'pricing', 'terminos',
+      'privacidad', 'terms', 'privacy', 'admin', 'dashboard', 'settings',
+      'soporte', 'api',
+    };
+    final candidateSlug =
+        (pathSlug != null && !rutasReservadas.contains(pathSlug))
+        ? pathSlug
+        : (queryParamSlug != null && queryParamSlug.isNotEmpty
+              ? queryParamSlug
+              : null);
 
     // Un solo sitio decide el aspecto de toda la aplicacion (D-102). El tema
     // del negocio no se conoce al arrancar -- llega con los datos de la sede o
@@ -99,6 +126,8 @@ class BeautyOSApp extends StatelessWidget {
           home = const TermsAndPrivacyPage(initialTab: 0);
         } else if (isPublicPrivacy) {
           home = const TermsAndPrivacyPage(initialTab: 1);
+        } else if (candidateSlug != null) {
+          home = PublicSalonPage(slug: candidateSlug);
         } else {
           home = const AuthGate(
             authenticatedChild: AuthenticatedRouter(

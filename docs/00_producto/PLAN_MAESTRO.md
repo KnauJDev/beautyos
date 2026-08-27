@@ -226,11 +226,11 @@ Tope antiabuso en la reserva pública, rol Asistente con sus pantallas, 2FA.
 
 | # | Paso | Quién | Estado |
 |---|---|---|---|
-| 5.1 | Identificador único por negocio, sin ñ ni tildes (`salonymas.com/naguaradeunas`) | 🤖 | ⬜ |
-| 5.2 | Función pública que lo resuelva sin sesión | 🤖 | ⬜ |
-| 5.3 | Enrutado por ruta en Flutter y `_redirects` | 🤖 | ⬜ |
-| 5.4 | Editarlo desde Configuración | 🤖 | ⬜ |
-| 5.5 | **La página del negocio:** portafolio, equipo, reseñas y reservar | 🤖 | ⬜ **Falta especificar** |
+| 5.1 | Identificador único por negocio, sin ñ ni tildes (`salonymas.com/naguaradeunas`) | 🤖 | ✅ **CERRADO 27-ago (D-164).** Columna `slug` en `tenants`, `private.beautyos_slugify` (minúsculas, sin acentos ni eñe, separadores en guiones) y `private.beautyos_generate_unique_tenant_slug` (corto/reservado/largo/colisión con sufijo numérico). Backfill de los tenants existentes y `register_tenant` generándolo desde el nombre para los nuevos. Lista de palabras reservadas del sistema. Control `184_test_slugs_publicos.sql` |
+| 5.2 | Función pública que lo resuelva sin sesión | 🤖 | ✅ **CERRADO 27-ago (D-164).** `get_public_salon_by_slug` (rol `anon`): solo datos de vitrina (nombre, tipo, logo, portada, tema, ciudad, dirección de la sede principal, WhatsApp, teléfono, Instagram, Facebook). `check_slug_availability` y `update_tenant_slug` (autoservicio, owner/admin) |
+| 5.3 | Enrutado por ruta en Flutter y `_redirects` | 🤖 | ✅ **CERRADO 27-ago (D-164).** `web/_redirects` (`/* /index.html 200`, no existía) y `BeautyOSApp.build()` en `main.dart` resuelve el slug desde `Uri.base.pathSegments` (o `?salon=<slug>` de respaldo) antes de `AuthGate`, igual que las demás rutas públicas. `PublicSalonPage` nueva, con el mismo patrón visual que `PublicBookingPage` y el tema del negocio aplicado (D-093d) |
+| 5.4 | Editarlo desde Configuración | 🤖 | ✅ **CERRADO 27-ago (D-164).** `PublicSalonLinkCard`: copiar, compartir por WhatsApp y "Modificar enlace" con comprobación de disponibilidad en vivo (debounce de 400 ms) contra `check_slug_availability`/`update_tenant_slug`. `get_business_settings` gana la columna `slug` |
+| 5.5 | **La página del negocio:** portafolio, equipo, reseñas y reservar | 🤖 | ⬜ **Falta especificar.** `PublicSalonPage` (D-164) ya tiene el encabezado y el aviso de "muy pronto" listos para recibirlo |
 | 5.6 | **Cuenta del cliente final:** ver sus fotos y su historial de visitas | 🤖 | ⬜ |
 | 5.7 | **Permiso de publicación de la clienta** — hoy no existe el campo | 🤖 | ⬜ **Legal** |
 

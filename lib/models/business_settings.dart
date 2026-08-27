@@ -21,6 +21,10 @@
   /// Solo tiene valor cuando [themeKey] es `personalizado` (D-109).
   final String? brandColor;
 
+  /// Identificador del enlace público del negocio (D-098, D-164):
+  /// `salonymas.com/<slug>`. Null si todavía no se le asignó uno.
+  final String? slug;
+
   const BusinessSettings({
     required this.id,
     required this.name,
@@ -35,6 +39,7 @@
     this.coverPhotoUrl,
     this.themeKey,
     this.brandColor,
+    this.slug,
   });
 
   factory BusinessSettings.fromMap(Map<String, dynamic> map) {
@@ -52,6 +57,7 @@
       coverPhotoUrl: map['cover_photo_url']?.toString(),
       themeKey: map['theme_key']?.toString(),
       brandColor: map['brand_color']?.toString(),
+      slug: map['slug']?.toString(),
     );
   }
 }

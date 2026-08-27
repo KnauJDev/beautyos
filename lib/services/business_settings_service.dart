@@ -66,4 +66,24 @@ class BusinessSettingsService {
       },
     );
   }
+
+  /// `true` si el slug está bien formado, no es una palabra reservada y
+  /// nadie más lo tiene (D-164). No lo reserva -- solo consulta.
+  Future<bool> checkSlugAvailability(String slug) async {
+    final response = await Supabase.instance.client.rpc(
+      'check_slug_availability',
+      params: {'p_slug': slug},
+    );
+    return response as bool;
+  }
+
+  /// Cambia el enlace público del negocio propio. Solo owner o admin
+  /// (D-164). Devuelve el slug normalizado que quedó guardado.
+  Future<String> updateTenantSlug(String newSlug) async {
+    final response = await Supabase.instance.client.rpc(
+      'update_tenant_slug',
+      params: {'p_new_slug': newSlug},
+    );
+    return response as String;
+  }
 }
