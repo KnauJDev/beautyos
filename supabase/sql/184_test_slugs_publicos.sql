@@ -103,8 +103,8 @@ begin
   -- real) para no depender de si el nombre real ya colisionó con otro al
   -- correr el backfill.
   -- =====================================================================
-  insert into public.tenants (name, slug, contact_email, active)
-  values ('Test Colision D164', 'test-colision-d164', 'test_colision@salonymas.com', true);
+  insert into public.tenants (name, slug, contact_email, whatsapp, active)
+  values ('Test Colision D164', 'test-colision-d164', 'test_colision@salonymas.com', '3001234567', true);
 
   if private.beautyos_generate_unique_tenant_slug('Test Colision D164') = 'test-colision-d164-2' then
     raise notice 'OK  2a  un nombre cuyo slug base ya existe genera "<base>-2"';
@@ -191,8 +191,8 @@ begin
   -- CASO 5: update_tenant_slug -- exito, reservado, y choque con otro
   -- tenant real (se crea uno de prueba, se borra solo al hacer ROLLBACK).
   -- =====================================================================
-  insert into public.tenants (name, slug, contact_email, active)
-  values ('Negocio de prueba D-164', 'negocio-de-prueba-d164', 'prueba_d164@salonymas.com', true)
+  insert into public.tenants (name, slug, contact_email, whatsapp, active)
+  values ('Negocio de prueba D-164', 'negocio-de-prueba-d164', 'prueba_d164@salonymas.com', '3007654321', true)
   returning id into v_other_tenant;
 
   begin
