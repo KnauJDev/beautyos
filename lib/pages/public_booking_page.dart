@@ -14,9 +14,19 @@ import '../services/public_booking_service.dart';
 /// exigen sede y tenant activos. Se llega aqui via
 /// "?reservar=`branch_id`" (ver main.dart), no por AuthGate.
 class PublicBookingPage extends StatefulWidget {
-  const PublicBookingPage({super.key, required this.branchId});
+  const PublicBookingPage({
+    super.key,
+    required this.branchId,
+    this.preselectedServiceId,
+  });
 
   final String branchId;
+
+  /// Si viene de "Reservar" sobre un servicio puntual de la página del
+  /// negocio (D-165), precarga ese servicio -- con el primer estilista que
+  /// lo ofrezca, ya que `PublicServiceOption` combina servicio y estilista
+  /// en una sola opción. La persona igual puede cambiarlo a mano.
+  final String? preselectedServiceId;
 
   @override
   State<PublicBookingPage> createState() => _PublicBookingPageState();
@@ -83,6 +93,14 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
         branchInfo = info;
         services = serviceOptions;
         isLoading = false;
+        if (widget.preselectedServiceId != null) {
+          for (final option in serviceOptions) {
+            if (option.serviceId == widget.preselectedServiceId) {
+              selectedService = option;
+              break;
+            }
+          }
+        }
       });
     } catch (error) {
       if (!mounted) return;

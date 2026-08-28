@@ -1,3 +1,9 @@
+import 'business_hour.dart';
+import 'public_salon_photo_item.dart';
+import 'public_salon_review_item.dart';
+import 'public_salon_service_item.dart';
+import 'public_salon_team_member.dart';
+
 /// Perfil comercial público de un negocio, resuelto por su slug sin sesión
 /// (D-098, D-164). Solo trae datos de vitrina -- nada operativo ni de
 /// contacto administrativo interno (eso vive en `BusinessSettings`).
@@ -17,6 +23,8 @@ class PublicSalonProfile {
     this.contactPhone,
     this.instagram,
     this.facebook,
+    this.primaryBranchId,
+    this.businessHours = const [],
   });
 
   final String tenantId;
@@ -44,6 +52,13 @@ class PublicSalonProfile {
   final String? instagram;
   final String? facebook;
 
+  /// Sede a la que apunta el botón "Agendar Cita" (D-165). Null si el
+  /// negocio no tiene ninguna sede principal activa.
+  final String? primaryBranchId;
+
+  /// Horario de la sede principal (D-165). Vacío si no hay ninguno sembrado.
+  final List<BusinessHour> businessHours;
+
   factory PublicSalonProfile.fromMap(Map<String, dynamic> map) {
     return PublicSalonProfile(
       tenantId: map['tenant_id'].toString(),
@@ -60,6 +75,14 @@ class PublicSalonProfile {
       contactPhone: map['contact_phone']?.toString(),
       instagram: map['instagram']?.toString(),
       facebook: map['facebook']?.toString(),
+      primaryBranchId: map['primary_branch_id']?.toString(),
+      businessHours: (map['business_hours'] as List<dynamic>? ?? [])
+          .map(
+            (item) => BusinessHour.fromMap(
+              Map<String, dynamic>.from(item as Map),
+            ),
+          )
+          .toList(),
     );
   }
 
@@ -94,4 +117,22 @@ class PublicSalonProfile {
     final handle = value.startsWith('@') ? value.substring(1) : value;
     return Uri.https('facebook.com', '/$handle');
   }
+}
+
+/// Todo lo que necesita la página pública del negocio en una sola llamada:
+/// el perfil y las cuatro listas que se cargan en paralelo (D-165).
+class PublicSalonFullProfile {
+  const PublicSalonFullProfile({
+    required this.profile,
+    required this.services,
+    required this.portfolio,
+    required this.team,
+    required this.reviews,
+  });
+
+  final PublicSalonProfile profile;
+  final List<PublicSalonServiceItem> services;
+  final List<PublicSalonPhotoItem> portfolio;
+  final List<PublicSalonTeamMember> team;
+  final PublicSalonReviewsSummary reviews;
 }

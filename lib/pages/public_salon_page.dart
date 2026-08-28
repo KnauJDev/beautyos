@@ -2,17 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
+import '../models/public_salon_photo_item.dart';
 import '../models/public_salon_profile.dart';
+import '../models/public_salon_review_item.dart';
+import '../models/public_salon_service_item.dart';
+import '../models/public_salon_team_member.dart';
 import '../services/public_salon_service.dart';
 import 'agenda_page.dart' show buildWhatsAppUri;
+import 'public_booking_page.dart';
 
-/// Página pública del negocio (D-098, D-164): `salonymas.com/<slug>`. No
-/// requiere sesión -- usa el rol "anon" y solo llama a
-/// `get_public_salon_by_slug`. Se llega aquí por el segmento de ruta o por
-/// "?salon=`slug`" (ver main.dart), no por AuthGate.
-///
-/// Base del paso 5.1 a 5.4. El portafolio de fotos, el catálogo de
-/// servicios y el botón de reserva llegan en el paso 5.5.
+/// Página pública del negocio (D-098, D-164, D-165):
+/// `salonymas.com/<slug>`. No requiere sesión -- usa el rol "anon". Se
+/// llega aquí por el segmento de ruta o por "?salon=`slug`" (ver
+/// main.dart), no por AuthGate.
 class PublicSalonPage extends StatefulWidget {
   const PublicSalonPage({super.key, required this.slug});
 
@@ -27,7 +29,7 @@ class _PublicSalonPageState extends State<PublicSalonPage> {
 
   bool isLoading = true;
   String? loadError;
-  PublicSalonProfile? profile;
+  PublicSalonFullProfile? fullProfile;
 
   @override
   void initState() {
@@ -42,7 +44,7 @@ class _PublicSalonPageState extends State<PublicSalonPage> {
     });
 
     try {
-      final result = await salonService.getSalonBySlug(widget.slug);
+      final result = await salonService.getFullProfile(widget.slug);
 
       if (!mounted) return;
 
@@ -50,11 +52,11 @@ class _PublicSalonPageState extends State<PublicSalonPage> {
       // Más. Se aplica antes del setState para que la pantalla se pinte ya
       // con el tema del negocio.
       if (result != null) {
-        AppBrand.aplicar(result.themeKey, result.brandColor);
+        AppBrand.aplicar(result.profile.themeKey, result.profile.brandColor);
       }
 
       setState(() {
-        profile = result;
+        fullProfile = result;
         isLoading = false;
       });
     } catch (error) {
@@ -73,9 +75,9 @@ class _PublicSalonPageState extends State<PublicSalonPage> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(20),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 640),
+              constraints: const BoxConstraints(maxWidth: 900),
               child: _buildContent(),
             ),
           ),
@@ -105,8 +107,8 @@ class _PublicSalonPageState extends State<PublicSalonPage> {
       );
     }
 
-    final salon = profile;
-    if (salon == null) {
+    final result = fullProfile;
+    if (result == null) {
       return const _MessageCard(
         icon: Icons.storefront_outlined,
         iconColor: AppColors.textMuted,
@@ -117,14 +119,72 @@ class _PublicSalonPageState extends State<PublicSalonPage> {
       );
     }
 
-    return _SalonProfileCard(salon: salon);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _HeroHeader(
+          salon: result.profile,
+          reviews: result.reviews,
+          onBook: result.profile.primaryBranchId == null
+              ? null
+              : () => _openBooking(result.profile.primaryBranchId!),
+        ),
+        if (result.services.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          _ServicesSection(
+            services: result.services,
+            onReserve: result.profile.primaryBranchId == null
+                ? null
+                : (serviceId) => _openBooking(
+                    result.profile.primaryBranchId!,
+                    preselectedServiceId: serviceId,
+                  ),
+          ),
+        ],
+        if (result.portfolio.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          _PortfolioSection(photos: result.portfolio),
+        ],
+        if (result.team.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          _TeamSection(team: result.team),
+        ],
+        if (result.reviews.totalReviews > 0) ...[
+          const SizedBox(height: 20),
+          _ReviewsSection(summary: result.reviews),
+        ],
+        const SizedBox(height: 20),
+        _HoursLocationSection(salon: result.profile),
+      ],
+    );
+  }
+
+  void _openBooking(String branchId, {String? preselectedServiceId}) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PublicBookingPage(
+          branchId: branchId,
+          preselectedServiceId: preselectedServiceId,
+        ),
+      ),
+    );
   }
 }
 
-class _SalonProfileCard extends StatelessWidget {
-  const _SalonProfileCard({required this.salon});
+// =============================================================================
+// SECCIÓN: Encabezado (portada, logo, nombre, calificación, contacto)
+// =============================================================================
+
+class _HeroHeader extends StatelessWidget {
+  const _HeroHeader({
+    required this.salon,
+    required this.reviews,
+    required this.onBook,
+  });
 
   final PublicSalonProfile salon;
+  final PublicSalonReviewsSummary reviews;
+  final VoidCallback? onBook;
 
   Future<void> _abrir(Uri uri) async {
     if (await canLaunchUrl(uri)) {
@@ -203,7 +263,32 @@ class _SalonProfileCard extends StatelessWidget {
                     ),
                   ),
                 ],
-                const SizedBox(height: 20),
+                if (reviews.totalReviews > 0) ...[
+                  const SizedBox(height: 10),
+                  _StarRatingLine(
+                    rating: reviews.avgRating,
+                    totalReviews: reviews.totalReviews,
+                  ),
+                ],
+                if (onBook != null) ...[
+                  const SizedBox(height: 20),
+                  FilledButton.icon(
+                    onPressed: onBook,
+                    icon: const Text('📅', style: TextStyle(fontSize: 16)),
+                    label: const Text('Agendar Cita'),
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 28,
+                        vertical: 14,
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
                 Wrap(
                   alignment: WrapAlignment.center,
                   spacing: 10,
@@ -211,7 +296,7 @@ class _SalonProfileCard extends StatelessWidget {
                   children: [
                     if (salon.whatsapp != null &&
                         salon.whatsapp!.trim().isNotEmpty)
-                      FilledButton.icon(
+                      OutlinedButton.icon(
                         onPressed: () => _abrir(
                           buildWhatsAppUri(
                             salon.whatsapp!,
@@ -219,11 +304,14 @@ class _SalonProfileCard extends StatelessWidget {
                                 '¿me cuentas más?',
                           ),
                         ),
-                        icon: const Icon(Icons.chat_bubble_outline, size: 18),
+                        icon: const Icon(
+                          Icons.chat_bubble_outline,
+                          size: 16,
+                          color: AppColors.whatsapp,
+                        ),
                         label: const Text('WhatsApp'),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.whatsapp,
-                          foregroundColor: Colors.white,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.whatsapp,
                         ),
                       ),
                     if (salon.contactPhone != null &&
@@ -232,40 +320,22 @@ class _SalonProfileCard extends StatelessWidget {
                         onPressed: () => _abrir(
                           Uri.parse('tel:${salon.contactPhone}'),
                         ),
-                        icon: const Icon(Icons.call_outlined, size: 18),
+                        icon: const Icon(Icons.call_outlined, size: 16),
                         label: const Text('Llamar'),
                       ),
                     if (salon.instagramUri != null)
                       OutlinedButton.icon(
                         onPressed: () => _abrir(salon.instagramUri!),
-                        icon: const Icon(
-                          Icons.camera_alt_outlined,
-                          size: 18,
-                        ),
+                        icon: const Icon(Icons.camera_alt_outlined, size: 16),
                         label: const Text('Instagram'),
                       ),
                     if (salon.facebookUri != null)
                       OutlinedButton.icon(
                         onPressed: () => _abrir(salon.facebookUri!),
-                        icon: const Icon(Icons.public_outlined, size: 18),
+                        icon: const Icon(Icons.public_outlined, size: 16),
                         label: const Text('Facebook'),
                       ),
                   ],
-                ),
-                const SizedBox(height: 28),
-                const Divider(),
-                const SizedBox(height: 16),
-                const Icon(
-                  Icons.auto_awesome_outlined,
-                  color: AppColors.textMuted,
-                  size: 28,
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Muy pronto: fotos de trabajos, catálogo de servicios y '
-                  'reserva en línea directo desde esta página.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: AppColors.textMuted),
                 ),
               ],
             ),
@@ -275,6 +345,463 @@ class _SalonProfileCard extends StatelessWidget {
     );
   }
 }
+
+class _StarRatingLine extends StatelessWidget {
+  const _StarRatingLine({required this.rating, required this.totalReviews});
+
+  final double rating;
+  final int totalReviews;
+
+  @override
+  Widget build(BuildContext context) {
+    final fullStars = rating.round().clamp(0, 5);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        for (var i = 0; i < 5; i++)
+          Icon(
+            i < fullStars ? Icons.star : Icons.star_border,
+            size: 18,
+            color: AppColors.warning,
+          ),
+        const SizedBox(width: 6),
+        Text(
+          '${rating.toStringAsFixed(1)} ($totalReviews '
+          '${totalReviews == 1 ? 'reseña' : 'reseñas'})',
+          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+        ),
+      ],
+    );
+  }
+}
+
+// =============================================================================
+// SECCIÓN GENÉRICA
+// =============================================================================
+
+class _Section extends StatelessWidget {
+  const _Section({required this.title, required this.icon, required this.child});
+
+  final String title;
+  final IconData icon;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: AppColors.brand, size: 22),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.brandDeep,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// SECCIÓN: Servicios
+// =============================================================================
+
+class _ServicesSection extends StatelessWidget {
+  const _ServicesSection({required this.services, required this.onReserve});
+
+  final List<PublicSalonServiceItem> services;
+  final void Function(String serviceId)? onReserve;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Section(
+      title: 'Servicios',
+      icon: Icons.content_cut_outlined,
+      child: Column(
+        children: [
+          for (final service in services) ...[
+            _ServiceRow(service: service, onReserve: onReserve),
+            if (service != services.last) const Divider(height: 24),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ServiceRow extends StatelessWidget {
+  const _ServiceRow({required this.service, required this.onReserve});
+
+  final PublicSalonServiceItem service;
+  final void Function(String serviceId)? onReserve;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                service.name,
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+              if (service.description != null &&
+                  service.description!.trim().isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  service.description!,
+                  style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                ),
+              ],
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Icon(Icons.schedule, size: 14, color: AppColors.textMuted),
+                  const SizedBox(width: 4),
+                  Text(
+                    service.durationLabel,
+                    style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    service.priceLabel,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.brandDeep,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        if (onReserve != null) ...[
+          const SizedBox(width: 12),
+          OutlinedButton(
+            onPressed: () => onReserve!(service.id),
+            child: const Text('Reservar'),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+// =============================================================================
+// SECCIÓN: Portafolio
+// =============================================================================
+
+class _PortfolioSection extends StatelessWidget {
+  const _PortfolioSection({required this.photos});
+
+  final List<PublicSalonPhotoItem> photos;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Section(
+      title: 'Portafolio',
+      icon: Icons.photo_library_outlined,
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 160,
+          crossAxisSpacing: 8,
+          mainAxisSpacing: 8,
+        ),
+        itemCount: photos.length,
+        itemBuilder: (context, index) {
+          final photo = photos[index];
+          return InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => _openViewer(context, photo),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                photo.photoUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  color: AppColors.surfaceAlt,
+                  child: const Icon(Icons.broken_image_outlined, color: AppColors.textMuted),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _openViewer(BuildContext context, PublicSalonPhotoItem photo) {
+    showDialog<void>(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: const EdgeInsets.all(16),
+        child: Stack(
+          children: [
+            InteractiveViewer(
+              child: Image.network(photo.photoUrl, fit: BoxFit.contain),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close, color: Colors.white),
+              ),
+            ),
+            if (photo.caption != null && photo.caption!.trim().isNotEmpty)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  color: Colors.black54,
+                  child: Text(
+                    photo.caption!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// SECCIÓN: Equipo
+// =============================================================================
+
+class _TeamSection extends StatelessWidget {
+  const _TeamSection({required this.team});
+
+  final List<PublicSalonTeamMember> team;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Section(
+      title: 'Equipo',
+      icon: Icons.groups_outlined,
+      child: Wrap(
+        spacing: 16,
+        runSpacing: 16,
+        children: [for (final member in team) _TeamMemberCard(member: member)],
+      ),
+    );
+  }
+}
+
+class _TeamMemberCard extends StatelessWidget {
+  const _TeamMemberCard({required this.member});
+
+  final PublicSalonTeamMember member;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 130,
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 36,
+            backgroundColor: AppColors.brandTint,
+            backgroundImage: member.photoUrl != null
+                ? NetworkImage(member.photoUrl!)
+                : null,
+            child: member.photoUrl == null
+                ? Text(
+                    member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.brandDeep,
+                    ),
+                  )
+                : null,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            member.name,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          ),
+          if (member.bio != null && member.bio!.trim().isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              member.bio!,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// SECCIÓN: Reseñas
+// =============================================================================
+
+class _ReviewsSection extends StatelessWidget {
+  const _ReviewsSection({required this.summary});
+
+  final PublicSalonReviewsSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Section(
+      title: 'Reseñas',
+      icon: Icons.star_outline,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _StarRatingLine(
+            rating: summary.avgRating,
+            totalReviews: summary.totalReviews,
+          ),
+          const SizedBox(height: 16),
+          for (final review in summary.reviews) ...[
+            _ReviewTile(review: review),
+            if (review != summary.reviews.last) const Divider(height: 24),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewTile extends StatelessWidget {
+  const _ReviewTile({required this.review});
+
+  final PublicSalonReviewItem review;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              review.clientName,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(width: 8),
+            Row(
+              children: [
+                for (var i = 0; i < 5; i++)
+                  Icon(
+                    i < review.rating ? Icons.star : Icons.star_border,
+                    size: 14,
+                    color: AppColors.warning,
+                  ),
+              ],
+            ),
+          ],
+        ),
+        if (review.comment != null && review.comment!.trim().isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            review.comment!,
+            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+// =============================================================================
+// SECCIÓN: Horarios y Ubicación
+// =============================================================================
+
+class _HoursLocationSection extends StatelessWidget {
+  const _HoursLocationSection({required this.salon});
+
+  final PublicSalonProfile salon;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Section(
+      title: 'Horarios y ubicación',
+      icon: Icons.schedule_outlined,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (salon.locationLine.isNotEmpty) ...[
+            Row(
+              children: [
+                const Icon(Icons.location_on_outlined, size: 18, color: AppColors.textMuted),
+                const SizedBox(width: 8),
+                Expanded(child: Text(salon.locationLine)),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
+          if (salon.businessHours.isEmpty)
+            const Text(
+              'Este negocio todavía no publicó su horario de atención.',
+              style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+            )
+          else
+            for (final hour in salon.businessHours)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(hour.dayName, style: const TextStyle(fontSize: 13)),
+                    Text(
+                      hour.scheduleText,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: hour.isOpen
+                            ? AppColors.textPrimary
+                            : AppColors.textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// ESTADOS DE MENSAJE (cargando / error / no encontrado)
+// =============================================================================
 
 class _MessageCard extends StatelessWidget {
   const _MessageCard({
