@@ -749,6 +749,25 @@ class _HoursLocationSection extends StatelessWidget {
 
   final PublicSalonProfile salon;
 
+  Future<void> _abrir(BuildContext context, Uri uri) async {
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Uri? get _mapsUri {
+    final address = salon.address?.trim();
+    if (address == null || address.isEmpty) return null;
+
+    final city = salon.city?.trim();
+    final query = city != null && city.isNotEmpty ? '$address, $city' : address;
+
+    return Uri.https('www.google.com', '/maps/search/', {
+      'api': '1',
+      'query': query,
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return _Section(
@@ -765,6 +784,14 @@ class _HoursLocationSection extends StatelessWidget {
                 Expanded(child: Text(salon.locationLine)),
               ],
             ),
+            if (_mapsUri != null) ...[
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: () => _abrir(context, _mapsUri!),
+                icon: const Text('📍', style: TextStyle(fontSize: 14)),
+                label: const Text('Ver en Google Maps'),
+              ),
+            ],
             const SizedBox(height: 16),
           ],
           if (salon.businessHours.isEmpty)

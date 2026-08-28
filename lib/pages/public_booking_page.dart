@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
 
@@ -8,11 +9,13 @@ import '../models/public_booking_result.dart';
 import '../models/public_branch_info.dart';
 import '../models/public_service_option.dart';
 import '../services/public_booking_service.dart';
+import 'agenda_page.dart' show buildWhatsAppUri;
 
 /// Pagina publica de reserva (web/QR), D-005. No requiere sesion: usa el
 /// cliente Supabase con el rol "anon" y solo llama a las RPC public_* que
 /// exigen sede y tenant activos. Se llega aqui via
-/// "?reservar=`branch_id`" (ver main.dart), no por AuthGate.
+/// "?reservar=`branch_id`" (ver main.dart) o empujada desde la pagina del
+/// negocio (D-165), no por AuthGate.
 class PublicBookingPage extends StatefulWidget {
   const PublicBookingPage({
     super.key,
@@ -23,13 +26,30 @@ class PublicBookingPage extends StatefulWidget {
   final String branchId;
 
   /// Si viene de "Reservar" sobre un servicio puntual de la página del
-  /// negocio (D-165), precarga ese servicio -- con el primer estilista que
-  /// lo ofrezca, ya que `PublicServiceOption` combina servicio y estilista
-  /// en una sola opción. La persona igual puede cambiarlo a mano.
+  /// negocio (D-165), precarga ese servicio. El profesional queda en
+  /// "Cualquiera disponible" (D-166) -- la persona lo puede acotar a mano.
   final String? preselectedServiceId;
 
   @override
   State<PublicBookingPage> createState() => _PublicBookingPageState();
+}
+
+/// Un horario disponible ya resuelto a un estilista concreto (D-166).
+///
+/// Con "Cualquiera disponible" se consultan TODOS los estilistas que
+/// ofrecen el servicio y se combinan sus horarios en una sola lista; cada
+/// hora recuerda de qué estilista salió, para poder reservar con el
+/// correcto aunque en pantalla solo se vea la hora.
+class _SlotOption {
+  const _SlotOption({
+    required this.slot,
+    required this.stylistId,
+    required this.stylistName,
+  });
+
+  final AvailableAppointmentSlot slot;
+  final String stylistId;
+  final String stylistName;
 }
 
 class _PublicBookingPageState extends State<PublicBookingPage> {
@@ -46,11 +66,15 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
   PublicBranchInfo? branchInfo;
   List<PublicServiceOption> services = [];
 
-  PublicServiceOption? selectedService;
+  String? selectedServiceId;
+
+  /// `null` significa "Cualquiera disponible" (D-166).
+  String? selectedStylistId;
+
   DateTime? selectedDate;
-  List<AvailableAppointmentSlot> slots = [];
+  List<_SlotOption> slotOptions = [];
   bool slotsLoading = false;
-  AvailableAppointmentSlot? selectedSlot;
+  _SlotOption? selectedSlotOption;
 
   bool isSubmitting = false;
   String? submitError;
@@ -93,13 +117,11 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
         branchInfo = info;
         services = serviceOptions;
         isLoading = false;
-        if (widget.preselectedServiceId != null) {
-          for (final option in serviceOptions) {
-            if (option.serviceId == widget.preselectedServiceId) {
-              selectedService = option;
-              break;
-            }
-          }
+        if (widget.preselectedServiceId != null &&
+            serviceOptions.any(
+              (option) => option.serviceId == widget.preselectedServiceId,
+            )) {
+          selectedServiceId = widget.preselectedServiceId;
         }
       });
     } catch (error) {
@@ -111,19 +133,60 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
     }
   }
 
-  void _selectService(PublicServiceOption option) {
+  /// Un servicio distinto por `serviceId`, con el primer nombre/precio/
+  /// duración que aparezca -- todos los estilistas que ofrecen el mismo
+  /// servicio comparten esos datos (vienen de la misma fila de
+  /// `branch_services`).
+  List<PublicServiceOption> get _distinctServices {
+    final seen = <String>{};
+    final result = <PublicServiceOption>[];
+    for (final option in services) {
+      if (seen.add(option.serviceId)) result.add(option);
+    }
+    return result;
+  }
+
+  List<PublicServiceOption> get _stylistsForSelectedService {
+    if (selectedServiceId == null) return const [];
+    final seen = <String>{};
+    final result = <PublicServiceOption>[];
+    for (final option in services) {
+      if (option.serviceId == selectedServiceId && seen.add(option.stylistId)) {
+        result.add(option);
+      }
+    }
+    return result;
+  }
+
+  PublicServiceOption? get _selectedServiceInfo {
+    for (final option in services) {
+      if (option.serviceId == selectedServiceId) return option;
+    }
+    return null;
+  }
+
+  void _selectService(String? serviceId) {
     setState(() {
-      selectedService = option;
+      selectedServiceId = serviceId;
+      selectedStylistId = null; // "Cualquiera disponible" por defecto.
       selectedDate = null;
-      slots = [];
-      selectedSlot = null;
+      slotOptions = [];
+      selectedSlotOption = null;
       bookingResult = null;
     });
   }
 
+  void _selectStylist(String? stylistId) {
+    setState(() {
+      selectedStylistId = stylistId;
+      selectedDate = null;
+      slotOptions = [];
+      selectedSlotOption = null;
+    });
+  }
+
   Future<void> _selectDate() async {
-    final service = selectedService;
-    if (service == null) return;
+    if (selectedServiceId == null) return;
 
     final now = DateTime.now();
     final picked = await showDatePicker(
@@ -137,22 +200,55 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
 
     setState(() {
       selectedDate = picked;
-      slots = [];
-      selectedSlot = null;
+      slotOptions = [];
+      selectedSlotOption = null;
       slotsLoading = true;
     });
 
     try {
-      final loadedSlots = await bookingService.getAvailableSlots(
-        branchId: widget.branchId,
-        serviceId: service.serviceId,
-        stylistId: service.stylistId,
-        date: picked,
+      // "Cualquiera disponible": se consulta a cada estilista que ofrece el
+      // servicio y se combinan los horarios (D-166). Con un estilista
+      // puntual, es la misma consulta de siempre con un solo destino.
+      final targets = selectedStylistId == null
+          ? _stylistsForSelectedService
+          : _stylistsForSelectedService
+              .where((option) => option.stylistId == selectedStylistId)
+              .toList();
+
+      final results = await Future.wait(
+        targets.map(
+          (target) => bookingService.getAvailableSlots(
+            branchId: widget.branchId,
+            serviceId: selectedServiceId!,
+            stylistId: target.stylistId,
+            date: picked,
+          ),
+        ),
       );
+
+      final merged = <_SlotOption>[];
+      final seenTimes = <DateTime>{};
+      for (var i = 0; i < targets.length; i++) {
+        for (final slot in results[i]) {
+          // Si dos estilistas coinciden en la misma hora, se muestra una
+          // sola vez -- son "Cualquiera disponible", no un listado por
+          // persona.
+          if (seenTimes.add(slot.startsAt)) {
+            merged.add(
+              _SlotOption(
+                slot: slot,
+                stylistId: targets[i].stylistId,
+                stylistName: targets[i].stylistName,
+              ),
+            );
+          }
+        }
+      }
+      merged.sort((a, b) => a.slot.startsAt.compareTo(b.slot.startsAt));
 
       if (!mounted) return;
       setState(() {
-        slots = loadedSlots;
+        slotOptions = merged;
         slotsLoading = false;
       });
     } catch (error) {
@@ -171,10 +267,11 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
   }
 
   Future<void> _submitBooking() async {
-    final service = selectedService;
-    final slot = selectedSlot;
+    final serviceId = selectedServiceId;
+    final serviceInfo = _selectedServiceInfo;
+    final slotOption = selectedSlotOption;
 
-    if (service == null || slot == null) {
+    if (serviceId == null || serviceInfo == null || slotOption == null) {
       setState(() {
         submitError = 'Selecciona un servicio, una fecha y un horario.';
       });
@@ -206,9 +303,9 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
     try {
       final result = await bookingService.createBooking(
         branchId: widget.branchId,
-        serviceId: service.serviceId,
-        stylistId: service.stylistId,
-        scheduledAt: slot.startsAt,
+        serviceId: serviceId,
+        stylistId: slotOption.stylistId,
+        scheduledAt: slotOption.slot.startsAt,
         clientName: name,
         clientPhone: phone,
         clientEmail: emailController.text.trim().isEmpty
@@ -295,7 +392,9 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
     if (result != null) {
       return _BookingSuccessCard(
         result: result,
-        businessName: branchInfo?.businessName ?? 'el negocio',
+        branchInfo: branchInfo!,
+        clientName: nameController.text.trim(),
+        durationMinutes: _selectedServiceInfo?.durationMinutes ?? 60,
       );
     }
 
@@ -363,10 +462,9 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
                 style: const TextStyle(fontSize: 14, color: AppColors.textSecondary),
               ),
             ],
-            _buildTeamSection(),
             const SizedBox(height: 24),
             const Text(
-              'Elige un servicio',
+              '1. Elige un servicio',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 10),
@@ -376,23 +474,53 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
                 'reservar en linea.',
               )
             else
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: services.map((service) {
-                  final selected =
-                      selectedService?.serviceId == service.serviceId &&
-                      selectedService?.stylistId == service.stylistId;
-                  return ChoiceChip(
-                    label: Text(
-                      '${service.label} · ${service.formattedPrice}',
-                    ),
-                    selected: selected,
-                    onSelected: (_) => _selectService(service),
-                  );
-                }).toList(),
+              DropdownButtonFormField<String>(
+                initialValue: selectedServiceId,
+                isExpanded: true,
+                decoration: const InputDecoration(border: OutlineInputBorder()),
+                hint: const Text('Selecciona un servicio'),
+                items: _distinctServices
+                    .map(
+                      (service) => DropdownMenuItem(
+                        value: service.serviceId,
+                        child: Text(
+                          '${service.serviceName} · ${service.durationMinutes} min · '
+                          '${service.formattedPrice}',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: _selectService,
               ),
-            if (selectedService != null) ...[
+            if (selectedServiceId != null) ...[
+              const SizedBox(height: 20),
+              const Text(
+                '2. Elige profesional',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(height: 10),
+              DropdownButtonFormField<String?>(
+                initialValue: selectedStylistId,
+                isExpanded: true,
+                decoration: const InputDecoration(border: OutlineInputBorder()),
+                items: [
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('Cualquiera disponible'),
+                  ),
+                  ..._stylistsForSelectedService.map(
+                    (stylist) => DropdownMenuItem<String?>(
+                      value: stylist.stylistId,
+                      child: Text(
+                        stylist.stylistName,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ],
+                onChanged: _selectStylist,
+              ),
               const SizedBox(height: 20),
               const Text(
                 'Elige una fecha',
@@ -414,7 +542,7 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
               const SizedBox(height: 10),
               if (slotsLoading)
                 const Center(child: CircularProgressIndicator())
-              else if (slots.isEmpty)
+              else if (slotOptions.isEmpty)
                 const Text(
                   'No hay horarios disponibles ese dia. Elige otra fecha.',
                 )
@@ -422,18 +550,23 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: slots.map((slot) {
-                    final selected = selectedSlot?.startsAt == slot.startsAt;
+                  children: slotOptions.map((option) {
+                    final selected = selectedSlotOption?.slot.startsAt ==
+                        option.slot.startsAt;
                     return ChoiceChip(
-                      label: Text(slot.label),
+                      label: Text(
+                        selectedStylistId == null
+                            ? '${option.slot.label} · ${option.stylistName}'
+                            : option.slot.label,
+                      ),
                       selected: selected,
                       onSelected: (_) =>
-                          setState(() => selectedSlot = slot),
+                          setState(() => selectedSlotOption = option),
                     );
                   }).toList(),
                 ),
             ],
-            if (selectedSlot != null) ...[
+            if (selectedSlotOption != null) ...[
               const SizedBox(height: 24),
               const Divider(),
               const SizedBox(height: 8),
@@ -501,112 +634,11 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
                           ),
                         )
                       : const Icon(Icons.check_circle_outline),
-                  label: Text(isSubmitting ? 'Enviando...' : 'Confirmar reserva'),
+                  label: Text(isSubmitting ? 'Enviando...' : 'Solicitar cita'),
                 ),
               ),
             ],
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTeamSection() {
-    final seen = <String>{};
-    final team = <PublicServiceOption>[];
-    for (final service in services) {
-      final hasProfile =
-          (service.stylistPhotoUrl?.trim().isNotEmpty ?? false) ||
-          (service.stylistBio?.trim().isNotEmpty ?? false);
-      if (hasProfile && seen.add(service.stylistId)) {
-        team.add(service);
-      }
-    }
-
-    if (team.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Conoce a nuestro equipo',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 120,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: team.length,
-              separatorBuilder: (context, index) => const SizedBox(width: 12),
-              itemBuilder: (context, index) {
-                final stylist = team[index];
-                return SizedBox(
-                  width: 92,
-                  child: Column(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(30),
-                        child: stylist.stylistPhotoUrl == null
-                            ? Container(
-                                width: 60,
-                                height: 60,
-                                color: AppColors.brandTint,
-                                child: Icon(
-                                  Icons.person_outline,
-                                  color: AppColors.brand,
-                                ),
-                              )
-                            : Image.network(
-                                stylist.stylistPhotoUrl!,
-                                width: 60,
-                                height: 60,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    Container(
-                                      width: 60,
-                                      height: 60,
-                                      color: AppColors.brandTint,
-                                      child: Icon(
-                                        Icons.person_outline,
-                                        color: AppColors.brand,
-                                      ),
-                                    ),
-                              ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        stylist.stylistName,
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      if (stylist.stylistBio != null &&
-                          stylist.stylistBio!.trim().isNotEmpty)
-                        Text(
-                          stylist.stylistBio!,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 10,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                    ],
-                  ),
-                );
-              },
             ),
           ),
         ],
@@ -618,20 +650,76 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
 class _BookingSuccessCard extends StatelessWidget {
   const _BookingSuccessCard({
     required this.result,
-    required this.businessName,
+    required this.branchInfo,
+    required this.clientName,
+    required this.durationMinutes,
   });
 
   final PublicBookingResult result;
-  final String businessName;
+  final PublicBranchInfo branchInfo;
+  final String clientName;
+  final int durationMinutes;
+
+  String _twoDigits(int value) => value.toString().padLeft(2, '0');
+
+  String get _dateText {
+    final date = result.scheduledAt;
+    return '${_twoDigits(date.day)}/${_twoDigits(date.month)}/${date.year} '
+        '${_twoDigits(date.hour)}:${_twoDigits(date.minute)}';
+  }
+
+  /// `YYYYMMDDTHHMMSSZ`, el formato que exige Google Calendar en su enlace
+  /// de plantilla -- siempre en UTC, sin separadores.
+  String _googleCalendarStamp(DateTime date) {
+    final utc = date.toUtc();
+    return '${utc.year.toString().padLeft(4, '0')}'
+        '${_twoDigits(utc.month)}${_twoDigits(utc.day)}T'
+        '${_twoDigits(utc.hour)}${_twoDigits(utc.minute)}${_twoDigits(utc.second)}Z';
+  }
+
+  Future<void> _abrir(BuildContext context, Uri uri) async {
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se pudo abrir el enlace.')),
+      );
+    }
+  }
+
+  void _avisarPorWhatsApp(BuildContext context) {
+    final whatsapp = branchInfo.whatsapp;
+    if (whatsapp == null || whatsapp.trim().isEmpty) return;
+
+    final mensaje =
+        'Hola, soy $clientName. Acabo de solicitar una cita para '
+        '${result.serviceName} el $_dateText. ¿Me confirman?';
+
+    _abrir(context, buildWhatsAppUri(whatsapp, text: mensaje));
+  }
+
+  void _guardarEnGoogleCalendar(BuildContext context) {
+    final start = result.scheduledAt;
+    final end = start.add(Duration(minutes: durationMinutes));
+    final location = [branchInfo.address, branchInfo.city]
+        .whereType<String>()
+        .where((value) => value.trim().isNotEmpty)
+        .join(', ');
+
+    final uri = Uri.https('calendar.google.com', '/calendar/render', {
+      'action': 'TEMPLATE',
+      'text': '${result.serviceName} en ${branchInfo.businessName}',
+      'dates': '${_googleCalendarStamp(start)}/${_googleCalendarStamp(end)}',
+      'details': 'Cita con ${result.stylistName} en ${branchInfo.businessName}.',
+      if (location.isNotEmpty) 'location': location,
+    });
+
+    _abrir(context, uri);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final date = result.scheduledAt;
-    final dateText =
-        '${date.day.toString().padLeft(2, '0')}/'
-        '${date.month.toString().padLeft(2, '0')}/${date.year} '
-        '${date.hour.toString().padLeft(2, '0')}:'
-        '${date.minute.toString().padLeft(2, '0')}';
+    final canPop = Navigator.of(context).canPop();
 
     return Card(
       elevation: 1,
@@ -648,7 +736,7 @@ class _BookingSuccessCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Solicitud enviada a $businessName',
+              'Solicitud enviada a ${branchInfo.businessName}',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 20,
@@ -657,7 +745,7 @@ class _BookingSuccessCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              '${result.serviceName} con ${result.stylistName}\n$dateText',
+              '${result.serviceName} con ${result.stylistName}\n$_dateText',
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 16),
             ),
@@ -668,6 +756,41 @@ class _BookingSuccessCard extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.textSecondary),
             ),
+            const SizedBox(height: 24),
+            if (branchInfo.whatsapp != null &&
+                branchInfo.whatsapp!.trim().isNotEmpty)
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => _avisarPorWhatsApp(context),
+                  icon: const Text('📲', style: TextStyle(fontSize: 16)),
+                  label: const Text('Avisar al salón por WhatsApp'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.whatsapp,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () => _guardarEnGoogleCalendar(context),
+                icon: const Text('📅', style: TextStyle(fontSize: 16)),
+                label: const Text('Guardar en Google Calendar'),
+              ),
+            ),
+            if (canPop) ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Text('🏠', style: TextStyle(fontSize: 16)),
+                  label: const Text('Volver a la página del salón'),
+                ),
+              ),
+            ],
           ],
         ),
       ),

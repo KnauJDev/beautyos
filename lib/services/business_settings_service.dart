@@ -45,7 +45,8 @@ class BusinessSettingsService {
   }
 
   /// Autoservicio: el owner o admin del propio negocio actualiza el nombre
-  /// del titular, tipo de negocio, teléfono, WhatsApp, Instagram y Facebook.
+  /// del titular, tipo de negocio, teléfono, WhatsApp, Instagram, Facebook
+  /// y la dirección física de la sede principal (D-166).
   Future<void> updateContactInfo({
     required String fullName,
     String? businessType,
@@ -53,6 +54,7 @@ class BusinessSettingsService {
     String? whatsapp,
     String? instagram,
     String? facebook,
+    String? address,
   }) async {
     await Supabase.instance.client.rpc(
       'update_tenant_contact_info',
@@ -63,6 +65,7 @@ class BusinessSettingsService {
         'p_whatsapp': whatsapp,
         'p_instagram': instagram,
         'p_facebook': facebook,
+        'p_address': address,
       },
     );
   }

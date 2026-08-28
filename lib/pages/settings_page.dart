@@ -937,6 +937,7 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
   late final TextEditingController _businessTypeController;
   late final TextEditingController _phoneController;
   late final TextEditingController _whatsappController;
+  late final TextEditingController _addressController;
   late final TextEditingController _instagramController;
   late final TextEditingController _facebookController;
   bool _isSaving = false;
@@ -953,6 +954,9 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
     );
     _whatsappController = TextEditingController(
       text: _editableOrEmpty(widget.settings.whatsapp, 'Sin WhatsApp'),
+    );
+    _addressController = TextEditingController(
+      text: widget.settings.address ?? '',
     );
     _instagramController = TextEditingController(
       text: _editableOrEmpty(widget.settings.instagram, 'Sin Instagram'),
@@ -975,6 +979,7 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
     _businessTypeController.dispose();
     _phoneController.dispose();
     _whatsappController.dispose();
+    _addressController.dispose();
     _instagramController.dispose();
     _facebookController.dispose();
     super.dispose();
@@ -990,6 +995,7 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
         whatsapp: _whatsappController.text.trim(),
         instagram: _instagramController.text.trim(),
         facebook: _facebookController.text.trim(),
+        address: _addressController.text.trim(),
       );
       if (!mounted) return;
       widget.onChanged();
@@ -1041,6 +1047,15 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
           keyboardType: TextInputType.phone,
           decoration: const InputDecoration(
             labelText: 'WhatsApp',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 10),
+        TextField(
+          controller: _addressController,
+          decoration: const InputDecoration(
+            labelText: 'Dirección física',
+            hintText: 'Calle 100 #10-20, local 5',
             border: OutlineInputBorder(),
           ),
         ),
