@@ -4,12 +4,16 @@ class PublicSalonReviewItem {
     required this.clientName,
     required this.rating,
     this.comment,
+    this.businessReply,
     this.createdAt,
   });
 
   final String clientName;
   final int rating;
   final String? comment;
+
+  /// Respuesta pública del salón a esta reseña (paso 6.3, D-170).
+  final String? businessReply;
   final DateTime? createdAt;
 
   factory PublicSalonReviewItem.fromMap(Map<String, dynamic> map) {
@@ -17,6 +21,7 @@ class PublicSalonReviewItem {
       clientName: map['client_name']?.toString() ?? 'Clienta',
       rating: (map['rating'] as num?)?.toInt() ?? 0,
       comment: map['comment']?.toString(),
+      businessReply: map['business_reply']?.toString(),
       createdAt: map['created_at'] == null
           ? null
           : DateTime.tryParse(map['created_at'].toString()),

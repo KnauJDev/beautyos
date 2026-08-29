@@ -258,5 +258,36 @@ void main() {
       expect(summary.reviews, isEmpty);
       expect(summary, same(PublicSalonReviewsSummary.empty));
     });
+
+    test('fromRows lee la respuesta del negocio cuando existe (D-170)', () {
+      final summary = PublicSalonReviewsSummary.fromRows([
+        {
+          'avg_rating': 5.0,
+          'total_reviews': 1,
+          'client_name': 'Clienta A',
+          'rating': 5,
+          'comment': 'Excelente',
+          'business_reply': '¡Gracias, Clienta A!',
+          'created_at': '2026-08-20T10:00:00Z',
+        },
+      ]);
+
+      expect(summary.reviews[0].businessReply, '¡Gracias, Clienta A!');
+    });
+
+    test('fromRows sin respuesta del negocio deja businessReply en null (D-170)', () {
+      final summary = PublicSalonReviewsSummary.fromRows([
+        {
+          'avg_rating': 5.0,
+          'total_reviews': 1,
+          'client_name': 'Clienta A',
+          'rating': 5,
+          'comment': 'Excelente',
+          'created_at': '2026-08-20T10:00:00Z',
+        },
+      ]);
+
+      expect(summary.reviews[0].businessReply, isNull);
+    });
   });
 }

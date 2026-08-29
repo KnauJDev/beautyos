@@ -3,7 +3,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../theme/app_theme.dart';
 
+import '../models/review_reply_draft.dart';
 import '../models/review_summary.dart';
+import '../services/business_settings_service.dart';
 import '../services/reviews_service.dart';
 import '../widgets/app_widgets.dart';
 
@@ -22,11 +24,26 @@ class _ResenasPageState extends State<ResenasPage> {
   late Future<List<ReviewSummary>> _reviewsFuture;
   String _selectedFilter = 'all';
 
+  /// Solo alimenta el borrador sugerido de respuesta (D-170) -- si falla al
+  /// cargar, un nombre genérico no bloquea ver ni responder reseñas.
+  String _businessName = 'nuestro salón';
+
   @override
   void initState() {
     super.initState();
     _reviewsService = ReviewsService(branchId: widget.branchId);
     _reviewsFuture = _reviewsService.getReviewsSummary();
+    _cargarNombreNegocio();
+  }
+
+  Future<void> _cargarNombreNegocio() async {
+    try {
+      final settings = await const BusinessSettingsService()
+          .getBusinessSettings();
+      if (mounted) setState(() => _businessName = settings.name);
+    } catch (_) {
+      // Silencioso a propósito: ver y responder reseñas no depende de esto.
+    }
   }
 
   void _refreshReviews() {
@@ -87,6 +104,95 @@ class _ResenasPageState extends State<ResenasPage> {
     }
   }
 
+  Future<void> _openReplyDialog(ReviewSummary review) async {
+    final draft = review.tieneRespuesta
+        ? review.businessReply!
+        : ReviewReplyDraftBuilder.generar(
+            rating: review.rating,
+            clientName: review.clientName,
+            serviceName: review.serviceName,
+            businessName: _businessName,
+          );
+
+    final controller = TextEditingController(text: draft);
+
+    final resultado = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          review.tieneRespuesta ? 'Editar respuesta' : 'Responder reseña',
+        ),
+        content: SizedBox(
+          width: 420,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Sugerencia lista para editar -- revisa el tono antes de '
+                'guardar. Se publica junto a la reseña en tu página.',
+                style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                maxLines: 5,
+                decoration: const InputDecoration(border: OutlineInputBorder()),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          if (review.tieneRespuesta)
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(''),
+              child: const Text(
+                'Quitar respuesta',
+                style: TextStyle(color: AppColors.danger),
+              ),
+            ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+
+    controller.dispose();
+
+    if (resultado == null) return;
+    await _saveReply(review, resultado);
+  }
+
+  Future<void> _saveReply(ReviewSummary review, String reply) async {
+    try {
+      await _reviewsService.setReviewReply(reviewId: review.id, reply: reply);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            reply.trim().isEmpty ? 'Respuesta eliminada.' : 'Respuesta guardada.',
+          ),
+        ),
+      );
+      _refreshReviews();
+    } catch (error) {
+      if (!mounted) return;
+      final message = error is PostgrestException
+          ? error.message
+          : error.toString();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo guardar la respuesta: $message')),
+      );
+    }
+  }
+
   List<ReviewSummary> _filterReviews(List<ReviewSummary> reviews) {
     switch (_selectedFilter) {
       case 'public':
@@ -135,6 +241,7 @@ class _ResenasPageState extends State<ResenasPage> {
           },
           onModerate: _moderateReview,
           onSetVisibility: _setReviewVisibility,
+          onReply: _openReplyDialog,
           onRefresh: _refreshReviews,
         );
       },
@@ -150,6 +257,7 @@ class _ReviewsContent extends StatelessWidget {
   final Future<void> Function(ReviewSummary review, bool approve) onModerate;
   final Future<void> Function(ReviewSummary review, bool visible)
   onSetVisibility;
+  final Future<void> Function(ReviewSummary review) onReply;
   final VoidCallback onRefresh;
 
   const _ReviewsContent({
@@ -159,6 +267,7 @@ class _ReviewsContent extends StatelessWidget {
     required this.onFilterChanged,
     required this.onModerate,
     required this.onSetVisibility,
+    required this.onReply,
     required this.onRefresh,
   });
 
@@ -246,6 +355,7 @@ class _ReviewsContent extends StatelessWidget {
           reviews: reviews,
           onModerate: onModerate,
           onSetVisibility: onSetVisibility,
+          onReply: onReply,
         ),
       ],
     );
@@ -326,11 +436,13 @@ class _ReviewsList extends StatelessWidget {
   final Future<void> Function(ReviewSummary review, bool approve) onModerate;
   final Future<void> Function(ReviewSummary review, bool visible)
   onSetVisibility;
+  final Future<void> Function(ReviewSummary review) onReply;
 
   const _ReviewsList({
     required this.reviews,
     required this.onModerate,
     required this.onSetVisibility,
+    required this.onReply,
   });
 
   @override
@@ -350,6 +462,7 @@ class _ReviewsList extends StatelessWidget {
             review: review,
             onModerate: onModerate,
             onSetVisibility: onSetVisibility,
+            onReply: onReply,
           ),
           const SizedBox(height: 12),
         ],
@@ -363,11 +476,13 @@ class _ReviewCard extends StatelessWidget {
   final Future<void> Function(ReviewSummary review, bool approve) onModerate;
   final Future<void> Function(ReviewSummary review, bool visible)
   onSetVisibility;
+  final Future<void> Function(ReviewSummary review) onReply;
 
   const _ReviewCard({
     required this.review,
     required this.onModerate,
     required this.onSetVisibility,
+    required this.onReply,
   });
 
   @override
@@ -426,6 +541,47 @@ class _ReviewCard extends StatelessWidget {
               'Fecha: ${review.createdDateText}',
               style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
             ),
+            const SizedBox(height: 12),
+            if (review.tieneRespuesta) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColors.brandTintSoft,
+                  borderRadius: BorderRadius.circular(AppRadius.control),
+                  border: Border.all(color: AppColors.brandTint),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tu respuesta',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.brandDeep,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      review.businessReply!,
+                      style: const TextStyle(fontSize: 13, color: AppColors.textStrong),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () => onReply(review),
+                icon: const Icon(Icons.edit_outlined, size: 16),
+                label: const Text('Editar respuesta'),
+              ),
+            ] else
+              OutlinedButton.icon(
+                onPressed: () => onReply(review),
+                icon: const Icon(Icons.reply_outlined, size: 16),
+                label: const Text('Responder'),
+              ),
             if (review.moderationStatus == 'pending') ...[
               const SizedBox(height: 12),
               Wrap(

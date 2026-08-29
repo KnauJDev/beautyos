@@ -697,6 +697,35 @@ class _ReviewTile extends StatelessWidget {
             style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
           ),
         ],
+        if (review.businessReply != null &&
+            review.businessReply!.trim().isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.brandTintSoft,
+              borderRadius: BorderRadius.circular(AppRadius.control),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Respuesta del negocio',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.brandDeep,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  review.businessReply!,
+                  style: const TextStyle(fontSize: 12, color: AppColors.textStrong),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }

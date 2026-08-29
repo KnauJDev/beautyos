@@ -48,4 +48,20 @@ class ReviewsService {
       },
     );
   }
+
+  /// Guarda, edita o quita (con texto vacío) la respuesta del salón a una
+  /// reseña (paso 6.3, D-170).
+  Future<void> setReviewReply({
+    required String reviewId,
+    required String reply,
+  }) async {
+    await Supabase.instance.client.rpc(
+      'set_review_reply',
+      params: {
+        'p_branch_id': branchId,
+        'p_review_id': reviewId,
+        'p_reply': reply,
+      },
+    );
+  }
 }

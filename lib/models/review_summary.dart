@@ -8,6 +8,11 @@
   final String? comment;
   final String moderationStatus;
   final bool visibleToPublic;
+
+  /// Respuesta pública del salón a esta reseña (paso 6.3, D-170). `null` si
+  /// todavía no ha respondido.
+  final String? businessReply;
+  final DateTime? businessReplyAt;
   final DateTime createdAt;
 
   const ReviewSummary({
@@ -20,6 +25,8 @@
     required this.comment,
     required this.moderationStatus,
     required this.visibleToPublic,
+    this.businessReply,
+    this.businessReplyAt,
     required this.createdAt,
   });
 
@@ -34,9 +41,16 @@
       comment: map['comment'] as String?,
       moderationStatus: map['moderation_status'] as String? ?? 'pending',
       visibleToPublic: map['visible_to_public'] as bool? ?? false,
+      businessReply: map['business_reply']?.toString(),
+      businessReplyAt: map['business_reply_at'] == null
+          ? null
+          : DateTime.tryParse(map['business_reply_at'].toString())?.toLocal(),
       createdAt: DateTime.parse(map['created_at'] as String).toLocal(),
     );
   }
+
+  bool get tieneRespuesta =>
+      businessReply != null && businessReply!.trim().isNotEmpty;
 
   static int _readInt(dynamic value) {
     if (value is int) {
