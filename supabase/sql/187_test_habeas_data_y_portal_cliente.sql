@@ -146,7 +146,7 @@ begin
 
   v_photo_sin_consentimiento := public.create_work_photo(
     v_branch, v_ticket_pasado, v_branch::text || '/prueba-sin-consentimiento.jpg',
-    'after', 'Sin autorizacion', v_stylist
+    'after'::text, 'Sin autorizacion'::text, v_stylist
   );
 
   if exists (

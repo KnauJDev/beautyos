@@ -43,9 +43,12 @@ comment on column public.work_photos.client_consent_at is
 
 -- ----------------------------------------------------------------------------
 -- 2. create_work_photo: gana `p_client_consent` (parámetro nuevo con
---    default al final -- no cambia el orden de los que ya existían, no hace
---    falta `drop function`).
+--    default al final). Exige `drop function` de la firma vieja de 6
+--    parámetros para evitar conflicto de sobrecarga en PostgreSQL al omitir
+--    el séptimo argumento.
 -- ----------------------------------------------------------------------------
+
+drop function if exists public.create_work_photo(uuid, uuid, text, text, text, uuid);
 
 create or replace function public.create_work_photo(
   p_branch_id uuid,
