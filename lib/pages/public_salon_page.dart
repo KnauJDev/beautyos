@@ -8,7 +8,9 @@ import '../models/public_salon_review_item.dart';
 import '../models/public_salon_service_item.dart';
 import '../models/public_salon_team_member.dart';
 import '../services/public_salon_service.dart';
+import '../widgets/photo_grid_viewer.dart';
 import 'agenda_page.dart' show buildWhatsAppUri;
+import 'client_portal_page.dart';
 import 'public_booking_page.dart';
 
 /// Página pública del negocio (D-098, D-164, D-165):
@@ -128,6 +130,7 @@ class _PublicSalonPageState extends State<PublicSalonPage> {
           onBook: result.profile.primaryBranchId == null
               ? null
               : () => _openBooking(result.profile.primaryBranchId!),
+          onOpenPortal: () => _openClientPortal(result.profile),
         ),
         if (result.services.isNotEmpty) ...[
           const SizedBox(height: 20),
@@ -169,6 +172,18 @@ class _PublicSalonPageState extends State<PublicSalonPage> {
       ),
     );
   }
+
+  void _openClientPortal(PublicSalonProfile salon) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ClientPortalPage(
+          tenantId: salon.tenantId,
+          businessName: salon.name,
+          businessWhatsapp: salon.whatsapp,
+        ),
+      ),
+    );
+  }
 }
 
 // =============================================================================
@@ -180,11 +195,13 @@ class _HeroHeader extends StatelessWidget {
     required this.salon,
     required this.reviews,
     required this.onBook,
+    required this.onOpenPortal,
   });
 
   final PublicSalonProfile salon;
   final PublicSalonReviewsSummary reviews;
   final VoidCallback? onBook;
+  final VoidCallback onOpenPortal;
 
   Future<void> _abrir(Uri uri) async {
     if (await canLaunchUrl(uri)) {
@@ -336,6 +353,14 @@ class _HeroHeader extends StatelessWidget {
                         label: const Text('Facebook'),
                       ),
                   ],
+                ),
+                const SizedBox(height: 12),
+                Center(
+                  child: TextButton.icon(
+                    onPressed: onOpenPortal,
+                    icon: const Text('👤', style: TextStyle(fontSize: 14)),
+                    label: const Text('Mis citas y fotos'),
+                  ),
                 ),
               ],
             ),
@@ -522,73 +547,10 @@ class _PortfolioSection extends StatelessWidget {
     return _Section(
       title: 'Portafolio',
       icon: Icons.photo_library_outlined,
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 160,
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
-        ),
-        itemCount: photos.length,
-        itemBuilder: (context, index) {
-          final photo = photos[index];
-          return InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () => _openViewer(context, photo),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                photo.photoUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  color: AppColors.surfaceAlt,
-                  child: const Icon(Icons.broken_image_outlined, color: AppColors.textMuted),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  void _openViewer(BuildContext context, PublicSalonPhotoItem photo) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.black,
-        insetPadding: const EdgeInsets.all(16),
-        child: Stack(
-          children: [
-            InteractiveViewer(
-              child: Image.network(photo.photoUrl, fit: BoxFit.contain),
-            ),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.close, color: Colors.white),
-              ),
-            ),
-            if (photo.caption != null && photo.caption!.trim().isNotEmpty)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  color: Colors.black54,
-                  child: Text(
-                    photo.caption!,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-              ),
-          ],
-        ),
+      child: PhotoGridViewer(
+        photos: photos
+            .map((photo) => (url: photo.photoUrl, caption: photo.caption))
+            .toList(),
       ),
     );
   }

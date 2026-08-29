@@ -595,6 +595,8 @@ class _WorkPhotoCard extends StatelessWidget {
                 Row(
                   children: [
                     _PhotoTypeBadge(text: photo.photoTypeText),
+                    const SizedBox(width: 6),
+                    _ConsentBadge(hasConsent: photo.clientConsent),
                     const Spacer(),
                     if (photo.ticketCode != null)
                       Container(
@@ -709,6 +711,51 @@ class _WorkPhotoCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Indicador visual de consentimiento (Ley 1581, D-167): si la clienta
+/// autorizó publicar la foto o si es solo archivo interno privado.
+class _ConsentBadge extends StatelessWidget {
+  final bool hasConsent;
+
+  const _ConsentBadge({required this.hasConsent});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = hasConsent ? AppColors.success : AppColors.textMuted;
+    return Tooltip(
+      message: hasConsent
+          ? 'La clienta autorizó publicar esta foto (Ley 1581)'
+          : 'Sin autorización de la clienta: solo archivo interno privado',
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: color.withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              hasConsent ? Icons.verified_user_outlined : Icons.lock_outline,
+              size: 12,
+              color: color,
+            ),
+            const SizedBox(width: 3),
+            Text(
+              hasConsent ? 'Autorizada' : 'Solo archivo interno',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

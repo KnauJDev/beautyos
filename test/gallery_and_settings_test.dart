@@ -87,6 +87,44 @@ void main() {
       expect(photo.photoTypeText, 'Portafolio');
       expect(photo.aiStatusText, 'IA pendiente');
     });
+
+    test('WorkPhotoSummary mapea client_consent y client_consent_at (D-167)', () {
+      final conConsentimiento = WorkPhotoSummary.fromMap({
+        'id': 'wp-103',
+        'ticket_id': 'tk-703',
+        'client_name': 'Laura Gómez',
+        'stylist_name': 'Sofía Pérez',
+        'photo_url': null,
+        'photo_type': 'after',
+        'ai_status': 'not_required',
+        'visible_to_customer': false,
+        'approved_for_portfolio': false,
+        'client_consent': true,
+        'client_consent_at': '2026-08-29T09:00:00Z',
+        'created_at': '2026-08-29T09:00:00Z',
+      });
+
+      expect(conConsentimiento.clientConsent, isTrue);
+      expect(conConsentimiento.clientConsentAt, isNotNull);
+
+      final sinConsentimiento = WorkPhotoSummary.fromMap({
+        'id': 'wp-104',
+        'ticket_id': 'tk-704',
+        'client_name': 'Laura Gómez',
+        'stylist_name': 'Sofía Pérez',
+        'photo_url': null,
+        'photo_type': 'after',
+        'ai_status': 'not_required',
+        'visible_to_customer': false,
+        'approved_for_portfolio': false,
+        'client_consent': false,
+        'client_consent_at': null,
+        'created_at': '2026-08-29T09:00:00Z',
+      });
+
+      expect(sinConsentimiento.clientConsent, isFalse);
+      expect(sinConsentimiento.clientConsentAt, isNull);
+    });
   });
 
   group('Numeración de Ventas y DIAN (Paso 4.9 / D-156)', () {

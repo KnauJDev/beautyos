@@ -33,6 +33,12 @@ class WorkPhotoSummary {
   final String aiStatus;
   final bool visibleToCustomer;
   final bool approvedForPortfolio;
+
+  /// La clienta autorizó publicar esta foto en portafolio y redes (Ley
+  /// 1581 de 2012). Sin esto, el servidor rechaza aprobarla para
+  /// portafolio (D-167).
+  final bool clientConsent;
+  final DateTime? clientConsentAt;
   final String createdAt;
 
   const WorkPhotoSummary({
@@ -53,6 +59,8 @@ class WorkPhotoSummary {
     required this.aiStatus,
     required this.visibleToCustomer,
     required this.approvedForPortfolio,
+    required this.clientConsent,
+    this.clientConsentAt,
     required this.createdAt,
   });
 
@@ -92,6 +100,10 @@ class WorkPhotoSummary {
       aiStatus: map['ai_status'] as String,
       visibleToCustomer: map['visible_to_customer'] as bool,
       approvedForPortfolio: map['approved_for_portfolio'] as bool,
+      clientConsent: map['client_consent'] as bool? ?? false,
+      clientConsentAt: map['client_consent_at'] == null
+          ? null
+          : DateTime.tryParse(map['client_consent_at'].toString()),
       createdAt: map['created_at'] as String,
     );
   }
@@ -115,6 +127,8 @@ class WorkPhotoSummary {
       aiStatus: aiStatus,
       visibleToCustomer: visibleToCustomer,
       approvedForPortfolio: approvedForPortfolio,
+      clientConsent: clientConsent,
+      clientConsentAt: clientConsentAt,
       createdAt: createdAt,
     );
   }

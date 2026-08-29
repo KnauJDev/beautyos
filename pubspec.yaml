@@ -45,6 +45,9 @@ dependencies:
   fl_chart: ^1.2.0
   sentry_flutter: ^9.26.0
   url_launcher: ^6.3.1
+  # Para recordar la sesion del Portal de la Clienta en su dispositivo
+  # (D-167): guarda el celular y el token, no el PIN.
+  shared_preferences: ^2.3.3
 
 dev_dependencies:
   flutter_test:

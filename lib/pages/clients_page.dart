@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
@@ -673,6 +674,38 @@ class _ClientDetailSheet extends StatelessWidget {
   final ClientSummary client;
   final VoidCallback onEdit;
 
+  Future<void> _openResetPortalPinDialog(BuildContext context) async {
+    final newPin = await showDialog<String>(
+      context: context,
+      builder: (_) => _ResetPortalPinDialog(clientName: client.name),
+    );
+
+    if (newPin == null || !context.mounted) return;
+
+    try {
+      await const ClientsService().resetPortalPin(
+        clientId: client.id,
+        newPin: newPin,
+      );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'PIN del portal actualizado. Nuevo PIN de ${client.name}: $newPin',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+      final message = error is PostgrestException
+          ? error.message
+          : error.toString();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo restablecer el PIN: $message')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -984,6 +1017,11 @@ class _ClientDetailSheet extends StatelessWidget {
                         icon: const Icon(Icons.edit_outlined, size: 16),
                         label: const Text('Gestionar / Editar'),
                       ),
+                      OutlinedButton.icon(
+                        onPressed: () => _openResetPortalPinDialog(context),
+                        icon: const Icon(Icons.lock_reset_outlined, size: 16),
+                        label: const Text('Restablecer PIN del portal'),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -1084,6 +1122,78 @@ class _ClientDetailSheet extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Pide el nuevo PIN de 4 dígitos del portal de una clienta (D-167). Sirve
+/// tanto para asignarlo la primera vez como para restablecerlo -- el salón
+/// es el único que puede hacer cualquiera de las dos cosas (ver la decisión
+/// de seguridad en la migración de D-167: el portal nunca deja que alguien
+/// se autoasigne un PIN).
+class _ResetPortalPinDialog extends StatefulWidget {
+  const _ResetPortalPinDialog({required this.clientName});
+
+  final String clientName;
+
+  @override
+  State<_ResetPortalPinDialog> createState() => _ResetPortalPinDialogState();
+}
+
+class _ResetPortalPinDialogState extends State<_ResetPortalPinDialog> {
+  final _pinController = TextEditingController();
+
+  @override
+  void dispose() {
+    _pinController.dispose();
+    super.dispose();
+  }
+
+  bool get _esValido => RegExp(r'^[0-9]{4}$').hasMatch(_pinController.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('PIN del portal de ${widget.clientName}'),
+      content: SizedBox(
+        width: 320,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Este PIN reemplaza cualquiera que tuviera antes y cierra su '
+              'sesión actual del portal, si tenía una abierta.',
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _pinController,
+              autofocus: true,
+              keyboardType: TextInputType.number,
+              maxLength: 4,
+              onChanged: (_) => setState(() {}),
+              decoration: const InputDecoration(
+                labelText: 'PIN nuevo (4 dígitos)',
+                border: OutlineInputBorder(),
+                counterText: '',
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: _esValido
+              ? () => Navigator.of(context).pop(_pinController.text)
+              : null,
+          child: const Text('Guardar PIN'),
+        ),
+      ],
     );
   }
 }

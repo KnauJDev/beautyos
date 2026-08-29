@@ -35,6 +35,7 @@ class WorkPhotosService {
     required String photoType,
     String? caption,
     String? stylistId,
+    bool clientConsent = false,
   }) async {
     final response = await Supabase.instance.client.rpc(
       'create_work_photo',
@@ -45,6 +46,7 @@ class WorkPhotosService {
         'p_photo_type': photoType,
         'p_caption': caption,
         'p_stylist_id': stylistId,
+        'p_client_consent': clientConsent,
       },
     );
 

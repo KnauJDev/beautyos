@@ -38,6 +38,7 @@ class _AddWorkPhotoDialogState extends State<AddWorkPhotoDialog> {
   XFile? _pickedImage;
   bool _isSaving = false;
   String? _error;
+  bool _clientConsent = false;
 
   @override
   void initState() {
@@ -90,6 +91,7 @@ class _AddWorkPhotoDialogState extends State<AddWorkPhotoDialog> {
             ? null
             : _captionController.text.trim(),
         stylistId: _selectedStylistId,
+        clientConsent: _clientConsent,
       );
 
       if (!mounted) return;
@@ -180,7 +182,24 @@ class _AddWorkPhotoDialogState extends State<AddWorkPhotoDialog> {
                 minLines: 2,
                 maxLines: 3,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
+              CheckboxListTile(
+                value: _clientConsent,
+                onChanged: (value) {
+                  setState(() {
+                    _clientConsent = value ?? false;
+                  });
+                },
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                dense: true,
+                title: const Text(
+                  'La clienta autorizó la publicación de esta foto en '
+                  'portafolio y redes (Ley 1581)',
+                  style: TextStyle(fontSize: 13),
+                ),
+              ),
+              const SizedBox(height: 8),
               OutlinedButton.icon(
                 onPressed: _pickImage,
                 icon: const Icon(Icons.image_outlined),

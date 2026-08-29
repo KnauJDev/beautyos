@@ -76,4 +76,17 @@ class ClientsService {
 
     return ClientSummary.fromMap(Map<String, dynamic>.from(rows.first as Map));
   }
+
+  /// Asigna o restablece el PIN de 4 dígitos del portal de la clienta
+  /// (D-167). Exclusivo owner/admin. Cierra cualquier sesión que tuviera
+  /// abierta con el PIN anterior.
+  Future<void> resetPortalPin({
+    required String clientId,
+    required String newPin,
+  }) async {
+    await Supabase.instance.client.rpc(
+      'admin_reset_client_portal_pin',
+      params: {'p_client_id': clientId, 'p_new_pin': newPin},
+    );
+  }
 }

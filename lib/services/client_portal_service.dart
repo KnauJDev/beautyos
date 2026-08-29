@@ -1,0 +1,43 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../models/client_portal_data.dart';
+
+/// Llama a las RPC públicas (rol "anon", sin sesión) del portal de la
+/// clienta (D-167). El PIN nunca lo crea esta pantalla -- solo el salón lo
+/// asigna (ver `ClientsService.resetPortalPin`); aquí solo se verifica.
+class ClientPortalService {
+  const ClientPortalService();
+
+  /// Verifica celular + PIN y devuelve el token de sesión. Lanza
+  /// [PostgrestException] con un mensaje ya listo para mostrar si el PIN es
+  /// incorrecto, si no hay PIN asignado, o si hay demasiados intentos.
+  Future<String> authenticate({
+    required String tenantId,
+    required String phone,
+    required String pin,
+  }) async {
+    final response = await Supabase.instance.client.rpc(
+      'client_portal_authenticate',
+      params: {'p_tenant_id': tenantId, 'p_phone': phone, 'p_pin': pin},
+    );
+
+    return response as String;
+  }
+
+  Future<ClientPortalData> getPortalData({
+    required String tenantId,
+    required String phone,
+    required String portalToken,
+  }) async {
+    final response = await Supabase.instance.client.rpc(
+      'get_client_portal_data',
+      params: {
+        'p_tenant_id': tenantId,
+        'p_phone': phone,
+        'p_portal_token': portalToken,
+      },
+    );
+
+    return ClientPortalData.fromMap(Map<String, dynamic>.from(response as Map));
+  }
+}
