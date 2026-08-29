@@ -262,10 +262,10 @@ Tope antiabuso en la reserva pública, rol Asistente con sus pantallas, 2FA.
 
 | # | Paso | Quién | Estado |
 |---|---|---|---|
-| 7.1 | Ver cada cliente: desde cuándo, cuántos periodos ha pagado, cuánto debe | 🤖 | ⬜ |
-| 7.2 | **Cambiar tarifas y límites por cliente** — pantalla sobre `tenant_feature_overrides`, que ya existe | 🤖 | ⬜ |
+| 7.1 | Ver cada cliente: desde cuándo, cuántos periodos ha pagado, cuánto debe | 🤖 | 🔄 D-172: código completo (`flutter analyze` 0/0, 238/238 pruebas), migración `20260829200000` y control `191` escritos y revisados, **pendientes de aplicar en Supabase** |
+| 7.2 | **Cambiar tarifas y límites por cliente** — pantalla sobre `tenant_feature_overrides`, que ya existe | 🤖 | 🔄 D-172: RPC de conceder/listar/revocar y Tarjeta 5 en la Ficha construidas, misma migración pendiente de aplicar |
 | 7.3 | **Sistema de referidos:** quién trajo a quién y qué comisión le corresponde | 🤖 | ⬜ **Nada construido** |
-| 7.4 | Métricas del negocio SaaS: activos, morosos, cancelados, ingreso mensual | 🤖 | ⬜ |
+| 7.4 | Métricas del negocio SaaS: activos, morosos, cancelados, ingreso mensual | 🤖 | 🔄 D-172: cabecera ejecutiva (`platform_get_saas_metrics`) construida, misma migración pendiente de aplicar |
 
 ### FASE 8 — Limpieza técnica
 

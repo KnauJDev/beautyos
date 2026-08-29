@@ -28,6 +28,12 @@ class PlatformTenantSummary {
     required this.currentPeriodEnd,
     required this.graceEndsAt,
     required this.createdAt,
+    this.paidPeriodsCount = 0,
+    this.totalPaidCop = 0,
+    this.effectiveMonthlyPrice = 0,
+    this.debtStatus,
+    this.debtAmountCop = 0,
+    this.activeOverridesCount = 0,
   });
 
   final String tenantId;
@@ -76,6 +82,32 @@ class PlatformTenantSummary {
   final DateTime? graceEndsAt;
   final DateTime? createdAt;
 
+  /// Conteo de eventos de ePayco que sí activaron/renovaron la suscripción
+  /// (D-172): visión 360° financiera, paso 7.1.
+  final int paidPeriodsCount;
+
+  /// LTV: total histórico cobrado a este salón, en COP (D-172).
+  final int totalPaidCop;
+
+  /// Precio mensual pactado real, calculado con
+  /// `private.beautyos_precio_efectivo` en el servidor (D-172). A
+  /// diferencia de [effectivePriceCop], que es una aproximación cliente,
+  /// este valor ya viene resuelto por la base de datos.
+  final int effectiveMonthlyPrice;
+
+  /// 'al_dia', 'en_prueba' o 'en_mora' (D-172).
+  final String? debtStatus;
+
+  /// Monto adeudado en COP si [debtStatus] es 'en_mora'; cero en cualquier
+  /// otro caso (D-172).
+  final int debtAmountCop;
+
+  /// Excepciones de límites vigentes ahora mismo (D-172, `tenant_feature_
+  /// overrides`).
+  final int activeOverridesCount;
+
+  bool get isInDebt => debtStatus == 'en_mora';
+
   bool get isPending => subscriptionStatus == 'pending';
   bool get isTrialing => subscriptionStatus == 'trialing';
   bool get isActive => subscriptionStatus == 'active';
@@ -96,6 +128,37 @@ class PlatformTenantSummary {
       default:
         return planCode ?? 'Profesional';
     }
+  }
+
+  /// "Registrado hace 18 días" / "Registrado hace 3 meses" (D-172, paso 7.1).
+  String get ageLabel {
+    if (createdAt == null) return 'Fecha de registro desconocida';
+    final days = DateTime.now().difference(createdAt!).inDays;
+    if (days < 1) return 'Registrado hoy';
+    if (days < 30) return 'Registrado hace $days ${days == 1 ? "día" : "días"}';
+    final months = (days / 30).floor();
+    if (months < 12) {
+      return 'Registrado hace $months ${months == 1 ? "mes" : "meses"}';
+    }
+    final years = (months / 12).floor();
+    return 'Registrado hace $years ${years == 1 ? "año" : "años"}';
+  }
+
+  String get formattedTotalPaid => _formatCop(totalPaidCop);
+
+  String get formattedDebtAmount => _formatCop(debtAmountCop);
+
+  static String _formatCop(int cop) {
+    final digits = cop.toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < digits.length; i++) {
+      final pos = digits.length - i;
+      buffer.write(digits[i]);
+      if (pos > 1 && pos % 3 == 1) {
+        buffer.write('.');
+      }
+    }
+    return '\$$buffer COP';
   }
 
   int get effectivePriceCop {
@@ -159,6 +222,12 @@ class PlatformTenantSummary {
       currentPeriodEnd: _parseDate(map['current_period_end']),
       graceEndsAt: _parseDate(map['grace_ends_at']),
       createdAt: _parseDate(map['created_at']),
+      paidPeriodsCount: _parseInt(map['paid_periods_count']) ?? 0,
+      totalPaidCop: _parseInt(map['total_paid_cop']) ?? 0,
+      effectiveMonthlyPrice: _parseInt(map['effective_monthly_price']) ?? 0,
+      debtStatus: map['debt_status']?.toString(),
+      debtAmountCop: _parseInt(map['debt_amount_cop']) ?? 0,
+      activeOverridesCount: _parseInt(map['active_overrides_count']) ?? 0,
     );
   }
 

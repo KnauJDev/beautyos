@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/platform_saas_metrics.dart';
+import '../models/platform_tenant_feature_override.dart';
 import '../models/platform_tenant_summary.dart';
 import '../models/tenant_subscription_history_entry.dart';
 
@@ -7,9 +9,7 @@ class PlatformService {
   const PlatformService();
 
   Future<String?> getMyPlatformRole() async {
-    final response = await Supabase.instance.client.rpc(
-      'get_my_platform_role',
-    );
+    final response = await Supabase.instance.client.rpc('get_my_platform_role');
     return response as String?;
   }
 
@@ -58,10 +58,7 @@ class PlatformService {
   }) async {
     await Supabase.instance.client.rpc(
       'platform_reject_tenant',
-      params: {
-        'p_tenant_id': tenantId,
-        'p_reason': reason,
-      },
+      params: {'p_tenant_id': tenantId, 'p_reason': reason},
     );
   }
 
@@ -121,7 +118,9 @@ class PlatformService {
     );
   }
 
-  Future<List<TenantSubscriptionHistoryEntry>> getTenantSubscriptionHistory(String tenantId) async {
+  Future<List<TenantSubscriptionHistoryEntry>> getTenantSubscriptionHistory(
+    String tenantId,
+  ) async {
     final response = await Supabase.instance.client.rpc(
       'platform_get_tenant_subscription_history',
       params: {'p_tenant_id': tenantId},
@@ -155,5 +154,57 @@ class PlatformService {
       },
     );
   }
-}
 
+  Future<PlatformSaasMetrics> getSaasMetrics() async {
+    final response = await Supabase.instance.client.rpc(
+      'platform_get_saas_metrics',
+    );
+    return PlatformSaasMetrics.fromMap(
+      Map<String, dynamic>.from(response as Map),
+    );
+  }
+
+  Future<List<PlatformTenantFeatureOverride>> getTenantFeatureOverrides(
+    String tenantId,
+  ) async {
+    final response = await Supabase.instance.client.rpc(
+      'platform_get_tenant_feature_overrides',
+      params: {'p_tenant_id': tenantId},
+    );
+    return (response as List)
+        .map(
+          (item) => PlatformTenantFeatureOverride.fromMap(
+            Map<String, dynamic>.from(item as Map),
+          ),
+        )
+        .toList();
+  }
+
+  Future<void> setTenantFeatureOverride({
+    required String tenantId,
+    required String featureKey,
+    required bool enabled,
+    int? limitValue,
+    required String reason,
+    DateTime? endsAt,
+  }) async {
+    await Supabase.instance.client.rpc(
+      'platform_set_tenant_feature_override',
+      params: {
+        'p_tenant_id': tenantId,
+        'p_feature_key': featureKey,
+        'p_enabled': enabled,
+        'p_limit_value': limitValue,
+        'p_reason': reason,
+        'p_ends_at': endsAt?.toUtc().toIso8601String(),
+      },
+    );
+  }
+
+  Future<void> deleteTenantFeatureOverride(String overrideId) async {
+    await Supabase.instance.client.rpc(
+      'platform_delete_tenant_feature_override',
+      params: {'p_override_id': overrideId},
+    );
+  }
+}

@@ -3,6 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
+import '../models/platform_saas_metrics.dart';
+import '../models/platform_tenant_feature_override.dart';
 import '../models/platform_tenant_summary.dart';
 import '../models/tenant_subscription_history_entry.dart';
 import '../services/platform_service.dart';
@@ -24,9 +26,11 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
   final platformService = const PlatformService();
 
   late Future<List<PlatformTenantSummary>> tenantsFuture;
+  late Future<PlatformSaasMetrics> saasMetricsFuture;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  String selectedFilter = 'todos'; // 'todos', 'pendientes', 'activos', 'trialing', 'demo', 'suspendidos'
+  String selectedFilter =
+      'todos'; // 'todos', 'pendientes', 'activos', 'trialing', 'demo', 'suspendidos'
 
   bool get isOwner => widget.platformRole == 'platform_owner';
 
@@ -34,6 +38,7 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
   void initState() {
     super.initState();
     tenantsFuture = platformService.listTenants();
+    saasMetricsFuture = platformService.getSaasMetrics();
   }
 
   @override
@@ -45,6 +50,7 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
   void reload() {
     setState(() {
       tenantsFuture = platformService.listTenants();
+      saasMetricsFuture = platformService.getSaasMetrics();
     });
   }
 
@@ -52,7 +58,10 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
     await Supabase.instance.client.auth.signOut();
   }
 
-  Future<String?> askReason(String title, {String hint = 'Motivo (obligatorio)'}) {
+  Future<String?> askReason(
+    String title, {
+    String hint = 'Motivo (obligatorio)',
+  }) {
     final controller = TextEditingController();
     return showDialog<String>(
       context: context,
@@ -89,10 +98,14 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
       text: tenant.priceCop != null ? tenant.priceCop.toString() : '',
     );
     final discountController = TextEditingController(
-      text: tenant.discountPercent != null ? tenant.discountPercent.toString() : '',
+      text: tenant.discountPercent != null
+          ? tenant.discountPercent.toString()
+          : '',
     );
     final reasonController = TextEditingController();
-    bool customPricing = tenant.priceCop != null || (tenant.discountPercent != null && !isFounder);
+    bool customPricing =
+        tenant.priceCop != null ||
+        (tenant.discountPercent != null && !isFounder);
 
     final approved = await showDialog<bool>(
       context: context,
@@ -108,25 +121,51 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
                 children: [
                   Text(
                     'Contacto: ${tenant.contactEmail} · ${tenant.whatsapp ?? "Sin WhatsApp"}',
-                    style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                   if (tenant.city != null) ...[
                     const SizedBox(height: 2),
                     Text(
                       'Ciudad: ${tenant.city} · Sedes: ${tenant.realBranchesCount} · Equipo: ${tenant.realTeamCount}',
-                      style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ],
                   const Divider(height: 24),
-                  const Text('Plan a asignar:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Plan a asignar:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
                     initialValue: selectedPlan,
-                    decoration: const InputDecoration(border: OutlineInputBorder()),
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                    ),
                     items: const [
-                      DropdownMenuItem(value: 'basico', child: Text('Básico — \$160.000/mes (1 sede, 5 cuentas)')),
-                      DropdownMenuItem(value: 'business', child: Text('Business — \$200.000/mes (3 sedes, 15 cuentas)')),
-                      DropdownMenuItem(value: 'profesional', child: Text('Profesional — \$240.000/mes (Ilimitado + IA)')),
+                      DropdownMenuItem(
+                        value: 'basico',
+                        child: Text(
+                          'Básico — \$160.000/mes (1 sede, 5 cuentas)',
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: 'business',
+                        child: Text(
+                          'Business — \$200.000/mes (3 sedes, 15 cuentas)',
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: 'profesional',
+                        child: Text(
+                          'Profesional — \$240.000/mes (Ilimitado + IA)',
+                        ),
+                      ),
                     ],
                     onChanged: (val) {
                       if (val != null) setModalState(() => selectedPlan = val);
@@ -135,8 +174,13 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
                   const SizedBox(height: 16),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Precio Pionero (50% de por vida)', style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: const Text('Aplica el 50% de descuento vitalicio para los primeros salones.'),
+                    title: const Text(
+                      'Precio Pionero (50% de por vida)',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: const Text(
+                      'Aplica el 50% de descuento vitalicio para los primeros salones.',
+                    ),
                     value: isFounder,
                     onChanged: (val) {
                       setModalState(() {
@@ -150,7 +194,8 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Tarifa especial personalizada'),
                       value: customPricing,
-                      onChanged: (val) => setModalState(() => customPricing = val ?? false),
+                      onChanged: (val) =>
+                          setModalState(() => customPricing = val ?? false),
                     ),
                     if (customPricing) ...[
                       const SizedBox(height: 8),
@@ -158,7 +203,8 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
                         controller: priceController,
                         keyboardType: TextInputType.number,
                         decoration: const InputDecoration(
-                          labelText: 'Precio especial en COP (ej. 30000 o 60000)',
+                          labelText:
+                              'Precio especial en COP (ej. 30000 o 60000)',
                           hintText: 'Ej. 30000',
                           border: OutlineInputBorder(),
                         ),
@@ -185,15 +231,23 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
                     ],
                   ],
                   const SizedBox(height: 16),
-                  const Text('Días de prueba gratis:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Días de prueba gratis:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<int>(
                     initialValue: trialDays,
-                    decoration: const InputDecoration(border: OutlineInputBorder()),
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                    ),
                     items: const [
                       DropdownMenuItem(value: 7, child: Text('7 días')),
                       DropdownMenuItem(value: 14, child: Text('14 días')),
-                      DropdownMenuItem(value: 21, child: Text('21 días (Estándar)')),
+                      DropdownMenuItem(
+                        value: 21,
+                        child: Text('21 días (Estándar)'),
+                      ),
                       DropdownMenuItem(value: 30, child: Text('30 días')),
                     ],
                     onChanged: (val) {
@@ -220,9 +274,14 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
                   final price = priceController.text.trim();
                   final discount = discountController.text.trim();
                   final reason = reasonController.text.trim();
-                  if ((price.isNotEmpty || discount.isNotEmpty) && reason.isEmpty) {
+                  if ((price.isNotEmpty || discount.isNotEmpty) &&
+                      reason.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Debes ingresar un motivo para el precio especial.')),
+                      const SnackBar(
+                        content: Text(
+                          'Debes ingresar un motivo para el precio especial.',
+                        ),
+                      ),
                     );
                     return;
                   }
@@ -267,7 +326,9 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('¡"${tenant.tenantName}" ha sido aprobado y su prueba de $trialDays días está activa!'),
+          content: Text(
+            '¡"${tenant.tenantName}" ha sido aprobado y su prueba de $trialDays días está activa!',
+          ),
           backgroundColor: AppColors.success,
         ),
       );
@@ -283,12 +344,16 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
       text: tenant.priceCop != null ? tenant.priceCop.toString() : '',
     );
     final discountController = TextEditingController(
-      text: tenant.discountPercent != null && !isFounder ? tenant.discountPercent.toString() : '',
+      text: tenant.discountPercent != null && !isFounder
+          ? tenant.discountPercent.toString()
+          : '',
     );
     final reasonController = TextEditingController(
       text: isFounder ? 'Pionero (50% de por vida)' : '',
     );
-    bool customPricing = tenant.priceCop != null || (tenant.discountPercent != null && !isFounder);
+    bool customPricing =
+        tenant.priceCop != null ||
+        (tenant.discountPercent != null && !isFounder);
 
     final updated = await showDialog<bool>(
       context: context,
@@ -304,18 +369,41 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
                 children: [
                   const Text(
                     'Ajusta el plan asignado o fija una tarifa especial en COP (ej. \$30.000, \$50.000, \$70.000).',
-                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                   const Divider(height: 24),
-                  const Text('Plan Asignado:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Plan Asignado:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
                     initialValue: selectedPlan,
-                    decoration: const InputDecoration(border: OutlineInputBorder()),
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                    ),
                     items: const [
-                      DropdownMenuItem(value: 'basico', child: Text('Básico — \$160.000/mes (1 sede, 5 cuentas)')),
-                      DropdownMenuItem(value: 'business', child: Text('Business — \$200.000/mes (3 sedes, 15 cuentas)')),
-                      DropdownMenuItem(value: 'profesional', child: Text('Profesional — \$240.000/mes (Ilimitado + IA)')),
+                      DropdownMenuItem(
+                        value: 'basico',
+                        child: Text(
+                          'Básico — \$160.000/mes (1 sede, 5 cuentas)',
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: 'business',
+                        child: Text(
+                          'Business — \$200.000/mes (3 sedes, 15 cuentas)',
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: 'profesional',
+                        child: Text(
+                          'Profesional — \$240.000/mes (Ilimitado + IA)',
+                        ),
+                      ),
                     ],
                     onChanged: (val) {
                       if (val != null) setModalState(() => selectedPlan = val);
@@ -324,8 +412,13 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
                   const SizedBox(height: 16),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: const Text('Precio Pionero (50% de por vida)', style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: const Text('Aplica el 50% de descuento vitalicio sobre el plan elegido.'),
+                    title: const Text(
+                      'Precio Pionero (50% de por vida)',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: const Text(
+                      'Aplica el 50% de descuento vitalicio sobre el plan elegido.',
+                    ),
                     value: isFounder,
                     onChanged: (val) {
                       setModalState(() {
@@ -341,10 +434,15 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
                   if (!isFounder) ...[
                     CheckboxListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Fijar Tarifa Especial Personalizada en COP'),
-                      subtitle: const Text('Para cobrarle un valor pactado (ej. \$30.000, \$50.000, \$70.000).'),
+                      title: const Text(
+                        'Fijar Tarifa Especial Personalizada en COP',
+                      ),
+                      subtitle: const Text(
+                        'Para cobrarle un valor pactado (ej. \$30.000, \$50.000, \$70.000).',
+                      ),
                       value: customPricing,
-                      onChanged: (val) => setModalState(() => customPricing = val ?? false),
+                      onChanged: (val) =>
+                          setModalState(() => customPricing = val ?? false),
                     ),
                     if (customPricing) ...[
                       const SizedBox(height: 8),
@@ -362,7 +460,8 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
                         controller: discountController,
                         keyboardType: TextInputType.number,
                         decoration: const InputDecoration(
-                          labelText: 'Descuento en % (opcional si ya fijó precio en COP)',
+                          labelText:
+                              'Descuento en % (opcional si ya fijó precio en COP)',
                           hintText: 'Ej. 30',
                           border: OutlineInputBorder(),
                         ),
@@ -372,7 +471,8 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
                         controller: reasonController,
                         decoration: const InputDecoration(
                           labelText: 'Motivo del precio especial *',
-                          hintText: 'Ej. Convenio especial amigo / Acuerdo comercial',
+                          hintText:
+                              'Ej. Convenio especial amigo / Acuerdo comercial',
                           border: OutlineInputBorder(),
                         ),
                       ),
@@ -393,9 +493,14 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
                   final price = priceController.text.trim();
                   final discount = discountController.text.trim();
                   final reason = reasonController.text.trim();
-                  if ((price.isNotEmpty || discount.isNotEmpty) && reason.isEmpty) {
+                  if ((price.isNotEmpty || discount.isNotEmpty) &&
+                      reason.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Debes ingresar un motivo para el precio especial.')),
+                      const SnackBar(
+                        content: Text(
+                          'Debes ingresar un motivo para el precio especial.',
+                        ),
+                      ),
                     );
                     return;
                   }
@@ -439,7 +544,9 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('¡Tarifa de "${tenant.tenantName}" actualizada exitosamente!'),
+          content: Text(
+            '¡Tarifa de "${tenant.tenantName}" actualizada exitosamente!',
+          ),
           backgroundColor: AppColors.success,
         ),
       );
@@ -451,10 +558,16 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
   }
 
   Future<void> handleUpdateContact(PlatformTenantSummary tenant) async {
-    final nameController = TextEditingController(text: tenant.contactName ?? '');
+    final nameController = TextEditingController(
+      text: tenant.contactName ?? '',
+    );
     final emailController = TextEditingController(text: tenant.contactEmail);
-    final whatsappController = TextEditingController(text: tenant.whatsapp ?? '');
-    final businessTypeController = TextEditingController(text: tenant.businessType ?? '');
+    final whatsappController = TextEditingController(
+      text: tenant.whatsapp ?? '',
+    );
+    final businessTypeController = TextEditingController(
+      text: tenant.businessType ?? '',
+    );
     final cityController = TextEditingController(text: tenant.city ?? '');
 
     final updated = await showDialog<bool>(
@@ -520,9 +633,14 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
           ),
           FilledButton.icon(
             onPressed: () {
-              if (nameController.text.trim().isEmpty || emailController.text.trim().isEmpty) {
+              if (nameController.text.trim().isEmpty ||
+                  emailController.text.trim().isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('El nombre de contacto y el correo no pueden estar vacíos.')),
+                  const SnackBar(
+                    content: Text(
+                      'El nombre de contacto y el correo no pueden estar vacíos.',
+                    ),
+                  ),
                 );
                 return;
               }
@@ -551,7 +669,9 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('¡Contacto de "${tenant.tenantName}" actualizado exitosamente!'),
+          content: Text(
+            '¡Contacto de "${tenant.tenantName}" actualizado exitosamente!',
+          ),
           backgroundColor: AppColors.success,
         ),
       );
@@ -579,7 +699,9 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
       reload();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Solicitud de "${tenant.tenantName}" rechazada.')),
+        SnackBar(
+          content: Text('Solicitud de "${tenant.tenantName}" rechazada.'),
+        ),
       );
     } on PostgrestException catch (error) {
       _showError(error.message);
@@ -716,7 +838,9 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
         child: Container(
           decoration: const BoxDecoration(
             color: AppColors.surface,
-            border: Border(bottom: BorderSide(color: AppColors.border, width: 1)),
+            border: Border(
+              bottom: BorderSide(color: AppColors.border, width: 1),
+            ),
           ),
           child: AppBar(
             elevation: 0,
@@ -738,7 +862,11 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Center(
-                    child: Icon(Icons.shield_outlined, color: Colors.white, size: 20),
+                    child: Icon(
+                      Icons.shield_outlined,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
@@ -771,7 +899,10 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
               IconButton(
                 tooltip: 'Actualizar listado',
                 onPressed: reload,
-                icon: const Icon(Icons.refresh_outlined, color: AppColors.textSecondary),
+                icon: const Icon(
+                  Icons.refresh_outlined,
+                  color: AppColors.textSecondary,
+                ),
               ),
               IconButton(
                 tooltip: 'Seguridad de tu cuenta',
@@ -779,143 +910,196 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
                   context: context,
                   builder: (_) => const SecuritySettingsDialog(),
                 ),
-                icon: const Icon(Icons.security_outlined, color: AppColors.textSecondary),
+                icon: const Icon(
+                  Icons.security_outlined,
+                  color: AppColors.textSecondary,
+                ),
               ),
               IconButton(
                 tooltip: 'Cerrar sesión',
                 onPressed: signOut,
-                icon: const Icon(Icons.logout_outlined, color: AppColors.danger),
+                icon: const Icon(
+                  Icons.logout_outlined,
+                  color: AppColors.danger,
+                ),
               ),
               const SizedBox(width: AppSpacing.sm),
             ],
           ),
         ),
       ),
-      body: FutureBuilder<List<PlatformTenantSummary>>(
-        future: tenantsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: Column(
+        children: [
+          const UpdateBanner(),
+          FutureBuilder<PlatformSaasMetrics>(
+            future: saasMetricsFuture,
+            builder: (context, metricsSnapshot) {
+              return _SaasMetricsHeader(
+                metrics: metricsSnapshot.data,
+                isLoading:
+                    metricsSnapshot.connectionState == ConnectionState.waiting,
+              );
+            },
+          ),
+          Expanded(
+            child: FutureBuilder<List<PlatformTenantSummary>>(
+              future: tenantsFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.error_outline, size: 40, color: AppColors.danger),
-                    const SizedBox(height: 12),
-                    Text(
-                      'No pudimos cargar los negocios.\n${snapshot.error}',
-                      textAlign: TextAlign.center,
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            size: 40,
+                            color: AppColors.danger,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'No pudimos cargar los negocios.\n${snapshot.error}',
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 12),
+                          OutlinedButton(
+                            onPressed: reload,
+                            child: const Text('Reintentar'),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    OutlinedButton(onPressed: reload, child: const Text('Reintentar')),
-                  ],
-                ),
-              ),
-            );
-          }
+                  );
+                }
 
-          final allTenants = snapshot.data ?? const <PlatformTenantSummary>[];
+                final allTenants =
+                    snapshot.data ?? const <PlatformTenantSummary>[];
 
-          // Métricas globales
-          final totalCount = allTenants.length;
-          final pendingCount = allTenants.where((t) => t.isPending).length;
-          final activeCount = allTenants.where((t) => t.isActive && !t.isDemo).length;
-          final trialCount = allTenants.where((t) => t.isTrialing).length;
-          final graceCount = allTenants.where((t) => t.isGrace || t.isPastDue || t.isSuspended).length;
+                // Métricas globales
+                final totalCount = allTenants.length;
+                final pendingCount = allTenants
+                    .where((t) => t.isPending)
+                    .length;
+                final activeCount = allTenants
+                    .where((t) => t.isActive && !t.isDemo)
+                    .length;
+                final trialCount = allTenants.where((t) => t.isTrialing).length;
+                final graceCount = allTenants
+                    .where((t) => t.isGrace || t.isPastDue || t.isSuspended)
+                    .length;
 
-          // Filtrar por texto
-          var filtered = allTenants.where((t) {
-            if (_searchQuery.isNotEmpty) {
-              final q = _searchQuery.toLowerCase().trim();
-              final name = t.tenantName.toLowerCase();
-              final email = t.contactEmail.toLowerCase();
-              final city = (t.city ?? '').toLowerCase();
-              final phone = (t.whatsapp ?? '').replaceAll(RegExp(r'[^0-9]'), '');
-              final qPhone = q.replaceAll(RegExp(r'[^0-9]'), '');
+                // Filtrar por texto
+                var filtered = allTenants.where((t) {
+                  if (_searchQuery.isNotEmpty) {
+                    final q = _searchQuery.toLowerCase().trim();
+                    final name = t.tenantName.toLowerCase();
+                    final email = t.contactEmail.toLowerCase();
+                    final city = (t.city ?? '').toLowerCase();
+                    final phone = (t.whatsapp ?? '').replaceAll(
+                      RegExp(r'[^0-9]'),
+                      '',
+                    );
+                    final qPhone = q.replaceAll(RegExp(r'[^0-9]'), '');
 
-              final matches = name.contains(q) ||
-                  email.contains(q) ||
-                  city.contains(q) ||
-                  (qPhone.isNotEmpty && phone.contains(qPhone));
+                    final matches =
+                        name.contains(q) ||
+                        email.contains(q) ||
+                        city.contains(q) ||
+                        (qPhone.isNotEmpty && phone.contains(qPhone));
 
-              if (!matches) return false;
-            }
+                    if (!matches) return false;
+                  }
 
-            // Filtrar por categoría
-            if (selectedFilter == 'pendientes') return t.isPending;
-            if (selectedFilter == 'activos') return t.isActive && !t.isDemo;
-            if (selectedFilter == 'trialing') return t.isTrialing;
-            if (selectedFilter == 'demo') return t.isDemo;
-            if (selectedFilter == 'suspendidos') return t.isSuspended;
+                  // Filtrar por categoría
+                  if (selectedFilter == 'pendientes') return t.isPending;
+                  if (selectedFilter == 'activos') {
+                    return t.isActive && !t.isDemo;
+                  }
+                  if (selectedFilter == 'trialing') return t.isTrialing;
+                  if (selectedFilter == 'demo') return t.isDemo;
+                  if (selectedFilter == 'suspendidos') return t.isSuspended;
 
-            return true;
-          }).toList();
+                  return true;
+                }).toList();
 
-          return Column(
-            children: [
-              const UpdateBanner(),
-              // 1. KPI Banner Superior
-              _PlatformKPIBanner(
-                totalCount: totalCount,
-                pendingCount: pendingCount,
-                activeCount: activeCount,
-                trialCount: trialCount,
-                graceCount: graceCount,
-                selectedFilter: selectedFilter,
-                onFilterSelected: (filter) => setState(() => selectedFilter = filter),
-              ),
-              // 2. Buscador y Filtros
-              _buildSearchAndFilters(pendingCount, activeCount, trialCount),
-              // 3. Listado de Tarjetas
-              Expanded(
-                child: filtered.isEmpty
-                    ? Center(
-                        child: Text(
-                          selectedFilter == 'pendientes'
-                              ? 'No hay solicitudes pendientes de aprobación.'
-                              : 'No hay negocios que coincidan con la búsqueda.',
-                          style: const TextStyle(color: AppColors.textSecondary),
-                        ),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.all(AppSpacing.md),
-                        itemCount: filtered.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.sm),
-                        itemBuilder: (context, index) => _TenantCard(
-                          tenant: filtered[index],
-                          isOwner: isOwner,
-                          onTap: () => _openTenantDetail(filtered[index]),
-                          onApprove: handleApprove,
-                          onReject: handleReject,
-                          onUpdatePricing: handleUpdatePricing,
-                          onViewSupportData: (t) {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => PlatformTenantDetailPage(
-                                  tenantId: t.tenantId,
-                                  tenantName: t.tenantName,
+                return Column(
+                  children: [
+                    // 1. KPI Banner Superior
+                    _PlatformKPIBanner(
+                      totalCount: totalCount,
+                      pendingCount: pendingCount,
+                      activeCount: activeCount,
+                      trialCount: trialCount,
+                      graceCount: graceCount,
+                      selectedFilter: selectedFilter,
+                      onFilterSelected: (filter) =>
+                          setState(() => selectedFilter = filter),
+                    ),
+                    // 2. Buscador y Filtros
+                    _buildSearchAndFilters(
+                      pendingCount,
+                      activeCount,
+                      trialCount,
+                    ),
+                    // 3. Listado de Tarjetas
+                    Expanded(
+                      child: filtered.isEmpty
+                          ? Center(
+                              child: Text(
+                                selectedFilter == 'pendientes'
+                                    ? 'No hay solicitudes pendientes de aprobación.'
+                                    : 'No hay negocios que coincidan con la búsqueda.',
+                                style: const TextStyle(
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
-                            );
-                          },
-                        ),
-                      ),
-              ),
-            ],
-          );
-        },
+                            )
+                          : ListView.separated(
+                              padding: const EdgeInsets.all(AppSpacing.md),
+                              itemCount: filtered.length,
+                              separatorBuilder: (context, index) =>
+                                  const SizedBox(height: AppSpacing.sm),
+                              itemBuilder: (context, index) => _TenantCard(
+                                tenant: filtered[index],
+                                isOwner: isOwner,
+                                onTap: () => _openTenantDetail(filtered[index]),
+                                onApprove: handleApprove,
+                                onReject: handleReject,
+                                onUpdatePricing: handleUpdatePricing,
+                                onViewSupportData: (t) {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => PlatformTenantDetailPage(
+                                        tenantId: t.tenantId,
+                                        tenantName: t.tenantName,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildSearchAndFilters(int pending, int active, int trialing) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       color: AppColors.surface,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -924,8 +1108,13 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
             controller: _searchController,
             onChanged: (val) => setState(() => _searchQuery = val),
             decoration: InputDecoration(
-              hintText: 'Buscar por salón, titular, correo, WhatsApp o ciudad...',
-              prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.textSecondary),
+              hintText:
+                  'Buscar por salón, titular, correo, WhatsApp o ciudad...',
+              prefixIcon: const Icon(
+                Icons.search,
+                size: 20,
+                color: AppColors.textSecondary,
+              ),
               suffixIcon: _searchQuery.isNotEmpty
                   ? IconButton(
                       icon: const Icon(Icons.clear, size: 18),
@@ -935,7 +1124,10 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
                       },
                     )
                   : null,
-              contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 10),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: 10,
+              ),
               isDense: true,
             ),
           ),
@@ -1030,7 +1222,12 @@ class _PlatformKPIBanner extends StatelessWidget {
     return Container(
       width: double.infinity,
       color: AppColors.surface,
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.xs),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.xs,
+      ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -1153,6 +1350,128 @@ class _KPICard extends StatelessWidget {
 }
 
 // ============================================================================
+// CABECERA EJECUTIVA DEL SAAS (D-172, paso 7.4)
+// ============================================================================
+class _SaasMetricsHeader extends StatelessWidget {
+  const _SaasMetricsHeader({required this.metrics, required this.isLoading});
+
+  final PlatformSaasMetrics? metrics;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    final m = metrics ?? PlatformSaasMetrics.empty;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.brand, AppColors.brandDark],
+        ),
+      ),
+      child: isLoading
+          ? const SizedBox(
+              height: 62,
+              child: Center(
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              ),
+            )
+          : SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _SaasMetricTile(
+                    icon: Icons.trending_up,
+                    label: 'MRR estimado',
+                    value: '\$${m.formattedMrr}',
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  _SaasMetricTile(
+                    icon: Icons.account_balance_wallet_outlined,
+                    label: 'Cobrado histórico',
+                    value: '\$${m.formattedTotalCollected}',
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  _SaasMetricTile(
+                    icon: Icons.storefront_outlined,
+                    label: 'En pago / prueba',
+                    value: '${m.activeCount} / ${m.trialingCount}',
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  _SaasMetricTile(
+                    icon: Icons.swap_horiz,
+                    label: 'Conversión prueba→pago',
+                    value: m.formattedConversionRate,
+                  ),
+                ],
+              ),
+            ),
+    );
+  }
+}
+
+class _SaasMetricTile extends StatelessWidget {
+  const _SaasMetricTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 168,
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(AppRadius.card),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: Colors.white),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              height: 1.1,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.white.withValues(alpha: 0.85),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================================
 // TARJETA DE NEGOCIO / SALÓN
 // ============================================================================
 class _TenantCard extends StatelessWidget {
@@ -1224,6 +1543,15 @@ class _TenantCard extends StatelessWidget {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
+  String _pluralizeMeses(int count) => count == 1 ? 'mes' : 'meses';
+
+  String _cobranzaMessage(PlatformTenantSummary tenant) {
+    final nombre = tenant.contactName ?? tenant.tenantName;
+    return 'Hola $nombre, te escribimos de Salón y Más respecto a la cuenta de '
+        '"${tenant.tenantName}". Notamos un saldo pendiente de ${tenant.formattedDebtAmount}. '
+        '¿Podemos ayudarte a ponerte al día?';
+  }
+
   @override
   Widget build(BuildContext context) {
     final status = tenant.subscriptionStatus;
@@ -1238,7 +1566,9 @@ class _TenantCard extends StatelessWidget {
           width: isPending ? 1.5 : 1.0,
         ),
       ),
-      color: isPending ? AppColors.statePendingTint.withValues(alpha: 0.35) : AppColors.surface,
+      color: isPending
+          ? AppColors.statePendingTint.withValues(alpha: 0.35)
+          : AppColors.surface,
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadius.card),
         onTap: onTap,
@@ -1266,7 +1596,10 @@ class _TenantCard extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           '${tenant.contactEmail} ${tenant.city != null ? "· 📍 ${tenant.city}" : ""}',
-                          style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ],
                     ),
@@ -1274,7 +1607,10 @@ class _TenantCard extends StatelessWidget {
                   const SizedBox(width: AppSpacing.sm),
                   if (tenant.isDemo) ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.surfaceAlt,
                         borderRadius: BorderRadius.circular(AppRadius.pill),
@@ -1293,7 +1629,10 @@ class _TenantCard extends StatelessWidget {
                   ],
                   if (tenant.isFounder) ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.brandTint,
                         borderRadius: BorderRadius.circular(AppRadius.pill),
@@ -1310,7 +1649,10 @@ class _TenantCard extends StatelessWidget {
                     const SizedBox(width: AppSpacing.xs),
                   ],
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
                       color: _statusColor(status).withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(AppRadius.pill),
@@ -1330,7 +1672,10 @@ class _TenantCard extends StatelessWidget {
 
               // Fila 2: Plan, Tarifa y Vigencia
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceAlt,
                   borderRadius: BorderRadius.circular(AppRadius.control),
@@ -1352,9 +1697,12 @@ class _TenantCard extends StatelessWidget {
                       status == 'pending'
                           ? 'Solicitado: ${_formatDate(tenant.createdAt)}'
                           : status == 'trialing'
-                              ? 'Prueba: ${_formatDate(tenant.createdAt)} al ${_formatDate(tenant.trialEndsAt)}'
-                              : 'Vence: ${_formatDate(tenant.currentPeriodEnd)}',
-                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          ? 'Prueba: ${_formatDate(tenant.createdAt)} al ${_formatDate(tenant.trialEndsAt)}'
+                          : 'Vence: ${_formatDate(tenant.currentPeriodEnd)}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   ],
                 ),
@@ -1362,21 +1710,131 @@ class _TenantCard extends StatelessWidget {
 
               const SizedBox(height: AppSpacing.sm),
 
+              // Fila 2.5: Antigüedad, períodos pagados/LTV, mora y overrides (D-172, paso 7.1)
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(
+                    '${tenant.ageLabel} · ${tenant.paidPeriodsCount} ${_pluralizeMeses(tenant.paidPeriodsCount)} pagados · ${tenant.formattedTotalPaid} LTV',
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  if (tenant.activeOverridesCount > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.brandTintSoft,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                      ),
+                      child: Text(
+                        '⚙️ ${tenant.activeOverridesCount} ${tenant.activeOverridesCount == 1 ? "límite especial" : "límites especiales"}',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.brandDeep,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              if (tenant.isInDebt) ...[
+                const SizedBox(height: 6),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.danger.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(AppRadius.control),
+                    border: Border.all(
+                      color: AppColors.danger.withValues(alpha: 0.35),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.warning_amber_rounded,
+                        size: 16,
+                        color: AppColors.danger,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'En mora: ${tenant.formattedDebtAmount}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.danger,
+                          ),
+                        ),
+                      ),
+                      if (tenant.whatsapp != null &&
+                          tenant.whatsapp!.isNotEmpty)
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            final uri = buildWhatsAppUri(
+                              tenant.whatsapp!,
+                              text: _cobranzaMessage(tenant),
+                            );
+                            launchUrl(
+                              uri,
+                              mode: LaunchMode.externalApplication,
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.chat_outlined,
+                            size: 14,
+                            color: AppColors.danger,
+                          ),
+                          label: const Text('Cobrar por WhatsApp'),
+                          style: OutlinedButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            foregroundColor: AppColors.danger,
+                            side: const BorderSide(color: AppColors.danger),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.sm),
+
               // Fila 3: Botones de Acción Rápida (WhatsApp, Llamar, Modificar Tarifa, Ver Ficha)
               Row(
                 children: [
-                  if (tenant.whatsapp != null && tenant.whatsapp!.isNotEmpty) ...[
+                  if (tenant.whatsapp != null &&
+                      tenant.whatsapp!.isNotEmpty) ...[
                     OutlinedButton.icon(
                       onPressed: () {
                         final uri = buildWhatsAppUri(tenant.whatsapp!);
                         launchUrl(uri, mode: LaunchMode.externalApplication);
                       },
-                      icon: const Icon(Icons.chat_outlined, size: 15, color: AppColors.success),
+                      icon: const Icon(
+                        Icons.chat_outlined,
+                        size: 15,
+                        color: AppColors.success,
+                      ),
                       label: const Text('WhatsApp'),
                       style: OutlinedButton.styleFrom(
                         visualDensity: VisualDensity.compact,
                         foregroundColor: AppColors.success,
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                       ),
                     ),
                     const SizedBox(width: AppSpacing.xs),
@@ -1385,12 +1843,19 @@ class _TenantCard extends StatelessWidget {
                         final uri = Uri.parse('tel:${tenant.whatsapp}');
                         launchUrl(uri);
                       },
-                      icon: const Icon(Icons.phone_outlined, size: 15, color: AppColors.textSecondary),
+                      icon: const Icon(
+                        Icons.phone_outlined,
+                        size: 15,
+                        color: AppColors.textSecondary,
+                      ),
                       label: const Text('Llamar'),
                       style: OutlinedButton.styleFrom(
                         visualDensity: VisualDensity.compact,
                         foregroundColor: AppColors.textSecondary,
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                       ),
                     ),
                   ],
@@ -1403,7 +1868,10 @@ class _TenantCard extends StatelessWidget {
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.brand,
                         visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
                       ),
                     ),
                     const SizedBox(width: AppSpacing.xs),
@@ -1414,7 +1882,10 @@ class _TenantCard extends StatelessWidget {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.danger,
                         visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                       ),
                     ),
                   ] else ...[
@@ -1425,7 +1896,10 @@ class _TenantCard extends StatelessWidget {
                         label: const Text('Precio / Plan'),
                         style: OutlinedButton.styleFrom(
                           visualDensity: VisualDensity.compact,
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                         ),
                       ),
                       const SizedBox(width: AppSpacing.xs),
@@ -1489,7 +1963,8 @@ class _TenantDetailSheet extends StatelessWidget {
     if (date == null) return '—';
     final local = date.toLocal();
     final fecha = _formatDate(local);
-    final hora = '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+    final hora =
+        '${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
     return '$fecha $hora';
   }
 
@@ -1533,14 +2008,21 @@ class _TenantDetailSheet extends StatelessWidget {
       ),
       child: SafeArea(
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.92),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.92,
+          ),
           child: Column(
             children: [
               // Header del Sheet
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.md,
+                ),
                 decoration: const BoxDecoration(
-                  border: Border(bottom: BorderSide(color: AppColors.border, width: 1)),
+                  border: Border(
+                    bottom: BorderSide(color: AppColors.border, width: 1),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -1563,10 +2045,15 @@ class _TenantDetailSheet extends StatelessWidget {
                               const SizedBox(width: AppSpacing.xs),
                               if (tenant.isFounder)
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: AppColors.brandTint,
-                                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.pill,
+                                    ),
                                   ),
                                   child: Text(
                                     '★ PIONERO 50%',
@@ -1581,7 +2068,10 @@ class _TenantDetailSheet extends StatelessWidget {
                           ),
                           Text(
                             'Estado: ${status?.toUpperCase() ?? "SIN ESTADO"} · Creado el ${_formatDate(tenant.createdAt)}',
-                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                         ],
                       ),
@@ -1607,32 +2097,62 @@ class _TenantDetailSheet extends StatelessWidget {
                         _buildSubsectionLabel('A. Contacto Administrativo'),
                         const SizedBox(height: 6),
                         _buildInfoRow('Negocio:', tenant.tenantName),
-                        _buildInfoRow('Tipo de Negocio:', tenant.businessType ?? 'Peluquería / Salón'),
-                        _buildInfoRow('Contacto Titular:', tenant.contactName ?? 'Sin registrar'),
+                        _buildInfoRow(
+                          'Tipo de Negocio:',
+                          tenant.businessType ?? 'Peluquería / Salón',
+                        ),
+                        _buildInfoRow(
+                          'Contacto Titular:',
+                          tenant.contactName ?? 'Sin registrar',
+                        ),
                         _buildInfoRow(
                           'WhatsApp:',
                           tenant.whatsapp ?? 'Sin registrar',
                           action: tenant.whatsapp != null
                               ? OutlinedButton.icon(
                                   onPressed: () {
-                                    final uri = buildWhatsAppUri(tenant.whatsapp!);
-                                    launchUrl(uri, mode: LaunchMode.externalApplication);
+                                    final uri = buildWhatsAppUri(
+                                      tenant.whatsapp!,
+                                    );
+                                    launchUrl(
+                                      uri,
+                                      mode: LaunchMode.externalApplication,
+                                    );
                                   },
-                                  icon: const Icon(Icons.chat_outlined, size: 14, color: AppColors.success),
+                                  icon: const Icon(
+                                    Icons.chat_outlined,
+                                    size: 14,
+                                    color: AppColors.success,
+                                  ),
                                   label: const Text('Abrir WhatsApp'),
                                   style: OutlinedButton.styleFrom(
                                     visualDensity: VisualDensity.compact,
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
                                     foregroundColor: AppColors.success,
                                   ),
                                 )
                               : null,
                         ),
                         _buildInfoRow('Correo:', tenant.contactEmail),
-                        _buildInfoRow('Teléfono:', tenant.contactPhone ?? 'Sin registrar'),
-                        _buildInfoRow('Ciudad:', tenant.city ?? 'Sin registrar'),
-                        _buildInfoRow('Instagram:', tenant.instagram ?? 'Sin registrar'),
-                        _buildInfoRow('Facebook:', tenant.facebook ?? 'Sin registrar'),
+                        _buildInfoRow(
+                          'Teléfono:',
+                          tenant.contactPhone ?? 'Sin registrar',
+                        ),
+                        _buildInfoRow(
+                          'Ciudad:',
+                          tenant.city ?? 'Sin registrar',
+                        ),
+                        _buildInfoRow(
+                          'Instagram:',
+                          tenant.instagram ?? 'Sin registrar',
+                        ),
+                        _buildInfoRow(
+                          'Facebook:',
+                          tenant.facebook ?? 'Sin registrar',
+                        ),
                         if (isOwner) ...[
                           const SizedBox(height: 10),
                           Align(
@@ -1649,7 +2169,9 @@ class _TenantDetailSheet extends StatelessWidget {
                           ),
                         ],
                         const Divider(height: 24),
-                        _buildSubsectionLabel('B. Capacidad Operativa Real (en vivo)'),
+                        _buildSubsectionLabel(
+                          'B. Capacidad Operativa Real (en vivo)',
+                        ),
                         const SizedBox(height: 6),
                         _buildInfoRow(
                           'Sedes Activas:',
@@ -1681,25 +2203,46 @@ class _TenantDetailSheet extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Plan Asignado:', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                  const Text(
+                                    'Plan Asignado:',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
                                   Text(
                                     'Plan ${tenant.planNameFormatted}',
-                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textPrimary,
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColors.brandTintSoft,
-                                borderRadius: BorderRadius.circular(AppRadius.control),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.control,
+                                ),
                                 border: Border.all(color: AppColors.border),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  const Text('Precio Mensual Fijado:', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                                  const Text(
+                                    'Precio Mensual Fijado:',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
                                   Text(
                                     tenant.formattedEffectivePrice,
                                     style: TextStyle(
@@ -1739,7 +2282,62 @@ class _TenantDetailSheet extends StatelessWidget {
                               : 'Pendiente de primer pago tras finalizar prueba',
                         ),
                         if (tenant.graceEndsAt != null)
-                          _buildInfoRow('Periodo de Gracia:', 'Hasta el ${_formatDate(tenant.graceEndsAt)}'),
+                          _buildInfoRow(
+                            'Periodo de Gracia:',
+                            'Hasta el ${_formatDate(tenant.graceEndsAt)}',
+                          ),
+                        const Divider(height: 20),
+                        _buildInfoRow('Antigüedad:', tenant.ageLabel),
+                        _buildInfoRow(
+                          'Períodos Pagados:',
+                          '${tenant.paidPeriodsCount} ${_pluralize(tenant.paidPeriodsCount, "mes pagado", "meses pagados")}',
+                        ),
+                        _buildInfoRow(
+                          'LTV (total pagado):',
+                          '${_formatCop(tenant.totalPaidCop)}${tenant.isFounder ? " · Pionero" : ""}',
+                        ),
+                        if (tenant.isInDebt)
+                          _buildInfoRow(
+                            'Estado de Cartera:',
+                            'EN MORA · ${_formatCop(tenant.debtAmountCop)} adeudados',
+                            action:
+                                tenant.whatsapp != null &&
+                                    tenant.whatsapp!.isNotEmpty
+                                ? OutlinedButton.icon(
+                                    onPressed: () {
+                                      final nombre =
+                                          tenant.contactName ??
+                                          tenant.tenantName;
+                                      final mensaje =
+                                          'Hola $nombre, te escribimos de Salón y Más respecto a la cuenta de '
+                                          '"${tenant.tenantName}". Notamos un saldo pendiente de ${_formatCop(tenant.debtAmountCop)}. '
+                                          '¿Podemos ayudarte a ponerte al día?';
+                                      final uri = buildWhatsAppUri(
+                                        tenant.whatsapp!,
+                                        text: mensaje,
+                                      );
+                                      launchUrl(
+                                        uri,
+                                        mode: LaunchMode.externalApplication,
+                                      );
+                                    },
+                                    icon: const Icon(
+                                      Icons.chat_outlined,
+                                      size: 14,
+                                      color: AppColors.danger,
+                                    ),
+                                    label: const Text('Cobrar por WhatsApp'),
+                                    style: OutlinedButton.styleFrom(
+                                      visualDensity: VisualDensity.compact,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
+                                      foregroundColor: AppColors.danger,
+                                    ),
+                                  )
+                                : null,
+                          ),
                       ],
                     ),
 
@@ -1757,53 +2355,87 @@ class _TenantDetailSheet extends StatelessWidget {
                             if (isPending && isOwner) ...[
                               FilledButton.icon(
                                 onPressed: () => onApprove(tenant),
-                                icon: const Icon(Icons.check_circle_outlined, size: 18),
+                                icon: const Icon(
+                                  Icons.check_circle_outlined,
+                                  size: 18,
+                                ),
                                 label: const Text('Aprobar Negocio'),
-                                style: FilledButton.styleFrom(backgroundColor: AppColors.brand),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: AppColors.brand,
+                                ),
                               ),
                               OutlinedButton.icon(
                                 onPressed: () => onReject(tenant),
-                                icon: const Icon(Icons.cancel_outlined, size: 18),
+                                icon: const Icon(
+                                  Icons.cancel_outlined,
+                                  size: 18,
+                                ),
                                 label: const Text('Rechazar Solicitud'),
-                                style: OutlinedButton.styleFrom(foregroundColor: AppColors.danger),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.danger,
+                                ),
                               ),
                             ],
                             OutlinedButton.icon(
                               onPressed: () => onViewSupportData(tenant),
-                              icon: const Icon(Icons.visibility_outlined, size: 18),
+                              icon: const Icon(
+                                Icons.visibility_outlined,
+                                size: 18,
+                              ),
                               label: const Text('Ver Datos (Soporte)'),
                             ),
                             if (!isPending && isOwner) ...[
                               OutlinedButton.icon(
                                 onPressed: () => onUpdatePricing(tenant),
-                                icon: const Icon(Icons.price_change_outlined, size: 18),
+                                icon: const Icon(
+                                  Icons.price_change_outlined,
+                                  size: 18,
+                                ),
                                 label: const Text('Cambiar Tarifa / Plan'),
                               ),
                               if (status == 'rejected')
                                 FilledButton.icon(
                                   onPressed: () => onApprove(tenant),
-                                  icon: const Icon(Icons.restart_alt_outlined, size: 18),
+                                  icon: const Icon(
+                                    Icons.restart_alt_outlined,
+                                    size: 18,
+                                  ),
                                   label: const Text('Reconsiderar / Aprobar'),
                                 ),
                               if (status == 'trialing')
                                 OutlinedButton.icon(
                                   onPressed: () => onExtendTrial(tenant),
-                                  icon: const Icon(Icons.schedule_outlined, size: 18),
+                                  icon: const Icon(
+                                    Icons.schedule_outlined,
+                                    size: 18,
+                                  ),
                                   label: const Text('Extender Prueba'),
                                 ),
-                              if (status != 'suspended' && status != 'cancelled' && status != 'rejected')
+                              if (status != 'suspended' &&
+                                  status != 'cancelled' &&
+                                  status != 'rejected')
                                 OutlinedButton.icon(
                                   onPressed: () => onSuspend(tenant),
-                                  icon: const Icon(Icons.pause_circle_outline, size: 18),
+                                  icon: const Icon(
+                                    Icons.pause_circle_outline,
+                                    size: 18,
+                                  ),
                                   label: const Text('Suspender'),
-                                  style: OutlinedButton.styleFrom(foregroundColor: AppColors.danger),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.danger,
+                                  ),
                                 ),
                               if (status == 'suspended')
                                 OutlinedButton.icon(
                                   onPressed: () => onReactivate(tenant),
-                                  icon: const Icon(Icons.play_circle_outline, size: 18),
+                                  icon: const Icon(
+                                    Icons.play_circle_outline,
+                                    size: 18,
+                                  ),
                                   label: const Text('Reactivar'),
-                                  style: OutlinedButton.styleFrom(foregroundColor: AppColors.success),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.success,
+                                  ),
                                 ),
                             ],
                           ],
@@ -1819,19 +2451,27 @@ class _TenantDetailSheet extends StatelessWidget {
                       icon: Icons.history,
                       children: [
                         FutureBuilder<List<TenantSubscriptionHistoryEntry>>(
-                          future: platformService.getTenantSubscriptionHistory(tenant.tenantId),
+                          future: platformService.getTenantSubscriptionHistory(
+                            tenant.tenantId,
+                          ),
                           builder: (context, snapshot) {
-                            if (snapshot.connectionState == ConnectionState.waiting) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
                               return const Padding(
                                 padding: EdgeInsets.symmetric(vertical: 16),
-                                child: Center(child: CircularProgressIndicator()),
+                                child: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
                               );
                             }
 
                             if (snapshot.hasError) {
                               return Text(
                                 'No se pudo cargar el historial: ${snapshot.error}',
-                                style: const TextStyle(fontSize: 12, color: AppColors.danger),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.danger,
+                                ),
                               );
                             }
 
@@ -1839,7 +2479,10 @@ class _TenantDetailSheet extends StatelessWidget {
                             if (history.isEmpty) {
                               return const Text(
                                 'Sin eventos registrados todavía.',
-                                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                ),
                               );
                             }
 
@@ -1847,7 +2490,9 @@ class _TenantDetailSheet extends StatelessWidget {
                               width: double.infinity,
                               decoration: BoxDecoration(
                                 border: Border.all(color: AppColors.border),
-                                borderRadius: BorderRadius.circular(AppRadius.control),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.control,
+                                ),
                               ),
                               child: SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
@@ -1858,27 +2503,92 @@ class _TenantDetailSheet extends StatelessWidget {
                                   dataRowMinHeight: 38,
                                   dataRowMaxHeight: 48,
                                   columns: const [
-                                    DataColumn(label: Text('Fecha y Hora', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5))),
-                                    DataColumn(label: Text('Plan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5))),
-                                    DataColumn(label: Text('Período Comprometido', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5))),
-                                    DataColumn(label: Text('Valor / Medio / Ref', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5))),
+                                    DataColumn(
+                                      label: Text(
+                                        'Fecha y Hora',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 11.5,
+                                        ),
+                                      ),
+                                    ),
+                                    DataColumn(
+                                      label: Text(
+                                        'Plan',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 11.5,
+                                        ),
+                                      ),
+                                    ),
+                                    DataColumn(
+                                      label: Text(
+                                        'Período Comprometido',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 11.5,
+                                        ),
+                                      ),
+                                    ),
+                                    DataColumn(
+                                      label: Text(
+                                        'Valor / Medio / Ref',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 11.5,
+                                        ),
+                                      ),
+                                    ),
                                   ],
                                   rows: history.map((entry) {
-                                    final periodo = entry.periodStart != null && entry.periodEnd != null
+                                    final periodo =
+                                        entry.periodStart != null &&
+                                            entry.periodEnd != null
                                         ? '${_formatDate(entry.periodStart)} al ${_formatDate(entry.periodEnd)}'
                                         : (entry.periodEnd != null
-                                            ? 'Hasta ${_formatDate(entry.periodEnd)}'
-                                            : '—');
-                                    final detalle = entry.paymentDetail ?? entry.description ?? '—';
+                                              ? 'Hasta ${_formatDate(entry.periodEnd)}'
+                                              : '—');
+                                    final detalle =
+                                        entry.paymentDetail ??
+                                        entry.description ??
+                                        '—';
                                     final valor = entry.amountCop != null
                                         ? '${_formatCop(entry.amountCop!)} · $detalle'
                                         : detalle;
                                     return DataRow(
                                       cells: [
-                                        DataCell(Text(_formatDateTime(entry.createdAt), style: const TextStyle(fontSize: 11.5))),
-                                        DataCell(Text(entry.planName ?? '—', style: const TextStyle(fontSize: 11.5))),
-                                        DataCell(Text(periodo, style: const TextStyle(fontSize: 11.5))),
-                                        DataCell(Text(valor, style: const TextStyle(fontSize: 11.5))),
+                                        DataCell(
+                                          Text(
+                                            _formatDateTime(entry.createdAt),
+                                            style: const TextStyle(
+                                              fontSize: 11.5,
+                                            ),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            entry.planName ?? '—',
+                                            style: const TextStyle(
+                                              fontSize: 11.5,
+                                            ),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            periodo,
+                                            style: const TextStyle(
+                                              fontSize: 11.5,
+                                            ),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            valor,
+                                            style: const TextStyle(
+                                              fontSize: 11.5,
+                                            ),
+                                          ),
+                                        ),
                                       ],
                                     );
                                   }).toList(),
@@ -1888,6 +2598,15 @@ class _TenantDetailSheet extends StatelessWidget {
                           },
                         ),
                       ],
+                    ),
+
+                    const SizedBox(height: AppSpacing.md),
+
+                    // TARJETA 5: LÍMITES Y EXCEPCIONES DEL SALÓN (OVERRIDES)
+                    _TenantOverridesCard(
+                      tenant: tenant,
+                      isOwner: isOwner,
+                      platformService: platformService,
                     ),
                   ],
                 ),
@@ -1964,11 +2683,378 @@ class _TenantDetailSheet extends StatelessWidget {
               ),
             ),
           ),
-          if (action != null) ...[
-            const SizedBox(width: 8),
-            action,
-          ],
+          if (action != null) ...[const SizedBox(width: 8), action],
         ],
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// TARJETA 5: LÍMITES Y EXCEPCIONES DEL SALÓN (D-172, paso 7.2)
+// ============================================================================
+class _TenantOverridesCard extends StatefulWidget {
+  const _TenantOverridesCard({
+    required this.tenant,
+    required this.isOwner,
+    required this.platformService,
+  });
+
+  final PlatformTenantSummary tenant;
+  final bool isOwner;
+  final PlatformService platformService;
+
+  @override
+  State<_TenantOverridesCard> createState() => _TenantOverridesCardState();
+}
+
+class _TenantOverridesCardState extends State<_TenantOverridesCard> {
+  late Future<List<PlatformTenantFeatureOverride>> _future;
+
+  static const _featureOptions = [
+    {'key': 'branches', 'label': 'Sedes'},
+    {'key': 'team_members', 'label': 'Cuentas de equipo'},
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _future = widget.platformService.getTenantFeatureOverrides(
+      widget.tenant.tenantId,
+    );
+  }
+
+  void _reload() {
+    setState(() {
+      _future = widget.platformService.getTenantFeatureOverrides(
+        widget.tenant.tenantId,
+      );
+    });
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return '—';
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
+  String _featureLabel(String key) {
+    for (final opt in _featureOptions) {
+      if (opt['key'] == key) return opt['label']!;
+    }
+    return key;
+  }
+
+  Future<void> _grantOverride() async {
+    String selectedKey = _featureOptions.first['key']!;
+    final limitController = TextEditingController();
+    final reasonController = TextEditingController();
+    DateTime? endsAt;
+
+    final granted = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => AlertDialog(
+          title: const Text('Conceder excepción de límite'),
+          content: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Capacidad:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedKey,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                    ),
+                    items: _featureOptions
+                        .map(
+                          (opt) => DropdownMenuItem(
+                            value: opt['key'],
+                            child: Text(opt['label']!),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (val) {
+                      if (val != null) setModalState(() => selectedKey = val);
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: limitController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Nuevo límite (número)',
+                      hintText: 'Ej. 3',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: reasonController,
+                    maxLines: 2,
+                    decoration: const InputDecoration(
+                      labelText: 'Motivo (obligatorio)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          endsAt == null
+                              ? 'Sin fecha de expiración'
+                              : 'Expira el ${_formatDate(endsAt)}',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now().add(
+                              const Duration(days: 30),
+                            ),
+                            firstDate: DateTime.now().add(
+                              const Duration(days: 1),
+                            ),
+                            lastDate: DateTime.now().add(
+                              const Duration(days: 3650),
+                            ),
+                          );
+                          if (picked != null) {
+                            setModalState(() => endsAt = picked);
+                          }
+                        },
+                        child: Text(
+                          endsAt == null ? 'Elegir fecha' : 'Cambiar',
+                        ),
+                      ),
+                      if (endsAt != null)
+                        IconButton(
+                          icon: const Icon(Icons.clear, size: 18),
+                          onPressed: () => setModalState(() => endsAt = null),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () {
+                if (reasonController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('El motivo es obligatorio.')),
+                  );
+                  return;
+                }
+                Navigator.of(context).pop(true);
+              },
+              child: const Text('Conceder'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (granted != true) return;
+
+    try {
+      await widget.platformService.setTenantFeatureOverride(
+        tenantId: widget.tenant.tenantId,
+        featureKey: selectedKey,
+        enabled: true,
+        limitValue: int.tryParse(limitController.text.trim()),
+        reason: reasonController.text.trim(),
+        endsAt: endsAt,
+      );
+      _reload();
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Excepción concedida.')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo conceder la excepción: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _revokeOverride(String overrideId) async {
+    try {
+      await widget.platformService.deleteTenantFeatureOverride(overrideId);
+      _reload();
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Excepción revocada.')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('No se pudo revocar: $e')));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        side: const BorderSide(color: AppColors.border),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.tune, size: 18, color: AppColors.brand),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '5. Límites y Excepciones del Salón (Overrides)',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+                if (widget.isOwner)
+                  TextButton.icon(
+                    onPressed: _grantOverride,
+                    icon: const Icon(Icons.add, size: 16),
+                    label: const Text('Conceder Excepción'),
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+              ],
+            ),
+            const Divider(height: 20),
+            FutureBuilder<List<PlatformTenantFeatureOverride>>(
+              future: _future,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                if (snapshot.hasError) {
+                  return Text(
+                    'No se pudo cargar: ${snapshot.error}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.danger,
+                    ),
+                  );
+                }
+                final overrides = snapshot.data ?? const [];
+                if (overrides.isEmpty) {
+                  return const Text(
+                    'Sin excepciones registradas. Este negocio usa los límites estándar de su plan.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  );
+                }
+                return Column(
+                  children: overrides.map((o) {
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: o.isActive
+                            ? AppColors.brandTintSoft
+                            : AppColors.surfaceAlt,
+                        borderRadius: BorderRadius.circular(AppRadius.control),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${_featureLabel(o.featureKey)}: hasta ${o.limitValue ?? "sin límite"}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  o.reason,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  o.endsAt != null
+                                      ? '${o.isActive ? "Vigente" : "Finalizó"} hasta el ${_formatDate(o.endsAt)}'
+                                      : (o.isActive
+                                            ? 'Vigente sin fecha de expiración'
+                                            : 'Finalizada'),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: o.isActive
+                                        ? AppColors.brandDeep
+                                        : AppColors.textMuted,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (widget.isOwner && o.isActive)
+                            IconButton(
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                size: 18,
+                                color: AppColors.danger,
+                              ),
+                              tooltip: 'Revocar',
+                              onPressed: () => _revokeOverride(o.overrideId),
+                            ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
