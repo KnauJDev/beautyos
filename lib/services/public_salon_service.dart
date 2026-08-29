@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/public_salon_blog_post.dart';
 import '../models/public_salon_photo_item.dart';
 import '../models/public_salon_profile.dart';
 import '../models/public_salon_review_item.dart';
@@ -80,9 +81,24 @@ class PublicSalonService {
     return PublicSalonReviewsSummary.fromRows(response as List);
   }
 
+  Future<List<PublicSalonBlogPost>> getBlogPosts(String tenantId) async {
+    final response = await Supabase.instance.client.rpc(
+      'get_public_salon_blog_posts',
+      params: {'p_tenant_id': tenantId},
+    );
+
+    return (response as List)
+        .map(
+          (item) => PublicSalonBlogPost.fromMap(
+            Map<String, dynamic>.from(item as Map),
+          ),
+        )
+        .toList();
+  }
+
   /// Perfil completo de la página pública: resuelve el slug primero (para
-  /// tener el `tenant_id`) y luego trae servicios, portafolio, equipo y
-  /// reseñas en paralelo. `null` si el slug no existe.
+  /// tener el `tenant_id`) y luego trae servicios, portafolio, equipo,
+  /// reseñas y blog en paralelo. `null` si el slug no existe.
   Future<PublicSalonFullProfile?> getFullProfile(String slug) async {
     final profile = await getSalonBySlug(slug);
     if (profile == null) return null;
@@ -92,6 +108,7 @@ class PublicSalonService {
       getPortfolio(profile.tenantId),
       getTeam(profile.tenantId),
       getReviews(profile.tenantId),
+      getBlogPosts(profile.tenantId),
     ]);
 
     return PublicSalonFullProfile(
@@ -100,6 +117,7 @@ class PublicSalonService {
       portfolio: results[1] as List<PublicSalonPhotoItem>,
       team: results[2] as List<PublicSalonTeamMember>,
       reviews: results[3] as PublicSalonReviewsSummary,
+      blogPosts: results[4] as List<PublicSalonBlogPost>,
     );
   }
 }

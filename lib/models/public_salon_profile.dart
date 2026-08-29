@@ -1,4 +1,5 @@
 import 'business_hour.dart';
+import 'public_salon_blog_post.dart';
 import 'public_salon_photo_item.dart';
 import 'public_salon_review_item.dart';
 import 'public_salon_service_item.dart';
@@ -128,6 +129,7 @@ class PublicSalonFullProfile {
     required this.portfolio,
     required this.team,
     required this.reviews,
+    required this.blogPosts,
   });
 
   final PublicSalonProfile profile;
@@ -135,4 +137,7 @@ class PublicSalonFullProfile {
   final List<PublicSalonPhotoItem> portfolio;
   final List<PublicSalonTeamMember> team;
   final PublicSalonReviewsSummary reviews;
+
+  /// Artículos publicados del blog (paso 6.6, D-171).
+  final List<PublicSalonBlogPost> blogPosts;
 }

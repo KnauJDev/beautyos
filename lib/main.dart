@@ -23,6 +23,7 @@ import 'pages/public_salon_page.dart';
 import 'pages/tenant_approval_status_page.dart';
 import 'pages/terms_and_privacy_page.dart';
 import 'pages/agenda_page.dart';
+import 'pages/blog_page.dart';
 import 'pages/clients_page.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/inventory_page.dart';
@@ -489,6 +490,20 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         page: ResenasPage(
           key: ValueKey('reviews-${branch.branchId}'),
           branchId: branch.branchId,
+        ),
+        allowedRoles: const <String>{'owner', 'admin'},
+      ),
+      BeautyModule(
+        section: const BeautySection(
+          'Blog',
+          Icons.article_outlined,
+          category: BeautyCategory.portafolio,
+        ),
+        // El blog es del negocio completo, no de una sede (paso 6.6,
+        // D-171) -- por eso recibe tenantId y no branchId.
+        page: BlogPage(
+          key: ValueKey('blog-${branch.tenantId}'),
+          tenantId: branch.tenantId,
         ),
         allowedRoles: const <String>{'owner', 'admin'},
       ),

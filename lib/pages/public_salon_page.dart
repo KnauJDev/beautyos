@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
+import '../models/public_salon_blog_post.dart';
 import '../models/public_salon_photo_item.dart';
 import '../models/public_salon_profile.dart';
 import '../models/public_salon_review_item.dart';
@@ -11,6 +12,7 @@ import '../services/public_salon_service.dart';
 import '../widgets/photo_grid_viewer.dart';
 import 'agenda_page.dart' show buildWhatsAppUri;
 import 'client_portal_page.dart';
+import 'public_blog_post_page.dart';
 import 'public_booking_page.dart';
 
 /// Página pública del negocio (D-098, D-164, D-165):
@@ -155,6 +157,10 @@ class _PublicSalonPageState extends State<PublicSalonPage> {
         if (result.reviews.totalReviews > 0) ...[
           const SizedBox(height: 20),
           _ReviewsSection(summary: result.reviews),
+        ],
+        if (result.blogPosts.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          _BlogSection(posts: result.blogPosts),
         ],
         const SizedBox(height: 20),
         _HoursLocationSection(salon: result.profile),
@@ -727,6 +733,91 @@ class _ReviewTile extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+// =============================================================================
+// SECCIÓN: Blog
+// =============================================================================
+
+class _BlogSection extends StatelessWidget {
+  const _BlogSection({required this.posts});
+
+  final List<PublicSalonBlogPost> posts;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Section(
+      title: 'Blog',
+      icon: Icons.article_outlined,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final post in posts) ...[
+            _BlogPostCard(post: post),
+            if (post != posts.last) const Divider(height: 24),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _BlogPostCard extends StatelessWidget {
+  const _BlogPostCard({required this.post});
+
+  final PublicSalonBlogPost post;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppRadius.control),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => PublicBlogPostPage(post: post)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (post.coverPhotoUrl != null) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.control),
+                child: Image.network(
+                  post.coverPhotoUrl!,
+                  width: 84,
+                  height: 84,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(width: 14),
+            ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    post.title,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    post.excerpt,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -243,7 +243,7 @@ Tope antiabuso en la reserva pública, rol Asistente con sus pantallas, 2FA.
 | 6.3 | Respuestas a reseñas asistidas | 🤖 | ✅ **CERRADO 29-ago (D-170), versión determinista.** `ReviewReplyDraftBuilder`: plantilla por franja de calificación (5★/4★/3★/1-2★) con el nombre de la clienta y el servicio, que el salón edita antes de guardar. `set_review_reply` (owner/admin) guarda/edita/quita la respuesta; se publica bajo la reseña en la página pública del negocio. No exclusivo de ningún plan. 216/216 pruebas en verde |
 | 6.4 | Publicación automática en Instagram | 🤖 | ⬜ **Requiere revisión de Meta** |
 | 6.5 | **WhatsApp con agente:** servicios, horarios, disponibilidad, agendar | 🤖 | ⬜ **Requiere verificación de empresa con Meta. Semanas** |
-| 6.6 | Blog de artículos de belleza y estética | 🤖 | ⬜ |
+| 6.6 | Blog de artículos de belleza y estética | 🤖 | ✅ **CERRADO 29-ago (D-171).** Blog **por cada salón** (decisión confirmada con el propietario), sin url propia por artículo todavía. Tabla `blog_posts` (tenant, no sede), bucket `blog-covers`, RPC autoservicio (`create`/`update`/`delete_blog_post`, `get_blog_posts_summary`) y pública (`get_public_salon_blog_posts`, solo publicados). Módulo "Blog" nuevo (owner/admin) y sección "Blog" en la página pública (D-165) con `PublicBlogPostPage` (`Navigator.push`, mismo patrón que reserva/reseñas). 222/222 pruebas en verde |
 
 > ⚠️ **Nada de la fase 6 se vende como disponible hasta que exista.** Cobrar
 > por WhatsApp e Instagram sin haberlos construido es una promesa que no se
