@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/publication_studio_data.dart';
 import '../models/work_photo_summary.dart';
 import 'storage_cleanup.dart';
 import 'work_photo_storage.dart';
@@ -140,5 +141,21 @@ class WorkPhotosService {
         'p_public_url': null,
       },
     );
+  }
+
+  /// Datos para el Estudio de publicación (paso 6.2, D-169). El servidor
+  /// rechaza una foto que no esté aprobada para portafolio o sin
+  /// consentimiento de la clienta -- mismo candado que D-167.
+  Future<PublicationStudioData> getPublicationStudioData(
+    String photoId,
+  ) async {
+    final response = await Supabase.instance.client
+        .rpc(
+          'get_publication_studio_data',
+          params: {'p_branch_id': branchId, 'p_photo_id': photoId},
+        )
+        .single();
+
+    return PublicationStudioData.fromMap(Map<String, dynamic>.from(response));
   }
 }

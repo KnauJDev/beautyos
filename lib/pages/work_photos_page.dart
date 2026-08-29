@@ -7,6 +7,7 @@ import '../models/work_photo_summary.dart';
 import '../services/work_photos_service.dart';
 import '../widgets/app_widgets.dart';
 import '../widgets/foto_de_trabajo.dart';
+import '../widgets/publication_studio_dialog.dart';
 
 class FotosTrabajosPage extends StatefulWidget {
   const FotosTrabajosPage({super.key, required this.branchId});
@@ -264,6 +265,11 @@ class _FotosTrabajosPageState extends State<FotosTrabajosPage> {
           onSetCustomerVisibility: _setCustomerVisibility,
           onSetPortfolioApproval: _setPortfolioApproval,
           onDelete: _deletePhoto,
+          onOpenPublicationStudio: (photo) => showPublicationStudioDialog(
+            context,
+            branchId: widget.branchId,
+            photo: photo,
+          ),
         );
       },
     );
@@ -287,6 +293,7 @@ class _WorkPhotosContent extends StatelessWidget {
   final Future<void> Function(WorkPhotoSummary photo, bool approved)
       onSetPortfolioApproval;
   final Future<void> Function(WorkPhotoSummary photo) onDelete;
+  final Future<void> Function(WorkPhotoSummary photo) onOpenPublicationStudio;
 
   const _WorkPhotosContent({
     required this.allPhotos,
@@ -303,6 +310,7 @@ class _WorkPhotosContent extends StatelessWidget {
     required this.onSetCustomerVisibility,
     required this.onSetPortfolioApproval,
     required this.onDelete,
+    required this.onOpenPublicationStudio,
   });
 
   @override
@@ -477,6 +485,7 @@ class _WorkPhotosContent extends StatelessWidget {
           onSetCustomerVisibility: onSetCustomerVisibility,
           onSetPortfolioApproval: onSetPortfolioApproval,
           onDelete: onDelete,
+          onOpenPublicationStudio: onOpenPublicationStudio,
         ),
       ],
     );
@@ -503,6 +512,7 @@ class _WorkPhotosGrid extends StatelessWidget {
   final Future<void> Function(WorkPhotoSummary photo, bool approved)
       onSetPortfolioApproval;
   final Future<void> Function(WorkPhotoSummary photo) onDelete;
+  final Future<void> Function(WorkPhotoSummary photo) onOpenPublicationStudio;
 
   const _WorkPhotosGrid({
     required this.photos,
@@ -510,6 +520,7 @@ class _WorkPhotosGrid extends StatelessWidget {
     required this.onSetCustomerVisibility,
     required this.onSetPortfolioApproval,
     required this.onDelete,
+    required this.onOpenPublicationStudio,
   });
 
   @override
@@ -552,6 +563,7 @@ class _WorkPhotosGrid extends StatelessWidget {
               onSetCustomerVisibility: onSetCustomerVisibility,
               onSetPortfolioApproval: onSetPortfolioApproval,
               onDelete: onDelete,
+              onOpenPublicationStudio: onOpenPublicationStudio,
             ),
           ),
       ],
@@ -566,12 +578,14 @@ class _WorkPhotoCard extends StatelessWidget {
   final Future<void> Function(WorkPhotoSummary photo, bool approved)
       onSetPortfolioApproval;
   final Future<void> Function(WorkPhotoSummary photo) onDelete;
+  final Future<void> Function(WorkPhotoSummary photo) onOpenPublicationStudio;
 
   const _WorkPhotoCard({
     required this.photo,
     required this.onSetCustomerVisibility,
     required this.onSetPortfolioApproval,
     required this.onDelete,
+    required this.onOpenPublicationStudio,
   });
 
   @override
@@ -706,6 +720,25 @@ class _WorkPhotoCard extends StatelessWidget {
                       tooltip: 'Eliminar foto',
                     ),
                   ],
+                ),
+                const SizedBox(height: 4),
+                SizedBox(
+                  width: double.infinity,
+                  child: Tooltip(
+                    message: photo.estaPublicada
+                        ? 'Compone una imagen lista para Instagram con esta foto'
+                        : 'Primero hay que aprobarla para portafolio',
+                    child: OutlinedButton.icon(
+                      onPressed: photo.estaPublicada
+                          ? () => onOpenPublicationStudio(photo)
+                          : null,
+                      icon: const Icon(Icons.auto_awesome_outlined, size: 16),
+                      label: const Text(
+                        'Estudio de publicación',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
