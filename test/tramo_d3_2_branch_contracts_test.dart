@@ -36,6 +36,7 @@ void main() {
       const DashboardPage(
         key: ValueKey('dashboard-branch-a2'),
         branchId: branchId,
+        nombreParaSaludo: 'Carlos',
       ),
       const MyStylistWorkPhotosPage(
         key: ValueKey('my-photos-branch-a2'),

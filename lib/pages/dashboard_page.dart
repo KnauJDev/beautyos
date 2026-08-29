@@ -12,6 +12,7 @@ import '../widgets/filtro_periodo.dart';
 import '../widgets/grafico_protagonista.dart';
 import '../widgets/indicador_comparado.dart';
 import '../widgets/tiempo_vendido.dart';
+import '../widgets/tu_negocio_en_palabras_card.dart';
 
 /// Vista 1 del Dashboard: el resumen (tarea 2.5a, D-110).
 ///
@@ -27,6 +28,10 @@ class DashboardPage extends StatefulWidget {
     super.key,
     required this.branchId,
     this.branches = const <BranchContext>[],
+    required this.nombreParaSaludo,
+    this.onIrAAgenda,
+    this.onIrATickets,
+    this.onIrAClientes,
   });
 
   final String branchId;
@@ -34,6 +39,17 @@ class DashboardPage extends StatefulWidget {
   /// Las sedes que este usuario puede consultar. Vacío significa que solo hay
   /// una y no se dibuja el selector.
   final List<BranchContext> branches;
+
+  /// El titular o, si no tiene perfil con nombre, el nombre del negocio.
+  /// "Tu negocio en palabras" (D-168) solo usa el primer nombre.
+  final String nombreParaSaludo;
+
+  /// Cambian de pestaña dentro del shell (D-168, mismo criterio de D-163:
+  /// Agenda, Tickets y Clientes son módulos hermanos en el mismo
+  /// `IndexedStack`, no rutas empujables).
+  final VoidCallback? onIrAAgenda;
+  final VoidCallback? onIrATickets;
+  final VoidCallback? onIrAClientes;
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -209,6 +225,29 @@ class _DashboardPageState extends State<DashboardPage> {
                 if (datos.sinHistoria)
                   const _DiaCero()
                 else ...[
+                  // Su propio FutureBuilder porque usa `_hoy`, que se carga
+                  // aparte de `_resumen` (ver comentario de `_cargarHoy`).
+                  // Comparte la misma Future que AgendaDeHoy/AvisosDelDia
+                  // mas abajo -- no dispara una segunda consulta.
+                  FutureBuilder<DashboardHoy>(
+                    future: _hoy,
+                    builder: (context, h) {
+                      if (!h.hasData) return const SizedBox.shrink();
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                        child: TuNegocioEnPalabrasCard(
+                          hoy: h.data!,
+                          overview: datos,
+                          rangoAnterior: resumen.rangoAnterior,
+                          nombre: widget.nombreParaSaludo,
+                          onIrAAgenda: widget.onIrAAgenda,
+                          onIrATickets: widget.onIrATickets,
+                          onIrAClientes: widget.onIrAClientes,
+                        ),
+                      );
+                    },
+                  ),
                   _Indicadores(resumen: resumen, periodo: _periodo),
                   const SizedBox(height: AppSpacing.lg),
                   // El grafico va en su propio FutureBuilder: son cientos de

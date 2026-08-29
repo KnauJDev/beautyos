@@ -265,6 +265,17 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
     await Supabase.instance.client.auth.signOut();
   }
 
+  /// Cambia de pestaña buscando el módulo por su título (D-168). Se busca
+  /// dinámicamente en vez de fijar un índice: a diferencia de D-163 (que
+  /// SÍ podía apoyarse en que Agenda y Tickets son siempre adyacentes),
+  /// aquí el llamador puede ser cualquiera de los tres, y fijar tres
+  /// índices distintos a mano es más frágil que buscarlos por nombre.
+  void _irAModulo(List<BeautyModule> modules, String titulo) {
+    final index = modules.indexWhere((m) => m.section.title == titulo);
+    if (index == -1) return;
+    setState(() => selectedIndex = index);
+  }
+
   List<BeautyModule> _modulesForProfile(
     MyProfile? profile,
     BranchContext branch,
@@ -272,7 +283,12 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
   ) {
     final role = profile?.role ?? 'client';
 
-    final modules = <BeautyModule>[
+    // Declarada aparte de su valor (D-168): el Dashboard necesita cerrar
+    // sobre `modules` en sus callbacks de navegación (_irAModulo), y Dart no
+    // permite que una variable se referencie dentro de su propio
+    // inicializador aunque sea desde un closure que se ejecuta después.
+    late final List<BeautyModule> modules;
+    modules = <BeautyModule>[
       // ======================================================================
       // 1. OPERACIÓN DIARIA (La recepcionista y la dueña trabajan aquí)
       // ======================================================================
@@ -388,6 +404,15 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           key: const ValueKey('dashboard'),
           branchId: branch.branchId,
           branches: branches,
+          // "Tu negocio en palabras" (D-168) saluda al titular; si su
+          // perfil no tiene nombre todavía, cae al nombre del negocio.
+          nombreParaSaludo:
+              (profile?.fullName.trim().isNotEmpty ?? false)
+              ? profile!.fullName
+              : branch.tenantName,
+          onIrAAgenda: () => _irAModulo(modules, 'Agenda'),
+          onIrATickets: () => _irAModulo(modules, 'Tickets & Caja'),
+          onIrAClientes: () => _irAModulo(modules, 'Clientes'),
         ),
         allowedRoles: const <String>{'owner', 'admin'},
       ),
