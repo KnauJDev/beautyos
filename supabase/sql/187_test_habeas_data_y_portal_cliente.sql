@@ -40,6 +40,7 @@ declare
   v_capturo boolean;
   v_error_msg text;
   v_portal_data jsonb;
+  v_auth jsonb;
   v_count integer;
   v_intentos integer;
   v_locked_until timestamptz;
@@ -231,21 +232,16 @@ begin
   update public.work_photos set visible_to_customer = true where id = v_photo_privada_visible;
 
   -- =====================================================================
+  -- =====================================================================
   -- CASO 4: client_portal_authenticate rechaza cuando no hay PIN asignado.
   -- =====================================================================
-  v_capturo := false;
-  begin
-    perform public.client_portal_authenticate(v_tenant, '3000000199', '1234');
-  exception
-    when others then
-      v_capturo := true;
-  end;
+  v_auth := public.client_portal_authenticate(v_tenant, '3000000199', '1234');
 
-  if v_capturo then
+  if (v_auth->>'error') = 'Todavía no tienes un PIN de acceso. Pídelo en el salón.' then
     raise notice 'OK  4a  sin PIN asignado, el portal rechaza el ingreso (no lo crea solo)';
   else
     v_fallos := v_fallos + 1;
-    raise notice 'FALLO 4a  el portal dejo entrar o creo un PIN sin que el salon lo asignara';
+    raise notice 'FALLO 4a  el portal dejo entrar o creo un PIN sin que el salon lo asignara: %', v_auth;
   end if;
 
   -- =====================================================================
@@ -253,43 +249,39 @@ begin
   -- =====================================================================
   perform public.admin_reset_client_portal_pin(v_client, '1234');
 
-  v_token := public.client_portal_authenticate(v_tenant, '3000000199', '1234');
+  v_auth := public.client_portal_authenticate(v_tenant, '3000000199', '1234');
+  v_token := v_auth->>'token';
 
   if v_token is not null and length(v_token) > 10 then
     raise notice 'OK  5a  con el PIN asignado por el salon, el login funciona y devuelve un token';
   else
     v_fallos := v_fallos + 1;
-    raise notice 'FALLO 5a  el login no devolvio un token valido';
+    raise notice 'FALLO 5a  el login no devolvio un token valido: %', v_auth;
   end if;
 
   -- El telefono con otro formato de puntuacion (guiones y parentesis, los
   -- mismos digitos) debe autenticar igual: se compara por digitos, no por
   -- el texto exacto guardado.
-  if public.client_portal_authenticate(v_tenant, '(300) 000-0199', '1234') is not null then
+  v_auth := public.client_portal_authenticate(v_tenant, '(300) 000-0199', '1234');
+  if (v_auth->>'token') is not null then
     raise notice 'OK  5b  el celular se compara por digitos, sin importar la puntuacion';
   else
     v_fallos := v_fallos + 1;
-    raise notice 'FALLO 5b  el login con otro formato de celular no funciono igual';
+    raise notice 'FALLO 5b  el login con otro formato de celular no funciono igual: %', v_auth;
   end if;
 
   -- =====================================================================
   -- CASO 6: PIN incorrecto se rechaza y cuenta como intento fallido.
   -- =====================================================================
-  v_capturo := false;
-  begin
-    perform public.client_portal_authenticate(v_tenant, '3000000199', '9999');
-  exception
-    when others then
-      v_capturo := true;
-  end;
+  v_auth := public.client_portal_authenticate(v_tenant, '3000000199', '9999');
 
   select portal_failed_attempts into v_intentos from public.clients where id = v_client;
 
-  if v_capturo and v_intentos = 1 then
+  if (v_auth->>'error') = 'PIN incorrecto.' and v_intentos = 1 then
     raise notice 'OK  6a  un PIN incorrecto se rechaza y queda contado como intento fallido';
   else
     v_fallos := v_fallos + 1;
-    raise notice 'FALLO 6a  se esperaba rechazo y 1 intento fallido; capturo=%, intentos=%', v_capturo, v_intentos;
+    raise notice 'FALLO 6a  se esperaba rechazo y 1 intento fallido; auth=%, intentos=%', v_auth, v_intentos;
   end if;
 
   -- =====================================================================
@@ -297,31 +289,19 @@ begin
   -- correcto.
   -- =====================================================================
   for i in 1..4 loop
-    begin
-      perform public.client_portal_authenticate(v_tenant, '3000000199', '9999');
-    exception
-      when others then
-        null;
-    end;
+    perform public.client_portal_authenticate(v_tenant, '3000000199', '9999');
   end loop;
 
   select portal_failed_attempts into v_intentos from public.clients where id = v_client;
 
-  v_capturo := false;
-  begin
-    perform public.client_portal_authenticate(v_tenant, '3000000199', '1234');
-  exception
-    when others then
-      v_capturo := true;
-      v_error_msg := sqlerrm;
-  end;
+  v_auth := public.client_portal_authenticate(v_tenant, '3000000199', '1234');
 
-  if v_intentos = 5 and v_capturo and v_error_msg like 'Demasiados intentos%' then
+  if v_intentos = 5 and (v_auth->>'error') like 'Demasiados intentos%' then
     raise notice 'OK  7a  tras 5 intentos fallidos, hasta el PIN correcto queda bloqueado';
   else
     v_fallos := v_fallos + 1;
-    raise notice 'FALLO 7a  se esperaba bloqueo tras 5 intentos; intentos=%, capturo=%, mensaje="%"',
-      v_intentos, v_capturo, v_error_msg;
+    raise notice 'FALLO 7a  se esperaba bloqueo tras 5 intentos; intentos=%, auth=%',
+      v_intentos, v_auth;
   end if;
 
   -- =====================================================================
@@ -358,28 +338,23 @@ begin
     raise notice 'FALLO 8a2  el token de sesion viejo siguio funcionando tras restablecer el PIN';
   end if;
 
-  v_capturo := false;
-  begin
-    perform public.client_portal_authenticate(v_tenant, '3000000199', '1234');
-  exception
-    when others then
-      v_capturo := true;
-  end;
+  v_auth := public.client_portal_authenticate(v_tenant, '3000000199', '1234');
 
-  if v_capturo then
+  if (v_auth->>'error') = 'PIN incorrecto.' then
     raise notice 'OK  8b  el PIN viejo (1234) ya no funciona tras restablecer';
   else
     v_fallos := v_fallos + 1;
-    raise notice 'FALLO 8b  el PIN viejo siguio funcionando despues de restablecer';
+    raise notice 'FALLO 8b  el PIN viejo siguio funcionando despues de restablecer: %', v_auth;
   end if;
 
-  v_token := public.client_portal_authenticate(v_tenant, '3000000199', '5678');
+  v_auth := public.client_portal_authenticate(v_tenant, '3000000199', '5678');
+  v_token := v_auth->>'token';
 
   if v_token is not null then
     raise notice 'OK  8c  el PIN nuevo (5678) funciona';
   else
     v_fallos := v_fallos + 1;
-    raise notice 'FALLO 8c  el PIN nuevo no funciono';
+    raise notice 'FALLO 8c  el PIN nuevo no funciono: %', v_auth;
   end if;
 
   -- =====================================================================

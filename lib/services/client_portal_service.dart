@@ -21,7 +21,21 @@ class ClientPortalService {
       params: {'p_tenant_id': tenantId, 'p_phone': phone, 'p_pin': pin},
     );
 
-    return response as String;
+    if (response is Map) {
+      final map = Map<String, dynamic>.from(response);
+      final error = map['error']?.toString();
+      if (error != null && error.isNotEmpty) {
+        throw PostgrestException(message: error);
+      }
+      final token = map['token']?.toString();
+      if (token != null && token.isNotEmpty) {
+        return token;
+      }
+    }
+
+    if (response is String) return response;
+
+    throw const PostgrestException(message: 'Respuesta inválida del servidor.');
   }
 
   Future<ClientPortalData> getPortalData({

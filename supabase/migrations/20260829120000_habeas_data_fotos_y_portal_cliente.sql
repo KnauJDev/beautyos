@@ -349,12 +349,14 @@ comment on column public.clients.portal_session_expires_at is
 --    la decisión de seguridad de este bloque (ver cabecera del archivo).
 -- ----------------------------------------------------------------------------
 
+drop function if exists public.client_portal_authenticate(uuid, text, text);
+
 create or replace function public.client_portal_authenticate(
   p_tenant_id uuid,
   p_phone text,
   p_pin text
 )
-returns text
+returns jsonb
 language plpgsql
 security definer
 set search_path = public
@@ -366,7 +368,7 @@ declare
   v_token text;
 begin
   if v_phone_digits = '' or v_pin !~ '^[0-9]{4}$' then
-    raise exception 'Escribe tu celular y un PIN de 4 dígitos.';
+    return jsonb_build_object('token', null, 'error', 'Escribe tu celular y un PIN de 4 dígitos.');
   end if;
 
   -- Se compara solo por dígitos: la clienta puede haber quedado registrada
@@ -383,15 +385,15 @@ begin
   for update;
 
   if not found then
-    raise exception 'No encontramos ninguna cuenta con ese celular en este negocio.';
+    return jsonb_build_object('token', null, 'error', 'No encontramos ninguna cuenta con ese celular en este negocio.');
   end if;
 
   if v_client.portal_pin_hash is null or v_client.portal_pin_salt is null then
-    raise exception 'Todavía no tienes un PIN de acceso. Pídelo en el salón.';
+    return jsonb_build_object('token', null, 'error', 'Todavía no tienes un PIN de acceso. Pídelo en el salón.');
   end if;
 
   if v_client.portal_locked_until is not null and v_client.portal_locked_until > now() then
-    raise exception 'Demasiados intentos fallidos. Espera unos minutos o pide un PIN nuevo en el salón.';
+    return jsonb_build_object('token', null, 'error', 'Demasiados intentos fallidos. Espera unos minutos o pide un PIN nuevo en el salón.');
   end if;
 
   if encode(sha256((v_pin || v_client.portal_pin_salt)::bytea), 'hex') <> v_client.portal_pin_hash then
@@ -403,7 +405,7 @@ begin
         end
     where id = v_client.id;
 
-    raise exception 'PIN incorrecto.';
+    return jsonb_build_object('token', null, 'error', 'PIN incorrecto.');
   end if;
 
   v_token := gen_random_uuid()::text;
@@ -415,7 +417,7 @@ begin
       portal_session_expires_at = now() + interval '60 days'
   where id = v_client.id;
 
-  return v_token;
+  return jsonb_build_object('token', v_token, 'error', null);
 end;
 $$;
 
