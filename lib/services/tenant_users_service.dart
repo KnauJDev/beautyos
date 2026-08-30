@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/tenant_user.dart';
+import '../models/user_branch_access.dart';
 
 class TenantUsersService {
   const TenantUsersService();
@@ -32,5 +33,34 @@ class TenantUsersService {
         .single();
 
     return TenantUser.fromMap(Map<String, dynamic>.from(response));
+  }
+
+  Future<List<UserBranchAccess>> getUserBranches(String profileId) async {
+    final response = await Supabase.instance.client.rpc(
+      'get_tenant_user_branches',
+      params: {'p_profile_id': profileId},
+    );
+
+    final rows = response as List<dynamic>;
+    return rows
+        .map(
+          (item) => UserBranchAccess.fromMap(
+            Map<String, dynamic>.from(item as Map),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  Future<void> setUserBranches({
+    required String profileId,
+    required List<String> branchIds,
+  }) async {
+    await Supabase.instance.client.rpc(
+      'set_tenant_user_branches',
+      params: {
+        'p_profile_id': profileId,
+        'p_branch_ids': branchIds,
+      },
+    );
   }
 }

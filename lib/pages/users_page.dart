@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import '../models/stylist_for_invitation.dart';
 import '../models/team_invitation.dart';
 import '../models/tenant_user.dart';
+import '../models/user_branch_access.dart';
 import '../services/stylists_service.dart';
 import '../services/team_invitations_service.dart';
 import '../services/tenant_users_service.dart';
@@ -628,6 +629,10 @@ class _ManageUserDialogState extends State<_ManageUserDialog> {
   late bool _active;
   bool _saving = false;
   String? _error;
+  List<UserBranchAccess>? _branches;
+  bool _loadingBranches = true;
+  String? _branchesError;
+  final Set<String> _selectedBranchIds = {};
 
   List<String> get _roles {
     final roles = <String>['admin', 'assistant', 'client'];
@@ -640,9 +645,43 @@ class _ManageUserDialogState extends State<_ManageUserDialog> {
     super.initState();
     _role = _roles.contains(widget.user.role) ? widget.user.role : 'client';
     _active = widget.user.active;
+    _loadBranches();
+  }
+
+  Future<void> _loadBranches() async {
+    try {
+      final list = await widget.usersService.getUserBranches(
+        widget.user.profileId,
+      );
+      if (!mounted) return;
+      setState(() {
+        _branches = list;
+        _loadingBranches = false;
+        for (final b in list) {
+          if (b.hasAccess) {
+            _selectedBranchIds.add(b.branchId);
+          }
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadingBranches = false;
+        _branchesError = e.toString();
+      });
+    }
   }
 
   Future<void> _save() async {
+    if (_active && _role != 'client' && _branches != null && _branches!.isNotEmpty) {
+      if (_selectedBranchIds.isEmpty) {
+        setState(() {
+          _error = 'Debes asignar al menos una sede a un miembro de equipo activo.';
+        });
+        return;
+      }
+    }
+
     setState(() {
       _saving = true;
       _error = null;
@@ -654,6 +693,13 @@ class _ManageUserDialogState extends State<_ManageUserDialog> {
         role: _role,
         active: _active,
       );
+
+      if (_branches != null && _branches!.isNotEmpty) {
+        await widget.usersService.setUserBranches(
+          profileId: widget.user.profileId,
+          branchIds: _selectedBranchIds.toList(),
+        );
+      }
 
       if (mounted) Navigator.of(context).pop(updated);
     } catch (error) {
@@ -670,7 +716,7 @@ class _ManageUserDialogState extends State<_ManageUserDialog> {
     return AlertDialog(
       title: const Text('Gestionar usuario'),
       content: SizedBox(
-        width: 420,
+        width: 440,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -726,6 +772,96 @@ class _ManageUserDialogState extends State<_ManageUserDialog> {
                   'El rol Estilista solo aparece cuando el usuario está vinculado a un perfil de estilista.',
                   style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                 ),
+              ],
+              const SizedBox(height: 16),
+              const Divider(height: 1),
+              const SizedBox(height: 14),
+              const Text(
+                'Sedes autorizadas',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Indica en cuáles sedes del negocio tiene acceso este colaborador.',
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 8),
+              if (_loadingBranches) ...[
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Center(
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                ),
+              ] else if (_branchesError != null) ...[
+                Text(
+                  'Error cargando sedes: $_branchesError',
+                  style: const TextStyle(fontSize: 12, color: AppColors.danger),
+                ),
+              ] else if (_branches == null || _branches!.isEmpty) ...[
+                const Text(
+                  'No hay sedes disponibles.',
+                  style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                ),
+              ] else ...[
+                ..._branches!.map((branch) {
+                  final isSelected = _selectedBranchIds.contains(branch.branchId);
+                  return CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    title: Row(
+                      children: [
+                        Text(
+                          branch.branchName,
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                        if (branch.isPrimary) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.brandTint,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'Principal',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.brandDark,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    subtitle: branch.inCatalog == true
+                        ? const Text(
+                            'Activo en catálogo de estilistas',
+                            style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                          )
+                        : null,
+                    value: isSelected,
+                    onChanged: _saving
+                        ? null
+                        : (val) {
+                            setState(() {
+                              if (val == true) {
+                                _selectedBranchIds.add(branch.branchId);
+                              } else {
+                                _selectedBranchIds.remove(branch.branchId);
+                              }
+                            });
+                          },
+                  );
+                }),
               ],
               if (_error != null) ...[
                 const SizedBox(height: 12),
