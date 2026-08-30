@@ -98,13 +98,48 @@ remitente visible sigue siendo `hola@salonymas.com`.
    significa que la función **reventó**, no que devolviera un error propio.
 3. **Si los registros solo muestran `booted` y ningún mensaje nuestro**, el
    fallo está **encima** de nuestro código: en la librería o en el arranque.
-4. **`hola@salonymas.com` hoy solo envía.** Nadie recibe ahí; si un cliente
-   responde, ese mensaje se pierde. Se resuelve con el reenvío gratuito de
-   Cloudflare (idea I-12).
+4. **`hola@salonymas.com` (recepción y reenvío):** Resuelto mediante Cloudflare
+   Email Routing (Paso 8.7 / Idea I-12 / D-180). Los correos entrantes dirigidos
+   a `hola@salonymas.com` se reenvían automáticamente al buzón del propietario
+   (`juankdev2026@gmail.com`) sin costo y sin servidores de correo adicionales.
+   **Cero conflicto con Resend:** Resend envía desde `send.salonymas.com` (MX
+   en subdominio `send`), mientras que Cloudflare Email Routing recibe en el
+   dominio raíz (`salonymas.com`, registros MX de Cloudflare).
 
 ---
 
-## 5. La regla que dejó D-128
+## 5. Reenvío entrante de soporte con Cloudflare Email Routing (Paso 8.7 / D-180)
+
+Para que el propietario reciba en su Gmail cualquier respuesta o consulta enviada a `hola@salonymas.com`:
+
+### Paso A — Configuración en el panel de Cloudflare
+1. Entra a [dash.cloudflare.com](https://dash.cloudflare.com/) y selecciona el dominio **`salonymas.com`**.
+2. En el menú lateral izquierdo, ve a **Email Routing** (Enrutamiento de correo).
+3. En la pestaña **Destination addresses** (Direcciones de destino):
+   - Clic en **Add destination address**.
+   - Ingresa: `juankdev2026@gmail.com`.
+   - Cloudflare enviará un correo de verificación a tu Gmail. Entra a tu Gmail y haz clic en el enlace para verificarla (estado pasa a *Verified*).
+4. En la pestaña **Routing rules** (Reglas de enrutamiento):
+   - Clic en **Create rule**.
+   - Custom address (dirección personalizada): `hola`.
+   - Acción: **Send to** (Enviar a) → `juankdev2026@gmail.com`.
+   - Clic en **Save**.
+5. En la pestaña **Settings** (Ajustes):
+   - Si Email Routing te pide añadir los registros DNS recomendados, haz clic en **Add records automatically** (Cloudflare agregará 3 registros MX y 1 TXT SPF para el dominio raíz sin tocar los de `send.` de Resend).
+
+### Paso B — Registros DNS que Cloudflare gestiona para la recepción raíz
+| Type | Name | Content / Server | Priority |
+|---|---|---|---|
+| MX | `@` (`salonymas.com`) | `route1.mx.cloudflare.net` | 93 |
+| MX | `@` (`salonymas.com`) | `route2.mx.cloudflare.net` | 64 |
+| MX | `@` (`salonymas.com`) | `route3.mx.cloudflare.net` | 5 |
+| TXT | `@` (`salonymas.com`) | `v=spf1 include:_spf.mx.cloudflare.net ~all` | — |
+
+*(Nota técnica: Resend envía a través del subdominio `send.salonymas.com` con su propio MX `feedback-smtp.us-east-1.amazonses.com`, por lo cual ambos sistemas conviven en perfecta armonía técnica).*
+
+---
+
+## 6. La regla que dejó D-128
 
 > **Ninguna dependencia de una Edge Function va con rango (`^1`, `~2`).**
 > Siempre versión exacta.

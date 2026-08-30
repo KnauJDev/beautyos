@@ -1,14 +1,15 @@
-# HANDOFF Salón y Más — 30 de agosto de 2026 ("Limpieza Técnica y Gestión de Sedes", D-174 a D-179)
+# HANDOFF Salón y Más — 30 de agosto de 2026 ("Limpieza Técnica y Reenvío de Soporte", D-174 a D-180)
 
-**Bloque documentado:** decisiones **D-174, D-175, D-176, D-177, D-178, D-179** · Pasos **8.1 al 8.6** de la **FASE 8 — Limpieza técnica, seguridad y preparación de lanzamiento**.
+**Bloque documentado:** decisiones **D-174 a D-180** · Pasos **8.1 al 8.7** de la **FASE 8 — Limpieza técnica, seguridad y preparación de lanzamiento**.
 - **8.1 (D-176 / H-05):** Purga de 30 funciones huérfanas en DB y preservación de 6 funciones internas de tickets con comentarios de protección.
 - **8.2 (D-175 / H-08):** Blindaje de columnas de dinero en pesos COP enteros (`round(x)` en comisiones y 14 `CHECK NOT VALID`).
 - **8.3 (D-174 / H-11):** Alineación de permisos sueltos de Storage en `beautyos_can_upload_work_photo`.
 - **8.4 (D-177 / Hallazgo U):** Blindaje perimetral de Edge Functions en `supabase/config.toml` (`verify_jwt = true`), registro formal de Smart Checkout V2 y despliegue en la nube.
 - **8.5 (D-178 / Hallazgo S):** Clarificación de pantalla de acceso y registro para colaboradores invitados (desacople de creación de negocio vs. inicio de sesión de empleado invitado).
 - **8.6 (D-179 / Hallazgo V):** Gestión de sedes para usuarios de equipo multi-sede (RPCs `get_tenant_user_branches`, `set_tenant_user_branches`, sincronización en `branch_stylists`, modelo `UserBranchAccess` y selector interactivo de sedes en `UsuariosPage`).
+- **8.7 (D-180 / Idea I-12):** Reenvío de correos de soporte `hola@salonymas.com` al Gmail del propietario mediante Cloudflare Email Routing (arquitectura de cero colisiones con Resend, documentación operativa en `docs/02_operacion/CORREO_Y_DOMINIO.md`).
 
-**Estado:** `flutter analyze` 100% limpio (0/0), **262 de 262 pruebas en verde** (`flutter test`, sube de 257 por `terms_and_privacy_test.dart` y `user_branch_access_test.dart`).
+**Estado:** `flutter analyze` 100% limpio (0/0), **262 de 262 pruebas en verde** (`flutter test`).
 
 ---
 
@@ -43,19 +44,22 @@
   - En `_ManageUserDialog`: sección interactiva **"Sedes autorizadas"** con checkboxes por sede, indicador de sede principal y advertencia de actividad en catálogo para estilistas.
   - Valida que al guardar se mantenga al menos 1 sede activa para usuarios con rol de equipo.
 
+### 1.4 Reenvío de Soporte en Cloudflare (Paso 8.7 / D-180)
+- Configuración y guía de Cloudflare Email Routing para reenviar respuestas y mensajes a `hola@salonymas.com` directo a `juankdev2026@gmail.com`.
+- Documentada en `docs/02_operacion/CORREO_Y_DOMINIO.md` la arquitectura de cero colisiones DNS: Resend envía por subdominio `send.salonymas.com`, mientras que Cloudflare recibe en la raíz `salonymas.com`.
+
 ---
 
 ## 2. Lo que está completado y lo que está pendiente
 
 ### Completado:
-- Pasos 8.1, 8.2, 8.3, 8.4, 8.5 y 8.6 terminados, probados y documentados en Git.
+- Pasos 8.1, 8.2, 8.3, 8.4, 8.5, 8.6 y 8.7 terminados, probados y documentados.
 - 262 pruebas automatizadas pasando al 100%. `flutter analyze` con 0 advertencias y 0 errores.
-- Decisiones D-174 a D-179 registradas en `docs/00_producto/REGISTRO_DE_DECISIONES.md`.
-- `docs/00_producto/PLAN_MAESTRO.md` actualizado con el cierre de los hallazgos H-05, H-08, H-11, U, S y V.
+- Decisiones D-174 a D-180 registradas en `docs/00_producto/REGISTRO_DE_DECISIONES.md`.
+- `docs/00_producto/PLAN_MAESTRO.md` actualizado con el cierre de los hallazgos H-05, H-08, H-11, U, S, V y la Idea I-12.
 
 ### Pendiente en la Fase 8:
-- **Paso 8.7 (Idea I-12):** Reenvío de correos de soporte `hola@salonymas.com` mediante Cloudflare Email Routing para recibir respuestas de salones en Gmail.
-- **Paso 8.8 (Broche de Oro):** Onboarding interactivo guiado *"Primeros pasos"* en el Dashboard para nuevos salones registrados (checklist de bienvenida para cargar servicios, horarios, estilistas y portafolio).
+- **Paso 8.8 (Broche de Oro):** Onboarding interactivo guiado *"Primeros pasos"* en el Dashboard para nuevos salones registrados (checklist de bienvenida para cargar servicios, horarios, estilistas y portafolio). El propietario ha indicado reservarlo como el último paso final.
 
 ---
 
@@ -77,10 +81,10 @@ powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "sup
 ## 4. Prompt para retomar en cualquier momento
 
 ```
-Lee el HANDOFF más reciente en docs/HANDOFF/ (bloque D-174 a D-179: Fase 8, pasos 8.1 al 8.6 completados).
+Lee el HANDOFF más reciente en docs/HANDOFF/ (bloque D-174 a D-180: Fase 8, pasos 8.1 al 8.7 completados).
 El proyecto está 100% limpio en flutter analyze (0/0) y 262 de 262 pruebas pasando en flutter test.
 
-Pendientes actuales de la Fase 8:
-1. Paso 8.7: Reenvío de correos de soporte hola@salonymas.com (Cloudflare Email Routing).
-2. Paso 8.8: Onboarding interactivo guiado "Primeros pasos" en Dashboard para nuevos salones.
+Pendiente final de la Fase 8 (reservado como último del todo):
+- Paso 8.8: Onboarding interactivo guiado "Primeros pasos" en Dashboard para nuevos salones.
 ```
+
