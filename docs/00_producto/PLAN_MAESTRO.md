@@ -277,7 +277,7 @@ filtro) y el cuerpo pasó a dos pestañas ejecutivas: `🏪 Salones Clientes` y
 | # | Paso | Quién | Estado |
 |---|---|---|---|
 | 8.1 | Eliminar las 42 funciones que nadie llama (H-05), en dos pasos | 🤖 | ⬜ |
-| 8.2 | Unificar las reglas de las columnas de dinero (H-08) | 🤖 | ⬜ |
+| 8.2 | Unificar las reglas de las columnas de dinero (H-08) | 🤖 | ✅ **CERRADO 30-ago (D-175).** Bug de `round(x, 2)` corregido a `round(x)` en comisiones; 14 candados `CHECK (col = round(col)) NOT VALID` aplicados y diagnosticados con 0 violaciones históricas. Migración `20260830140000` y Control `194` en verde en Supabase |
 | 8.3 | Alinear el permiso suelto de Storage (H-11) | 🤖 | ✅ **CERRADO 30-ago (D-174).** Revocado de public/anon en `beautyos_can_upload_work_photo(uuid)`, solo authenticated. Migración `20260830120000` y Control `193` aplicados y en verde (3/3 casos en Supabase) |
 | 8.4 | Onboarding guiado "Primeros pasos" | 🤖 | ⬜ |
 
@@ -323,7 +323,7 @@ toque, o se descarta con su motivo.
 | H-05 | 42 funciones heredadas | ⬜ Paso 8.1 |
 | H-06 | Documento rector desactualizado | ✅ Cerrado — y este documento lo reemplaza |
 | H-07 | `pubspec.lock` sin versionar | ✅ Cerrado (D-091) |
-| H-08 | Columnas de dinero inconsistentes | ⬜ Paso 8.2 |
+| H-08 | Columnas de dinero inconsistentes | ✅ **Cerrado 30-ago (D-175, Paso 8.2)** |
 | H-09 | Archivos públicos permanentes | ✅ Cerrado (D-119) |
 | H-10 | `social_publishing` sin nada detrás | 🔄 Es la fase 6 |
 | H-11 | Permiso suelto de Storage | ✅ **Cerrado 30-ago (D-174, Paso 8.3)** |
