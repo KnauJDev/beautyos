@@ -262,10 +262,10 @@ Tope antiabuso en la reserva pública, rol Asistente con sus pantallas, 2FA.
 
 | # | Paso | Quién | Estado |
 |---|---|---|---|
-| 7.1 | Ver cada cliente: desde cuándo, cuántos periodos ha pagado, cuánto debe | 🤖 | 🔄 D-172: código completo (`flutter analyze` 0/0, 238/238 pruebas), migración `20260829200000` y control `191` escritos y revisados, **pendientes de aplicar en Supabase** |
-| 7.2 | **Cambiar tarifas y límites por cliente** — pantalla sobre `tenant_feature_overrides`, que ya existe | 🤖 | 🔄 D-172: RPC de conceder/listar/revocar y Tarjeta 5 en la Ficha construidas, misma migración pendiente de aplicar |
+| 7.1 | Ver cada cliente: desde cuándo, cuántos periodos ha pagado, cuánto debe | 🤖 | ✅ **CERRADO 30-ago (D-172).** Antigüedad, períodos pagados, LTV en COP, mora con monto adeudado y botón WhatsApp de cobro cordial. Migración `20260829200000` y Control `191` aplicados y en verde (17/17 casos). 238/238 pruebas Flutter |
+| 7.2 | **Cambiar tarifas y límites por cliente** — pantalla sobre `tenant_feature_overrides`, que ya existe | 🤖 | ✅ **CERRADO 30-ago (D-172).** RPCs `platform_get`/`set`/`delete_tenant_feature_override` y Tarjeta 5 en la Ficha Nivel 3 para conceder/revocar excepciones (sedes, equipo). Misma migración y control 191 |
 | 7.3 | **Sistema de referidos:** quién trajo a quién y qué comisión le corresponde | 🤖 | ⬜ **Nada construido** |
-| 7.4 | Métricas del negocio SaaS: activos, morosos, cancelados, ingreso mensual | 🤖 | 🔄 D-172: cabecera ejecutiva (`platform_get_saas_metrics`) construida, misma migración pendiente de aplicar |
+| 7.4 | Métricas del negocio SaaS: activos, morosos, cancelados, ingreso mensual | 🤖 | ✅ **CERRADO 30-ago (D-172).** Cabecera ejecutiva del SaaS (`platform_get_saas_metrics`): MRR estimado, recaudo histórico, salud de cartera y conversión prueba→pago. Misma migración y control 191 |
 
 ### FASE 8 — Limpieza técnica
 
