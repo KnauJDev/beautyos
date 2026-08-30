@@ -32,6 +32,7 @@ class TenantRegistrationService {
     int estimatedBranches = 1,
     int estimatedTeamSize = 1,
     String? referralSource,
+    String? referralCodeUsed,
   }) async {
     final response = await Supabase.instance.client.rpc(
       'register_tenant',
@@ -44,6 +45,7 @@ class TenantRegistrationService {
         'p_estimated_branches': estimatedBranches,
         'p_estimated_team_size': estimatedTeamSize,
         'p_referral_source': referralSource,
+        'p_referral_code_used': referralCodeUsed,
       },
     );
 

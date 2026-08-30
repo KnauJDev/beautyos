@@ -34,6 +34,9 @@ class PlatformTenantSummary {
     this.debtStatus,
     this.debtAmountCop = 0,
     this.activeOverridesCount = 0,
+    this.partnerId,
+    this.partnerName,
+    this.referralCodeUsed,
   });
 
   final String tenantId;
@@ -105,6 +108,14 @@ class PlatformTenantSummary {
   /// Excepciones de límites vigentes ahora mismo (D-172, `tenant_feature_
   /// overrides`).
   final int activeOverridesCount;
+
+  /// Partner vinculado a este salón (D-173). Nulo = sin partner.
+  final String? partnerId;
+  final String? partnerName;
+
+  /// El código de referido tal como se usó al registrarse -- puede no
+  /// resolver a ningún [partnerId] si el código no existía en ese momento.
+  final String? referralCodeUsed;
 
   bool get isInDebt => debtStatus == 'en_mora';
 
@@ -228,6 +239,9 @@ class PlatformTenantSummary {
       debtStatus: map['debt_status']?.toString(),
       debtAmountCop: _parseInt(map['debt_amount_cop']) ?? 0,
       activeOverridesCount: _parseInt(map['active_overrides_count']) ?? 0,
+      partnerId: map['partner_id']?.toString(),
+      partnerName: map['partner_name']?.toString(),
+      referralCodeUsed: map['referral_code_used']?.toString(),
     );
   }
 

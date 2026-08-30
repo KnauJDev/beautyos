@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
+import '../models/platform_partner.dart';
 import '../models/platform_saas_metrics.dart';
 import '../models/platform_tenant_feature_override.dart';
 import '../models/platform_tenant_summary.dart';
@@ -22,11 +24,13 @@ class PlatformPanelPage extends StatefulWidget {
   State<PlatformPanelPage> createState() => _PlatformPanelPageState();
 }
 
-class _PlatformPanelPageState extends State<PlatformPanelPage> {
+class _PlatformPanelPageState extends State<PlatformPanelPage>
+    with SingleTickerProviderStateMixin {
   final platformService = const PlatformService();
 
   late Future<List<PlatformTenantSummary>> tenantsFuture;
   late Future<PlatformSaasMetrics> saasMetricsFuture;
+  late final TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String selectedFilter =
@@ -39,11 +43,13 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
     super.initState();
     tenantsFuture = platformService.listTenants();
     saasMetricsFuture = platformService.getSaasMetrics();
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -777,6 +783,75 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
     );
   }
 
+  Future<void> handleAssignPartner(PlatformTenantSummary tenant) async {
+    List<PlatformPartner> partners;
+    try {
+      partners = await platformService.listPartners();
+    } on PostgrestException catch (error) {
+      _showError(error.message);
+      return;
+    }
+    if (!mounted) return;
+
+    String? selectedPartnerId = tenant.partnerId;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => AlertDialog(
+          title: Text('Partner de "${tenant.tenantName}"'),
+          content: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: DropdownButtonFormField<String?>(
+                initialValue: selectedPartnerId,
+                decoration: const InputDecoration(
+                  labelText: 'Partner vinculado',
+                  border: OutlineInputBorder(),
+                ),
+                items: [
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('Sin partner'),
+                  ),
+                  ...partners.map(
+                    (p) => DropdownMenuItem<String?>(
+                      value: p.partnerId,
+                      child: Text('${p.fullName} (${p.referralCode})'),
+                    ),
+                  ),
+                ],
+                onChanged: (v) => setModalState(() => selectedPartnerId = v),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Guardar'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      await platformService.setTenantPartner(
+        tenantId: tenant.tenantId,
+        partnerId: selectedPartnerId,
+      );
+      reload();
+    } on PostgrestException catch (error) {
+      _showError(error.message);
+    }
+  }
+
   void _openTenantDetail(PlatformTenantSummary tenant) {
     showModalBottomSheet<void>(
       context: context,
@@ -813,6 +888,10 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
         onUpdateContact: (t) {
           Navigator.of(context).pop();
           handleUpdateContact(t);
+        },
+        onAssignPartner: (t) {
+          Navigator.of(context).pop();
+          handleAssignPartner(t);
         },
         onViewSupportData: (t) {
           Navigator.of(context).pop();
@@ -941,156 +1020,155 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
               );
             },
           ),
+          Container(
+            color: AppColors.surface,
+            child: TabBar(
+              controller: _tabController,
+              labelColor: AppColors.brand,
+              unselectedLabelColor: AppColors.textSecondary,
+              indicatorColor: AppColors.brand,
+              tabs: const [
+                Tab(text: '🏪 Salones Clientes'),
+                Tab(text: '🤝 Partners y Referidos'),
+              ],
+            ),
+          ),
           Expanded(
-            child: FutureBuilder<List<PlatformTenantSummary>>(
-              future: tenantsFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.error_outline,
-                            size: 40,
-                            color: AppColors.danger,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'No pudimos cargar los negocios.\n${snapshot.error}',
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 12),
-                          OutlinedButton(
-                            onPressed: reload,
-                            child: const Text('Reintentar'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                final allTenants =
-                    snapshot.data ?? const <PlatformTenantSummary>[];
-
-                // Métricas globales
-                final totalCount = allTenants.length;
-                final pendingCount = allTenants
-                    .where((t) => t.isPending)
-                    .length;
-                final activeCount = allTenants
-                    .where((t) => t.isActive && !t.isDemo)
-                    .length;
-                final trialCount = allTenants.where((t) => t.isTrialing).length;
-                final graceCount = allTenants
-                    .where((t) => t.isGrace || t.isPastDue || t.isSuspended)
-                    .length;
-
-                // Filtrar por texto
-                var filtered = allTenants.where((t) {
-                  if (_searchQuery.isNotEmpty) {
-                    final q = _searchQuery.toLowerCase().trim();
-                    final name = t.tenantName.toLowerCase();
-                    final email = t.contactEmail.toLowerCase();
-                    final city = (t.city ?? '').toLowerCase();
-                    final phone = (t.whatsapp ?? '').replaceAll(
-                      RegExp(r'[^0-9]'),
-                      '',
-                    );
-                    final qPhone = q.replaceAll(RegExp(r'[^0-9]'), '');
-
-                    final matches =
-                        name.contains(q) ||
-                        email.contains(q) ||
-                        city.contains(q) ||
-                        (qPhone.isNotEmpty && phone.contains(qPhone));
-
-                    if (!matches) return false;
-                  }
-
-                  // Filtrar por categoría
-                  if (selectedFilter == 'pendientes') return t.isPending;
-                  if (selectedFilter == 'activos') {
-                    return t.isActive && !t.isDemo;
-                  }
-                  if (selectedFilter == 'trialing') return t.isTrialing;
-                  if (selectedFilter == 'demo') return t.isDemo;
-                  if (selectedFilter == 'suspendidos') return t.isSuspended;
-
-                  return true;
-                }).toList();
-
-                return Column(
-                  children: [
-                    // 1. KPI Banner Superior
-                    _PlatformKPIBanner(
-                      totalCount: totalCount,
-                      pendingCount: pendingCount,
-                      activeCount: activeCount,
-                      trialCount: trialCount,
-                      graceCount: graceCount,
-                      selectedFilter: selectedFilter,
-                      onFilterSelected: (filter) =>
-                          setState(() => selectedFilter = filter),
-                    ),
-                    // 2. Buscador y Filtros
-                    _buildSearchAndFilters(
-                      pendingCount,
-                      activeCount,
-                      trialCount,
-                    ),
-                    // 3. Listado de Tarjetas
-                    Expanded(
-                      child: filtered.isEmpty
-                          ? Center(
-                              child: Text(
-                                selectedFilter == 'pendientes'
-                                    ? 'No hay solicitudes pendientes de aprobación.'
-                                    : 'No hay negocios que coincidan con la búsqueda.',
-                                style: const TextStyle(
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            )
-                          : ListView.separated(
-                              padding: const EdgeInsets.all(AppSpacing.md),
-                              itemCount: filtered.length,
-                              separatorBuilder: (context, index) =>
-                                  const SizedBox(height: AppSpacing.sm),
-                              itemBuilder: (context, index) => _TenantCard(
-                                tenant: filtered[index],
-                                isOwner: isOwner,
-                                onTap: () => _openTenantDetail(filtered[index]),
-                                onApprove: handleApprove,
-                                onReject: handleReject,
-                                onUpdatePricing: handleUpdatePricing,
-                                onViewSupportData: (t) {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => PlatformTenantDetailPage(
-                                        tenantId: t.tenantId,
-                                        tenantName: t.tenantName,
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                    ),
-                  ],
-                );
-              },
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildTenantsTab(),
+                _PartnersTab(
+                  platformService: platformService,
+                  isOwner: isOwner,
+                ),
+              ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTenantsTab() {
+    return FutureBuilder<List<PlatformTenantSummary>>(
+      future: tenantsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    size: 40,
+                    color: AppColors.danger,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'No pudimos cargar los negocios.\n${snapshot.error}',
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton(
+                    onPressed: reload,
+                    child: const Text('Reintentar'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final allTenants = snapshot.data ?? const <PlatformTenantSummary>[];
+
+        // Métricas para los contadores de las píldoras de filtro.
+        final pendingCount = allTenants.where((t) => t.isPending).length;
+        final activeCount = allTenants
+            .where((t) => t.isActive && !t.isDemo)
+            .length;
+        final trialCount = allTenants.where((t) => t.isTrialing).length;
+
+        // Filtrar por texto
+        var filtered = allTenants.where((t) {
+          if (_searchQuery.isNotEmpty) {
+            final q = _searchQuery.toLowerCase().trim();
+            final name = t.tenantName.toLowerCase();
+            final email = t.contactEmail.toLowerCase();
+            final city = (t.city ?? '').toLowerCase();
+            final phone = (t.whatsapp ?? '').replaceAll(RegExp(r'[^0-9]'), '');
+            final qPhone = q.replaceAll(RegExp(r'[^0-9]'), '');
+
+            final matches =
+                name.contains(q) ||
+                email.contains(q) ||
+                city.contains(q) ||
+                (qPhone.isNotEmpty && phone.contains(qPhone));
+
+            if (!matches) return false;
+          }
+
+          // Filtrar por categoría
+          if (selectedFilter == 'pendientes') return t.isPending;
+          if (selectedFilter == 'activos') {
+            return t.isActive && !t.isDemo;
+          }
+          if (selectedFilter == 'trialing') return t.isTrialing;
+          if (selectedFilter == 'demo') return t.isDemo;
+          if (selectedFilter == 'suspendidos') return t.isSuspended;
+
+          return true;
+        }).toList();
+
+        return Column(
+          children: [
+            // 1. Buscador y Filtros
+            _buildSearchAndFilters(pendingCount, activeCount, trialCount),
+            // 2. Listado de Tarjetas
+            Expanded(
+              child: filtered.isEmpty
+                  ? Center(
+                      child: Text(
+                        selectedFilter == 'pendientes'
+                            ? 'No hay solicitudes pendientes de aprobación.'
+                            : 'No hay negocios que coincidan con la búsqueda.',
+                        style: const TextStyle(color: AppColors.textSecondary),
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      itemCount: filtered.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: AppSpacing.sm),
+                      itemBuilder: (context, index) => _TenantCard(
+                        tenant: filtered[index],
+                        isOwner: isOwner,
+                        onTap: () => _openTenantDetail(filtered[index]),
+                        onApprove: handleApprove,
+                        onReject: handleReject,
+                        onUpdatePricing: handleUpdatePricing,
+                        onViewSupportData: (t) {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => PlatformTenantDetailPage(
+                                tenantId: t.tenantId,
+                                tenantName: t.tenantName,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -1190,160 +1268,6 @@ class _PlatformPanelPageState extends State<PlatformPanelPage> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ============================================================================
-// KPI BANNER SUPERIOR
-// ============================================================================
-class _PlatformKPIBanner extends StatelessWidget {
-  const _PlatformKPIBanner({
-    required this.totalCount,
-    required this.pendingCount,
-    required this.activeCount,
-    required this.trialCount,
-    required this.graceCount,
-    required this.selectedFilter,
-    required this.onFilterSelected,
-  });
-
-  final int totalCount;
-  final int pendingCount;
-  final int activeCount;
-  final int trialCount;
-  final int graceCount;
-  final String selectedFilter;
-  final ValueChanged<String> onFilterSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      color: AppColors.surface,
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.sm,
-        AppSpacing.md,
-        AppSpacing.xs,
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
-            _KPICard(
-              title: 'Total Salones',
-              count: totalCount,
-              icon: Icons.storefront_outlined,
-              isSelected: selectedFilter == 'todos',
-              color: AppColors.textPrimary,
-              onTap: () => onFilterSelected('todos'),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            _KPICard(
-              title: 'Por Aprobar',
-              count: pendingCount,
-              icon: Icons.hourglass_top_outlined,
-              isSelected: selectedFilter == 'pendientes',
-              color: AppColors.statePending,
-              onTap: () => onFilterSelected('pendientes'),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            _KPICard(
-              title: 'Activos',
-              count: activeCount,
-              icon: Icons.check_circle_outline,
-              isSelected: selectedFilter == 'activos',
-              color: AppColors.success,
-              onTap: () => onFilterSelected('activos'),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            _KPICard(
-              title: 'En Prueba',
-              count: trialCount,
-              icon: Icons.schedule,
-              isSelected: selectedFilter == 'trialing',
-              color: AppColors.brand,
-              onTap: () => onFilterSelected('trialing'),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            _KPICard(
-              title: 'Gracia / Mora',
-              count: graceCount,
-              icon: Icons.warning_amber_rounded,
-              isSelected: selectedFilter == 'suspendidos',
-              color: AppColors.danger,
-              onTap: () => onFilterSelected('suspendidos'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _KPICard extends StatelessWidget {
-  const _KPICard({
-    required this.title,
-    required this.count,
-    required this.icon,
-    required this.isSelected,
-    required this.color,
-    required this.onTap,
-  });
-
-  final String title;
-  final int count;
-  final IconData icon;
-  final bool isSelected;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppRadius.control),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.brandTintSoft : AppColors.surfaceAlt,
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          border: Border.all(
-            color: isSelected ? AppColors.brand : AppColors.border,
-            width: isSelected ? 1.5 : 1.0,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 18, color: color),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  count.toString(),
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: color,
-                    height: 1.1,
-                  ),
-                ),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -1940,6 +1864,7 @@ class _TenantDetailSheet extends StatelessWidget {
     required this.onUpdatePricing,
     required this.onUpdateContact,
     required this.onViewSupportData,
+    required this.onAssignPartner,
   });
 
   final PlatformTenantSummary tenant;
@@ -1953,6 +1878,7 @@ class _TenantDetailSheet extends StatelessWidget {
   final ValueChanged<PlatformTenantSummary> onUpdatePricing;
   final ValueChanged<PlatformTenantSummary> onUpdateContact;
   final ValueChanged<PlatformTenantSummary> onViewSupportData;
+  final ValueChanged<PlatformTenantSummary> onAssignPartner;
 
   String _formatDate(DateTime? date) {
     if (date == null) return '—';
@@ -2186,6 +2112,40 @@ class _TenantDetailSheet extends StatelessWidget {
                           'Origen / Registro:',
                           tenant.referralSource ?? 'Registro directo web',
                         ),
+                        const Divider(height: 24),
+                        _buildSubsectionLabel('C. Partner (D-173)'),
+                        const SizedBox(height: 6),
+                        _buildInfoRow(
+                          'Partner Vinculado:',
+                          tenant.partnerName ?? 'Sin partner asignado',
+                          action: isOwner
+                              ? OutlinedButton.icon(
+                                  onPressed: () => onAssignPartner(tenant),
+                                  icon: const Icon(
+                                    Icons.handshake_outlined,
+                                    size: 14,
+                                  ),
+                                  label: Text(
+                                    tenant.partnerId == null
+                                        ? 'Asignar'
+                                        : 'Cambiar',
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    visualDensity: VisualDensity.compact,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    foregroundColor: AppColors.brand,
+                                  ),
+                                )
+                              : null,
+                        ),
+                        if (tenant.referralCodeUsed != null)
+                          _buildInfoRow(
+                            'Código Usado al Registrarse:',
+                            tenant.referralCodeUsed!,
+                          ),
                       ],
                     ),
 
@@ -3054,6 +3014,1166 @@ class _TenantOverridesCardState extends State<_TenantOverridesCard> {
               },
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// PESTAÑA "PARTNERS Y REFERIDOS" (D-173, paso 7.3)
+// ============================================================================
+class _PartnersTab extends StatefulWidget {
+  const _PartnersTab({required this.platformService, required this.isOwner});
+
+  final PlatformService platformService;
+  final bool isOwner;
+
+  @override
+  State<_PartnersTab> createState() => _PartnersTabState();
+}
+
+class _PartnersTabState extends State<_PartnersTab> {
+  late Future<PlatformPartnersSummary> _summaryFuture;
+  late Future<List<PlatformPartner>> _partnersFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _reload();
+  }
+
+  void _reload() {
+    setState(() {
+      _summaryFuture = widget.platformService.getPartnersSummary();
+      _partnersFuture = widget.platformService.listPartners();
+    });
+  }
+
+  void _openPartnerDetail(PlatformPartner partner) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _PartnerDetailSheet(
+        partner: partner,
+        isOwner: widget.isOwner,
+        platformService: widget.platformService,
+        onChanged: _reload,
+      ),
+    );
+  }
+
+  Future<void> _copyConsolidatedSummary(PlatformPartnersSummary summary) async {
+    final partners = await _partnersFuture;
+    final pendientes = partners
+        .where((p) => p.pendingCommissionsCop > 0)
+        .toList();
+
+    if (!mounted) return;
+
+    if (pendientes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No hay comisiones pendientes por pagar.'),
+        ),
+      );
+      return;
+    }
+
+    final now = DateTime.now();
+    final buffer = StringBuffer()
+      ..writeln('RESUMEN DE COMISIONES PENDIENTES -- SALÓN Y MÁS')
+      ..writeln(
+        '${now.day.toString().padLeft(2, '0')}/${now.month.toString().padLeft(2, '0')}/${now.year}',
+      )
+      ..writeln('');
+
+    for (final p in pendientes) {
+      buffer.writeln(
+        '${p.fullName} (${p.referralCode}) -- ${p.payoutChannelLabel}: ${p.payoutAccount} -- ${p.formattedPending}',
+      );
+    }
+
+    buffer
+      ..writeln('')
+      ..writeln('Total a transferir: ${summary.formattedPending}');
+
+    await Clipboard.setData(ClipboardData(text: buffer.toString()));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Resumen consolidado copiado.')),
+    );
+  }
+
+  Future<void> _showCreatePartnerDialog() async {
+    final fullNameController = TextEditingController();
+    final documentIdController = TextEditingController();
+    final referralCodeController = TextEditingController();
+    final phoneController = TextEditingController();
+    final whatsappController = TextEditingController();
+    final emailController = TextEditingController();
+    final payoutAccountController = TextEditingController();
+    final valueController = TextEditingController(text: '15');
+    final durationMonthsController = TextEditingController();
+    final notesController = TextEditingController();
+
+    String payoutChannel = 'bre_b';
+    String commissionType = 'percentage';
+    String commissionDuration = 'first_payment_only';
+    String? error;
+    bool isSubmitting = false;
+
+    final createdId = await showDialog<String>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => AlertDialog(
+          title: const Text('Nuevo Partner'),
+          content: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (error != null) ...[
+                    Text(
+                      error!,
+                      style: const TextStyle(
+                        color: AppColors.danger,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  TextField(
+                    controller: fullNameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Nombre completo',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: documentIdController,
+                    decoration: const InputDecoration(
+                      labelText: 'Cédula / NIT (opcional)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: referralCodeController,
+                    textCapitalization: TextCapitalization.characters,
+                    decoration: const InputDecoration(
+                      labelText: 'Código de referido',
+                      hintText: 'Ej. CARLOS',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: phoneController,
+                    decoration: const InputDecoration(
+                      labelText: 'Teléfono (opcional)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: whatsappController,
+                    decoration: const InputDecoration(
+                      labelText: 'WhatsApp (opcional)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: emailController,
+                    decoration: const InputDecoration(
+                      labelText: 'Correo (opcional)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const Divider(height: 24),
+                  DropdownButtonFormField<String>(
+                    initialValue: payoutChannel,
+                    decoration: const InputDecoration(
+                      labelText: 'Canal de pago',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'bre_b',
+                        child: Text('Llave Bre-B'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'daviplata',
+                        child: Text('Daviplata'),
+                      ),
+                      DropdownMenuItem(value: 'nequi', child: Text('Nequi')),
+                      DropdownMenuItem(
+                        value: 'bancolombia',
+                        child: Text('Bancolombia'),
+                      ),
+                      DropdownMenuItem(value: 'otro', child: Text('Otro')),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) setModalState(() => payoutChannel = v);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: payoutAccountController,
+                    decoration: const InputDecoration(
+                      labelText: 'Llave o número de cuenta',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const Divider(height: 24),
+                  const Text(
+                    'Esquema de comisión',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          initialValue: commissionType,
+                          decoration: const InputDecoration(
+                            labelText: 'Tipo',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 'percentage',
+                              child: Text('Porcentaje'),
+                            ),
+                            DropdownMenuItem(
+                              value: 'fixed_cop',
+                              child: Text('Valor fijo COP'),
+                            ),
+                          ],
+                          onChanged: (v) {
+                            if (v != null) {
+                              setModalState(() => commissionType = v);
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: valueController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: commissionType == 'percentage'
+                                ? '%'
+                                : '\$ COP',
+                            border: const OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: commissionDuration,
+                    decoration: const InputDecoration(
+                      labelText: 'Duración',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'first_payment_only',
+                        child: Text('Solo el primer pago'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'first_n_months',
+                        child: Text('Primeros N meses'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'recurring_lifetime',
+                        child: Text('Recurrente, mientras pague'),
+                      ),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) {
+                        setModalState(() => commissionDuration = v);
+                      }
+                    },
+                  ),
+                  if (commissionDuration == 'first_n_months') ...[
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: durationMonthsController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Cantidad de meses',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: notesController,
+                    maxLines: 2,
+                    decoration: const InputDecoration(
+                      labelText: 'Notas (opcional)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: isSubmitting
+                  ? null
+                  : () async {
+                      if (fullNameController.text.trim().isEmpty ||
+                          referralCodeController.text.trim().isEmpty ||
+                          payoutAccountController.text.trim().isEmpty) {
+                        setModalState(
+                          () => error =
+                              'Nombre, código y cuenta de pago son obligatorios.',
+                        );
+                        return;
+                      }
+                      setModalState(() {
+                        isSubmitting = true;
+                        error = null;
+                      });
+                      try {
+                        final id = await widget.platformService.createPartner(
+                          fullName: fullNameController.text.trim(),
+                          referralCode: referralCodeController.text.trim(),
+                          payoutChannel: payoutChannel,
+                          payoutAccount: payoutAccountController.text.trim(),
+                          documentId: documentIdController.text.trim().isEmpty
+                              ? null
+                              : documentIdController.text.trim(),
+                          phone: phoneController.text.trim().isEmpty
+                              ? null
+                              : phoneController.text.trim(),
+                          whatsapp: whatsappController.text.trim().isEmpty
+                              ? null
+                              : whatsappController.text.trim(),
+                          email: emailController.text.trim().isEmpty
+                              ? null
+                              : emailController.text.trim(),
+                          commissionType: commissionType,
+                          commissionValue:
+                              double.tryParse(valueController.text.trim()) ??
+                              15.0,
+                          commissionDuration: commissionDuration,
+                          durationMonths: commissionDuration == 'first_n_months'
+                              ? int.tryParse(
+                                  durationMonthsController.text.trim(),
+                                )
+                              : null,
+                          notes: notesController.text.trim().isEmpty
+                              ? null
+                              : notesController.text.trim(),
+                        );
+                        if (context.mounted) Navigator.of(context).pop(id);
+                      } on PostgrestException catch (e) {
+                        setModalState(() {
+                          isSubmitting = false;
+                          error = e.message;
+                        });
+                      }
+                    },
+              child: isSubmitting
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Crear Partner'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (createdId == null) return;
+    _reload();
+
+    if (!mounted) return;
+    final whatsapp = whatsappController.text.trim();
+    final code = referralCodeController.text.trim().toUpperCase();
+    final link = '${Uri.base.origin}/?ref=$code';
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Partner creado. Enlace: $link'),
+        action: whatsapp.isNotEmpty
+            ? SnackBarAction(
+                label: 'Bienvenida',
+                onPressed: () {
+                  final mensaje =
+                      'Hola ${fullNameController.text.trim()}, ¡bienvenido como Partner de Salón y Más! '
+                      'Este es tu enlace para recomendarnos y ganar comisión: $link';
+                  launchUrl(
+                    buildWhatsAppUri(whatsapp, text: mensaje),
+                    mode: LaunchMode.externalApplication,
+                  );
+                },
+              )
+            : null,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<PlatformPartnersSummary>(
+      future: _summaryFuture,
+      builder: (context, summarySnapshot) {
+        final summary = summarySnapshot.data ?? PlatformPartnersSummary.empty;
+
+        return Column(
+          children: [
+            _PartnersKpiRow(summary: summary),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.md,
+                AppSpacing.xs,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: _showCreatePartnerDialog,
+                      icon: const Icon(
+                        Icons.person_add_alt_1_outlined,
+                        size: 18,
+                      ),
+                      label: const Text('Nuevo Partner'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.brand,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  OutlinedButton.icon(
+                    onPressed: () => _copyConsolidatedSummary(summary),
+                    icon: const Icon(Icons.copy_all_outlined, size: 18),
+                    label: const Text('Copiar Resumen'),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: FutureBuilder<List<PlatformPartner>>(
+                future: _partnersFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text(
+                        'No pudimos cargar los partners.\n${snapshot.error}',
+                        textAlign: TextAlign.center,
+                      ),
+                    );
+                  }
+
+                  final partners = snapshot.data ?? const <PlatformPartner>[];
+                  if (partners.isEmpty) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Text(
+                          'Todavía no hay partners registrados.',
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
+                      ),
+                    );
+                  }
+
+                  return ListView.separated(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    itemCount: partners.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: AppSpacing.sm),
+                    itemBuilder: (context, index) => _PartnerCard(
+                      partner: partners[index],
+                      isOwner: widget.isOwner,
+                      platformService: widget.platformService,
+                      onTap: () => _openPartnerDetail(partners[index]),
+                      onChanged: _reload,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _PartnersKpiRow extends StatelessWidget {
+  const _PartnersKpiRow({required this.summary});
+
+  final PlatformPartnersSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      color: AppColors.surface,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.xs,
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _PartnerStatChip(
+              icon: Icons.groups_outlined,
+              label: 'Partners activos',
+              value: '${summary.activePartnersCount}',
+              color: AppColors.brand,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            _PartnerStatChip(
+              icon: Icons.storefront_outlined,
+              label: 'Salones vinculados',
+              value: '${summary.linkedTenantsCount}',
+              color: AppColors.info,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            _PartnerStatChip(
+              icon: Icons.hourglass_top_outlined,
+              label: 'Por pagar',
+              value: summary.formattedPending,
+              color: AppColors.warning,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            _PartnerStatChip(
+              icon: Icons.check_circle_outline,
+              label: 'Pagado histórico',
+              value: summary.formattedPaid,
+              color: AppColors.success,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PartnerStatChip extends StatelessWidget {
+  const _PartnerStatChip({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceAlt,
+        borderRadius: BorderRadius.circular(AppRadius.control),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: color,
+                  height: 1.1,
+                ),
+              ),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PartnerCard extends StatelessWidget {
+  const _PartnerCard({
+    required this.partner,
+    required this.isOwner,
+    required this.platformService,
+    required this.onTap,
+    required this.onChanged,
+  });
+
+  final PlatformPartner partner;
+  final bool isOwner;
+  final PlatformService platformService;
+  final VoidCallback onTap;
+  final VoidCallback onChanged;
+
+  Future<void> _settle(BuildContext context) async {
+    final result = await showSettlePartnerCommissionsDialog(
+      context: context,
+      platformService: platformService,
+      partner: partner,
+    );
+    if (result == null) return;
+
+    onChanged();
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Liquidado ${result.formattedAmount} (${result.settledCount} comisiones).',
+        ),
+        action: (partner.whatsapp != null && partner.whatsapp!.isNotEmpty)
+            ? SnackBarAction(
+                label: 'Notificar',
+                onPressed: () {
+                  final mensaje =
+                      'Hola ${partner.fullName}, te confirmamos el pago de tu comisión de Salón y Más: '
+                      '${result.formattedAmount}. ¡Gracias por ser nuestro aliado!';
+                  launchUrl(
+                    buildWhatsAppUri(partner.whatsapp!, text: mensaje),
+                    mode: LaunchMode.externalApplication,
+                  );
+                },
+              )
+            : null,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        side: const BorderSide(color: AppColors.border),
+      ),
+      color: partner.active ? AppColors.surface : AppColors.surfaceAlt,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          partner.fullName,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Código: ${partner.referralCode} · ${partner.payoutChannelLabel}: ${partner.payoutAccount}',
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (!partner.active)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceAlt,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: const Text(
+                        'INACTIVO',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceAlt,
+                  borderRadius: BorderRadius.circular(AppRadius.control),
+                ),
+                child: Text(
+                  partner.commissionLabel,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.storefront_outlined,
+                    size: 15,
+                    color: AppColors.textSecondary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${partner.linkedTenantsCount} ${partner.linkedTenantsCount == 1 ? "salón" : "salones"}',
+                    style: const TextStyle(fontSize: 12.5),
+                  ),
+                  const Spacer(),
+                  if (partner.pendingCommissionsCop > 0)
+                    Text(
+                      'Pendiente: ${partner.formattedPending}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.warning,
+                      ),
+                    ),
+                ],
+              ),
+              if (isOwner && partner.pendingCommissionsCop > 0) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: FilledButton.icon(
+                    onPressed: () => _settle(context),
+                    icon: const Icon(Icons.payments_outlined, size: 16),
+                    label: const Text('Liquidar Comisiones'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.success,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+Future<PlatformPartnerSettlementResult?> showSettlePartnerCommissionsDialog({
+  required BuildContext context,
+  required PlatformService platformService,
+  required PlatformPartner partner,
+}) {
+  String method = partner.payoutChannel;
+  final referenceController = TextEditingController();
+  final notesController = TextEditingController();
+  bool isSubmitting = false;
+  String? error;
+
+  return showDialog<PlatformPartnerSettlementResult>(
+    context: context,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setModalState) => AlertDialog(
+        title: Text('Liquidar comisiones de ${partner.fullName}'),
+        content: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Se marcarán como pagadas TODAS sus comisiones pendientes: ${partner.formattedPending}.',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (error != null) ...[
+                  Text(
+                    error!,
+                    style: const TextStyle(
+                      color: AppColors.danger,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                DropdownButtonFormField<String>(
+                  initialValue: method,
+                  decoration: const InputDecoration(
+                    labelText: 'Medio de pago',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'bre_b',
+                      child: Text('Llave Bre-B'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'daviplata',
+                      child: Text('Daviplata'),
+                    ),
+                    DropdownMenuItem(value: 'nequi', child: Text('Nequi')),
+                    DropdownMenuItem(
+                      value: 'bancolombia',
+                      child: Text('Bancolombia'),
+                    ),
+                    DropdownMenuItem(value: 'otro', child: Text('Otro')),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) setModalState(() => method = v);
+                  },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: referenceController,
+                  decoration: const InputDecoration(
+                    labelText: 'Referencia bancaria',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: notesController,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Notas (opcional)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: isSubmitting
+                ? null
+                : () async {
+                    setModalState(() {
+                      isSubmitting = true;
+                      error = null;
+                    });
+                    try {
+                      final result = await platformService
+                          .settlePartnerCommissions(
+                            partnerId: partner.partnerId,
+                            payoutMethod: method,
+                            payoutReference:
+                                referenceController.text.trim().isEmpty
+                                ? null
+                                : referenceController.text.trim(),
+                            notes: notesController.text.trim().isEmpty
+                                ? null
+                                : notesController.text.trim(),
+                          );
+                      if (context.mounted) Navigator.of(context).pop(result);
+                    } on PostgrestException catch (e) {
+                      setModalState(() {
+                        isSubmitting = false;
+                        error = e.message;
+                      });
+                    }
+                  },
+            child: isSubmitting
+                ? const SizedBox(
+                    height: 16,
+                    width: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Confirmar Liquidación'),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _PartnerDetailSheet extends StatefulWidget {
+  const _PartnerDetailSheet({
+    required this.partner,
+    required this.isOwner,
+    required this.platformService,
+    required this.onChanged,
+  });
+
+  final PlatformPartner partner;
+  final bool isOwner;
+  final PlatformService platformService;
+  final VoidCallback onChanged;
+
+  @override
+  State<_PartnerDetailSheet> createState() => _PartnerDetailSheetState();
+}
+
+class _PartnerDetailSheetState extends State<_PartnerDetailSheet> {
+  late Future<PlatformPartnerDetail> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = widget.platformService.getPartnerDetail(widget.partner.partnerId);
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return '—';
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
+  Widget _sectionLabel(String text) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w800,
+        color: AppColors.textSecondary,
+        letterSpacing: 0.5,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.9,
+          ),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.md,
+                ),
+                decoration: const BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: AppColors.border, width: 1),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.partner.fullName,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          Text(
+                            'Código ${widget.partner.referralCode} · ${widget.partner.commissionLabel}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: FutureBuilder<PlatformPartnerDetail>(
+                  future: _future,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Text('No se pudo cargar: ${snapshot.error}'),
+                      );
+                    }
+
+                    final detail = snapshot.data!;
+                    return ListView(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      children: [
+                        _sectionLabel(
+                          'Salones vinculados (${detail.linkedTenants.length})',
+                        ),
+                        const SizedBox(height: 8),
+                        if (detail.linkedTenants.isEmpty)
+                          const Text(
+                            'Todavía no ha traído ningún salón.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textSecondary,
+                            ),
+                          )
+                        else
+                          ...detail.linkedTenants.map(
+                            (t) => Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      t.tenantName,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    t.subscriptionStatus ?? '—',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 20),
+                        _sectionLabel(
+                          'Comisiones (${detail.commissions.length})',
+                        ),
+                        const SizedBox(height: 8),
+                        if (detail.commissions.isEmpty)
+                          const Text(
+                            'Sin comisiones generadas todavía.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textSecondary,
+                            ),
+                          )
+                        else
+                          ...detail.commissions.map(
+                            (c) => Container(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: c.isPending
+                                    ? AppColors.warningTint
+                                    : AppColors.successTint,
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.control,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          c.tenantName,
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                        Text(
+                                          c.isPaid
+                                              ? 'Pagada el ${_formatDate(c.paidAt)}${c.payoutReference != null ? " · Ref: ${c.payoutReference}" : ""}'
+                                              : 'Generada el ${_formatDate(c.createdAt)}',
+                                          style: const TextStyle(
+                                            fontSize: 11.5,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Text(
+                                    c.formattedAmount,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w800,
+                                      color: c.isPending
+                                          ? AppColors.warning
+                                          : AppColors.success,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

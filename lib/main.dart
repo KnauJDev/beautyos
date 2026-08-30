@@ -17,6 +17,7 @@ import 'pages/auth_gate.dart';
 import 'pages/authenticated_router.dart';
 import 'pages/complete_tenant_setup_page.dart';
 import 'pages/public_booking_page.dart';
+import 'pages/public_partner_page.dart';
 import 'pages/public_plans_page.dart';
 import 'pages/public_review_page.dart';
 import 'pages/public_salon_page.dart';
@@ -72,15 +73,20 @@ class BeautyOSApp extends StatelessWidget {
     // Mismo motivo: un cliente anonimo nunca debe pasar por login.
     final publicReviewTicketId = Uri.base.queryParameters['resena'];
     // Planes publicos (Paso 3.8 / D-140): enlace sin sesion, ej. "?planes=1".
-    final isPublicPlans = Uri.base.queryParameters.containsKey('planes') ||
+    final isPublicPlans =
+        Uri.base.queryParameters.containsKey('planes') ||
         Uri.base.queryParameters.containsKey('pricing');
     // Terminos y Privacidad (Paso 3.3): enlace sin sesion, ej. "?terminos=1"
     // o "?privacidad=1". Cada uno abre directo en su pestana.
-    final isPublicTerms = Uri.base.queryParameters.containsKey('terminos') ||
+    final isPublicTerms =
+        Uri.base.queryParameters.containsKey('terminos') ||
         Uri.base.queryParameters.containsKey('terms');
     final isPublicPrivacy =
         Uri.base.queryParameters.containsKey('privacidad') ||
-            Uri.base.queryParameters.containsKey('privacy');
+        Uri.base.queryParameters.containsKey('privacy');
+    // Postulación pública de Partners (Paso 7.3 / D-173): enlace sin sesión,
+    // ej. "?partners=1". Mismo motivo que las rutas de arriba.
+    final isPublicPartners = Uri.base.queryParameters.containsKey('partners');
     // Pagina publica del negocio por slug (D-098 / D-164): sin sesion, ej.
     // "salonymas.com/naguaradeunas" o, de respaldo, "?salon=<slug>". Mismo
     // motivo que las rutas de arriba: un visitante anonimo nunca debe pasar
@@ -95,11 +101,25 @@ class BeautyOSApp extends StatelessWidget {
         pathSegments.length == 1 && pathSegments.first.trim().isNotEmpty
         ? pathSegments.first.trim().toLowerCase()
         : null;
-    final queryParamSlug = Uri.base.queryParameters['salon']?.trim().toLowerCase();
+    final queryParamSlug = Uri.base.queryParameters['salon']
+        ?.trim()
+        .toLowerCase();
     const rutasReservadas = <String>{
-      'login', 'register', 'auth', 'planes', 'pricing', 'terminos',
-      'privacidad', 'terms', 'privacy', 'admin', 'dashboard', 'settings',
-      'soporte', 'api',
+      'login',
+      'register',
+      'auth',
+      'planes',
+      'pricing',
+      'terminos',
+      'privacidad',
+      'terms',
+      'privacy',
+      'admin',
+      'dashboard',
+      'settings',
+      'soporte',
+      'api',
+      'partners',
     };
     final candidateSlug =
         (pathSlug != null && !rutasReservadas.contains(pathSlug))
@@ -127,6 +147,8 @@ class BeautyOSApp extends StatelessWidget {
           home = const TermsAndPrivacyPage(initialTab: 0);
         } else if (isPublicPrivacy) {
           home = const TermsAndPrivacyPage(initialTab: 1);
+        } else if (isPublicPartners || pathSlug == 'partners') {
+          home = const PublicPartnerPage();
         } else if (candidateSlug != null) {
           home = PublicSalonPage(slug: candidateSlug);
         } else {
@@ -407,8 +429,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           branches: branches,
           // "Tu negocio en palabras" (D-168) saluda al titular; si su
           // perfil no tiene nombre todavía, cae al nombre del negocio.
-          nombreParaSaludo:
-              (profile?.fullName.trim().isNotEmpty ?? false)
+          nombreParaSaludo: (profile?.fullName.trim().isNotEmpty ?? false)
               ? profile!.fullName
               : branch.tenantName,
           onIrAAgenda: () => _irAModulo(modules, 'Agenda'),
@@ -726,10 +747,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                           height: 36,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [
-                                AppColors.brand,
-                                AppColors.brandDark,
-                              ],
+                              colors: [AppColors.brand, AppColors.brandDark],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
@@ -742,12 +760,13 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                                     child: Image.network(
                                       branch.tenantLogoUrl!,
                                       fit: BoxFit.contain,
-                                      errorBuilder: (context, error, stackTrace) =>
-                                          const Icon(
-                                        Icons.auto_awesome,
-                                        color: Colors.white,
-                                        size: 20,
-                                      ),
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              const Icon(
+                                                Icons.auto_awesome,
+                                                color: Colors.white,
+                                                size: 20,
+                                              ),
                                     ),
                                   )
                                 : const Icon(
@@ -811,8 +830,10 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                         Padding(
                           padding: const EdgeInsets.only(right: AppSpacing.sm),
                           child: FilledButton.icon(
-                            onPressed: () =>
-                                openCreateAppointmentDialog(context, branch.branchId),
+                            onPressed: () => openCreateAppointmentDialog(
+                              context,
+                              branch.branchId,
+                            ),
                             icon: const Icon(Icons.add, size: 18),
                             label: Text(isWide ? 'Nueva Cita' : 'Cita'),
                             style: FilledButton.styleFrom(
@@ -820,7 +841,9 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                               foregroundColor: Colors.white,
                               elevation: 0,
                               padding: EdgeInsets.symmetric(
-                                horizontal: isWide ? AppSpacing.md : AppSpacing.sm,
+                                horizontal: isWide
+                                    ? AppSpacing.md
+                                    : AppSpacing.sm,
                                 vertical: AppSpacing.xs,
                               ),
                               shape: RoundedRectangleBorder(
@@ -847,10 +870,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                         ),
 
                       // Avatar de Usuario & Menú de Perfil
-                      _UserProfileMenu(
-                        profile: profile,
-                        onSignOut: signOut,
-                      ),
+                      _UserProfileMenu(profile: profile, onSignOut: signOut),
                       const SizedBox(width: AppSpacing.sm),
                     ],
                   ),
@@ -997,7 +1017,11 @@ class _BranchSelectorPill extends StatelessWidget {
           ),
           if (branches.length > 1) ...[
             const SizedBox(width: 4),
-            const Icon(Icons.keyboard_arrow_down, size: 16, color: AppColors.textSecondary),
+            const Icon(
+              Icons.keyboard_arrow_down,
+              size: 16,
+              color: AppColors.textSecondary,
+            ),
           ],
         ],
       ),
@@ -1012,7 +1036,9 @@ class _BranchSelectorPill extends StatelessWidget {
       initialValue: selectedBranch,
       onSelected: onSelected,
       elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.card),
+      ),
       itemBuilder: (context) => branches
           .map(
             (branch) => PopupMenuItem<BranchContext>(
@@ -1072,7 +1098,8 @@ class _TrialHeaderBadge extends StatelessWidget {
         padding: const EdgeInsets.only(right: AppSpacing.sm),
         child: InkWell(
           borderRadius: BorderRadius.circular(20),
-          onTap: () => epayco.iniciarPago(context, status, onPaymentLaunched: onRefresh),
+          onTap: () =>
+              epayco.iniciarPago(context, status, onPaymentLaunched: onRefresh),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
@@ -1083,7 +1110,11 @@ class _TrialHeaderBadge extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.warning_amber_rounded, size: 14, color: AppColors.warning),
+                const Icon(
+                  Icons.warning_amber_rounded,
+                  size: 14,
+                  color: AppColors.warning,
+                ),
                 const SizedBox(width: 5),
                 Text(
                   '$days ${days == 1 ? "día" : "días"} de gracia · Pagar',
@@ -1107,7 +1138,11 @@ class _TrialHeaderBadge extends StatelessWidget {
           padding: const EdgeInsets.only(right: AppSpacing.sm),
           child: InkWell(
             borderRadius: BorderRadius.circular(20),
-            onTap: () => epayco.iniciarPago(context, status, onPaymentLaunched: onRefresh),
+            onTap: () => epayco.iniciarPago(
+              context,
+              status,
+              onPaymentLaunched: onRefresh,
+            ),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
@@ -1121,7 +1156,9 @@ class _TrialHeaderBadge extends StatelessWidget {
                   Icon(Icons.schedule, size: 14, color: AppColors.brand),
                   const SizedBox(width: 5),
                   Text(
-                    days == 0 ? 'Prueba termina hoy' : 'Prueba: $days d restantes',
+                    days == 0
+                        ? 'Prueba termina hoy'
+                        : 'Prueba: $days d restantes',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -1180,10 +1217,7 @@ class _TrialHeaderBadge extends StatelessWidget {
 // AVATAR DE USUARIO & MENÚ DE PERFIL
 // ============================================================================
 class _UserProfileMenu extends StatelessWidget {
-  const _UserProfileMenu({
-    required this.profile,
-    required this.onSignOut,
-  });
+  const _UserProfileMenu({required this.profile, required this.onSignOut});
 
   final MyProfile profile;
   final Future<void> Function() onSignOut;
@@ -1200,7 +1234,9 @@ class _UserProfileMenu extends StatelessWidget {
     return PopupMenuButton<String>(
       tooltip: 'Perfil y cuenta',
       elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.card)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.card),
+      ),
       onSelected: (value) {
         if (value == 'security') {
           showDialog(
@@ -1241,7 +1277,11 @@ class _UserProfileMenu extends StatelessWidget {
           value: 'security',
           child: Row(
             children: [
-              Icon(Icons.security_outlined, size: 18, color: AppColors.textSecondary),
+              Icon(
+                Icons.security_outlined,
+                size: 18,
+                color: AppColors.textSecondary,
+              ),
               SizedBox(width: 10),
               Text('Seguridad de tu cuenta'),
             ],
@@ -1260,9 +1300,7 @@ class _UserProfileMenu extends StatelessWidget {
       ],
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-        ),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(24)),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1312,9 +1350,7 @@ class _CategorizedSideMenu extends StatelessWidget {
       width: 240,
       decoration: const BoxDecoration(
         color: AppColors.surface,
-        border: Border(
-          right: BorderSide(color: AppColors.border, width: 1),
-        ),
+        border: Border(right: BorderSide(color: AppColors.border, width: 1)),
       ),
       child: SafeArea(
         top: false,
@@ -1385,7 +1421,9 @@ class _SideMenuItem extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    color: isSelected ? AppColors.brandDeep : AppColors.textStrong,
+                    color: isSelected
+                        ? AppColors.brandDeep
+                        : AppColors.textStrong,
                   ),
                 ),
               ),
@@ -1473,7 +1511,8 @@ class _MobileNavBar extends StatelessWidget {
             MapEntry(i, sections[i]),
         ];
 
-        final groupedRestantes = <BeautyCategory, List<MapEntry<int, BeautySection>>>{};
+        final groupedRestantes =
+            <BeautyCategory, List<MapEntry<int, BeautySection>>>{};
         for (final entry in restantes) {
           groupedRestantes
               .putIfAbsent(entry.value.category, () => [])

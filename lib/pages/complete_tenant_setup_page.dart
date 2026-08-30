@@ -52,7 +52,10 @@ class _CompleteTenantSetupPageState extends State<CompleteTenantSetupPage> {
     {'value': 'instagram', 'label': 'Instagram'},
     {'value': 'facebook', 'label': 'Facebook / TikTok'},
     {'value': 'recomendacion', 'label': 'Recomendación de un colega'},
-    {'value': 'visita_comercial', 'label': 'Visita de un asesor de Salón y Más'},
+    {
+      'value': 'visita_comercial',
+      'label': 'Visita de un asesor de Salón y Más',
+    },
     {'value': 'google', 'label': 'Google / Búsqueda web'},
     {'value': 'otro', 'label': 'Otro medio'},
   ];
@@ -72,9 +75,13 @@ class _CompleteTenantSetupPageState extends State<CompleteTenantSetupPage> {
     final whatsapp = whatsappController.text.trim();
     final city = cityController.text.trim();
 
-    if (businessName.isEmpty || ownerFullName.isEmpty || whatsapp.isEmpty || city.isEmpty) {
+    if (businessName.isEmpty ||
+        ownerFullName.isEmpty ||
+        whatsapp.isEmpty ||
+        city.isEmpty) {
       setState(() {
-        errorMessage = 'Por favor completa nombre del negocio, tu nombre, WhatsApp y ciudad.';
+        errorMessage =
+            'Por favor completa nombre del negocio, tu nombre, WhatsApp y ciudad.';
       });
       return;
     }
@@ -85,6 +92,12 @@ class _CompleteTenantSetupPageState extends State<CompleteTenantSetupPage> {
     });
 
     try {
+      // Enlace de partner (D-173): ej. "salonymas.com/?ref=CARLOS". Se lee de
+      // la URL del navegador directamente -- esta app no cambia de URL entre
+      // pantallas internas, así que sigue disponible aquí aunque el clic al
+      // enlace haya pasado por el login/registro antes de llegar a este paso.
+      final referralCodeUsed = Uri.base.queryParameters['ref']?.trim();
+
       await tenantRegistrationService.registerTenant(
         businessName: businessName,
         ownerFullName: ownerFullName,
@@ -94,6 +107,10 @@ class _CompleteTenantSetupPageState extends State<CompleteTenantSetupPage> {
         estimatedBranches: selectedBranches,
         estimatedTeamSize: selectedTeamSize,
         referralSource: selectedReferralSource,
+        referralCodeUsed:
+            (referralCodeUsed != null && referralCodeUsed.isNotEmpty)
+            ? referralCodeUsed
+            : null,
       );
 
       if (!mounted) {
@@ -108,7 +125,8 @@ class _CompleteTenantSetupPageState extends State<CompleteTenantSetupPage> {
     } catch (error, stackTrace) {
       debugPrint('CompleteTenantSetupPage.submit failed: $error\n$stackTrace');
       setState(() {
-        errorMessage = 'Ocurrió un error inesperado al enviar tu solicitud: $error';
+        errorMessage =
+            'Ocurrió un error inesperado al enviar tu solicitud: $error';
       });
     } finally {
       if (mounted) {
@@ -185,7 +203,10 @@ class _CompleteTenantSetupPageState extends State<CompleteTenantSetupPage> {
                     const Text(
                       'Revisaremos tu solicitud para configurar tu cuenta personalizada y activar tu prueba gratis de 21 días.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                     const SizedBox(height: 28),
 
@@ -279,9 +300,18 @@ class _CompleteTenantSetupPageState extends State<CompleteTenantSetupPage> {
                             ),
                             items: const [
                               DropdownMenuItem(value: 1, child: Text('1 sede')),
-                              DropdownMenuItem(value: 2, child: Text('2 sedes')),
-                              DropdownMenuItem(value: 3, child: Text('3 sedes')),
-                              DropdownMenuItem(value: 5, child: Text('4 o más')),
+                              DropdownMenuItem(
+                                value: 2,
+                                child: Text('2 sedes'),
+                              ),
+                              DropdownMenuItem(
+                                value: 3,
+                                child: Text('3 sedes'),
+                              ),
+                              DropdownMenuItem(
+                                value: 5,
+                                child: Text('4 o más'),
+                              ),
                             ],
                             onChanged: (val) {
                               if (val != null) {
@@ -346,17 +376,26 @@ class _CompleteTenantSetupPageState extends State<CompleteTenantSetupPage> {
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: Colors.red.shade50,
-                          borderRadius: BorderRadius.circular(AppRadius.control),
+                          borderRadius: BorderRadius.circular(
+                            AppRadius.control,
+                          ),
                           border: Border.all(color: Colors.red.shade200),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                            const Icon(
+                              Icons.error_outline,
+                              color: Colors.red,
+                              size: 20,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 errorMessage!,
-                                style: const TextStyle(color: Colors.red, fontSize: 13),
+                                style: const TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 13,
+                                ),
                               ),
                             ),
                           ],
@@ -380,8 +419,13 @@ class _CompleteTenantSetupPageState extends State<CompleteTenantSetupPage> {
                               )
                             : const Icon(Icons.send_outlined),
                         label: Text(
-                          isLoading ? 'Enviando solicitud...' : 'Enviar solicitud de ingreso',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          isLoading
+                              ? 'Enviando solicitud...'
+                              : 'Enviar solicitud de ingreso',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),

@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/platform_partner.dart';
 import '../models/platform_saas_metrics.dart';
 import '../models/platform_tenant_feature_override.dart';
 import '../models/platform_tenant_summary.dart';
@@ -205,6 +206,144 @@ class PlatformService {
     await Supabase.instance.client.rpc(
       'platform_delete_tenant_feature_override',
       params: {'p_override_id': overrideId},
+    );
+  }
+
+  Future<PlatformPartnersSummary> getPartnersSummary() async {
+    final response = await Supabase.instance.client.rpc(
+      'platform_get_partners_summary',
+    );
+    return PlatformPartnersSummary.fromMap(
+      Map<String, dynamic>.from(response as Map),
+    );
+  }
+
+  Future<List<PlatformPartner>> listPartners() async {
+    final response = await Supabase.instance.client.rpc(
+      'platform_list_partners',
+    );
+    return (response as List)
+        .map(
+          (item) =>
+              PlatformPartner.fromMap(Map<String, dynamic>.from(item as Map)),
+        )
+        .toList();
+  }
+
+  Future<String> createPartner({
+    required String fullName,
+    required String referralCode,
+    required String payoutChannel,
+    required String payoutAccount,
+    String? documentId,
+    String? phone,
+    String? whatsapp,
+    String? email,
+    String commissionType = 'percentage',
+    double commissionValue = 15.0,
+    String commissionDuration = 'first_payment_only',
+    int? durationMonths,
+    String? notes,
+  }) async {
+    final response = await Supabase.instance.client.rpc(
+      'platform_create_partner',
+      params: {
+        'p_full_name': fullName,
+        'p_referral_code': referralCode,
+        'p_payout_channel': payoutChannel,
+        'p_payout_account': payoutAccount,
+        'p_document_id': documentId,
+        'p_phone': phone,
+        'p_whatsapp': whatsapp,
+        'p_email': email,
+        'p_commission_type': commissionType,
+        'p_commission_value': commissionValue,
+        'p_commission_duration': commissionDuration,
+        'p_duration_months': durationMonths,
+        'p_notes': notes,
+      },
+    );
+    final rows = response as List;
+    return Map<String, dynamic>.from(
+      rows.first as Map,
+    )['partner_id'].toString();
+  }
+
+  Future<void> updatePartner({
+    required String partnerId,
+    required String fullName,
+    String? documentId,
+    String? phone,
+    String? whatsapp,
+    String? email,
+    required String payoutChannel,
+    required String payoutAccount,
+    required String commissionType,
+    required double commissionValue,
+    required String commissionDuration,
+    int? durationMonths,
+    required bool active,
+    String? notes,
+  }) async {
+    await Supabase.instance.client.rpc(
+      'platform_update_partner',
+      params: {
+        'p_partner_id': partnerId,
+        'p_full_name': fullName,
+        'p_document_id': documentId,
+        'p_phone': phone,
+        'p_whatsapp': whatsapp,
+        'p_email': email,
+        'p_payout_channel': payoutChannel,
+        'p_payout_account': payoutAccount,
+        'p_commission_type': commissionType,
+        'p_commission_value': commissionValue,
+        'p_commission_duration': commissionDuration,
+        'p_duration_months': durationMonths,
+        'p_active': active,
+        'p_notes': notes,
+      },
+    );
+  }
+
+  Future<PlatformPartnerDetail> getPartnerDetail(String partnerId) async {
+    final response = await Supabase.instance.client.rpc(
+      'platform_get_partner_detail',
+      params: {'p_partner_id': partnerId},
+    );
+    return PlatformPartnerDetail.fromMap(
+      Map<String, dynamic>.from(response as Map),
+    );
+  }
+
+  Future<void> setTenantPartner({
+    required String tenantId,
+    String? partnerId,
+  }) async {
+    await Supabase.instance.client.rpc(
+      'platform_set_tenant_partner',
+      params: {'p_tenant_id': tenantId, 'p_partner_id': partnerId},
+    );
+  }
+
+  Future<PlatformPartnerSettlementResult> settlePartnerCommissions({
+    required String partnerId,
+    required String payoutMethod,
+    String? payoutReference,
+    String? notes,
+  }) async {
+    final response = await Supabase.instance.client.rpc(
+      'platform_settle_partner_commissions',
+      params: {
+        'p_partner_id': partnerId,
+        'p_payout_method': payoutMethod,
+        'p_payout_reference': payoutReference,
+        'p_notes': notes,
+      },
+    );
+    final rows = response as List;
+    return PlatformPartnerSettlementResult.fromMap(
+      Map<String, dynamic>.from(rows.first as Map),
     );
   }
 }
