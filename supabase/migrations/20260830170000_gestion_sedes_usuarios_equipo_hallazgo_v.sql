@@ -217,7 +217,7 @@ begin
   -- Desactivar sedes de este tenant que ya no estén en p_branch_ids
   update public.branch_memberships bm
      set active = false,
-         ends_at = coalesce(bm.ends_at, now()),
+         ends_at = coalesce(bm.ends_at, greatest(now(), bm.starts_at + interval '1 millisecond')),
          updated_at = now()
    where bm.tenant_id = v_tenant_id
      and bm.tenant_membership_id = v_tenant_membership_id
@@ -258,7 +258,7 @@ begin
     -- Desactivar en branch_stylists de las sedes que ya no tiene asignadas
     update public.branch_stylists bst
        set active = false,
-           ends_at = coalesce(bst.ends_at, now()),
+           ends_at = coalesce(bst.ends_at, greatest(now(), bst.starts_at + interval '1 millisecond')),
            updated_at = now()
      where bst.tenant_id = v_tenant_id
        and bst.stylist_id = v_target.stylist_id
