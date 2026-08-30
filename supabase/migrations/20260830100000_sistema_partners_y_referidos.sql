@@ -445,10 +445,10 @@ begin
   end if;
 
   if v_referral_code_clean is not null then
-    select id into v_partner_id
-    from public.partners
-    where referral_code = v_referral_code_clean
-      and active = true;
+    select p.id into v_partner_id
+    from public.partners p
+    where p.referral_code = v_referral_code_clean
+      and p.active = true;
   end if;
 
   insert into public.tenants (
@@ -876,7 +876,7 @@ begin
     raise exception 'El código de referido debe tener entre 3 y 20 caracteres, sin espacios (letras, números, guion o guion bajo).';
   end if;
 
-  if exists (select 1 from public.partners where referral_code = v_code) then
+  if exists (select 1 from public.partners p where p.referral_code = v_code) then
     raise exception 'Ese código de referido ya está en uso. Elige otro.';
   end if;
 
@@ -1261,7 +1261,7 @@ begin
     raise exception 'El código deseado debe tener entre 3 y 20 caracteres, sin espacios (letras, números, guion o guion bajo).';
   end if;
 
-  if exists (select 1 from public.partners where referral_code = v_code) then
+  if exists (select 1 from public.partners p where p.referral_code = v_code) then
     raise exception 'Ese código ya está en uso. Elige otro.';
   end if;
 
