@@ -278,7 +278,7 @@ filtro) y el cuerpo pasó a dos pestañas ejecutivas: `🏪 Salones Clientes` y
 |---|---|---|---|
 | 8.1 | Eliminar las 42 funciones que nadie llama (H-05), en dos pasos | 🤖 | ⬜ |
 | 8.2 | Unificar las reglas de las columnas de dinero (H-08) | 🤖 | ⬜ |
-| 8.3 | Alinear el permiso suelto de Storage (H-11) | 🤖 | ⬜ |
+| 8.3 | Alinear el permiso suelto de Storage (H-11) | 🤖 | ✅ **CERRADO 30-ago (D-174).** Revocado de public/anon en `beautyos_can_upload_work_photo(uuid)`, solo authenticated. Migración `20260830120000` y Control `193` aplicados y en verde (3/3 casos en Supabase) |
 | 8.4 | Onboarding guiado "Primeros pasos" | 🤖 | ⬜ |
 
 ---
@@ -326,7 +326,7 @@ toque, o se descarta con su motivo.
 | H-08 | Columnas de dinero inconsistentes | ⬜ Paso 8.2 |
 | H-09 | Archivos públicos permanentes | ✅ Cerrado (D-119) |
 | H-10 | `social_publishing` sin nada detrás | 🔄 Es la fase 6 |
-| H-11 | Permiso suelto de Storage | ⬜ Paso 8.3 |
+| H-11 | Permiso suelto de Storage | ✅ **Cerrado 30-ago (D-174, Paso 8.3)** |
 | H-12 | Resend en sandbox: los correos no llegan | ✅ **Cerrado 10-ago (D-128)** |
 | H-13 | Commits sin publicar | ✅ Cerrado |
 
