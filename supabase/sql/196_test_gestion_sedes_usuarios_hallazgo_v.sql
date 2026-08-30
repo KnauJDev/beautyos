@@ -96,18 +96,18 @@ begin
     v_tenant, v_stylist_user, 'stylist', v_stylist_record, true, now()
   );
 
-  -- Asignar inicialmente solo a la branch1
+  -- Asignar inicialmente solo a la branch1 (con starts_at en el pasado)
   insert into public.branch_memberships (
     tenant_id, branch_id, tenant_membership_id, active, starts_at
   )
-  select v_tenant, v_branch1, tm.id, true, now()
+  select v_tenant, v_branch1, tm.id, true, now() - interval '1 hour'
   from public.tenant_memberships tm
   where tm.tenant_id = v_tenant and tm.user_id = v_stylist_user;
 
   insert into public.branch_stylists (
     tenant_id, branch_id, stylist_id, active, starts_at
   ) values (
-    v_tenant, v_branch1, v_stylist_record, true, now()
+    v_tenant, v_branch1, v_stylist_record, true, now() - interval '1 hour'
   );
 
   -- 4. Simular sesión de propietario
