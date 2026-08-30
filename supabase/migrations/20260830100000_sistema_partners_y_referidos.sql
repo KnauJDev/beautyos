@@ -29,7 +29,7 @@ begin;
 -- 1. Tabla `partners`.
 -- -----------------------------------------------------------------------
 
-create table public.partners (
+create table if not exists public.partners (
   id uuid primary key default gen_random_uuid(),
   full_name text not null,
   document_id text,
@@ -55,8 +55,8 @@ create table public.partners (
     check (commission_duration <> 'first_n_months' or duration_months is not null)
 );
 
-create index partners_referral_code_idx on public.partners (referral_code);
-create index partners_active_idx on public.partners (active);
+create index if not exists partners_referral_code_idx on public.partners (referral_code);
+create index if not exists partners_active_idx on public.partners (active);
 
 alter table public.partners enable row level security;
 
@@ -78,7 +78,7 @@ alter table public.tenants
   add column if not exists partner_id uuid references public.partners(id) on delete set null,
   add column if not exists referral_code_used text;
 
-create index tenants_partner_id_idx on public.tenants (partner_id) where partner_id is not null;
+create index if not exists tenants_partner_id_idx on public.tenants (partner_id) where partner_id is not null;
 
 comment on column public.tenants.partner_id is
   'Partner vinculado a este salón (D-173): quien lo trajo. Nulo = sin partner. Se asigna por ?ref=CODIGO al registrarse o a mano desde el Panel de Plataforma.';
@@ -89,7 +89,7 @@ comment on column public.tenants.referral_code_used is
 -- 3. Tabla `partner_commissions`.
 -- -----------------------------------------------------------------------
 
-create table public.partner_commissions (
+create table if not exists public.partner_commissions (
   id uuid primary key default gen_random_uuid(),
   partner_id uuid not null references public.partners(id) on delete restrict,
   tenant_id uuid not null references public.tenants(id) on delete restrict,
@@ -105,9 +105,9 @@ create table public.partner_commissions (
   created_at timestamptz not null default now()
 );
 
-create index partner_commissions_partner_status_idx
+create index if not exists partner_commissions_partner_status_idx
   on public.partner_commissions (partner_id, status);
-create index partner_commissions_tenant_idx
+create index if not exists partner_commissions_tenant_idx
   on public.partner_commissions (tenant_id);
 
 alter table public.partner_commissions enable row level security;
