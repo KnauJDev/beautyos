@@ -1,15 +1,30 @@
 
+# BeautyOS / Salón y Más - Configuración de Edge Functions de Supabase
+# Paso 8.4 (Hallazgo U): blindaje perimetral de JWT.
+
 [functions.send-invitation-email]
 enabled = true
-verify_jwt = false
+verify_jwt = true
 import_map = "./functions/send-invitation-email/deno.json"
 entrypoint = "./functions/send-invitation-email/index.ts"
 
 [functions.send-low-stock-alert]
 enabled = true
-verify_jwt = false
+verify_jwt = true
 import_map = "./functions/send-low-stock-alert/deno.json"
 entrypoint = "./functions/send-low-stock-alert/index.ts"
+
+[functions.create-epayco-session]
+enabled = true
+verify_jwt = true
+import_map = "./functions/create-epayco-session/deno.json"
+entrypoint = "./functions/create-epayco-session/index.ts"
+
+[functions.verify-epayco-transaction]
+enabled = true
+verify_jwt = false
+import_map = "./functions/verify-epayco-transaction/deno.json"
+entrypoint = "./functions/verify-epayco-transaction/index.ts"
 
 [functions.epayco-webhook]
 enabled = true
