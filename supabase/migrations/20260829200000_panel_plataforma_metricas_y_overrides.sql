@@ -312,6 +312,13 @@ comment on function public.platform_get_saas_metrics() is
 --    (22-jul); solo faltaban las RPC y la pantalla.
 -- -----------------------------------------------------------------------
 
+-- Relajar la restricción para permitir ends_at >= starts_at (al revocar una
+-- excepción en la misma marca de tiempo o fecha que su inicio):
+alter table public.tenant_feature_overrides
+  drop constraint if exists tenant_feature_overrides_validity_check,
+  add constraint tenant_feature_overrides_validity_check
+    check (ends_at is null or ends_at >= starts_at);
+
 create or replace function public.platform_get_tenant_feature_overrides(
   p_tenant_id uuid
 )
@@ -488,8 +495,15 @@ begin
 
   -- Se finaliza (ends_at = now()), no se borra: preserva el rastro de que
   -- existió, mismo criterio de auditoría append-only del resto del proyecto.
+  -- Si el override empezó en la misma transacción o en el futuro (starts_at >= now()),
+  -- ajustamos starts_at 1 milisegundo atrás para que ends_at > starts_at
+  -- se cumpla siempre sin ambigüedad temporal ni violaciones de constraint.
   update public.tenant_feature_overrides
-  set ends_at = least(coalesce(ends_at, now()), now())
+  set starts_at = case
+                    when starts_at >= now() then now() - interval '1 millisecond'
+                    else starts_at
+                  end,
+      ends_at = least(coalesce(ends_at, now()), now())
   where id = p_override_id;
 
   select id into v_subscription_id
