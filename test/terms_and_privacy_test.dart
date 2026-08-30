@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:salonymas/pages/login_page.dart';
 import 'package:salonymas/pages/register_page.dart';
 import 'package:salonymas/pages/terms_and_privacy_page.dart';
 
@@ -144,6 +145,63 @@ void main() {
 
       expect(find.byType(TermsAndPrivacyPage), findsOneWidget);
       expect(find.text('Privacidad (Habeas Data)'), findsOneWidget);
+    });
+  });
+
+  group('Paso 8.5 — Clarificar pantalla de acceso para invitados (Hallazgo S)', () {
+    testWidgets('LoginPage muestra guía para colaboradores invitados y botón para registrar salón', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: LoginPage(
+            onLoginSuccess: () {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Subtítulo neutral
+      expect(find.text('Ingresa a tu cuenta'), findsOneWidget);
+
+      // Bloque de orientación al colaborador invitado por correo
+      expect(
+        find.textContaining('¿Te invitaron a un equipo?'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Inicia sesión con el correo de tu invitación'),
+        findsOneWidget,
+      );
+
+      // Camino explícito de registrar negocio nuevo
+      expect(
+        find.text('¿Quieres usar Salón y Más en tu centro?'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Registra tu negocio gratis'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('RegisterPage clarifica que es para registrar un negocio y orienta a invitados a iniciar sesión', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RegisterPage(
+            onRegisterSuccess: () {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Título claro de creación de negocio
+      expect(find.text('Registra tu negocio en Salón y Más'), findsOneWidget);
+      expect(find.text('21 días de prueba gratis, sin tarjeta.'), findsOneWidget);
+
+      // Enlace de retorno que acoge a invitados
+      expect(
+        find.text('¿Ya tienes cuenta o te invitaron a un equipo? Inicia sesión'),
+        findsOneWidget,
+      );
     });
   });
 }

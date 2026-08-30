@@ -163,7 +163,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     const SizedBox(height: 18),
                     Text(
-                      'Crea tu cuenta en Salón y Más',
+                      'Registra tu negocio en Salón y Más',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 24,
@@ -312,7 +312,10 @@ class _RegisterPageState extends State<RegisterPage> {
                         onPressed: isLoading
                             ? null
                             : () => Navigator.of(context).pop(),
-                        child: const Text('Ya tengo cuenta, iniciar sesión'),
+                        child: const Text(
+                          '¿Ya tienes cuenta o te invitaron a un equipo? Inicia sesión',
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       TextButton.icon(

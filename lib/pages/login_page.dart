@@ -134,7 +134,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Ingresa a tu centro de belleza',
+                      'Ingresa a tu cuenta',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 15,
@@ -210,8 +210,51 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 18),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.brandSurface,
+                        borderRadius: BorderRadius.circular(AppRadius.control),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.group_outlined,
+                            size: 20,
+                            color: AppColors.brand,
+                          ),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Text(
+                              '¿Te invitaron a un equipo?\nInicia sesión con el correo de tu invitación',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                                height: 1.3,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(height: 1, color: AppColors.border),
                     const SizedBox(height: 14),
-                    TextButton(
+                    const Text(
+                      '¿Quieres usar Salón y Más en tu centro?',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    OutlinedButton.icon(
                       onPressed: isLoading
                           ? null
                           : () async {
@@ -230,9 +273,18 @@ class _LoginPageState extends State<LoginPage> {
                                 widget.onLoginSuccess();
                               }
                             },
-                      child: const Text('¿No tienes cuenta? Crea tu negocio'),
+                      icon: const Icon(Icons.add_business_outlined, size: 18),
+                      label: const Text('Registra tu negocio gratis'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.brandDeep,
+                        side: BorderSide(color: AppColors.brand.withValues(alpha: 0.5)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 10),
                     TextButton.icon(
                       onPressed: isLoading
                           ? null
