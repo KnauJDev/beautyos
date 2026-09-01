@@ -284,6 +284,14 @@ filtro) y el cuerpo pasó a dos pestañas ejecutivas: `🏪 Salones Clientes` y
 | 8.6 | **Gestión de sedes para usuarios de equipo multi-sede (Hallazgo V):** interfaz en Usuarios y RPC para asignar/revocar acceso a sedes (`branch_memberships`) a un colaborador existente | 🤖 | ✅ Cerrado (D-179) |
 | 8.7 | **Reenvío de correos de soporte `hola@salonymas.com` (Idea I-12):** activación en Cloudflare Email Routing para recibir respuestas de salones en Gmail | 👥 | ✅ **Cerrado 30-ago (D-180).** Enrutamiento en Cloudflare hacia `juankdev2026@gmail.com` desacoplado de Resend (que envía por `send.salonymas.com`). Documentación operativa en `docs/02_operacion/CORREO_Y_DOMINIO.md` |
 | 8.8 | **Broche de oro: Onboarding guiado "Primeros pasos"** — checklist interactivo de bienvenida en Dashboard para salones nuevos | 🤖 | ⬜ *(Al final del todo)* |
+| 8.9 | 🔴 **Cerrar TL-01: `verify-epayco-transaction` activaba suscripciones con pagos hechos en otro comercio de ePayco.** Primer hallazgo de la auditoría de 4 revisiones del 01-sep | 🤖 | 🔄 **Escrito 01-sep (D-181).** `verify_jwt = true`, comparación de `x_cust_id_cliente` contra `EPAYCO_P_CUST_ID`, negocio resuelto desde `tenant_memberships` de quien llama, y eliminado el rastreo por prefijo de factura. `flutter analyze` 0/0 y 262/262 en verde. **Pendiente que el propietario despliegue y verifique contra una transacción real.** No cierra TL-02 |
+| 8.10 | 🔴 **Cerrar TL-02: la firma de ePayco no cubre `x_extra1` ni `x_extra2`**, así que un pago propio legítimo se puede reenviar con el negocio cambiado. Necesita tabla de intenciones de pago generada en el servidor | 🤖 | ⬜ **Siguiente paso** |
+
+> **La auditoría de 4 revisiones del 01-sep** (técnica, UX, producto y crítica
+> brutal/seguridad) está verificada hallazgo por hallazgo en
+> `docs/01_arquitectura/auditorias/AUDITORIA_4_REVISIONES_2026-09-01.md`. Ese
+> documento **no manda sobre este**: es el expediente de evidencia. Los pasos
+> que salgan de él entran aquí, uno a uno, como 8.9, 8.10 y siguientes.
 
 ---
 

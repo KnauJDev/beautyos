@@ -22,7 +22,12 @@ entrypoint = "./functions/create-epayco-session/index.ts"
 
 [functions.verify-epayco-transaction]
 enabled = true
-verify_jwt = false
+# D-181 (hallazgo TL-01): pasa de `false` a `true`. La llamaba una sola pantalla
+# (`main.dart`, al volver de la pasarela) y siempre con sesión iniciada, asi que
+# abrirla a cualquiera no aportaba nada y permitia confirmar pagos ajenos.
+# El webhook (`epayco-webhook`) sigue en `false` a proposito: lo llama ePayco
+# servidor-a-servidor, sin sesion, y se autentica con la firma SHA-256 (D-177).
+verify_jwt = true
 import_map = "./functions/verify-epayco-transaction/deno.json"
 entrypoint = "./functions/verify-epayco-transaction/index.ts"
 
