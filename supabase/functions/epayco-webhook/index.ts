@@ -1,4 +1,17 @@
-// BeautyOS - Webhook Receptor y Validador de ePayco (Pasos 3.9 y 3.10 / D-141)
+// BeautyOS - Webhook Receptor y Validador de ePayco (Pasos 3.9 y 3.10 / D-141 / D-182)
+//
+// BLINDAJE DE INTENCION DE PAGO (D-182, hallazgo TL-02 de la auditoria del 01-sep):
+// La firma SHA-256 de ePayco cubre cust_id, key, ref_payco, transaction_id,
+// monto y moneda -- pero NO cubre `x_extra1` (el negocio) ni `x_extra2` (el
+// plan), que eran justamente los dos campos con los que este webhook decidia a
+// quien activarle la suscripcion. Una confirmacion legitima se podia reenviar
+// con `x_extra1` cambiado y la firma seguia siendo valida.
+// (El UNIQUE de D-141 lo convertia en una carrera, no lo impedia.)
+//
+// Ahora el negocio y el plan salen de `subscription_payment_intents`, que el
+// servidor escribe en `create-epayco-session` ANTES de mandar a nadie a pagar,
+// y que se resuelve por el numero de factura (`x_id_invoice`). Si no hay
+// intencion registrada, o si el payload declara otro negocio, no se procesa.
 //
 // Recibe las notificaciones de confirmacion de transacciones de ePayco (servidor a servidor),
 // valida la firma criptografica SHA-256 usando la llave privada (EPAYCO_P_KEY) que reside
@@ -88,34 +101,25 @@ Deno.serve(async (req) => {
     const xSignature = (payload.x_signature ?? "").toString().trim();
     const xTransactionState = (payload.x_transaction_state ?? payload.x_response ?? "").toString().trim();
     const xCodTransactionState = (payload.x_cod_transaction_state ?? "").toString().trim();
-    let xTenantId = (payload.x_extra1 ?? payload.extra1 ?? payload.extras?.extra1 ?? "").toString().trim();
+    // D-182 (TL-02): `x_extra1` y `x_extra2` YA NO DECIDEN NADA. La firma
+    // SHA-256 de ePayco no los cubre (solo cubre cust_id, key, ref, tx, monto
+    // y moneda), asi que se podian cambiar sin invalidarla y activarle la
+    // suscripcion a otro negocio. Ahora solo se conservan para contrastarlos
+    // contra la intencion que el servidor registro al abrir el checkout.
+    const xTenantEnPayload = (payload.x_extra1 ?? payload.extra1 ?? payload.extras?.extra1 ?? "").toString().trim();
     const xInvoice = (payload.x_id_invoice ?? payload.x_id_factura ?? "").toString().trim();
-    const xPlanCode = (payload.x_extra2 ?? payload.extra2 ?? payload.extras?.extra2 ?? "").toString().trim();
 
-    if (!xTenantId && xInvoice) {
-      const match = xInvoice.match(/SUB-([0-9A-Fa-f]{8})-/);
-      if (match) {
-        const prefix = match[1].toLowerCase();
-        const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-        const { data: matchedTenant } = await supabaseAdmin
-          .from("tenants")
-          .select("id")
-          .ilike("id", `${prefix}%`)
-          .limit(1)
-          .maybeSingle();
-        if (matchedTenant?.id) {
-          xTenantId = matchedTenant.id;
-        }
-      }
-    }
+    // Se retiro el rastreo por prefijo de factura contra `tenants`: adivinar el
+    // negocio casando 8 caracteres hexadecimales es justo lo que se vino a
+    // cerrar, y ahora la factura resuelve al negocio de forma exacta.
 
     console.log(
-      `PASO: ${paso} | ref: ${xRefPayco} | tx: ${xTransactionId} | estado: ${xTransactionState} (cod: ${xCodTransactionState}) | monto: ${xAmount} | tenant: ${xTenantId}`
+      `PASO: ${paso} | ref: ${xRefPayco} | tx: ${xTransactionId} | estado: ${xTransactionState} (cod: ${xCodTransactionState}) | monto: ${xAmount} | factura: ${xInvoice}`
     );
 
-    if (!xRefPayco || !xTenantId) {
-      console.warn("Webhook rechazado: Faltan x_ref_payco o x_extra1 (tenant_id).");
-      return responder({ error: "Faltan parametros obligatorios: x_ref_payco o x_extra1." }, 400);
+    if (!xRefPayco || !xInvoice) {
+      console.warn("Webhook rechazado: faltan x_ref_payco o x_id_invoice.");
+      return responder({ error: "Faltan parametros obligatorios: x_ref_payco o x_id_invoice." }, 400);
     }
 
     // BLINDAJE FAIL-CLOSED: x_signature es 100% obligatoria
@@ -137,11 +141,51 @@ Deno.serve(async (req) => {
     }
     console.log("Firma criptografica de ePayco verificada con exito en el servidor.");
 
-    paso = "ejecutar rpc interna con service_role";
+    paso = "preparar cliente de base de datos";
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
+    // D-182 (TL-02): quien decide el negocio y el plan es la intencion que el
+    // servidor escribio al abrir el checkout, no el payload. Si la factura no
+    // tiene intencion registrada, o si el payload dice pertenecer a otro
+    // negocio, no se procesa nada. FAIL-CLOSED.
+    paso = "resolver la intencion de pago";
+    const { data: intentData, error: intentError } = await supabase.rpc(
+      "beautyos_resolver_intencion_pago",
+      {
+        p_invoice_number: xInvoice,
+        p_tenant_en_payload: xTenantEnPayload || null,
+        p_x_ref_payco: xRefPayco,
+      },
+    );
+
+    if (intentError) {
+      console.error("Error al resolver la intencion de pago:", intentError);
+      return responder({ error: `Error resolviendo la intencion de pago: ${intentError.message}` }, 500);
+    }
+
+    const intent = Array.isArray(intentData) && intentData.length > 0 ? intentData[0] : null;
+
+    if (!intent || intent.coincide !== true) {
+      console.error(
+        `ALERTA DE SEGURIDAD: confirmacion rechazada para la factura ${xInvoice} ` +
+          `(ref ${xRefPayco}). Motivo: ${intent?.motivo ?? "sin intencion registrada"}. ` +
+          `El payload declaraba el negocio "${xTenantEnPayload}".`,
+      );
+      return responder({
+        error: intent?.motivo ?? "No hay una intencion de pago registrada para esta factura.",
+      }, 403);
+    }
+
+    const xTenantId = intent.tenant_id as string;
+    const xPlanCode = (intent.plan_code ?? "") as string;
+
+    console.log(
+      `Intencion de pago resuelta: factura ${xInvoice} -> negocio ${xTenantId}, plan ${xPlanCode}.`,
+    );
+
+    paso = "ejecutar rpc interna con service_role";
     const amountNum = Math.round(Number(xAmount) || 0);
 
     const { data, error } = await supabase.rpc("beautyos_procesar_evento_epayco", {

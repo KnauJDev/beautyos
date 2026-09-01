@@ -168,6 +168,31 @@ Deno.serve(async (req) => {
 
     paso = "crear sesión de Smart Checkout V2 en ePayco";
     const invoiceNumber = `SUB-${tenantId.replace(/-/g, "").substring(0, 8).toUpperCase()}-${Date.now()}`;
+
+    // D-182 (TL-02): se deja escrito, ANTES de que nadie pueda pagar, a qué
+    // negocio y a qué plan corresponde esta factura. El webhook leerá esto en
+    // vez de creerle a `x_extra1`, que viaja fuera de la firma de ePayco y por
+    // tanto se puede cambiar sin invalidarla.
+    //
+    // Va antes de crear la sesión a propósito: si se registrara después y esa
+    // escritura fallara, quedaría una sesión pagable sin intención, y el
+    // webhook rechazaría un pago legítimo.
+    paso = "registrar la intención de pago (D-182)";
+    const { error: intentError } = await supabaseAdmin.rpc("beautyos_registrar_intencion_pago", {
+      p_invoice_number: invoiceNumber,
+      p_tenant_id: tenantId,
+      p_plan_code: planCodeResuelto,
+      p_plan_id: calc.plan_id_resuelto ?? null,
+      p_amount_cop: amount,
+      p_created_by: userId,
+    });
+
+    if (intentError) {
+      console.error("No se pudo registrar la intención de pago:", intentError);
+      return responder({
+        error: "No se pudo preparar el cobro de forma segura. Inténtalo de nuevo.",
+      }, 500);
+    }
     const sessionPayload = {
       checkout_version: "2",
       name: `Suscripción Salón y Más - ${planName}`,
