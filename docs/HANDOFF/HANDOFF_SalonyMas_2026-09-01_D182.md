@@ -1,8 +1,8 @@
-# HANDOFF Salón y Más — 1 de septiembre de 2026 ("Auditoría de 4 revisiones y cierre del perímetro de pagos", D-181 y D-182)
+# HANDOFF Salón y Más — 1 de septiembre de 2026 ("Auditoría de 4 revisiones, perímetro de pagos y privacidad del portal", D-181 a D-183)
 
-**Bloque documentado:** decisiones **D-181 y D-182** · Pasos **8.9 y 8.10** de la **FASE 8**.
+**Bloque documentado:** decisiones **D-181, D-182 y D-183** · Pasos **8.9, 8.10 y 8.11** de la **FASE 8**.
 
-**Estado:** `flutter analyze` limpio (0/0), **262 de 262 pruebas en verde**. **D-181 y D-182 desplegados y verificados en producción.** El perímetro de pagos de ePayco queda cerrado por los dos lados: la ruta de verificación inmediata y el webhook.
+**Estado:** `flutter analyze` limpio (0/0), **262 de 262 pruebas en verde**. **D-181 y D-182 desplegados y verificados en producción** — el perímetro de pagos de ePayco queda cerrado por los dos lados. **D-183 escrito, pendiente de aplicar.**
 
 ---
 
@@ -60,11 +60,35 @@ verde (9 de 9 casos contra la base real)** con el ataque de TL-02 rechazado y
 `ROLLBACK` limpio, y las dos Edge Functions desplegadas **en el orden correcto**
 — primero la que escribe intenciones, luego la que las exige.
 
+### 1.4 Paso 8.11 — TL-04 y TL-05, escrito y sin aplicar (D-183)
+
+`client_portal_authenticate` la ejecuta `anon`, y el `tenant_id` que necesita es
+público desde D-164. Devolvía **cuatro mensajes distinguibles** y los tres
+últimos confirmaban que un celular sí era clienta de ese salón. **Y el contador
+de intentos no lo frenaba**, porque solo sube cuando la clienta existe *y* ya
+tiene PIN: la enumeración no tenía tope ninguno. Ley 1581.
+
+Ahora hay **un solo mensaje** para los cuatro casos, con la pista de "si aún no
+tienes PIN, pídelo en tu salón" dada a todo el mundo, y el **tiempo** de
+respuesta igualado. Más el índice funcional `clients_tenant_phone_digits_idx`,
+que sirve a las dos funciones del portal.
+
 ---
 
 ## 2. Lo que quedó a medias
 
-### 2.1 El candado 2 de D-181 nunca se ha ejercitado
+### 2.1 🔴 D-183 sin aplicar
+
+```powershell
+powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\migrations\20260901140000_portal_clienta_sin_enumeracion_tl04_tl05.sql"
+
+powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\sql\198_test_portal_clienta_sin_enumeracion_tl04_tl05.sql"
+```
+
+Aquí **no hay que desplegar nada**: es solo base de datos. El cambio de Dart es
+un comentario.
+
+### 2.2 El candado 2 de D-181 nunca se ha ejercitado
 
 El `401` verifica el **primer** candado (la sesión). La comparación de
 `x_cust_id_cliente` **no se ha probado contra una transacción real**, y está
@@ -78,7 +102,7 @@ Cómo salir de dudas con el próximo pago real:
 curl -s https://secure.epayco.co/validation/v1/reference/REF_PAYCO_REAL | python -m json.tool | grep -i cust
 ```
 
-### 2.2 Paso 8.8 sigue pendiente
+### 2.3 Paso 8.8 sigue pendiente
 
 El onboarding guiado "Primeros pasos" sigue reservado como el último del todo.
 Las cuatro revisiones coincidieron en que hace falta antes de vender.
@@ -131,17 +155,20 @@ D-181 (TL-01) y D-182 (TL-02) están desplegados y verificados en producción:
 el perímetro de pagos de ePayco queda cerrado por los dos lados (la ruta de
 verificación inmediata y el webhook). Control 197 en verde, 9 de 9 casos.
 
+D-183 (TL-04 y TL-05, privacidad del portal de la clienta) está ESCRITO pero SIN
+APLICAR: migración 20260901140000 y control 198. Ver apartado 2.1.
+
 El contexto completo de la auditoría de 4 revisiones, con cada hallazgo
 verificado contra el código, está en
 docs/01_arquitectura/auditorias/AUDITORIA_4_REVISIONES_2026-09-01.md.
 Ese documento NO manda sobre el Plan Maestro: es el expediente de evidencia.
 
 Lo siguiente en la cola, por orden de daño:
-1. TL-04 y TL-05 juntos (una migración pequeña): el portal de clientas devuelve
-   cuatro errores distinguibles y permite enumerar qué celulares son clientas de
-   un salón, sin tope. Ley 1581.
-2. TL-19: la interfaz nunca consulta get_my_entitlements(), así que un salón en
-   plan Básico ve módulos que no tiene, entra, y recibe una excepción de
-   PostgreSQL en crudo. Es bug, es UX y es venta perdida a la vez.
+1. TL-19 (paso 8.13): la interfaz nunca consulta get_my_entitlements(), así que
+   un salón en plan Básico ve módulos que no tiene, entra, y recibe una
+   excepción de PostgreSQL en crudo. Es bug, es UX y es venta perdida a la vez.
+2. TL-06 (paso 8.12): el PIN del portal es sha256 de una vuelta sobre 4 dígitos,
+   y 5 intentos errados bloquean a la clienta real sabiendo solo su celular.
+   Necesita pgcrypto.
 3. Paso 8.8: onboarding guiado "Primeros pasos".
 ```

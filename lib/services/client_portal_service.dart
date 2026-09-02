@@ -9,8 +9,12 @@ class ClientPortalService {
   const ClientPortalService();
 
   /// Verifica celular + PIN y devuelve el token de sesión. Lanza
-  /// [PostgrestException] con un mensaje ya listo para mostrar si el PIN es
-  /// incorrecto, si no hay PIN asignado, o si hay demasiados intentos.
+  /// [PostgrestException] con un mensaje ya listo para mostrar.
+  ///
+  /// Ese mensaje es **el mismo para todos los casos de fallo** —celular que no
+  /// es clienta, clienta sin PIN, PIN equivocado y clienta bloqueada— y así
+  /// tiene que seguir: distinguirlos permitía enumerar qué celulares son
+  /// clientas de un salón sin adivinar ningún PIN (TL-04, D-183, Ley 1581).
   Future<String> authenticate({
     required String tenantId,
     required String phone,
