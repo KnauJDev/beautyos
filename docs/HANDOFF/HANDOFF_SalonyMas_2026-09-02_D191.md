@@ -61,19 +61,38 @@ WhatsApp y cobrando aparte.
 
 ## 3. Lo que quedó a medias
 
-### 3.1 D-191 sin aplicar
+### 3.1 D-192 sin aplicar, y esta vez SI hay que desplegar
+
+Aqui ya no vale aplicar solo el SQL: las dos Edge Functions cambiaron. En este
+orden exacto -- primero la base de datos, y las funciones solo cuando la
+funcion que llaman ya exista:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\migrations\20260902140000_cobro_por_sede_etapa3a_d191.sql"
+powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\migrations\20260902160000_pago_de_sede_etapa3b_d192.sql"
 ```
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\sql\203_test_cobro_por_sede_etapa3a.sql"
+powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\sql\204_test_pago_de_sede_etapa3b.sql"
 ```
 
-**No hay que desplegar nada.** La migración es compatible hacia atrás a
-propósito: el parámetro nuevo lleva valor por defecto y la columna nueva va al
-final, así que las Edge Functions en producción siguen funcionando igual.
+```bash
+npx supabase functions deploy create-epayco-session
+```
+
+```bash
+npx supabase functions deploy epayco-webhook
+```
+
+### 3.2 🔴 El checkout de la aplicacion quedo obsoleto con D-188
+
+`epayco_checkout_service.dart` sigue ofreciendo un desplegable con **los tres
+planes retirados y sus precios viejos** ($160.000 / $200.000 / $240.000), y por
+defecto elige `profesional`, que ya no existe.
+
+**El cobro sale bien** -- el servidor calcula el monto y el plan retirado cae al
+plan real (D-159, D-160) -- **pero al dueno se le ensena un precio que no es el
+suyo**. Encontrado el 02-sep al construir D-192. Se arregla junto con la
+pantalla de sedes.
 
 ### 3.3 La pantalla pública nunca se vio renderizada
 
@@ -122,23 +141,26 @@ curl -s https://secure.epayco.co/validation/v1/reference/REF_PAYCO_REAL | python
 ## 5. Prompt para retomar
 
 ```
-Lee el HANDOFF más reciente en docs/HANDOFF/ (bloque D-188 a D-191: un solo plan
+Lee el HANDOFF más reciente en docs/HANDOFF/ (bloque D-188 a D-192: un solo plan
 "Todo Incluido" cobrado por sede, $150.000 de lista).
 
-Etapas 1 y 2 aplicadas y verificadas en producción. Etapa 3a (D-191) escrita y
-SIN APLICAR: migración 20260902140000 y control 203, ver apartado 3.1.
+Etapas 1, 2 y 3a aplicadas y verificadas. De la 3b, el SERVIDOR está hecho
+(D-192) y sin aplicar: migración 20260902160000, control 204 y las dos Edge
+Functions. Ver apartado 3.1, que esta vez SÍ lleva despliegue y tiene orden.
 
-Lo siguiente es la Etapa 3b, que es lo que de verdad cobra:
-1. `create-epayco-session` acepta `branchId` y cotiza con
-   `beautyos_calcular_cargo_sede` en vez de con la del negocio.
-2. `epayco-webhook` resuelve la sede desde la intención y activa
-   `branch_subscriptions` en vez de (o además de) la del negocio.
-3. Alertas de vencimiento por sede (hoy son por negocio, D-143).
-4. Pantalla en Configuración: lista de sedes con su estado y botón de pago,
+Lo que falta de la 3b:
+1. Arreglar `epayco_checkout_service.dart`, que quedó obsoleto con D-188: ofrece
+   los tres planes retirados con sus precios viejos. Ver apartado 3.2.
+2. Pantalla en Configuración: lista de sedes con su estado y botón de pago,
    consumiendo `get_branch_subscriptions()`, que ya existe y no la llama nadie.
-5. El tope de equipo pasa a contarse por sede.
+   El botón manda `branchId` a `create-epayco-session`, que ya lo acepta.
+3. Alertas de vencimiento por sede (hoy son por negocio, D-143).
+4. El tope de equipo pasa a contarse por sede (D-189 lo prometió "por sede" y
+   `create_team_invitation` cuenta el tenant entero).
 
-Ojo: la 3b toca `beautyos_procesar_evento_epayco`, que es el corazón del cobro
-(D-141, D-159, D-160) y está blindado por D-181 y D-182. Hacer un control SQL
-que compruebe que el ataque de TL-02 sigue cerrado DESPUÉS del cambio.
+Ojo con lo que NO hay que tocar: `beautyos_procesar_evento_epayco` se dejó
+intacta a propósito (D-192). El cobro por sede vive en
+`beautyos_procesar_pago_de_sede`, aparte, porque las reglas de monto son
+distintas: un prorrateo puede estar por debajo del piso de $10.000 que aquella
+exige.
 ```
