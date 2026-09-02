@@ -148,8 +148,8 @@ begin
   values (v_tenant, 'Servicio Control 200', 30, 30000, true)
   returning id into v_servicio;
 
-  insert into public.branch_services (tenant_id, branch_id, service_id, active)
-  values (v_tenant, v_branch, v_servicio, false);
+  insert into public.branch_services (tenant_id, branch_id, service_id, price, duration_minutes, active)
+  values (v_tenant, v_branch, v_servicio, 30000, 30, false);
 
   select exists (
     select 1 from public.services s
