@@ -1,8 +1,8 @@
-# HANDOFF Salón y Más — 2 de septiembre de 2026 ("Un solo plan por sede", D-188 a D-193)
+# HANDOFF Salón y Más — 2 de septiembre de 2026 ("Un solo plan por sede", D-188 a D-194)
 
-**Bloque documentado:** decisiones **D-188 a D-193** · Pasos **8.15 y 8.16** de la **FASE 8**.
+**Bloque documentado:** decisiones **D-188 a D-194** · Pasos **8.15 y 8.16** de la **FASE 8**.
 
-**Estado:** `flutter analyze` limpio (0/0) y **287 de 287 pruebas en verde**. **Las tres etapas de D-188 están cerradas y verificadas en producción.** El cobro por sede funciona de extremo a extremo: catálogo, suscripción por sede, cobro con prorrateo y pantalla.
+**Estado:** `flutter analyze` limpio (0/0) y **292 de 292 pruebas en verde**. **Las tres etapas de D-188 están cerradas y verificadas en producción.** El cobro por sede funciona de extremo a extremo: catálogo, suscripción por sede, cobro con prorrateo y pantalla.
 
 > El bloque anterior (D-181 a D-187, la auditoría de 4 revisiones y sus seis
 > bloqueadores) está en `docs/_archivo/handoffs/HANDOFF_SalonyMas_2026-09-01_D182.md`.
@@ -60,6 +60,31 @@ overrides de D-172.
 
 ---
 
+## 2-bis. Reportes consolidados, y quién ve qué (D-194)
+
+El dueño con dos locales ya puede ver su negocio entero: Reportes gana un
+selector *Esta sede / Todas las sedes*, con el desglose de cuánto puso cada una.
+
+**`get_tenant_reports_v3` llama a `get_branch_reports_v3` sede por sede y suma**,
+en vez de duplicar sus 250 líneas. La lógica de qué es una venta vive en un solo
+sitio. El precio de esa decisión es que **las dos funciones quedan acopladas por
+el nombre de cada columna**: si alguien renombra una en la de una sede, la
+consolidada sumaría **cero en silencio**. El Control 205 compara las dos listas
+de columnas justamente para cazar eso — **no lo quites**.
+
+### Y una corrección que conviene tener escrita
+
+**Solo el `tenant_owner` ve todas las sedes sin que nadie se las asigne.**
+`beautyos_resolve_branch_access` lo exceptúa por rol; **el `admin` no** — necesita
+su fila en `branch_memberships`, gestionable desde Usuarios desde D-179. Así que
+un admin recibe el consolidado de **sus** sedes, no del negocio entero.
+
+**El estado de pago no influye en el acceso ni en los reportes.** Una sede en
+mora sigue apareciendo: sus ventas ocurrieron. Cobrar y reportar son dos cosas
+distintas.
+
+---
+
 ## 3. Lo que quedó a medias
 
 ### 3.1 Las alertas de vencimiento siguen siendo por negocio
@@ -81,7 +106,8 @@ comercial que el código no cumple.
 `public_plans_page.dart` se rediseñó entera para el plan único y **compila y
 pasa las pruebas, pero nadie la ha visto con los ojos**: no se pudo levantar el
 servidor web en esas sesiones. Para una página comercial, eso es justo lo que el
-analizador no dice. Lo mismo vale para la tarjeta de sedes de D-193.
+analizador no dice. Lo mismo vale para la tarjeta de sedes de D-193 y para el
+desglose por sede de D-194.
 
 ### 3.4 El candado 2 de D-181 sigue sin ejercitarse
 
@@ -108,6 +134,8 @@ curl -s https://secure.epayco.co/validation/v1/reference/REF_PAYCO_REAL | python
 - **No darle a cada sede su propia fecha de corte.** Un salón, una fecha de
   cobro (D-191). Tres locales con tres cobros en tres días distintos es cómo se
   pierde la confianza del dueño.
+- **No quitar el caso 2 del Control 205.** Es lo único que impide que un
+  cambio de nombre de columna deje el consolidado sumando cero en silencio.
 - **No poner `verify_jwt = true` en `epayco-webhook`.** Lo llama ePayco
   servidor-a-servidor y se autentica con la firma SHA-256 (D-177).
 
@@ -122,7 +150,7 @@ Lee el HANDOFF más reciente en docs/HANDOFF/ (bloque D-188 a D-193: un solo pla
 Las TRES etapas de D-188 están cerradas y verificadas en producción. El cobro
 por sede funciona de extremo a extremo: catálogo, branch_subscriptions, cobro
 con prorrateo hasta la fecha de corte del negocio, y la pantalla en
-Configuración.
+Configuración. D-194 añadió los reportes consolidados de todas las sedes.
 
 Lo que queda, por orden de daño:
 1. Alertas de vencimiento por sede (apartado 3.1). Hoy una sede secundaria que
