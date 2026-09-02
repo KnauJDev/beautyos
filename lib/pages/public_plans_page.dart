@@ -177,11 +177,15 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Tarjetas de Planes
-                        if (isMobile)
-                          _buildMobilePlansList(plans)
-                        else
-                          _buildDesktopPlansGrid(plans),
+                        // La tarjeta unica del plan (D-188). Antes habia
+                        // tres columnas comparativas; con un solo plan, una
+                        // tabla comparando contra uno mismo no dice nada.
+                        _buildPlanHero(
+                          plans.isEmpty
+                              ? PublicPlansService.fallbackPlans.single
+                              : plans.first,
+                          isMobile,
+                        ),
 
                         const SizedBox(height: 48),
 
@@ -190,8 +194,8 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
 
                         const SizedBox(height: 56),
 
-                        // Tabla Comparativa Detallada
-                        _buildDetailedComparison(plans),
+                        // Comparativa contra el incumbente
+                        _buildComparativaAgendaPro(),
 
                         const SizedBox(height: 56),
 
@@ -215,386 +219,302 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
   }
 
   Widget _buildHeroHeader(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 900;
+
     return Container(
       width: double.infinity,
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 48),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.brandTint,
-              borderRadius: BorderRadius.circular(AppRadius.pill),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.card_giftcard_outlined, size: 16, color: AppColors.brandDeep),
-                const SizedBox(width: 8),
-                Text(
-                  '21 DÍAS DE PRUEBA GRATIS · SIN TARJETA DE CRÉDITO',
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 20 : 32,
+        vertical: isMobile ? 40 : 64,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.brandSurface, Colors.white],
+        ),
+      ),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 760),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 7,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.brandTint,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  'UN SOLO PLAN. SIN LETRA MENUDA.',
                   style: TextStyle(
-                    color: AppColors.brandDeep,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
-                    letterSpacing: 0.5,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                    color: AppColors.brandDark,
                   ),
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 18),
-          Text(
-            'Planes simples y transparentes\npara hacer crecer tu centro de belleza',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.w800,
-              color: AppColors.brandDeep,
-              height: 1.2,
-            ),
-          ),
-          const SizedBox(height: 14),
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 680),
-            child: const Text(
-              'Agenda inteligente, tickets de venta, control de clientes, comisiones e inventario '
-              'diseñados exclusivamente para centros de estética, peluquerías, barberías y spas en Colombia.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 15,
-                color: AppColors.textSecondary,
-                height: 1.5,
               ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Wrap(
-            spacing: 16,
-            runSpacing: 10,
-            alignment: WrapAlignment.center,
-            children: const [
-              _HeroCheckItem(label: 'Acompañamiento humano'),
-              _HeroCheckItem(label: 'Facturación en pesos COP'),
-              _HeroCheckItem(label: 'Sin permanencia mínima'),
+              const SizedBox(height: 20),
+              Text(
+                'Todo lo que tu salon necesita,\nen un solo plan por sede',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: isMobile ? 28 : 40,
+                  height: 1.2,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.brandDeep,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Agenda, caja, comisiones, inventario, reportes, fotos de '
+                'trabajos, resenas y tu pagina web publica. Todo, desde el '
+                'primer dia. Pagas por sede, no por funciones.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  height: 1.5,
+                  color: AppColors.textSecondary,
+                ),
+              ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDesktopPlansGrid(List<PublicPlan> plans) {
-    return IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: plans.map((plan) {
-          return Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: _buildPlanCard(plan),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _buildMobilePlansList(List<PublicPlan> plans) {
-    return Column(
-      children: plans.map((plan) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 20),
-          child: _buildPlanCard(plan),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildPlanCard(PublicPlan plan) {
-    final isPopular = plan.isPopular;
-    final isElite = plan.isElite;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(
-          color: isPopular ? AppColors.brand : AppColors.border,
-          width: isPopular ? 2 : 1,
         ),
-        boxShadow: isPopular
-            ? [
-                BoxShadow(
-                  color: AppColors.brand.withValues(alpha: 0.12),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                ),
-              ]
-            : null,
       ),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          // Badge "MÁS ELEGIDO" o "ÉLITE"
-          if (isPopular || isElite)
-            Positioned(
-              top: -12,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isPopular ? AppColors.brand : AppColors.brandDeep,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
+    );
+  }
+
+  /// La tarjeta unica del plan (D-188).
+  ///
+  /// Sustituye a las tres columnas comparativas: cuando solo hay un plan, una
+  /// tabla de comparacion contra uno mismo no dice nada. Lo que hay que
+  /// responder aqui es "cuanto" y "que entra", en ese orden.
+  Widget _buildPlanHero(PublicPlan plan, bool isMobile) {
+    final lista = plan.priceCop;
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 620),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppColors.brand, width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.brand.withValues(alpha: 0.10),
+                blurRadius: 32,
+                offset: const Offset(0, 12),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.brand,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(22),
                   ),
-                  child: Text(
-                    isPopular ? '★ MÁS ELEGIDO' : '👑 PLAN ÉLITE',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 11,
-                      letterSpacing: 0.5,
-                    ),
+                ),
+                child: const Text(
+                  'PRECIO PIONERO, SOLO PARA LOS PRIMEROS 25 SALONES',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.6,
                   ),
                 ),
               ),
-            ),
-
-          Padding(
-            padding: const EdgeInsets.all(28),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 6),
-                // Nombre del Plan
-                Text(
-                  plan.name,
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: isPopular ? AppColors.brand : AppColors.brandDeep,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  _getPlanTagline(plan.code),
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                    height: 1.3,
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Precio
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
+              Padding(
+                padding: EdgeInsets.all(isMobile ? 24 : 36),
+                child: Column(
                   children: [
                     Text(
-                      plan.formattedPrice,
+                      plan.name,
                       style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w900,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
                         color: AppColors.brandDeep,
                       ),
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'COP / ${plan.periodLabel}',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            '\$',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.brand,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          '80.000',
+                          style: TextStyle(
+                            fontSize: isMobile ? 46 : 58,
+                            height: 1,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.brand,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'por sede, al mes',
+                      style: TextStyle(
+                        fontSize: 15,
                         color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      children: [
+                        Text(
+                          '\$${_milesConPunto(lista)}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: AppColors.textMuted,
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.successTint,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: const Text(
+                            'Ahorras 33% de por vida',
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.success,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 28),
+                    const Divider(),
+                    const SizedBox(height: 20),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Cero limites',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.brandDeep,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ..._incluido.map(
+                      (t) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(
+                              Icons.check_circle,
+                              size: 18,
+                              color: AppColors.success,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                t,
+                                style: const TextStyle(
+                                  fontSize: 14.5,
+                                  height: 1.4,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: () => _navigateToRegister(plan.code),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                        ),
+                        child: const Text(
+                          'Empezar mi prueba de 21 dias',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Sin tarjeta de credito. Te acompanamos a configurarlo.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: AppColors.textMuted,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
-                const Divider(height: 1, color: AppColors.border),
-                const SizedBox(height: 20),
-
-                // Resumen de límites clave
-                _buildLimitHighlightRow(
-                  icon: Icons.storefront_outlined,
-                  text: plan.branchesLabel,
-                  isBold: true,
-                ),
-                const SizedBox(height: 10),
-                _buildLimitHighlightRow(
-                  icon: Icons.people_outline,
-                  text: plan.teamMembersLabel,
-                  isBold: true,
-                ),
-                const SizedBox(height: 18),
-                const Divider(height: 1, color: AppColors.border),
-                const SizedBox(height: 18),
-
-                // Lista de características
-                ..._buildPlanFeatureItems(plan),
-
-                const SizedBox(height: 28),
-                const Spacer(),
-
-                // Botón CTA
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: isPopular
-                      ? FilledButton(
-                          onPressed: () => _navigateToRegister(plan.code),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: AppColors.brand,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.control),
-                            ),
-                          ),
-                          child: const Text(
-                            'Comenzar prueba gratis',
-                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-                          ),
-                        )
-                      : OutlinedButton(
-                          onPressed: () => _navigateToRegister(plan.code),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.brandDeep,
-                            side: const BorderSide(color: AppColors.border, width: 1.5),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.control),
-                            ),
-                          ),
-                          child: const Text(
-                            'Comenzar prueba gratis',
-                            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-                          ),
-                        ),
-                ),
-                const SizedBox(height: 8),
-                Center(
-                  child: Text(
-                    '21 días gratis · Cancela cuando quieras',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildLimitHighlightRow({
-    required IconData icon,
-    required String text,
-    bool isBold = false,
-  }) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: AppColors.brandTintSoft,
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Icon(icon, size: 16, color: AppColors.brand),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: isBold ? FontWeight.w700 : FontWeight.w500,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  static const List<String> _incluido = [
+    'Estilistas y cuentas de equipo ilimitados',
+    'Clientas, citas y tickets sin tope',
+    'Caja, cobros, abonos y comisiones automaticas',
+    'Inventario, compras y gastos',
+    'Reportes financieros y arqueo de caja',
+    'Fotos de trabajos, sin limite de fotos',
+    'Resenas verificadas de tus clientas',
+    'Tu pagina web publica con reserva en linea',
+  ];
 
-  List<Widget> _buildPlanFeatureItems(PublicPlan plan) {
-    final items = _getPlanKeyFeatures(plan.code);
-    return items.map((item) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(
-              Icons.check_circle_rounded,
-              color: AppColors.stateConfirmed,
-              size: 18,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                item,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textStrong,
-                  height: 1.3,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }).toList();
-  }
-
-  String _getPlanTagline(String code) {
-    switch (code.toLowerCase()) {
-      case 'basico':
-        return 'Para salones o barberías independientes que buscan orden y control total.';
-      case 'business':
-        return 'Para centros en crecimiento que necesitan controlar stock, compras y rentabilidad.';
-      case 'profesional':
-        return 'Para marcas consolidadas y cadenas multisede con máxima visibilidad tecnológica.';
-      default:
-        return 'Gestión integral para tu negocio.';
+  /// 120000 -> "120.000". Sin dependencias: es el unico sitio de esta pantalla
+  /// que formatea dinero y no vale la pena traerse el formateador entero.
+  String _milesConPunto(int valor) {
+    final digitos = valor.toString();
+    final buffer = StringBuffer();
+    for (var i = 0; i < digitos.length; i++) {
+      final restantes = digitos.length - i;
+      buffer.write(digitos[i]);
+      if (restantes > 1 && restantes % 3 == 1) buffer.write('.');
     }
+    return buffer.toString();
   }
-
-  List<String> _getPlanKeyFeatures(String code) {
-    switch (code.toLowerCase()) {
-      case 'basico':
-        return [
-          'Agenda digital y tickets de cobro',
-          'Ficha de clientes e historial',
-          'Enlace web de reservas sin cuenta',
-          'Cálculo automático de comisiones',
-          'Cierre diario de caja por sede',
-        ];
-      case 'business':
-        return [
-          'Todo lo del plan Básico',
-          'Control completo de inventario y stock',
-          'Registro de compras y gastos operativos',
-          'Alarmas automáticas de stock bajo',
-          'Reportes financieros ampliados por estilista',
-        ];
-      case 'profesional':
-        return [
-          'Todo lo del plan Business',
-          'Galería de fotos de trabajo por estilista',
-          'Página pública de reseñas verificadas',
-          'Herramientas de IA y publicación social',
-          'Soporte prioritario y onboarding VIP',
-        ];
-      default:
-        return ['Gestión y agenda'];
-    }
-  }
-
   Widget _buildTrialGuaranteeBanner(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(28),
@@ -645,155 +565,202 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
     );
   }
 
-  Widget _buildDetailedComparison(List<PublicPlan> plans) {
-    return Container(
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Comparativa detallada de características',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Revisa qué incluye cada nivel para elegir el plan ideal para tu salón.',
-            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: 24),
-          _buildComparisonRow('Sedes incluidas', '1', 'Hasta 3', 'Ilimitadas'),
-          _buildComparisonRow('Cuentas de equipo', 'Hasta 5', 'Hasta 15', 'Ilimitadas'),
-          _buildComparisonRow('Agenda y citas ilimitadas', '✓', '✓', '✓'),
-          _buildComparisonRow('Enlace público de reservas', '✓', '✓', '✓'),
-          _buildComparisonRow('Tickets y cobros diarios', '✓', '✓', '✓'),
-          _buildComparisonRow('Fichas y saldo de clientes', '✓', '✓', '✓'),
-          _buildComparisonRow('Inventario, compras y gastos', '—', '✓', '✓'),
-          _buildComparisonRow('Reportes financieros avanzados', '—', '✓', '✓'),
-          _buildComparisonRow('Fotos de trabajos por estilista', '—', '—', '✓'),
-          _buildComparisonRow('Reseñas públicas verificadas', '—', '—', '✓'),
-          _buildComparisonRow('Herramientas de IA / Redes', '—', '—', '✓'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildComparisonRow(String feature, String basico, String business, String profesional) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.border, width: 0.5)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: Text(
-              feature,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              basico,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                color: basico == '—' ? AppColors.textMuted : AppColors.brandDeep,
-                fontWeight: basico == '✓' ? FontWeight.w900 : FontWeight.w600,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              business,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                color: business == '—' ? AppColors.textMuted : AppColors.brand,
-                fontWeight: business == '✓' ? FontWeight.w900 : FontWeight.w700,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              profesional,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                color: profesional == '—' ? AppColors.textMuted : AppColors.brandDeep,
-                fontWeight: profesional == '✓' ? FontWeight.w900 : FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFaqSection() {
+  /// La comparacion que de verdad importa en la primera visita (D-188).
+  ///
+  /// Los precios de AgendaPro salen del benchmarking del 28-jul, hecho con una
+  /// cuenta de prueba real, no de su publicidad. **Su plan de entrada es mas
+  /// barato que el nuestro**, y se ensena igual: el que trae lo mismo que
+  /// nosotros cuesta mas de cuatro veces. Ensenar las dos cifras es mas
+  /// honesto, y mas convincente, que ensenar solo la que nos favorece.
+  Widget _buildComparativaAgendaPro() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Preguntas frecuentes',
+        Text(
+          'Comparalo con lo que hay',
           style: TextStyle(
-            fontSize: 22,
+            fontSize: 24,
             fontWeight: FontWeight.w800,
-            color: AppColors.textPrimary,
+            color: AppColors.brandDeep,
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Precios de AgendaPro en Colombia, tomados de una cuenta de prueba '
+          'real en julio de 2026.',
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+        ),
+        const SizedBox(height: 20),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            children: [
+              _filaComparativa(
+                titulo: 'AgendaPro, plan de entrada',
+                precio: '\$99.000',
+                detalle: 'Sin inventario ni reportes avanzados.',
+                destacada: false,
+              ),
+              const Divider(height: 1),
+              _filaComparativa(
+                titulo: 'AgendaPro, plan completo',
+                precio: '\$510.000',
+                detalle: 'Lo mas parecido a lo que aqui viene de serie.',
+                destacada: false,
+              ),
+              const Divider(height: 1),
+              _filaComparativa(
+                titulo: 'Salon y Mas, Todo Incluido',
+                precio: '\$120.000',
+                detalle:
+                    'Todo lo de arriba, por sede. \$80.000 si entras como pionero.',
+                destacada: true,
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 16),
-        _buildFaqTile(
-          question: '¿Cómo funciona la prueba gratis de 21 días?',
-          answer:
-              'Al registrar tu negocio, tu solicitud entra a revisión humana. '
-              'Tus 21 días de prueba empiezan a contar únicamente cuando te contactamos '
-              'y activamos tu cuenta. Tienes acceso completo para probar todo el potencial de Salón y Más sin prisas.',
-        ),
-        _buildFaqTile(
-          question: '¿Necesito ingresar tarjeta de crédito para registrarme?',
-          answer:
-              'No. No te solicitamos tarjeta de crédito ni datos bancarios para comenzar tu prueba. '
-              'Solo necesitas los datos básicos de tu negocio.',
-        ),
-        _buildFaqTile(
-          question: '¿Cómo pago mi suscripción al terminar la prueba?',
-          answer:
-              'Aceptamos todos los medios de pago locales en Colombia (PSE, tarjetas débito/crédito, '
-              'y transferencias) a través de pasarela de pago segura con facturación transparente.',
-        ),
-        _buildFaqTile(
-          question: '¿Puedo cambiar de plan o cancelar en cualquier momento?',
-          answer:
-              'Sí. No existe contrato de permanencia mínima. Puedes subir o ajustar tu plan '
-              'a medida que tu equipo o tus sedes crezcan.',
-        ),
-        _buildFaqTile(
-          question: '¿Qué es el beneficio de "Pionero"?',
-          answer:
-              'Los primeros 25 centros de belleza que se registran y activan con Salón y Más '
-              'reciben una tarifa especial de Pionero con un 50% de descuento vitalicio en su suscripción.',
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            Icon(Icons.info_outline, size: 16, color: AppColors.textMuted),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Y una diferencia que no cabe en la tabla: cuando algo se traba '
+                'un sabado a las 3 de la tarde, aqui te contesta por WhatsApp '
+                'quien hizo el programa, en tu misma hora.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
   }
 
+  Widget _filaComparativa({
+    required String titulo,
+    required String precio,
+    required String detalle,
+    required bool destacada,
+  }) {
+    return Container(
+      color: destacada ? AppColors.brandTintSoft : Colors.transparent,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  titulo,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: destacada ? FontWeight.w800 : FontWeight.w600,
+                    color: destacada
+                        ? AppColors.brandDeep
+                        : AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  detalle,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Text(
+            precio,
+            style: TextStyle(
+              fontSize: destacada ? 22 : 18,
+              fontWeight: FontWeight.w800,
+              color: destacada ? AppColors.brand : AppColors.textStrong,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  Widget _buildFaqSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Preguntas frecuentes',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w800,
+            color: AppColors.brandDeep,
+          ),
+        ),
+        const SizedBox(height: 20),
+        _buildFaqTile(
+          question: 'De verdad, no hay modulos bloqueados?',
+          answer:
+              'No hay. Antes teniamos tres planes y cada uno escondia cosas: '
+              'el pequeno se quedaba sin inventario, sin reportes y sin fotos. '
+              'Nos parecio mezquino y lo quitamos. Hoy pagas por sede y tienes '
+              'el programa completo desde el primer dia.',
+        ),
+        _buildFaqTile(
+          question: 'Que pasa si abro una segunda sede?',
+          answer:
+              'Puedes crearla cuando quieras. Cada sede activa suma su cuota '
+              'mensual, asi que solo pagas mas cuando tu negocio ya crecio. Si '
+              'cierras una sede, dejas de pagarla.',
+        ),
+        _buildFaqTile(
+          question: 'Hay limite de estilistas, de clientas o de fotos?',
+          answer:
+              'No. Ni de estilistas, ni de cuentas de equipo, ni de clientas, '
+              'ni de citas, ni de fotos de trabajos. Lo que se cobra es la '
+              'sede, no lo que hagas dentro de ella.',
+        ),
+        _buildFaqTile(
+          question: 'Que es el precio pionero y hasta cuando dura?',
+          answer:
+              'Los primeros 25 salones pagan 80.000 por sede en vez de '
+              '120.000, y ese precio se les congela mientras sigan activos. '
+              'No son seis meses: es de por vida.',
+        ),
+        _buildFaqTile(
+          question: 'Tengo que poner una tarjeta para probarlo?',
+          answer:
+              'No. La prueba de 21 dias no pide tarjeta. Y antes de la prueba '
+              'hablamos contigo: no dejamos entrar a nadie sin acompanarlo a '
+              'configurar sus servicios, su equipo y su horario.',
+        ),
+        _buildFaqTile(
+          question: 'Como pago y desde donde?',
+          answer:
+              'Por ePayco, con PSE, Nequi, Daviplata o tarjeta, desde la misma '
+              'aplicacion. La factura queda registrada en tu cuenta.',
+        ),
+        _buildFaqTile(
+          question: 'Y si quiero irme?',
+          answer:
+              'Dejas de pagar y ya. No hay clausula de permanencia ni multa. '
+              'Tus datos son tuyos y te los entregamos si los pides.',
+        ),
+      ],
+    );
+  }
   Widget _buildFaqTile({required String question, required String answer}) {
     return Card(
       elevation: 0,
@@ -894,27 +861,3 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
   }
 }
 
-class _HeroCheckItem extends StatelessWidget {
-  const _HeroCheckItem({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Icon(Icons.check_circle_outline, size: 16, color: AppColors.stateConfirmed),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
-        ),
-      ],
-    );
-  }
-}
