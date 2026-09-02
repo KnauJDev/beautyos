@@ -1,8 +1,8 @@
-# HANDOFF Salón y Más — 2 de septiembre de 2026 ("Un solo plan por sede", D-188 a D-192)
+# HANDOFF Salón y Más — 2 de septiembre de 2026 ("Un solo plan por sede", D-188 a D-193)
 
-**Bloque documentado:** decisiones **D-188 a D-192** · Pasos **8.15 y 8.16** de la **FASE 8**.
+**Bloque documentado:** decisiones **D-188 a D-193** · Pasos **8.15 y 8.16** de la **FASE 8**.
 
-**Estado:** `flutter analyze` limpio (0/0) y **282 de 282 pruebas en verde**. Etapas 1, 2 y 3a **aplicadas y verificadas en producción**. Etapa 3b: **el servidor está hecho y pendiente de aplicar; falta la pantalla**.
+**Estado:** `flutter analyze` limpio (0/0) y **287 de 287 pruebas en verde**. **Las tres etapas de D-188 están cerradas y verificadas en producción.** El cobro por sede funciona de extremo a extremo: catálogo, suscripción por sede, cobro con prorrateo y pantalla.
 
 > El bloque anterior (D-181 a D-187, la auditoría de 4 revisiones y sus seis
 > bloqueadores) está en `docs/_archivo/handoffs/HANDOFF_SalonyMas_2026-09-01_D182.md`.
@@ -48,67 +48,42 @@ cinco visitas a salones reales para repartir 15 casillas, y ya no hay casillas.
 | **1** | Catálogo de un solo plan, capacidades abiertas, pantalla pública | ✅ **Aplicada y verificada** (D-188, D-189) |
 | **2** | Suscripción por sede: `branch_subscriptions` | ✅ **Aplicada y verificada** (D-190) |
 | **3a** | `branch_id` en las intenciones de pago + cálculo del cargo por sede | ✅ **Aplicada y verificada** (D-191) |
-| **3b** | Checkout, webhook, alertas y pantalla de pago | 🔄 **Servidor hecho** (D-192), pendiente de aplicar. Faltan pantalla y alertas |
+| **3b** | Checkout y webhook por sede, y la pantalla de pago | ✅ **Cerrada** (D-192, D-193) |
 
-### 🔴 Hasta que la 3b esté hecha no se puede vender la segunda sede
+### Ya se puede vender la segunda sede
 
-Hoy un negocio paga **una** suscripción. Una sede nueva nace `pending` y **la
-activa a mano el dueño de la plataforma** con `platform_set_branch_subscription`,
-que es como se va a vender en la práctica las primeras semanas: hablando por
-WhatsApp y cobrando aparte.
+Una sede nueva nace `pending`, aparece en Configuración con su estado y su
+botón, y al pagarla se activa sola con el prorrateo hasta la fecha de corte del
+negocio. El dueño de la plataforma **sigue pudiendo activarla a mano** con
+`platform_set_branch_subscription` para casos negociados, igual que los
+overrides de D-172.
 
 ---
 
 ## 3. Lo que quedó a medias
 
-### 3.1 D-192 sin aplicar, y esta vez SI hay que desplegar
+### 3.1 Las alertas de vencimiento siguen siendo por negocio
 
-Aqui ya no vale aplicar solo el SQL: las dos Edge Functions cambiaron. En este
-orden exacto -- primero la base de datos, y las funciones solo cuando la
-funcion que llaman ya exista:
+`send-subscription-expiry-alerts` (D-143) avisa a los 10, 5 y 3 días mirando
+`tenant_subscriptions`. Una sede secundaria que se atrase **no genera aviso**.
+No es urgente mientras no haya salones con dos sedes pagando, pero el día que
+los haya, el primero se enterará tarde.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\migrations\20260902160000_pago_de_sede_etapa3b_d192.sql"
-```
+### 3.2 El tope de equipo sigue siendo por NEGOCIO, no por sede
 
-```powershell
-powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\sql\204_test_pago_de_sede_etapa3b.sql"
-```
-
-```bash
-npx supabase functions deploy create-epayco-session
-```
-
-```bash
-npx supabase functions deploy epayco-webhook
-```
-
-### 3.2 🔴 El checkout de la aplicacion quedo obsoleto con D-188
-
-`epayco_checkout_service.dart` sigue ofreciendo un desplegable con **los tres
-planes retirados y sus precios viejos** ($160.000 / $200.000 / $240.000), y por
-defecto elige `profesional`, que ya no existe.
-
-**El cobro sale bien** -- el servidor calcula el monto y el plan retirado cae al
-plan real (D-159, D-160) -- **pero al dueno se le ensena un precio que no es el
-suyo**. Encontrado el 02-sep al construir D-192. Se arregla junto con la
-pantalla de sedes.
+`create_team_invitation` cuenta las cuentas del tenant entero. La promesa de
+*"10 por sede"* (D-189) **no es cierta para multi-sede**. Hoy juega a favor del
+cliente —tiene menos de lo que se le prometió, no más— pero es una promesa
+comercial que el código no cumple.
 
 ### 3.3 La pantalla pública nunca se vio renderizada
 
 `public_plans_page.dart` se rediseñó entera para el plan único y **compila y
 pasa las pruebas, pero nadie la ha visto con los ojos**: no se pudo levantar el
 servidor web en esas sesiones. Para una página comercial, eso es justo lo que el
-analizador no dice.
+analizador no dice. Lo mismo vale para la tarjeta de sedes de D-193.
 
-### 3.4 El tope de equipo es por NEGOCIO, no por sede
-
-`create_team_invitation` cuenta las cuentas del tenant entero. La promesa de
-*"10 por sede"* (D-189) **no es cierta para multi-sede** hasta que se arregle.
-Va con la 3b. Hoy no perjudica a nadie porque la segunda sede tampoco se puede
-vender.
-
-### 3.5 El candado 2 de D-181 sigue sin ejercitarse
+### 3.4 El candado 2 de D-181 sigue sin ejercitarse
 
 La comparación de `x_cust_id_cliente` no se ha probado contra una transacción
 real. En el próximo pago:
@@ -141,26 +116,27 @@ curl -s https://secure.epayco.co/validation/v1/reference/REF_PAYCO_REAL | python
 ## 5. Prompt para retomar
 
 ```
-Lee el HANDOFF más reciente en docs/HANDOFF/ (bloque D-188 a D-192: un solo plan
+Lee el HANDOFF más reciente en docs/HANDOFF/ (bloque D-188 a D-193: un solo plan
 "Todo Incluido" cobrado por sede, $150.000 de lista).
 
-Etapas 1, 2 y 3a aplicadas y verificadas. De la 3b, el SERVIDOR está hecho
-(D-192) y sin aplicar: migración 20260902160000, control 204 y las dos Edge
-Functions. Ver apartado 3.1, que esta vez SÍ lleva despliegue y tiene orden.
+Las TRES etapas de D-188 están cerradas y verificadas en producción. El cobro
+por sede funciona de extremo a extremo: catálogo, branch_subscriptions, cobro
+con prorrateo hasta la fecha de corte del negocio, y la pantalla en
+Configuración.
 
-Lo que falta de la 3b:
-1. Arreglar `epayco_checkout_service.dart`, que quedó obsoleto con D-188: ofrece
-   los tres planes retirados con sus precios viejos. Ver apartado 3.2.
-2. Pantalla en Configuración: lista de sedes con su estado y botón de pago,
-   consumiendo `get_branch_subscriptions()`, que ya existe y no la llama nadie.
-   El botón manda `branchId` a `create-epayco-session`, que ya lo acepta.
-3. Alertas de vencimiento por sede (hoy son por negocio, D-143).
-4. El tope de equipo pasa a contarse por sede (D-189 lo prometió "por sede" y
-   `create_team_invitation` cuenta el tenant entero).
+Lo que queda, por orden de daño:
+1. Alertas de vencimiento por sede (apartado 3.1). Hoy una sede secundaria que
+   se atrase no avisa a nadie.
+2. El tope de equipo por sede (apartado 3.2). D-189 lo prometió "por sede" y
+   create_team_invitation cuenta el tenant entero.
+3. Mirar con los ojos la pantalla pública de planes y la tarjeta de sedes
+   (apartado 3.3). Compilan y pasan pruebas; nadie las ha visto.
 
-Ojo con lo que NO hay que tocar: `beautyos_procesar_evento_epayco` se dejó
-intacta a propósito (D-192). El cobro por sede vive en
-`beautyos_procesar_pago_de_sede`, aparte, porque las reglas de monto son
-distintas: un prorrateo puede estar por debajo del piso de $10.000 que aquella
-exige.
+Y fuera de esto, del Plan Maestro: la Fase 3 tiene dos casillas de 👤 abiertas
+(3.2 consultar a un contador sobre DIAN e IVA, y 3.4 subir Supabase a Pro).
+
+Ojo con lo que NO hay que tocar: beautyos_procesar_evento_epayco se dejó intacta
+a propósito (D-192). El cobro por sede vive aparte, en
+beautyos_procesar_pago_de_sede, porque las reglas de monto son distintas: un
+prorrateo puede estar por debajo del piso de $10.000 que aquella exige.
 ```

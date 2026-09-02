@@ -26,6 +26,7 @@ import '../services/stylists_service.dart';
 import '../services/tenant_cover_upload_service.dart';
 import '../services/tenant_logo_upload_service.dart';
 import '../services/tenant_subscription_service.dart';
+import '../widgets/sedes_suscripcion_card.dart';
 import '../services/app_version_service.dart';
 import '../widgets/app_widgets.dart';
 import '../widgets/create_branch_dialog.dart';
@@ -718,6 +719,13 @@ class _SubscriptionSettingsCardState extends State<_SubscriptionSettingsCard> {
                     ),
                   ),
                 ),
+
+                // Las sedes con su estado de pago (D-193). Va aquí dentro y no
+                // como tarjeta aparte para reutilizar la suscripción que esta
+                // pantalla ya cargó, en vez de pedirla dos veces -- y porque es
+                // donde el dueño ya está mirando el dinero.
+                const SizedBox(height: 20),
+                SedesSuscripcionCard(subscription: sub),
               ],
             ),
           ),

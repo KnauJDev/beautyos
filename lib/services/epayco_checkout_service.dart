@@ -52,8 +52,11 @@ class EpaycoCheckoutService {
       );
     }
 
-    final planName = selectedPlanName ?? subscription.planName ?? 'Profesional';
-    final planCode = selectedPlanCode ?? subscription.planCode ?? 'profesional';
+    // D-193: el plan por defecto es el unico que queda. 'profesional' se
+    // retiro con D-188 y seguia aqui de respaldo, ofreciendo un plan que ya
+    // no existe.
+    final planName = selectedPlanName ?? subscription.planName ?? 'Todo Incluido';
+    final planCode = selectedPlanCode ?? subscription.planCode ?? 'pro';
     final tenantName = subscription.tenantName;
     final testFlag = isTest ?? defaultTestMode;
 
@@ -76,239 +79,135 @@ class EpaycoCheckoutService {
     return Uri.https('checkout.epayco.co', '/checkout.php', queryParams);
   }
 
-  static String _formatCOP(int value) {
-    final digits = value.toString();
-    final buffer = StringBuffer();
-    for (int i = 0; i < digits.length; i++) {
-      final pos = digits.length - i;
-      buffer.write(digits[i]);
-      if (pos > 1 && pos % 3 == 1) {
-        buffer.write('.');
-      }
-    }
-    return '\$$buffer COP';
-  }
 
   /// Muestra el selector interactivo de planes con cálculo de descuento Pionero
   /// y abre el Smart Checkout V2 de ePayco mediante sesión segura generada en backend.
+  /// Abre el checkout de ePayco para la suscripción del negocio o para UNA sede.
+  ///
+  /// **Qué se quitó de aquí, y por qué importa (D-193).** Hasta hoy esta
+  /// función abría un desplegable con los tres planes —Básico, Business,
+  /// Profesional— y calculaba el precio en el cliente con las cifras escritas a
+  /// mano: 160.000, 200.000 y 240.000.
+  ///
+  /// D-188 retiró esos tres planes el 01-sep y **esto se quedó como estaba**. El
+  /// cobro salía bien, porque el monto lo calcula el servidor y un plan
+  /// retirado cae al plan real (D-159, D-160), pero **al dueño se le enseñaba un
+  /// precio que no era el suyo** y se le ofrecían planes que ya no existen.
+  ///
+  /// **Y por eso ahora no se muestra ninguna cifra calculada aquí.** El monto
+  /// depende del ciclo —mes completo, renovación anticipada, o el prorrateo de
+  /// una sede que se activa a mitad de mes (D-191)— y esa cuenta vive en el
+  /// servidor, en un solo sitio. Repetirla en el cliente es cómo nació este
+  /// problema. El importe exacto lo enseña ePayco antes de cobrar.
   Future<void> iniciarPago(
     BuildContext context,
     TenantSubscriptionStatus subscription, {
     VoidCallback? onPaymentLaunched,
+
+    /// Si viene, se paga ESA sede con su prorrateo (D-191, D-192). Si no, es la
+    /// suscripción del negocio, como siempre.
+    String? branchId,
+    String? branchName,
   }) async {
-    String chosenPlanCode = subscription.planCode ?? 'profesional';
-    if (chosenPlanCode.isEmpty) chosenPlanCode = 'profesional';
+    final esSede = branchId != null && branchId.isNotEmpty;
 
-    int calculatePlanPrice(String planCode) {
-      if (subscription.priceCop != null &&
-          subscription.priceCop! > 0 &&
-          planCode == subscription.planCode) {
-        return subscription.priceCop!;
-      }
-
-      int base = 240000;
-      if (planCode == 'basico') base = 160000;
-      if (planCode == 'business') base = 200000;
-
-      if (subscription.isFounder) {
-        return (base * 0.5).round();
-      }
-      if (subscription.discountPercent != null && subscription.discountPercent! > 0) {
-        return (base * (1.0 - (subscription.discountPercent! / 100.0))).round();
-      }
-      return base;
-    }
-
-    final result = await showDialog<Map<String, dynamic>>(
+    final confirmado = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setModalState) {
-          final currentPrice = calculatePlanPrice(chosenPlanCode);
-          final priceText = '${_formatCOP(currentPrice)}/mes';
-
-          String chosenPlanName = 'Profesional';
-          if (chosenPlanCode == 'basico') chosenPlanName = 'Básico';
-          if (chosenPlanCode == 'business') chosenPlanName = 'Business';
-
-          return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.brandSurface,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(Icons.payment_outlined, color: AppColors.brand),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    'Activar / Renovar Plan',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.brandSurface,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(Icons.payment_outlined, color: AppColors.brand),
             ),
-            content: SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 440),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (subscription.hasPactadoPrice) ...[
-                      Text(
-                        'Tu plan y tarifa fueron acordados con Salón y Más:',
-                        style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-                      ),
-                    ] else ...[
-                      Text(
-                        'Elige el plan que mejor se adapte a tu salón:',
-                        style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Selector de Plan
-                      DropdownButtonFormField<String>(
-                        initialValue: chosenPlanCode,
-                        decoration: const InputDecoration(
-                          labelText: 'Plan a contratar',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'basico',
-                            child: Text('Básico (1 sede, hasta 5 cuentas)'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'business',
-                            child: Text('Business (Hasta 3 sedes, 15 cuentas)'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'profesional',
-                            child: Text('Profesional (Ilimitado + IA & Marketing)'),
-                          ),
-                        ],
-                        onChanged: (val) {
-                          if (val != null) {
-                            setModalState(() => chosenPlanCode = val);
-                          }
-                        },
-                      ),
-                    ],
-                    const SizedBox(height: 12),
-
-                    // Tarjeta de Valor a Pagar
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Plan: $chosenPlanName',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Valor a pagar: $priceText',
-                            style: TextStyle(
-                              color: AppColors.brand,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Si pagas antes o después de tu fecha de corte, el monto exacto se confirma en la pantalla de ePayco.',
-                            style: TextStyle(color: AppColors.textSecondary, fontSize: 11),
-                          ),
-                          if (subscription.isFounder) ...[
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: AppColors.brandTint,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                '★ 50% DESCUENTO PIONERO APLICADO',
-                                style: TextStyle(
-                                  color: AppColors.brandDeep,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        const Icon(Icons.check_circle_outline, color: AppColors.success, size: 16),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Medios: PSE, Nequi, Daviplata y Tarjetas.',
-                            style: TextStyle(color: AppColors.textPrimary, fontSize: 12.5),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.flash_on_outlined, color: AppColors.brand, size: 16),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Activación automática e inmediata tras pagar.',
-                            style: TextStyle(color: AppColors.textPrimary, fontSize: 12.5),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                esSede ? 'Activar esta sede' : 'Activar o renovar tu plan',
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(null),
-                child: const Text('Cancelar'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              esSede
+                  ? 'Vas a pagar la sede "${branchName ?? 'seleccionada'}" del '
+                        'plan Todo Incluido.'
+                  : 'Vas a pagar tu plan Todo Incluido.',
+              style: const TextStyle(fontSize: 15, height: 1.4),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.brandTintSoft,
+                borderRadius: BorderRadius.circular(12),
               ),
-              FilledButton.icon(
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.brand,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                ),
-                onPressed: () => Navigator.of(dialogContext).pop({
-                  'planCode': chosenPlanCode,
-                  'planName': chosenPlanName,
-                  'amount': currentPrice,
-                }),
-                icon: const Icon(Icons.lock_outline, size: 18),
-                label: const Text('Continuar a ePayco'),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.receipt_long_outlined,
+                    size: 18,
+                    color: AppColors.brandDark,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      esSede
+                          ? 'Si tu negocio ya tiene una fecha de corte, esta '
+                                'sede se cobra solo hasta ese día y desde el '
+                                'siguiente mes va completa. El importe exacto lo '
+                                'verás en ePayco antes de pagar.'
+                          : 'El importe exacto lo verás en ePayco antes de '
+                                'pagar, calculado según tu fecha de corte.',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        height: 1.4,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          );
-        },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.brand,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 10,
+              ),
+            ),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            icon: const Icon(Icons.lock_outline, size: 18),
+            label: const Text('Continuar a ePayco'),
+          ),
+        ],
       ),
     );
 
-    if (result == null) return;
-
-    final finalPlanCode = result['planCode'] as String;
+    if (confirmado != true) return;
 
     // Mostrar diálogo de carga mientras el backend genera la sesión segura
     if (!context.mounted) return;
@@ -347,7 +246,8 @@ class EpaycoCheckoutService {
         'create-epayco-session',
         headers: headers,
         body: {
-          'planCode': finalPlanCode,
+          'planCode': 'pro',
+          if (esSede) 'branchId': branchId,
         },
       );
 
@@ -388,7 +288,9 @@ class EpaycoCheckoutService {
       MonitoreoService.reportarError(
         e,
         st,
-        motivo: 'Fallo al inicializar Smart Checkout ePayco para tenant ${subscription.tenantId}',
+        motivo: esSede
+            ? 'Fallo al inicializar Smart Checkout ePayco para la sede \$branchId'
+            : 'Fallo al inicializar Smart Checkout ePayco para tenant \${subscription.tenantId}',
       );
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
