@@ -1,24 +1,30 @@
 -- CONTROL 201: Un solo plan "Todo Incluido" (D-188, Etapa 1 de 3).
+--             Actualizado por D-189: lista 150.000 y equipo de 10 personas.
 --
 -- POR QUÉ ESTE ARCHIVO
 --
 -- La migración 20260901200000 retira la escalera de tres planes (D-124, D-136)
--- y deja uno solo con todo dentro, a $120.000 de lista por sede.
+-- y deja uno solo con todo dentro. D-189 fija la lista en $150.000 por sede
+-- y el equipo en 10 personas.
 --
 -- Este control valida transaccionalmente:
---   - Existe el plan `pro` a $120.000, activo.
+--   - Existe el plan `pro` a $150.000, activo (D-189).
 --   - Los tres viejos quedaron en `retired` y NO se borraron (el histórico de
 --     pagos y las suscripciones los referencian).
 --   - `list_public_plans()` devuelve UN SOLO plan.
 --   - Ese plan trae las cuatro capacidades de software encendidas y sin tope.
---   - Sedes y cuentas de equipo quedan sin tope: estilistas ilimitados.
+--   - Las SEDES siguen sin tope: se cobran, no se limitan.
+--   - El EQUIPO queda en 9 cuentas + el dueño = 10 personas (D-189). El
+--     propietario no cuenta contra el tope, y eso viene de D-136.
 --   - `social_publishing` sigue APAGADA: es Fase 6 y no existe. El Plan
 --     Maestro prohíbe venderla antes de construirla.
 --   - Ningún negocio quedó apuntando a un plan retirado.
 --   - Un tenant del plan nuevo resuelve TODAS las capacidades en `true` a
 --     través de `beautyos_resolve_entitlement`, sin haber tocado esa función.
---   - Los pioneros tienen precio pactado de $80.000, no un porcentaje: el
---     33,33% de 120.000 da 80.004 y el checkout mostraría un número raro.
+--   - Los pioneros tienen PRECIO PACTADO con su motivo, no un porcentaje. Ya
+--     no se exige una cifra concreta: desde D-189 el descuento se negocia uno
+--     a uno. Lo que se comprueba es que sea precio y no porcentaje, porque un
+--     33,33% de 150.000 tampoco cae redondo.
 --
 -- CÓMO SE EJECUTA
 --
@@ -46,7 +52,7 @@ begin
   raise notice '======================================================================';
 
   -- -------------------------------------------------------------------------
-  raise notice '--- CASO 1: el plan unico existe, activo y a 120.000 ---';
+  raise notice '--- CASO 1: el plan unico existe, activo y a 150.000 ---';
   -- -------------------------------------------------------------------------
   select id, price_cop, status into v_plan_id, v_precio, v_estado
   from public.plans where code = 'pro' and version = 1;
@@ -54,14 +60,14 @@ begin
   if v_plan_id is null then
     v_fallos := v_fallos + 1;
     raise warning 'FALLO 1 (CRITICO): no existe el plan `pro`.';
-  elsif v_precio <> 120000 then
+  elsif v_precio <> 150000 then
     v_fallos := v_fallos + 1;
-    raise warning 'FALLO 1b: el precio de lista es % y deberia ser 120000.', v_precio;
+    raise warning 'FALLO 1b: el precio de lista es % y deberia ser 150000 (D-189).', v_precio;
   elsif v_estado <> 'active' then
     v_fallos := v_fallos + 1;
     raise warning 'FALLO 1c: el plan unico no esta activo (%).', v_estado;
   else
-    raise notice 'OK 1: plan `pro` activo a $120.000 por sede.';
+    raise notice 'OK 1: plan `pro` activo a $150.000 por sede.';
   end if;
 
   -- -------------------------------------------------------------------------
@@ -106,7 +112,7 @@ begin
   raise notice '--- CASO 4: todo dentro y sin topes ---';
   -- -------------------------------------------------------------------------
   foreach v_clave in array array['inventory', 'financial_reports', 'portfolio',
-                                 'reviews', 'branches', 'team_members']
+                                 'reviews', 'branches']
   loop
     select pf.enabled, pf.limit_value into v_r
     from public.plan_features pf
@@ -126,6 +132,26 @@ begin
       raise notice 'OK 4: % encendida y sin tope.', v_clave;
     end if;
   end loop;
+
+  -- -------------------------------------------------------------------------
+  raise notice '--- CASO 4b: el equipo queda en 9 cuentas + el dueno = 10 personas ---';
+  -- -------------------------------------------------------------------------
+  select pf.enabled, pf.limit_value into v_r
+  from public.plan_features pf
+  join public.features f on f.id = pf.feature_id
+  where pf.plan_id = v_plan_id and f.key = 'team_members';
+
+  if v_r is null or not v_r.enabled then
+    v_fallos := v_fallos + 1;
+    raise warning 'FALLO 4b: team_members viene apagada.';
+  elsif v_r.limit_value is distinct from 9 then
+    v_fallos := v_fallos + 1;
+    raise warning 'FALLO 4b: el tope de equipo es % y deberia ser 9 (D-189). '
+      'Nueve cuentas mas el dueno son diez personas: el propietario NO cuenta '
+      'contra el tope, y eso viene de D-136.', v_r.limit_value;
+  else
+    raise notice 'OK 4b: 9 cuentas de equipo + el dueno = 10 personas.';
+  end if;
 
   -- -------------------------------------------------------------------------
   raise notice '--- CASO 5: social_publishing sigue APAGADA (Fase 6, no existe) ---';
@@ -193,17 +219,21 @@ begin
   -- -------------------------------------------------------------------------
   raise notice '--- CASO 8: los pioneros con precio pactado, no con porcentaje ---';
   -- -------------------------------------------------------------------------
+  -- D-189: el pionero deja de tener una cifra publica y pasa a negociarse uno a
+  -- uno desde el panel. Lo que se comprueba ya no es "que valga 80.000", sino
+  -- que sea un PRECIO PACTADO con su motivo y sin porcentaje vivo -- que es lo
+  -- que evita el redondeo raro que encontro D-188.
   select count(*) into v_conteo
   from public.tenant_subscriptions
   where is_founder = true
-    and (price_cop is distinct from 80000 or discount_percent is not null);
+    and (price_cop is null or price_reason is null or discount_percent is not null);
 
   if v_conteo > 0 then
     v_fallos := v_fallos + 1;
-    raise warning 'FALLO 8: % pionero(s) sin precio pactado de 80000, o con porcentaje vivo. '
-      'El 33,33%% de 120.000 da 80.004 y el checkout mostraria ese numero.', v_conteo;
+    raise warning 'FALLO 8: % pionero(s) sin precio pactado con motivo, o con porcentaje vivo. '
+      'El descuento se fija como precio, no como %%: un 33,33%% de 150.000 no cae redondo.', v_conteo;
   else
-    raise notice 'OK 8: los pioneros pagan $80.000 exactos por sede.';
+    raise notice 'OK 8: los pioneros tienen precio pactado propio, cada uno el suyo.';
   end if;
 
   -- -------------------------------------------------------------------------

@@ -272,8 +272,9 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
               const SizedBox(height: 16),
               const Text(
                 'Agenda, caja, comisiones, inventario, reportes, fotos de '
-                'trabajos, resenas y tu pagina web publica. Todo, desde el '
-                'primer dia. Pagas por sede, no por funciones.',
+                'trabajos, resenas y tu pagina web publica. El 100% de las '
+                'funciones, desde el primer dia. Pagas por sede, no por '
+                'funciones.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
@@ -324,7 +325,7 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
                   ),
                 ),
                 child: const Text(
-                  'PRECIO PIONERO, SOLO PARA LOS PRIMEROS 25 SALONES',
+                  'TODO INCLUIDO. SIN MODULOS BLOQUEADOS.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white,
@@ -363,7 +364,7 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
                           ),
                         ),
                         Text(
-                          '80.000',
+                          _milesConPunto(lista),
                           style: TextStyle(
                             fontSize: isMobile ? 46 : 58,
                             height: 1,
@@ -382,38 +383,24 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      spacing: 8,
-                      children: [
-                        Text(
-                          '\$${_milesConPunto(lista)}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: AppColors.textMuted,
-                            decoration: TextDecoration.lineThrough,
-                          ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.successTint,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        '\$${_milesConPunto(lista ~/ 30)} al dia por llevar '
+                        'todo tu salon',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.success,
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.successTint,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: const Text(
-                            'Ahorras 33% de por vida',
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.success,
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                     const SizedBox(height: 28),
                     const Divider(),
@@ -482,6 +469,64 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
                         color: AppColors.textMuted,
                       ),
                     ),
+                    const SizedBox(height: 20),
+                    const Divider(),
+                    const SizedBox(height: 16),
+                    // D-189: el descuento de lanzamiento no lleva cifra ni cupo
+                    // publicado. Se negocia salon por salon y se fija como
+                    // precio pactado desde el panel, asi que aqui lo que se
+                    // abre es una conversacion, no una promesa.
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.brandTintSoft,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Column(
+                        children: [
+                          Text(
+                            'Consulta la tarifa especial de lanzamiento',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.brandDeep,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Estamos abriendo ciudad por ciudad, y los primeros '
+                            'salones de cada una entran con una tarifa distinta. '
+                            'Escribenos y hablamos de la tuya.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 13,
+                              height: 1.4,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: _openWhatsApp,
+                              icon: const Icon(
+                                Icons.chat_bubble_outline,
+                                size: 18,
+                                color: AppColors.whatsapp,
+                              ),
+                              label: const Text('Preguntar por WhatsApp'),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -493,7 +538,7 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
   }
 
   static const List<String> _incluido = [
-    'Estilistas y cuentas de equipo ilimitados',
+    'Hasta 10 personas en tu equipo, tu incluido',
     'Clientas, citas y tickets sin tope',
     'Caja, cobros, abonos y comisiones automaticas',
     'Inventario, compras y gastos',
@@ -615,9 +660,10 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
               const Divider(height: 1),
               _filaComparativa(
                 titulo: 'Salon y Mas, Todo Incluido',
-                precio: '\$120.000',
+                precio: '\$150.000',
                 detalle:
-                    'Todo lo de arriba, por sede. \$80.000 si entras como pionero.',
+                    'Todo lo de arriba, por sede. Pregunta por la tarifa de '
+                    'lanzamiento de tu ciudad.',
                 destacada: true,
               ),
             ],
@@ -726,18 +772,20 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
               'cierras una sede, dejas de pagarla.',
         ),
         _buildFaqTile(
-          question: 'Hay limite de estilistas, de clientas o de fotos?',
+          question: 'Cuanta gente cabe en mi equipo?',
           answer:
-              'No. Ni de estilistas, ni de cuentas de equipo, ni de clientas, '
-              'ni de citas, ni de fotos de trabajos. Lo que se cobra es la '
-              'sede, no lo que hagas dentro de ella.',
+              'Diez personas por sede, tu incluido: tu mas nueve entre '
+              'administradores, recepcionistas y estilistas. Cubre a casi '
+              'cualquier salon. Si el tuyo es mas grande, escribenos y lo '
+              'ampliamos. Clientas, citas y fotos no tienen tope ninguno.',
         ),
         _buildFaqTile(
-          question: 'Que es el precio pionero y hasta cuando dura?',
+          question: 'Y la tarifa de lanzamiento de la que hablan?',
           answer:
-              'Los primeros 25 salones pagan 80.000 por sede en vez de '
-              '120.000, y ese precio se les congela mientras sigan activos. '
-              'No son seis meses: es de por vida.',
+              'Estamos abriendo ciudad por ciudad y acompanamos uno a uno a los '
+              'primeros salones de cada una, asi que su tarifa la hablamos en '
+              'persona. Escribenos por WhatsApp y te contamos como esta la de '
+              'tu ciudad.',
         ),
         _buildFaqTile(
           question: 'Tengo que poner una tarjeta para probarlo?',

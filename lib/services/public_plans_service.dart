@@ -45,14 +45,17 @@ class PublicPlansService {
           code: 'pro',
           name: 'Todo Incluido',
           billingPeriod: 'monthly',
-          priceCop: 120000,
+          priceCop: 150000,
           currencyCode: 'COP',
           features: [
             PublicPlanFeature(key: 'branches', name: 'Sedes', enabled: true),
             PublicPlanFeature(
               key: 'team_members',
-              name: 'Estilistas y cuentas de equipo',
+              name: 'Cuentas de equipo',
               enabled: true,
+              // 9 cuentas + el dueno = 10 personas. El propietario no cuenta
+              // contra el tope (D-136, D-189).
+              limitValue: 9,
             ),
             PublicPlanFeature(
               key: 'agenda_tickets',
@@ -100,8 +103,12 @@ class PublicPlansService {
         ),
       ];
 
-  /// Precio pionero por sede (D-188). No es un porcentaje: $80.000 sobre
-  /// $120.000 es un 33%, y modelarlo como porcentaje daba $80.004 por
-  /// redondeo. Se guarda como precio pactado en la suscripción.
-  static const int precioPioneroCop = 80000;
+  /// Personas que caben en el plan sin pedir excepción: 9 cuentas de equipo
+  /// más el dueño (D-189). El propietario no cuenta contra el tope (D-136).
+  ///
+  /// **Ya no hay constante de precio pionero.** Desde D-189 el descuento se
+  /// negocia salón por salón y se fija como precio pactado desde el panel, así
+  /// que publicar una cifra fija aquí ataría las manos justo donde se quiere
+  /// tenerlas libres.
+  static const int personasIncluidas = 10;
 }

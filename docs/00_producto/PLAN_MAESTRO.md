@@ -96,29 +96,49 @@ la fase 6 se vende como disponible hasta que exista*.
 
 ### Precios
 
+**Ajustado el 02-sep (D-189).**
+
 | | Por sede al mes |
 |---|---:|
-| **Precio de lista** | $120.000 |
-| **Precio pionero** | **$80.000** |
+| **Precio de lista** | **$150.000** |
+| | *$5.000 al día* |
 
-- **25 pioneros**, precio congelado **de por vida mientras sigan activos**.
-- **El pionero es un precio pactado, no un porcentaje.** Y conviene saber por
-  qué: $80.000 sobre $120.000 **no es el 50%, es el 33,33%**, y ese número no
-  cae redondo — `120000 * (1 - 33.33/100)` da **80.004**. Como
-  `beautyos_procesar_evento_epayco` compara el monto pagado contra el calculado
-  (D-159), esos cuatro pesos se verían en el checkout. Se guarda como
-  `price_cop = 80000` con su motivo.
-- ⚠️ **Por lo mismo, el descuento del pionero no se puede anunciar como "50%".
-  Es un 33%.**
-- **Todo esto es modificable desde el panel del dueño de la plataforma**, por
-  cliente y con motivo registrado.
+**El descuento de lanzamiento no se publica.** Ni cifra ni cupo. En la web hay
+un *"Consulta la tarifa especial de lanzamiento"* con enlace a WhatsApp, y el
+precio de cada salón se fija **uno a uno desde el panel**, al aprobarlo. Así no
+se atan las manos en la negociación ni se promete en público algo que luego
+haya que sostener con todo el mundo.
+
+- **El descuento se fija como precio pactado, nunca como porcentaje.** Un
+  33,33% de 150.000 tampoco cae redondo, y `beautyos_procesar_evento_epayco`
+  compara el monto pagado contra el calculado (D-159): un peso de diferencia se
+  ve en el checkout.
+- Los pioneros que ya tienen $80.000 pactados **se quedan con su precio**.
+
+### Cuánta gente cabe
+
+**10 personas por salón: el dueño más 9 cuentas de equipo** entre
+administradores, recepcionistas y estilistas.
+
+- ⚠️ **El tope guardado es 9, no 10**, porque **el propietario no cuenta contra
+  el límite** (D-136: *"su cuenta no es de equipo, es el negocio"*). Poner 10
+  daría once personas.
+- ⚠️ **Y el tope es por NEGOCIO, no por sede.** `create_team_invitation` cuenta
+  el tenant entero. Que sea "10 por sede" solo será cierto cuando la Etapa 2
+  haga la suscripción por sede — **hay que arreglarlo ahí, o la promesa
+  comercial y el código dejan de coincidir**.
+- **Al salón grande se le concede la excepción desde el panel**, con
+  `tenant_feature_overrides`. Es mejor tener algo que conceder que no tener
+  nada.
+
+**Clientas, citas, tickets y fotos no tienen tope ninguno.**
 
 ### Qué cambia de precio para quién
 
 | | Antes | Ahora | |
 |---|---:|---:|---|
-| Salón de **1 sede** | $160.000 (Básico, sin inventario ni reportes ni fotos) | **$120.000 con todo** | más barato y completo |
-| Cadena de **3 sedes** (pionera) | $120.000 (Profesional, sedes ilimitadas) | **$240.000** | el doble |
+| Salón de **1 sede** | $160.000 (Básico, sin inventario ni reportes ni fotos) | **$150.000 con todo** | algo más barato, y completo |
+| Cadena de **3 sedes** | $240.000 (Profesional, sedes ilimitadas) | **$450.000** | casi el doble |
 
 Es coherente —el valor escala con el negocio— pero **cambia para quién es barato
 el producto**: el salón de barrio, que es el cliente objetivo escrito en el
@@ -137,7 +157,7 @@ eso va por partes:
 
 | Etapa | Qué | Estado |
 |---|---|---|
-| 1 | Catálogo de un solo plan y capacidades abiertas | ✅ **CERRADA 01-sep (D-188).** Migración aplicada, Control 201 en verde (8 de 8) y `create-epayco-session` desplegada con el plan por defecto `pro` |
+| 1 | Catálogo de un solo plan, capacidades abiertas y pantalla pública | ✅ **CERRADA 01-sep (D-188).** Migración aplicada, Control 201 en verde (8 de 8) y `create-epayco-session` desplegada con el plan por defecto `pro` |
 | 2 | **Suscripción por sede:** tabla propia, la sede nace inactiva y se activa al pagarse | ⬜ |
 | 3 | **ePayco por sede:** intención con `branch_id`, prorrateo hasta la fecha ancla, alertas y panel por sede | ⬜ |
 
@@ -305,7 +325,7 @@ filtro) y el cuerpo pasó a dos pestañas ejecutivas: `🏪 Salones Clientes` y
 | 8.13 | 🔴 **Cerrar TL-19: la interfaz nunca consulta `get_my_entitlements()`.** Un salón en Básico ve módulos que no tiene, entra, y recibe una excepción de PostgreSQL en crudo. Toda la escalera de precios es invisible dentro del producto | 🤖 | 🔄 **Escrito 01-sep (D-184).** `EntitlementsService`, `requiredFeature` en `BeautyModule` y `PlanLockedPage`: el módulo **se ve con candado** (esconderlo mataría la venta) y explica qué gana al subir. Falla **abierto** a propósito. Acotado a Reportes, Inventario, Compras y Gastos, que son los que de verdad revientan (Fotos y Reseñas van aparte, en 8.14). Botón de WhatsApp a soporte con el mensaje pre-armado del módulo. ✅ **CERRADO 01-sep.** `flutter analyze` 0/0 y 271/271 pruebas en verde |
 | 8.14 | **Candado por botón en Fotos de trabajos y Reseñas.** El Plan Maestro §3 las reserva al Profesional, pero `portfolio` solo protege `create_work_photo` y `reviews` solo `public_create_review`: bloquear el módulo entero escondería fotos que el salón ya tiene. Necesita candado en la acción, no en el módulo | 🤖 | ✅ **CERRADO 01-sep (D-187).** `mostrarCandadoDePlan` en los dos únicos sitios que abren esas acciones. **El caso de Reseñas era el peor:** el salón manda el enlace y es **la clienta** quien recibe el error. Al estilista se le da un mensaje distinto que al dueño. 279/279 pruebas en verde. **Cierra la auditoría de 4 revisiones** |
 
-| 8.15 | 🔴 **Etapa 2 de D-188 — suscripción por sede.** Tabla propia con su estado y su ancla, la sede nace inactiva y se activa al pagarse, `beautyos_precio_efectivo` por sede. `create_branch` deja de bloquear | 🤖 | ⬜ **Bloquea vender la segunda sede** |
+| 8.15 | 🔴 **Etapa 2 de D-188 — suscripción por sede.** Tabla propia con su estado y su ancla, la sede nace inactiva y se activa al pagarse, `beautyos_precio_efectivo` por sede. `create_branch` deja de bloquear. **Y el tope de equipo pasa a ser por sede**: hoy `create_team_invitation` cuenta el tenant entero, así que la promesa de "10 por sede" (D-189) no es cierta para multi-sede hasta que se arregle aquí | 🤖 | ⬜ **Bloquea vender la segunda sede** |
 | 8.16 | 🔴 **Etapa 3 de D-188 — ePayco por sede.** `create-epayco-session` y las intenciones de pago (D-182) con `branch_id`, prorrateo hasta la fecha ancla al activar a mitad de ciclo (reutiliza D-160), alertas y panel de plataforma por sede | 🤖 | ⬜ **Bloquea vender la segunda sede** |
 
 > **La auditoría de 4 revisiones del 01-sep** (técnica, UX, producto y crítica

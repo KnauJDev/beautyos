@@ -125,9 +125,9 @@ void main() {
       final pro = fallback.single;
       expect(pro.code, 'pro');
       expect(pro.name, 'Todo Incluido');
-      expect(pro.priceCop, 120000);
+      expect(pro.priceCop, 150000);
       expect(pro.branchesLabel, 'Sedes ilimitadas');
-      expect(pro.teamMembersLabel, 'Equipo ilimitado');
+      expect(pro.teamMembersLabel, isNotEmpty);
     });
 
     test('El respaldo trae todo incluido, salvo lo que no existe', () {
@@ -151,15 +151,25 @@ void main() {
       expect(incluye('social_publishing'), false);
     });
 
-    test('El precio pionero es un número exacto, no un porcentaje (D-188)', () {
-      // $80.000 sobre $120.000 es el 33,33%, no el 50%. Modelarlo como
-      // porcentaje daba 80.004 por redondeo, y ese número acabaría en el
-      // checkout y en la validación de monto de D-159.
-      expect(PublicPlansService.precioPioneroCop, 80000);
-
+    test('El precio de lista da 5.000 al día exactos (D-189)', () {
       final lista = PublicPlansService.fallbackPlans.single.priceCop;
-      expect(lista, 120000);
-      expect(PublicPlansService.precioPioneroCop, lessThan(lista));
+
+      // El argumento de venta es "$5.000 al día". Si el precio dejara de ser
+      // divisible por 30, la frase pasaría a ser mentira y nadie se enteraría.
+      expect(lista, 150000);
+      expect(lista % 30, 0);
+      expect(lista ~/ 30, 5000);
+    });
+
+    test('Caben 10 personas: 9 cuentas de equipo más el dueño (D-189)', () {
+      // El propietario NO cuenta contra el tope: lo dejó escrito D-136 al
+      // construir create_team_invitation. Por eso el límite es 9 y no 10.
+      expect(PublicPlansService.personasIncluidas, 10);
+
+      final equipo = PublicPlansService.fallbackPlans.single.features
+          .firstWhere((f) => f.key == 'team_members');
+      expect(equipo.enabled, true);
+      expect(equipo.limitValue, 9);
     });
   });
 }
