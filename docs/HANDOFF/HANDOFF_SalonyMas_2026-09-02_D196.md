@@ -2,13 +2,13 @@
 
 **Bloque documentado:** decisión **D-196** · Paso **8.18** de la **FASE 8**.
 
-**Estado:** código y control **escritos y revisados**, `flutter analyze` 0/0 y
-**297 de 297 pruebas en verde** (sin cambios en Flutter: este bloque es
-enteramente de base de datos y Edge Function). **La migración NO está
-aplicada en Supabase y la Edge Function NO está desplegada** — los dos
-pasos que faltan piden credenciales interactivas (la contraseña de la base,
-el login del CLI de Supabase) que esta sesión no tiene cómo suministrar. Ver
-el apartado 3 para los comandos exactos.
+**Estado:** ✅ **CERRADO y verificado en producción.** El propietario aplicó
+la migración con `aplicar_sql.ps1`, corrió el Control 206 (**10 de 10 casos
+en verde, `ROLLBACK` limpio**) y desplegó `send-subscription-expiry-alerts`.
+`flutter analyze` 0/0 y **297 de 297 pruebas en verde** (sin cambios en
+Flutter: este bloque es enteramente de base de datos y Edge Function). El
+apartado 3 queda como referencia de los comandos ya ejecutados, por si hace
+falta repetirlos en otro entorno (por ejemplo `salonymas-ensayo`, D-134).
 
 > El bloque anterior (D-195, "Velocidad Operativa de Mostrador") está en
 > `docs/_archivo/handoffs/HANDOFF_SalonyMas_2026-09-02_D195.md`.
@@ -89,12 +89,15 @@ propio bloque, con su propia decisión.
 
 ---
 
-## 2. Verificación escrita, pendiente de correr
+## 2. Verificación — Control 206, corrido por el propietario: 10 de 10 en verde
 
 **Control 206** (`supabase/sql/206_test_tope_equipo_y_alertas_por_sede.sql`),
-10 casos, terminado en `ROLLBACK`:
+terminado en `ROLLBACK` limpio:
 
-1. Las cinco funciones nuevas/redefinidas existen y son `SECURITY DEFINER`.
+1. Las cuatro funciones nuevas/redefinidas existen y son `SECURITY DEFINER`
+   (con un caso extra, 1b: la firma vieja de 5 argumentos de
+   `beautyos_registrar_alerta_enviada` ya no existe — ver la nota de la
+   trampa de D-174 en el apartado 4).
 2. Con solo la sede principal, el tope se comporta **igual que antes** (9).
 3. Una sede secundaria **pendiente** de pago no amplía el cupo.
 4. Una sede secundaria **activa** sí lo amplía (9 → 18).
@@ -108,17 +111,16 @@ propio bloque, con su propia decisión.
    aparece ahí.
 10. `anon`/`authenticated` no alcanzan ninguna función nueva.
 
-**No se pudo ejecutar contra la base real desde esta sesión**: no hay
-`psql`, ni el CLI de Supabase, ni forma de responder al prompt interactivo
-de contraseña que pide `aplicar_sql.ps1` (lee la contraseña con
-`Read-Host -AsSecureString`, que en esta sesión no tiene con qué
-responderse). El script y el control están escritos y revisados a mano
-línea por línea, pero **"revisado" no es "verificado contra la base real"**
-— eso lo tiene que hacer el propietario.
+Aplicado y verificado en producción el 02-sep. La Edge Function
+`send-subscription-expiry-alerts` quedó desplegada en el mismo bloque.
 
 ---
 
-## 3. Lo que falta hacer, con los comandos exactos
+## 3. Los tres pasos, ya ejecutados — queda como referencia
+
+Los tres se corrieron el 02-sep y quedaron verificados. Se dejan los
+comandos exactos por si hace falta repetirlos en otro entorno (por ejemplo
+`salonymas-ensayo`, D-134).
 
 ### 3.1 Aplicar la migración
 
@@ -137,8 +139,9 @@ powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" `
   -Archivo "supabase\sql\206_test_tope_equipo_y_alertas_por_sede.sql"
 ```
 
-Termina en `ROLLBACK`: no deja datos de prueba. Si los 10 casos salen en
-verde, este bloque pasa a `✅ CERRADO` en el Plan Maestro y el Registro.
+Termina en `ROLLBACK`: no deja datos de prueba. Los 10 casos salieron en
+verde, y por eso este bloque está `✅ CERRADO` en el Plan Maestro y el
+Registro.
 
 ### 3.3 Desplegar la Edge Function
 
