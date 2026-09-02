@@ -159,7 +159,8 @@ eso va por partes:
 |---|---|---|
 | 1 | Catálogo de un solo plan, capacidades abiertas y pantalla pública | ✅ **CERRADA 02-sep (D-188, D-189).** Migración aplicada, Control 201 en verde (8 de 8) y `create-epayco-session` desplegada con el plan por defecto `pro` |
 | 2 | **Suscripción por sede:** tabla propia, la sede nace inactiva y se activa al pagarse | ⬜ |
-| 3 | **ePayco por sede:** intención con `branch_id`, prorrateo hasta la fecha ancla, alertas y panel por sede | ⬜ |
+| 3a | **La base:** `branch_id` en la intención de pago y el cálculo del cargo por sede con prorrateo | 🔄 **Escrita 02-sep (D-191).** Pendiente de aplicar |
+| 3b | **Lo que cobra:** checkout y webhook por sede, alertas y pantalla de pago del salón | ⬜ |
 
 > 🔴 **Hasta que la Etapa 3 esté hecha no se puede vender la segunda sede.** Hoy
 > un negocio paga una suscripción y puede crear las sedes que quiera sin que se
@@ -326,7 +327,7 @@ filtro) y el cuerpo pasó a dos pestañas ejecutivas: `🏪 Salones Clientes` y
 | 8.14 | **Candado por botón en Fotos de trabajos y Reseñas.** El Plan Maestro §3 las reserva al Profesional, pero `portfolio` solo protege `create_work_photo` y `reviews` solo `public_create_review`: bloquear el módulo entero escondería fotos que el salón ya tiene. Necesita candado en la acción, no en el módulo | 🤖 | ✅ **CERRADO 01-sep (D-187).** `mostrarCandadoDePlan` en los dos únicos sitios que abren esas acciones. **El caso de Reseñas era el peor:** el salón manda el enlace y es **la clienta** quien recibe el error. Al estilista se le da un mensaje distinto que al dueño. 279/279 pruebas en verde. **Cierra la auditoría de 4 revisiones** |
 
 | 8.15 | 🔴 **Etapa 2 de D-188 — suscripción por sede.** Tabla propia con su estado y su ancla, la sede nace pendiente, `beautyos_precio_efectivo` por sede. Y el tope de equipo pasa a ser por sede: hoy `create_team_invitation` cuenta el tenant entero, así que la promesa de "10 por sede" (D-189) no es cierta para multi-sede hasta que se arregle aquí | 🤖 | 🔄 **Escrito 02-sep (D-190).** `branch_subscriptions` con estado, período y precio por sede; las sedes existentes **heredan lo que se les vendió** y solo las nuevas nacen pendientes; la plataforma las activa a mano hasta la Etapa 3. Migración `20260902120000` y Control `202`. ✅ **CERRADO 02-sep: aplicado en Supabase y Control 202 en verde (9 de 9).** Faltan el tope de equipo por sede y la pantalla del salón, que van con la Etapa 3 |
-| 8.16 | 🔴 **Etapa 3 de D-188 — ePayco por sede.** `create-epayco-session` y las intenciones de pago (D-182) con `branch_id`, prorrateo hasta la fecha ancla al activar a mitad de ciclo (reutiliza D-160), alertas y panel de plataforma por sede | 🤖 | ⬜ **Bloquea vender la segunda sede** |
+| 8.16 | 🔴 **Etapa 3 de D-188 — ePayco por sede.** `create-epayco-session` y las intenciones de pago (D-182) con `branch_id`, prorrateo hasta la fecha ancla al activar a mitad de ciclo (reutiliza D-160), alertas y panel de plataforma por sede | 🤖 | 🔄 **3a escrita 02-sep (D-191):** `branch_id` en las intenciones y `beautyos_calcular_cargo_sede`, compatible hacia atrás. Migración `20260902140000` y Control `203`. **Falta la 3b:** checkout, webhook, alertas y pantalla. **Bloquea vender la segunda sede** |
 
 > **La auditoría de 4 revisiones del 01-sep** (técnica, UX, producto y crítica
 > brutal/seguridad) está verificada hallazgo por hallazgo en
