@@ -24,7 +24,18 @@ class BranchReportV3 {
   final List<ReportCommissionItem> commissionsByStylist;
   final List<ReportServiceSaleItem> salesByService;
 
+  /// Cuantas sedes hay dentro de estas cifras (D-194). 1 = una sola sede.
+  final int branchesCount;
+
+  /// El desglose por sede del consolidado. Vacio cuando se mira una sola sede.
+  final List<ReportBranchItem> byBranch;
+
+  /// Si estas cifras son la suma de mas de una sede.
+  bool get esConsolidado => branchesCount > 1;
+
   const BranchReportV3({
+    this.branchesCount = 1,
+    this.byBranch = const <ReportBranchItem>[],
     required this.startDate,
     required this.endDate,
     required this.totalReceived,
@@ -50,6 +61,9 @@ class BranchReportV3 {
   });
 
   factory BranchReportV3.fromMap(Map<String, dynamic> map) {
+    final sedes = map['branches_count'];
+    final desglose = map['by_branch'];
+
     final commissionsRaw = map['commissions_by_stylist'];
     final salesRaw = map['sales_by_service'];
 
@@ -72,6 +86,17 @@ class BranchReportV3 {
     }
 
     return BranchReportV3(
+      branchesCount: sedes is int
+          ? sedes
+          : int.tryParse(sedes?.toString() ?? '') ?? 1,
+      byBranch: desglose is List
+          ? desglose
+                .whereType<Map>()
+                .map(
+                  (e) => ReportBranchItem.fromMap(Map<String, dynamic>.from(e)),
+                )
+                .toList(growable: false)
+          : const <ReportBranchItem>[],
       startDate: DateTime.tryParse(map['start_date']?.toString() ?? '') ?? DateTime.now(),
       endDate: DateTime.tryParse(map['end_date']?.toString() ?? '') ?? DateTime.now(),
       totalReceived: double.tryParse(map['total_received']?.toString() ?? '') ?? 0,
@@ -191,4 +216,54 @@ class ReportServiceSaleItem {
   }
 
   String get formattedTotalSales => formatMoney(totalSales);
+}
+
+/// Una sede dentro del reporte consolidado (D-194).
+///
+/// Sale gratis: el consolidado calcula cada sede por separado y las suma, asi
+/// que el desglose ya estaba hecho.
+class ReportBranchItem {
+  const ReportBranchItem({
+    required this.branchId,
+    required this.branchName,
+    required this.isPrimary,
+    required this.totalReceived,
+    required this.netResult,
+    required this.totalExpenses,
+    required this.totalPurchases,
+    required this.totalCommissions,
+    required this.expectedCash,
+    required this.paymentsCount,
+  });
+
+  final String branchId;
+  final String branchName;
+  final bool isPrimary;
+  final double totalReceived;
+  final double netResult;
+  final double totalExpenses;
+  final double totalPurchases;
+  final double totalCommissions;
+  final double expectedCash;
+  final int paymentsCount;
+
+  static double _num(Object? v) =>
+      v is num ? v.toDouble() : double.tryParse(v?.toString() ?? '') ?? 0;
+
+  factory ReportBranchItem.fromMap(Map<String, dynamic> map) {
+    return ReportBranchItem(
+      branchId: map['branch_id']?.toString() ?? '',
+      branchName: map['branch_name']?.toString() ?? 'Sede',
+      isPrimary: map['is_primary'] == true,
+      totalReceived: _num(map['total_received']),
+      netResult: _num(map['net_result']),
+      totalExpenses: _num(map['total_expenses']),
+      totalPurchases: _num(map['total_purchases']),
+      totalCommissions: _num(map['total_commissions']),
+      expectedCash: _num(map['expected_cash']),
+      paymentsCount: map['payments_count'] is int
+          ? map['payments_count'] as int
+          : int.tryParse(map['payments_count']?.toString() ?? '') ?? 0,
+    );
+  }
 }

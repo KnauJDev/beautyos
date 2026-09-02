@@ -179,7 +179,7 @@ Un dueño ve **16 módulos**. Esto es lo que hay hoy.
 | **Agenda** | Lista básica. **234 líneas** | Pasa a ser el tablero día/semana/mes | F4.2, F4.3 |
 | **Tickets** | Panel completo de cobro. **3.699 líneas** | Nivel 2 y 3; número de venta; píldora de estado | F4.4, F4.5 |
 | **Clientes** | Solo lista | Nuevos vs recurrentes, retorno, valor, quién dejó de venir. Falta apellido separado | F4.6 |
-| **Reportes** | Ventas + resultado financiero | Nivel 2 y 3, métodos de pago, comparación entre períodos | F4.7 |
+| **Reportes** | Ventas, resultado financiero y **consolidado de todas las sedes** (D-194) | Nivel 2 y 3, métodos de pago, comparación entre períodos | F4.7 |
 | **Estilistas** | Lista y configuración | Producción por persona | F4.9 |
 | **Servicios** | Catálogo y precios | Cuáles dejan más dinero. Foto por servicio | F4.9 |
 | **Usuarios** | Invitar y gestionar. **El correo de invitación ya llega** (H-12 cerrado el 10-ago) y **un estilista no puede tener dos cuentas activas** (R, cerrado el 11-ago) | Separar el texto de la pantalla de acceso (**S**) y **poder dar acceso a una segunda sede** (**V**) | Fase 4 |

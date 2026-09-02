@@ -472,6 +472,8 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         page: ReportesPage(
           key: ValueKey('reports-${branch.branchId}'),
           branchId: branch.branchId,
+          // Para poder alternar entre esta sede y el consolidado (D-194).
+          branches: branches,
         ),
         allowedRoles: const <String>{'owner', 'admin'},
         // Sus dos RPC de lectura (`get_sales_report_summary_v2` y

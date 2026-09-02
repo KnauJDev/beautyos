@@ -1,15 +1,24 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../models/branch_context.dart';
 import '../models/branch_report_v3.dart';
 import '../models/ticket_payment.dart' show formatMoney;
 import '../services/branch_reports_service.dart';
 import '../widgets/app_widgets.dart';
 
 class ReportesPage extends StatefulWidget {
-  const ReportesPage({super.key, required this.branchId});
+  const ReportesPage({
+    super.key,
+    required this.branchId,
+    this.branches = const <BranchContext>[],
+  });
 
   final String branchId;
+
+  /// Las sedes que este usuario puede consultar (D-194). Con una sola, el
+  /// selector de consolidado ni se dibuja: seria un boton que no hace nada.
+  final List<BranchContext> branches;
 
   @override
   State<ReportesPage> createState() => _ReportesPageState();
@@ -20,6 +29,9 @@ class _ReportesPageState extends State<ReportesPage> {
   late Future<BranchReportV3> reportsFuture;
 
   String selectedPeriod = 'hoy'; // 'hoy', 'semana', 'mes', 'rango'
+
+  /// Mirar el negocio entero en vez de esta sede (D-194).
+  bool _consolidado = false;
   late DateTime startDate;
   late DateTime endDate;
 
@@ -52,10 +64,24 @@ class _ReportesPageState extends State<ReportesPage> {
           endDate = today;
           break;
       }
-      reportsFuture = reportsService.getBranchReport(
-        startDate: startDate,
-        endDate: endDate,
-      );
+      reportsFuture = _pedirReporte();
+    });
+  }
+
+  Future<BranchReportV3> _pedirReporte() {
+    return _consolidado
+        ? reportsService.getTenantReport(startDate: startDate, endDate: endDate)
+        : reportsService.getBranchReport(
+            startDate: startDate,
+            endDate: endDate,
+          );
+  }
+
+  void _cambiarAmbito(bool consolidado) {
+    if (_consolidado == consolidado) return;
+    setState(() {
+      _consolidado = consolidado;
+      reportsFuture = _pedirReporte();
     });
   }
 
@@ -86,19 +112,13 @@ class _ReportesPageState extends State<ReportesPage> {
       selectedPeriod = 'rango';
       startDate = DateTime(picked.start.year, picked.start.month, picked.start.day);
       endDate = DateTime(picked.end.year, picked.end.month, picked.end.day);
-      reportsFuture = reportsService.getBranchReport(
-        startDate: startDate,
-        endDate: endDate,
-      );
+      reportsFuture = _pedirReporte();
     });
   }
 
   void _refresh() {
     setState(() {
-      reportsFuture = reportsService.getBranchReport(
-        startDate: startDate,
-        endDate: endDate,
-      );
+      reportsFuture = _pedirReporte();
     });
   }
 
@@ -155,6 +175,31 @@ class _ReportesPageState extends State<ReportesPage> {
                     ),
                   ],
                 ),
+                // Ambito del reporte (D-194). Solo tiene sentido con mas de
+                // una sede: con una, seria un boton que no hace nada.
+                if (widget.branches.length > 1) ...[
+                  const SizedBox(height: 12),
+                  SegmentedButton<bool>(
+                    segments: const [
+                      ButtonSegment<bool>(
+                        value: false,
+                        icon: Icon(Icons.storefront_outlined, size: 16),
+                        label: Text('Esta sede'),
+                      ),
+                      ButtonSegment<bool>(
+                        value: true,
+                        icon: Icon(Icons.public, size: 16),
+                        label: Text('Todas las sedes'),
+                      ),
+                    ],
+                    selected: {_consolidado},
+                    onSelectionChanged: (s) => _cambiarAmbito(s.first),
+                    showSelectedIcon: false,
+                    style: const ButtonStyle(
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -228,6 +273,14 @@ class _ReportesPageState extends State<ReportesPage> {
                 _buildFinancialSummaryCard(report),
                 const SizedBox(height: 16),
 
+                // El desglose por sede (D-194). Va justo debajo del total: la
+                // pregunta que sigue a "cuanto vendi" siempre es "y cual de
+                // mis locales".
+                if (report.esConsolidado) ...[
+                  _buildDesglosePorSede(report),
+                  const SizedBox(height: 16),
+                ],
+
                 // Tarjeta 2: Métodos de Pago y Arqueo de Efectivo
                 _buildPaymentMethodsAndCashCard(report),
                 const SizedBox(height: 16),
@@ -258,6 +311,125 @@ class _ReportesPageState extends State<ReportesPage> {
         }
       },
     );
+  }
+
+  /// Cuanto puso cada sede en el consolidado (D-194).
+  ///
+  /// No cuesta una consulta extra: el consolidado calcula cada sede por
+  /// separado y las suma, asi que este desglose ya estaba hecho.
+  Widget _buildDesglosePorSede(BranchReportV3 report) {
+    final sedes = [...report.byBranch]
+      ..sort((a, b) => b.totalReceived.compareTo(a.totalReceived));
+
+    final total = report.totalReceived;
+
+    return Card(
+      elevation: 1,
+      color: AppColors.surface,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.public, size: 18, color: AppColors.brand),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Cuánto puso cada sede',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.brandDeep,
+                    ),
+                  ),
+                ),
+                Text(
+                  '${report.branchesCount} sedes',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            for (final sede in sedes) ...[
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            sede.branchName,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          _pesos(sede.totalReceived),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.success,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: LinearProgressIndicator(
+                        value: total <= 0 ? 0 : sede.totalReceived / total,
+                        minHeight: 5,
+                        backgroundColor: AppColors.surfaceAlt,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          AppColors.brand,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Resultado ${_pesos(sede.netResult)} · '
+                      '${sede.paymentsCount} cobros · '
+                      'caja ${_pesos(sede.expectedCash)}',
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 150000.0 -> "\$150.000". Los reportes manejan pesos enteros (D-175), asi
+  /// que se redondea antes de partir en miles.
+  String _pesos(double valor) {
+    final entero = valor.round();
+    final negativo = entero < 0;
+    final digitos = entero.abs().toString();
+    final buffer = StringBuffer();
+    for (var i = 0; i < digitos.length; i++) {
+      final restantes = digitos.length - i;
+      buffer.write(digitos[i]);
+      if (restantes > 1 && restantes % 3 == 1) buffer.write('.');
+    }
+    // El signo va ANTES del simbolo, no en medio: es el bug de TL-12, que
+    // imprimia "\$-.100" al contar los puntos desde el final incluyendo el menos.
+    return negativo ? '-\$$buffer' : '\$$buffer';
   }
 
   Widget _buildFinancialSummaryCard(BranchReportV3 report) {
