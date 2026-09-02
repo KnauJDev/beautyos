@@ -3,14 +3,17 @@ import 'package:flutter/material.dart';
 import '../models/branch_context.dart';
 import '../models/dashboard_hoy.dart';
 import '../models/dashboard_serie.dart';
+import '../models/onboarding_progress.dart';
 import '../models/periodo_dashboard.dart';
 import '../services/dashboard_service.dart';
+import '../services/onboarding_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/agenda_de_hoy.dart';
 import '../widgets/app_widgets.dart';
 import '../widgets/filtro_periodo.dart';
 import '../widgets/grafico_protagonista.dart';
 import '../widgets/indicador_comparado.dart';
+import '../widgets/primeros_pasos_card.dart';
 import '../widgets/tiempo_vendido.dart';
 import '../widgets/tu_negocio_en_palabras_card.dart';
 
@@ -32,6 +35,9 @@ class DashboardPage extends StatefulWidget {
     this.onIrAAgenda,
     this.onIrATickets,
     this.onIrAClientes,
+    this.onIrAServicios,
+    this.onIrAEstilistas,
+    this.onIrAConfiguracion,
   });
 
   final String branchId;
@@ -51,6 +57,12 @@ class DashboardPage extends StatefulWidget {
   final VoidCallback? onIrATickets;
   final VoidCallback? onIrAClientes;
 
+  /// Los tres destinos de la lista de Primeros pasos (paso 8.8, D-186). Mismo
+  /// criterio que los de arriba: son modulos hermanos del mismo `IndexedStack`.
+  final VoidCallback? onIrAServicios;
+  final VoidCallback? onIrAEstilistas;
+  final VoidCallback? onIrAConfiguracion;
+
   @override
   State<DashboardPage> createState() => _DashboardPageState();
 }
@@ -68,12 +80,39 @@ class _DashboardPageState extends State<DashboardPage> {
   late Future<SerieDashboard> _serie;
   late Future<DashboardHoy> _hoy;
 
+  /// Primeros pasos (paso 8.8, D-186). Se carga aparte del resto: si fallara,
+  /// el Dashboard tiene que seguir funcionando igual.
+  final OnboardingService _onboardingService = const OnboardingService();
+  late Future<OnboardingProgress> _primerosPasos;
+
   @override
   void initState() {
     super.initState();
     dashboardService = DashboardService(branchId: widget.branchId);
     _cargarTodo();
     _cargarHoy();
+    _cargarPrimerosPasos();
+  }
+
+  void _cargarPrimerosPasos() {
+    _primerosPasos = _onboardingService.getProgress(widget.branchId);
+  }
+
+  Future<void> _descartarPrimerosPasos() async {
+    try {
+      await _onboardingService.dismiss();
+      if (!mounted) return;
+      setState(_cargarPrimerosPasos);
+    } catch (_) {
+      if (!mounted) return;
+      // Si no se pudo guardar, hay que decirlo: si no, la lista reaparece al
+      // recargar y parece que el boton no hace nada.
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo ocultar la lista. Intentalo de nuevo.'),
+        ),
+      );
+    }
   }
 
   List<String> get _sedes =>
@@ -103,6 +142,7 @@ class _DashboardPageState extends State<DashboardPage> {
     setState(() {
       _cargarTodo();
       _cargarHoy();
+      _cargarPrimerosPasos();
     });
   }
 
@@ -201,6 +241,30 @@ class _DashboardPageState extends State<DashboardPage> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Primeros pasos (paso 8.8, D-186): va ARRIBA DEL TODO, antes
+                // de los controles. Un salon que aun no puede cobrar no
+                // necesita elegir un rango de fechas: necesita saber que le
+                // falta. Cuando los cuatro pasos estan hechos desaparece sola.
+                FutureBuilder<OnboardingProgress>(
+                  future: _primerosPasos,
+                  builder: (context, p) {
+                    if (!p.hasData || !p.data!.debeMostrarse) {
+                      return const SizedBox.shrink();
+                    }
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                      child: PrimerosPasosCard(
+                        progreso: p.data!,
+                        onIrAServicios: widget.onIrAServicios ?? () {},
+                        onIrAEstilistas: widget.onIrAEstilistas ?? () {},
+                        onIrAConfiguracion: widget.onIrAConfiguracion ?? () {},
+                        onIrAAgenda: widget.onIrAAgenda ?? () {},
+                        onDescartar: _descartarPrimerosPasos,
+                      ),
+                    );
+                  },
+                ),
                 _Controles(
                   periodo: _periodo,
                   hoy: datos.hoyEnLaSede,
@@ -223,7 +287,15 @@ class _DashboardPageState extends State<DashboardPage> {
                 const SizedBox(height: AppSpacing.lg),
 
                 if (datos.sinHistoria)
-                  const _DiaCero()
+                  // Si la lista de Primeros pasos esta arriba, esta tarjeta
+                  // diria lo mismo con menos: se calla (paso 8.8, D-186).
+                  FutureBuilder<OnboardingProgress>(
+                    future: _primerosPasos,
+                    builder: (context, p) =>
+                        (p.hasData && p.data!.debeMostrarse)
+                        ? const SizedBox.shrink()
+                        : const _DiaCero(),
+                  )
                 else ...[
                   // Su propio FutureBuilder porque usa `_hoy`, que se carga
                   // aparte de `_resumen` (ver comentario de `_cargarHoy`).

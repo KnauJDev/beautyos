@@ -450,6 +450,10 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           onIrAAgenda: () => _irAModulo(modules, 'Agenda'),
           onIrATickets: () => _irAModulo(modules, 'Tickets & Caja'),
           onIrAClientes: () => _irAModulo(modules, 'Clientes'),
+          // Los tres destinos de la lista de Primeros pasos (paso 8.8, D-186).
+          onIrAServicios: () => _irAModulo(modules, 'Servicios'),
+          onIrAEstilistas: () => _irAModulo(modules, 'Estilistas'),
+          onIrAConfiguracion: () => _irAModulo(modules, 'Configuración'),
         ),
         allowedRoles: const <String>{'owner', 'admin'},
       ),

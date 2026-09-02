@@ -1,8 +1,8 @@
 # HANDOFF Salón y Más — 1 de septiembre de 2026 ("Auditoría de 4 revisiones, perímetro de pagos y privacidad del portal", D-181 a D-183)
 
-**Bloque documentado:** decisiones **D-181 a D-185** · Pasos **8.9 a 8.13** de la **FASE 8**.
+**Bloque documentado:** decisiones **D-181 a D-186** · Pasos **8.8 a 8.13** de la **FASE 8**.
 
-**Estado:** `flutter analyze` limpio (0/0), **262 de 262 pruebas en verde**. `flutter analyze` limpio (0/0) y **271 de 271 pruebas en verde**. **D-181, D-182 y D-183 desplegados y verificados en producción** — el perímetro de pagos de ePayco cerrado por los dos lados y el portal de la clienta sin enumeración. **D-184 cerrado**: los candados de plan ya no dejan que un salón vea errores de base de datos por culpa de su plan. **D-185 aplicado y verificado.** Con esto quedan cerrados los seis bloqueadores de seguridad y backend de la auditoría: TL-01, TL-02, TL-04, TL-05, TL-06 y TL-19.
+**Estado:** `flutter analyze` limpio (0/0), **262 de 262 pruebas en verde**. `flutter analyze` limpio (0/0) y **271 de 271 pruebas en verde**. **D-181, D-182 y D-183 desplegados y verificados en producción** — el perímetro de pagos de ePayco cerrado por los dos lados y el portal de la clienta sin enumeración. **D-184 cerrado**: los candados de plan ya no dejan que un salón vea errores de base de datos por culpa de su plan. **D-185 aplicado y verificado.** Con esto quedan cerrados los seis bloqueadores de seguridad y backend de la auditoría: TL-01, TL-02, TL-04, TL-05, TL-06 y TL-19. **D-186 (el broche de oro, paso 8.8) escrito y pendiente de aplicar.**
 
 ---
 
@@ -120,11 +120,36 @@ escala: 1 minuto a los 5 intentos, 5 a los 10, 30 a los 15.
 verde (9 de 9 casos contra la base real)**, con bcrypt activo, la migración al
 vuelo probada y `ROLLBACK` limpio.
 
+### 1.7 Paso 8.8 — el broche de oro, escrito y sin aplicar (D-186)
+
+La tarjeta `_DiaCero` del Dashboard enumeraba tres cosas por hacer, pero era
+**texto**: no sabía cuáles estaban hechas y no llevaba a ninguna parte.
+
+Ahora `get_onboarding_progress` dice qué está hecho de verdad y
+`PrimerosPasosCard` lo pinta con contador «X de 4», barra de avance y un botón
+**Empezar** por paso que lleva de un toque a su pantalla. Los cuatro pasos son
+**servicios, equipo, horario y primera cita**, porque los cuatro llevan al bucle
+central: que el salón cobre una cita.
+
+**La lista tiene un final:** al completarse desaparece sola, sin que nadie la
+cierre. Y hay un "Ya lo tengo listo, ocultar" para el salón que llegó con su
+negocio montado, guardado en `tenants` y no en el perfil: si el dueño la cierra,
+el administrador tampoco vuelve a verla.
+
+**El portafolio quedó fuera a propósito**, aunque el paso 8.8 lo mencionaba:
+desde D-184 las fotos son de plan Profesional, así que a un salón en Básico se
+le estaría pidiendo como primer paso algo que su plan no le deja hacer.
+
 ---
 
 ## 2. Lo que quedó a medias
 
-### 2.1 El candado 2 de D-181 nunca se ha ejercitado
+### 2.1 🔴 D-186 sin aplicar
+
+Los comandos están en el apartado 5. Después conviene mirarlo con un salón
+nuevo: las 7 pruebas cubren el modelo, no la pantalla.
+
+### 2.2 El candado 2 de D-181 nunca se ha ejercitado
 
 El `401` verifica el **primer** candado (la sesión). La comparación de
 `x_cust_id_cliente` **no se ha probado contra una transacción real**, y está
@@ -138,10 +163,10 @@ Cómo salir de dudas con el próximo pago real:
 curl -s https://secure.epayco.co/validation/v1/reference/REF_PAYCO_REAL | python -m json.tool | grep -i cust
 ```
 
-### 2.2 Paso 8.8 sigue pendiente
+### 2.3 Paso 8.14 y el candado por botón
 
-El onboarding guiado "Primeros pasos" sigue reservado como el último del todo.
-Las cuatro revisiones coincidieron en que hace falta antes de vender.
+Fotos de trabajos y Reseñas necesitan candado **por botón**, no por módulo
+(sale de D-184). Es lo único que queda de la auditoría además de lo de arriba.
 
 ---
 
@@ -202,12 +227,14 @@ Ese documento NO manda sobre el Plan Maestro: es el expediente de evidencia.
 D-184 (TL-19, candados de plan en la interfaz) está cerrado, con 271/271
 pruebas en verde.
 
-D-185 (TL-06, PIN con bcrypt) está aplicado y verificado: Control 199 en verde.
+Los seis bloqueadores de seguridad y backend de la auditoría están cerrados y
+verificados: TL-01, TL-02, TL-04, TL-05, TL-06 y TL-19.
 
-Con esto quedan cerrados los seis bloqueadores de seguridad y backend de la
-auditoría: TL-01, TL-02, TL-04, TL-05, TL-06 y TL-19.
+D-186 (paso 8.8, el broche de oro) está ESCRITO pero SIN APLICAR:
 
-Lo siguiente en la cola:
+  powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\migrations\20260901180000_onboarding_primeros_pasos.sql"
+  powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\sql\200_test_onboarding_primeros_pasos.sql"
+
+Lo unico que queda despues:
 1. Paso 8.14: candado por botón en Fotos de trabajos y Reseñas (sale de D-184).
-2. Paso 8.8: onboarding guiado "Primeros pasos".
 ```
