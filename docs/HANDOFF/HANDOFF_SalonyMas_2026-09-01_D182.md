@@ -2,7 +2,7 @@
 
 **Bloque documentado:** decisiones **D-181, D-182 y D-183** · Pasos **8.9, 8.10 y 8.11** de la **FASE 8**.
 
-**Estado:** `flutter analyze` limpio (0/0), **262 de 262 pruebas en verde**. **D-181 y D-182 desplegados y verificados en producción** — el perímetro de pagos de ePayco queda cerrado por los dos lados. **D-183 escrito, pendiente de aplicar.**
+**Estado:** `flutter analyze` limpio (0/0), **262 de 262 pruebas en verde**. **D-181, D-182 y D-183 desplegados y verificados en producción.** El perímetro de pagos de ePayco queda cerrado por los dos lados y el portal de la clienta ya no permite enumerar.
 
 ---
 
@@ -60,7 +60,7 @@ verde (9 de 9 casos contra la base real)** con el ataque de TL-02 rechazado y
 `ROLLBACK` limpio, y las dos Edge Functions desplegadas **en el orden correcto**
 — primero la que escribe intenciones, luego la que las exige.
 
-### 1.4 Paso 8.11 — TL-04 y TL-05, escrito y sin aplicar (D-183)
+### 1.4 Paso 8.11 — TL-04 y TL-05 cerrados y verificados (D-183)
 
 `client_portal_authenticate` la ejecuta `anon`, y el `tenant_id` que necesita es
 público desde D-164. Devolvía **cuatro mensajes distinguibles** y los tres
@@ -73,22 +73,20 @@ tienes PIN, pídelo en tu salón" dada a todo el mundo, y el **tiempo** de
 respuesta igualado. Más el índice funcional `clients_tenant_phone_digits_idx`,
 que sirve a las dos funciones del portal.
 
+**Verificado en producción el 01-sep:** migración aplicada y **Control 198 en
+verde (9 de 9 casos contra la base real)**, con el oráculo eliminado, los cuatro
+mensajes idénticos entre sí, el índice comprobado y `ROLLBACK` limpio.
+
+**Lo que cambió para las clientas reales:** la que se equivoca de PIN y la que
+está bloqueada ven ahora el mismo mensaje. Si alguna llama al salón confundida,
+la respuesta es "espera 15 minutos o pídeme un PIN nuevo". El bloqueo sigue
+funcionando igual; solo dejó de anunciarse.
+
 ---
 
 ## 2. Lo que quedó a medias
 
-### 2.1 🔴 D-183 sin aplicar
-
-```powershell
-powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\migrations\20260901140000_portal_clienta_sin_enumeracion_tl04_tl05.sql"
-
-powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\sql\198_test_portal_clienta_sin_enumeracion_tl04_tl05.sql"
-```
-
-Aquí **no hay que desplegar nada**: es solo base de datos. El cambio de Dart es
-un comentario.
-
-### 2.2 El candado 2 de D-181 nunca se ha ejercitado
+### 2.1 El candado 2 de D-181 nunca se ha ejercitado
 
 El `401` verifica el **primer** candado (la sesión). La comparación de
 `x_cust_id_cliente` **no se ha probado contra una transacción real**, y está
@@ -102,7 +100,7 @@ Cómo salir de dudas con el próximo pago real:
 curl -s https://secure.epayco.co/validation/v1/reference/REF_PAYCO_REAL | python -m json.tool | grep -i cust
 ```
 
-### 2.3 Paso 8.8 sigue pendiente
+### 2.2 Paso 8.8 sigue pendiente
 
 El onboarding guiado "Primeros pasos" sigue reservado como el último del todo.
 Las cuatro revisiones coincidieron en que hace falta antes de vender.
@@ -155,8 +153,8 @@ D-181 (TL-01) y D-182 (TL-02) están desplegados y verificados en producción:
 el perímetro de pagos de ePayco queda cerrado por los dos lados (la ruta de
 verificación inmediata y el webhook). Control 197 en verde, 9 de 9 casos.
 
-D-183 (TL-04 y TL-05, privacidad del portal de la clienta) está ESCRITO pero SIN
-APLICAR: migración 20260901140000 y control 198. Ver apartado 2.1.
+D-183 (TL-04 y TL-05, privacidad del portal de la clienta) también está aplicado
+y verificado: Control 198 en verde, 9 de 9 casos.
 
 El contexto completo de la auditoría de 4 revisiones, con cada hallazgo
 verificado contra el código, está en
