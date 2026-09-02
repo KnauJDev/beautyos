@@ -137,7 +137,7 @@ eso va por partes:
 
 | Etapa | Qué | Estado |
 |---|---|---|
-| 1 | Catálogo de un solo plan, capacidades abiertas, pantalla pública | 🔄 D-188 |
+| 1 | Catálogo de un solo plan y capacidades abiertas | ✅ **CERRADA 01-sep (D-188).** Migración aplicada, Control 201 en verde (8 de 8) y `create-epayco-session` desplegada con el plan por defecto `pro` |
 | 2 | **Suscripción por sede:** tabla propia, la sede nace inactiva y se activa al pagarse | ⬜ |
 | 3 | **ePayco por sede:** intención con `branch_id`, prorrateo hasta la fecha ancla, alertas y panel por sede | ⬜ |
 
