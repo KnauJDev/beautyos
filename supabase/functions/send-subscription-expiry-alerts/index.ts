@@ -1,10 +1,16 @@
-// BeautyOS - Automatizacion de Alertas de Vencimiento de Suscripcion y Gracia (Paso 3.11 / D-143)
+// BeautyOS - Automatizacion de Alertas de Vencimiento de Suscripcion y Gracia (Paso 3.11 / D-143, por sede desde D-196)
 //
 // 1. Control de Acceso: exige x-cron-secret o Bearer token contra CRON_SECRET (Fail-Closed).
 // 2. Ejecuta la suspension automatica de salones con gracia vencida (beautyos_suspender_suscripciones_vencidas).
-// 3. Consulta los salones con notificaciones pendientes (10, 5, 3 dias antes de corte y dias 1 al 5 de gracia).
-// 4. Genera correos en formato HTML responsivo en espanol con escape de caracteres, enlace directo de pago y WhatsApp.
-// 5. Envia los correos a traves de Resend (hola@salonymas.com) y registra cada envio en logs anti-spam.
+//    Sigue siendo solo del NEGOCIO: ninguna sede secundaria se suspende sola todavia (D-196).
+// 3. Consulta los salones con notificaciones pendientes (10, 5, 3 dias antes de corte y dias 1 al 5 de gracia),
+//    y por separado las SEDES SECUNDARIAS con el mismo calculo (D-196). La sede principal no se consulta aparte:
+//    su vencimiento ya lo cubre la alerta del negocio.
+// 4. Agrupa las dos listas POR NEGOCIO: un dueno con una sede que vence y dos sedes en gracia recibe UN SOLO
+//    correo, no tres. Genera HTML responsivo en espanol con escape de caracteres, enlace directo de pago y WhatsApp.
+// 5. Envia un correo por negocio a traves de Resend (hola@salonymas.com) y registra CADA alerta individual
+//    (la del negocio y la de cada sede) en el log anti-spam, para que el filtro de "no repetir hoy" siga
+//    funcionando por componente aunque el correo salga combinado.
 
 import { createClient } from "@supabase/supabase-js";
 
@@ -20,6 +26,43 @@ const CORS = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
+
+interface AlertaTenant {
+  tenant_id: string;
+  tenant_name: string;
+  recipient_email: string;
+  owner_name: string;
+  subscription_id: string;
+  subscription_status: string;
+  plan_name: string;
+  price_cop: number | null;
+  notification_type: string;
+  days_remaining: number;
+  expiry_date: string;
+}
+
+interface AlertaSede {
+  tenant_id: string;
+  tenant_name: string;
+  recipient_email: string;
+  owner_name: string;
+  branch_id: string;
+  branch_name: string;
+  branch_subscription_id: string;
+  notification_type: string;
+  days_remaining: number;
+  expiry_date: string;
+  price_cop: number | null;
+}
+
+interface GrupoAlertas {
+  tenant_id: string;
+  tenant_name: string;
+  recipient_email: string;
+  owner_name: string;
+  tenantAlert: AlertaTenant | null;
+  sedeAlerts: AlertaSede[];
+}
 
 function responder(cuerpo: unknown, status: number) {
   return new Response(JSON.stringify(cuerpo), {
@@ -42,56 +85,175 @@ function formatearPesosCop(valor?: number | null): string {
   return "$" + valor.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + " COP / mes";
 }
 
-function generarContenidoCorreo(alerta: Record<string, any>) {
-  const rawNombreDuenio = alerta.owner_name || "Propietario(a)";
-  const rawNombreSalon = alerta.tenant_name || "Tu Negocio";
-  const rawPlan = alerta.plan_name || "Profesional";
+// Agrupa las dos listas de alertas (negocio y sede) por tenant_id, para que
+// cada negocio reciba UN SOLO correo aunque tenga varias alertas pendientes
+// hoy (D-196). El orden de recorrido no importa: un Map con upsert basta.
+function agruparPorNegocio(
+  alertasTenant: AlertaTenant[],
+  alertasSede: AlertaSede[]
+): Map<string, GrupoAlertas> {
+  const grupos = new Map<string, GrupoAlertas>();
 
-  const nombreDuenio = escapeHtml(rawNombreDuenio);
-  const nombreSalon = escapeHtml(rawNombreSalon);
-  const plan = escapeHtml(rawPlan);
-  const precio = formatearPesosCop(alerta.price_cop);
+  for (const a of alertasTenant) {
+    grupos.set(a.tenant_id, {
+      tenant_id: a.tenant_id,
+      tenant_name: a.tenant_name,
+      recipient_email: a.recipient_email,
+      owner_name: a.owner_name,
+      tenantAlert: a,
+      sedeAlerts: [],
+    });
+  }
+
+  for (const a of alertasSede) {
+    const existente = grupos.get(a.tenant_id);
+    if (existente) {
+      existente.sedeAlerts.push(a);
+    } else {
+      grupos.set(a.tenant_id, {
+        tenant_id: a.tenant_id,
+        tenant_name: a.tenant_name,
+        recipient_email: a.recipient_email,
+        owner_name: a.owner_name,
+        tenantAlert: null,
+        sedeAlerts: [a],
+      });
+    }
+  }
+
+  return grupos;
+}
+
+// Frase corta para una fila de sede dentro del correo combinado. Mismo
+// vocabulario de notification_type que ya usa la alerta del negocio.
+function describirVencimientoSede(alerta: AlertaSede): string {
   const tipo = alerta.notification_type || "";
   const dias = alerta.days_remaining ?? 0;
 
-  let asunto = `Aviso sobre tu cuenta en Salón y Más (${rawNombreSalon})`;
-  let encabezado = "Estado de tu suscripción";
-  let mensajePrincipal = "";
+  if (tipo.startsWith("trial_")) {
+    return dias > 1 ? `Su prueba termina en ${dias} días` : "Su prueba termina hoy o mañana";
+  }
+  if (tipo.startsWith("period_")) {
+    return dias > 1 ? `Vence en ${dias} días` : "Vence hoy";
+  }
+  if (tipo.startsWith("grace_day_")) {
+    return `En periodo de gracia: quedan ${dias} ${dias === 1 ? "día" : "días"}`;
+  }
+  return "Requiere atención";
+}
+
+// true si alguna de las sedes ya está en las últimas 48h de su gracia o vence
+// hoy: sirve para elegir el color/urgencia cuando no hay alerta de negocio.
+function haySedeUrgente(sedeAlerts: AlertaSede[]): boolean {
+  return sedeAlerts.some(
+    (a) =>
+      a.notification_type === "grace_day_4" ||
+      a.notification_type === "grace_day_5" ||
+      (a.notification_type === "period_1d" && (a.days_remaining ?? 0) <= 1)
+  );
+}
+
+function bloqueSedesHtml(sedeAlerts: AlertaSede[]): string {
+  if (sedeAlerts.length === 0) return "";
+
+  const filas = sedeAlerts
+    .map(
+      (a) => `
+          <div class="info-row">
+            <strong>${escapeHtml(a.branch_name)}:</strong>
+            <span>${escapeHtml(describirVencimientoSede(a))}</span>
+          </div>`
+    )
+    .join("");
+
+  return `
+          <p style="margin-top: 24px; margin-bottom: 8px; font-weight: 700;">
+            Tus sedes con vencimiento próximo
+          </p>
+          <div class="info-card">
+            ${filas}
+          </div>`;
+}
+
+function generarContenidoCorreo(grupo: GrupoAlertas) {
+  const rawNombreDuenio = grupo.owner_name || "Propietario(a)";
+  const rawNombreSalon = grupo.tenant_name || "Tu Negocio";
+
+  const nombreDuenio = escapeHtml(rawNombreDuenio);
+  const nombreSalon = escapeHtml(rawNombreSalon);
+
+  const tenantAlert = grupo.tenantAlert;
+  const sedeAlerts = grupo.sedeAlerts;
+
+  let asunto: string;
+  let encabezado: string;
+  let mensajePrincipal: string;
   let colorBadge = "#6366f1"; // Indigo
   let textoBoton = "Pagar y Gestionar Mi Plan";
+  let plan = "";
+  let precio = "Tarifa según plan";
 
-  if (tipo.startsWith("trial_")) {
-    encabezado = "Tu prueba gratis está por terminar";
-    if (dias > 1) {
-      asunto = `Tu prueba gratis de Salón y Más vence en ${dias} días — ${rawNombreSalon}`;
-      mensajePrincipal = `Te quedan <strong>${dias} días</strong> de tu periodo de prueba gratis. Para continuar disfrutando de tu agenda, reservas de clientes y reportes sin interrupción, te invitamos a activar tu suscripción.`;
-    } else {
-      asunto = `🚨 Tu prueba gratis de Salón y Más termina pronto — ${rawNombreSalon}`;
-      mensajePrincipal = `Tu periodo de prueba gratis finaliza hoy o en las próximas horas. ¡Activa tu suscripción para mantener la agenda abierta a tus clientes!`;
+  if (tenantAlert) {
+    plan = escapeHtml(tenantAlert.plan_name || "Todo Incluido");
+    precio = formatearPesosCop(tenantAlert.price_cop);
+    const tipo = tenantAlert.notification_type || "";
+    const dias = tenantAlert.days_remaining ?? 0;
+
+    asunto = `Aviso sobre tu cuenta en Salón y Más (${rawNombreSalon})`;
+    encabezado = "Estado de tu suscripción";
+
+    if (tipo.startsWith("trial_")) {
+      encabezado = "Tu prueba gratis está por terminar";
+      if (dias > 1) {
+        asunto = `Tu prueba gratis de Salón y Más vence en ${dias} días — ${rawNombreSalon}`;
+        mensajePrincipal = `Te quedan <strong>${dias} días</strong> de tu periodo de prueba gratis. Para continuar disfrutando de tu agenda, reservas de clientes y reportes sin interrupción, te invitamos a activar tu suscripción.`;
+      } else {
+        asunto = `🚨 Tu prueba gratis de Salón y Más termina pronto — ${rawNombreSalon}`;
+        mensajePrincipal = `Tu periodo de prueba gratis finaliza hoy o en las próximas horas. ¡Activa tu suscripción para mantener la agenda abierta a tus clientes!`;
+        colorBadge = "#e11d48";
+      }
+    } else if (tipo.startsWith("period_")) {
+      encabezado = "Próxima renovación de mensualidad";
+      if (dias > 1) {
+        asunto = `Tu suscripción a Salón y Más vence en ${dias} días — ${rawNombreSalon}`;
+        mensajePrincipal = `Te recordamos que tu mensualidad del <strong>Plan ${plan}</strong> vence en <strong>${dias} días</strong>. Realiza tu pago con tiempo para mantener tus servicios al día.`;
+      } else {
+        asunto = `Tu mensualidad de Salón y Más vence hoy — ${rawNombreSalon}`;
+        mensajePrincipal = `Hoy vence tu periodo de suscripción mensual del <strong>Plan ${plan}</strong>. Realiza tu pago para evitar que tu servicio entre en periodo de mora.`;
+        colorBadge = "#f59e0b";
+      }
+    } else if (tipo.startsWith("grace_day_")) {
+      encabezado = `Periodo de Gracia: Te quedan ${dias} ${dias === 1 ? "día" : "días"}`;
+      colorBadge = dias <= 2 ? "#e11d48" : "#f59e0b";
+      asunto = `⚠️ Tienes ${dias} ${dias === 1 ? "día" : "días"} de gracia para realizar tu pago — ${rawNombreSalon}`;
+      mensajePrincipal = `Tienes <strong>${dias} ${dias === 1 ? "día" : "días"} de gracia</strong> para realizar tu pago y continuar disfrutando de tus servicios sin interrupción ni bloqueo de citas.`;
+      textoBoton = "Pagar Ahora por PSE / Tarjeta";
+    } else if (tipo === "suspended") {
+      encabezado = "Suscripción Pausada";
       colorBadge = "#e11d48";
-    }
-  } else if (tipo.startsWith("period_")) {
-    encabezado = "Próxima renovación de mensualidad";
-    if (dias > 1) {
-      asunto = `Tu suscripción a Salón y Más vence en ${dias} días — ${rawNombreSalon}`;
-      mensajePrincipal = `Te recordamos que tu mensualidad del <strong>Plan ${plan}</strong> vence en <strong>${dias} días</strong>. Realiza tu pago con tiempo para mantener tus servicios al día.`;
+      asunto = `Tu suscripción a Salón y Más ha sido pausada — ${rawNombreSalon}`;
+      mensajePrincipal = `Tu periodo de gracia ha finalizado y tu servicio ha sido pausado temporalmente. No podrás agendar nuevas citas ni recibir reservas públicas hasta reactivar tu plan. Tan pronto realices el pago, tu cuenta se reactivará automáticamente.`;
+      textoBoton = "Reactivar Mi Cuenta Ahora";
     } else {
-      asunto = `Tu mensualidad de Salón y Más vence hoy — ${rawNombreSalon}`;
-      mensajePrincipal = `Hoy vence tu periodo de suscripción mensual del <strong>Plan ${plan}</strong>. Realiza tu pago para evitar que tu servicio entre en periodo de mora.`;
-      colorBadge = "#f59e0b";
+      mensajePrincipal = "Hay novedades sobre el estado de tu suscripción.";
     }
-  } else if (tipo.startsWith("grace_day_")) {
-    encabezado = `Periodo de Gracia: Te quedan ${dias} ${dias === 1 ? "día" : "días"}`;
-    colorBadge = dias <= 2 ? "#e11d48" : "#f59e0b";
-    asunto = `⚠️ Tienes ${dias} ${dias === 1 ? "día" : "días"} de gracia para realizar tu pago — ${rawNombreSalon}`;
-    mensajePrincipal = `Tienes <strong>${dias} ${dias === 1 ? "día" : "días"} de gracia</strong> para realizar tu pago y continuar disfrutando de tus servicios sin interrupción ni bloqueo de citas.`;
-    textoBoton = "Pagar Ahora por PSE / Tarjeta";
-  } else if (tipo === "suspended") {
-    encabezado = "Suscripción Pausada";
-    colorBadge = "#e11d48";
-    asunto = `Tu suscripción a Salón y Más ha sido pausada — ${rawNombreSalon}`;
-    mensajePrincipal = `Tu periodo de gracia ha finalizado y tu servicio ha sido pausado temporalmente. No podrás agendar nuevas citas ni recibir reservas públicas hasta reactivar tu plan. Tan pronto realices el pago, tu cuenta se reactivará automáticamente.`;
-    textoBoton = "Reactivar Mi Cuenta Ahora";
+
+    // Con alertas de sede además de la del negocio, se avisa en el asunto
+    // para que no parezca un correo repetido si llega otro sobre las sedes.
+    if (sedeAlerts.length > 0) {
+      asunto += ` (+ ${sedeAlerts.length} sede${sedeAlerts.length === 1 ? "" : "s"})`;
+    }
+  } else {
+    // Sin alerta del negocio: solo hay sedes secundarias por vencer o en
+    // gracia. Encabezado propio, sin mencionar un plan que hoy no vence.
+    encabezado = "Sedes por vencer";
+    colorBadge = haySedeUrgente(sedeAlerts) ? "#e11d48" : "#f59e0b";
+    asunto = `Aviso de sedes por vencer en Salón y Más — ${rawNombreSalon}`;
+    textoBoton = "Ver mis sedes y pagar";
+    mensajePrincipal =
+      sedeAlerts.length === 1
+        ? `Una de tus sedes está por vencer o en periodo de gracia. Revisa el detalle abajo.`
+        : `${sedeAlerts.length} de tus sedes están por vencer o en periodo de gracia. Revisa el detalle abajo.`;
   }
 
   const html = `
@@ -126,11 +288,17 @@ function generarContenidoCorreo(alerta: Record<string, any>) {
           <p>Hola <strong>${nombreDuenio}</strong>,</p>
           <p>${mensajePrincipal}</p>
 
-          <div class="info-card">
+          ${
+            tenantAlert
+              ? `<div class="info-card">
             <div class="info-row"><strong>Negocio:</strong> <span>${nombreSalon}</span></div>
             <div class="info-row"><strong>Plan:</strong> <span>${plan}</span></div>
             <div class="info-row"><strong>Valor mensual:</strong> <span>${precio}</span></div>
-          </div>
+          </div>`
+              : ""
+          }
+
+          ${bloqueSedesHtml(sedeAlerts)}
 
           <div class="btn-container">
             <a href="${APP_URL}" class="btn">${textoBoton}</a>
@@ -196,6 +364,9 @@ Deno.serve(async (req) => {
     });
 
     paso = "suspender suscripciones con gracia vencida";
+    // Sigue siendo solo del NEGOCIO (D-143). Ninguna sede secundaria se
+    // suspende sola todavia: construir esa suspension automatica por sede es
+    // un cambio de comportamiento mayor que D-196 no cubrio a proposito.
     const { data: suspendResult, error: suspendError } = await supabase
       .rpc("beautyos_suspender_suscripciones_vencidas");
 
@@ -205,26 +376,40 @@ Deno.serve(async (req) => {
       console.log("Suscripciones suspendidas hoy:", suspendResult);
     }
 
-    paso = "consultar alertas pendientes";
-    const { data: alertas, error: alertasError } = await supabase
+    paso = "consultar alertas pendientes del negocio";
+    const { data: alertasTenantData, error: alertasTenantError } = await supabase
       .rpc("beautyos_obtener_alertas_suscripcion_pendientes");
 
-    if (alertasError) {
-      console.error("Error al consultar alertas pendientes:", alertasError.message);
-      return responder({ error: `Error al consultar alertas: ${alertasError.message}` }, 500);
+    if (alertasTenantError) {
+      console.error("Error al consultar alertas del negocio:", alertasTenantError.message);
+      return responder({ error: `Error al consultar alertas: ${alertasTenantError.message}` }, 500);
     }
 
-    const listaAlertas = (alertas as any[]) || [];
-    console.log(`PASO: ${paso} | Alertas encontradas: ${listaAlertas.length}`);
+    paso = "consultar alertas pendientes por sede";
+    const { data: alertasSedeData, error: alertasSedeError } = await supabase
+      .rpc("beautyos_obtener_alertas_sede_pendientes");
+
+    if (alertasSedeError) {
+      console.error("Error al consultar alertas por sede:", alertasSedeError.message);
+      return responder({ error: `Error al consultar alertas de sede: ${alertasSedeError.message}` }, 500);
+    }
+
+    const alertasTenant = (alertasTenantData as AlertaTenant[]) || [];
+    const alertasSede = (alertasSedeData as AlertaSede[]) || [];
+    const grupos = agruparPorNegocio(alertasTenant, alertasSede);
+
+    console.log(
+      `PASO: ${paso} | Alertas de negocio: ${alertasTenant.length} | Alertas de sede: ${alertasSede.length} | Negocios a notificar: ${grupos.size}`
+    );
 
     let totalEnviados = 0;
     let totalFallidos = 0;
     const detallesEnvios: any[] = [];
 
     paso = "enviar correos por Resend";
-    for (const alerta of listaAlertas) {
+    for (const grupo of grupos.values()) {
       try {
-        const { asunto, html } = generarContenidoCorreo(alerta);
+        const { asunto, html } = generarContenidoCorreo(grupo);
 
         const resResend = await fetch("https://api.resend.com/emails", {
           method: "POST",
@@ -234,46 +419,67 @@ Deno.serve(async (req) => {
           },
           body: JSON.stringify({
             from: "Salon y Mas <hola@salonymas.com>",
-            to: [alerta.recipient_email],
+            to: [grupo.recipient_email],
             subject: asunto,
             html: html,
           }),
         });
 
         if (resResend.ok) {
-          // Registrar en BD para evitar duplicados
-          await supabase.rpc("beautyos_registrar_alerta_enviada", {
-            p_tenant_id: alerta.tenant_id,
-            p_subscription_id: alerta.subscription_id,
-            p_notification_type: alerta.notification_type,
-            p_recipient_email: alerta.recipient_email,
-            p_metadata: {
-              asunto: asunto,
-              dias_restantes: alerta.days_remaining,
-              enviado_at: new Date().toISOString(),
-            },
-          });
+          // Registra CADA alerta individual (negocio + cada sede) en el log
+          // anti-spam, aunque el correo haya salido combinado: el filtro de
+          // "no repetir hoy" de beautyos_obtener_alertas_*_pendientes es por
+          // componente, no por correo.
+          if (grupo.tenantAlert) {
+            await supabase.rpc("beautyos_registrar_alerta_enviada", {
+              p_tenant_id: grupo.tenantAlert.tenant_id,
+              p_subscription_id: grupo.tenantAlert.subscription_id,
+              p_notification_type: grupo.tenantAlert.notification_type,
+              p_recipient_email: grupo.tenantAlert.recipient_email,
+              p_metadata: {
+                asunto,
+                dias_restantes: grupo.tenantAlert.days_remaining,
+                enviado_at: new Date().toISOString(),
+              },
+            });
+          }
+
+          for (const sede of grupo.sedeAlerts) {
+            await supabase.rpc("beautyos_registrar_alerta_enviada", {
+              p_tenant_id: sede.tenant_id,
+              p_subscription_id: null,
+              p_notification_type: sede.notification_type,
+              p_recipient_email: sede.recipient_email,
+              p_metadata: {
+                asunto,
+                dias_restantes: sede.days_remaining,
+                sede: sede.branch_name,
+                enviado_at: new Date().toISOString(),
+              },
+              p_branch_id: sede.branch_id,
+            });
+          }
 
           totalEnviados++;
           detallesEnvios.push({
-            tenant: alerta.tenant_name,
-            email: alerta.recipient_email,
-            tipo: alerta.notification_type,
+            tenant: grupo.tenant_name,
+            email: grupo.recipient_email,
+            tipo_negocio: grupo.tenantAlert?.notification_type ?? null,
+            sedes: grupo.sedeAlerts.map((s) => ({ sede: s.branch_name, tipo: s.notification_type })),
             ok: true,
           });
         } else {
           const errText = await resResend.text();
-          console.error(`Resend rechazo envio a ${alerta.recipient_email}:`, errText);
+          console.error(`Resend rechazo envio a ${grupo.recipient_email}:`, errText);
           totalFallidos++;
           detallesEnvios.push({
-            tenant: alerta.tenant_name,
-            email: alerta.recipient_email,
-            tipo: alerta.notification_type,
+            tenant: grupo.tenant_name,
+            email: grupo.recipient_email,
             error: errText,
           });
         }
       } catch (errAlerta) {
-        console.error(`Fallo envio para tenant ${alerta.tenant_name}:`, errAlerta);
+        console.error(`Fallo envio para tenant ${grupo.tenant_name}:`, errAlerta);
         totalFallidos++;
       }
     }
@@ -282,7 +488,9 @@ Deno.serve(async (req) => {
       {
         ok: true,
         suspendidos: suspendResult,
-        total_procesados: listaAlertas.length,
+        alertas_negocio: alertasTenant.length,
+        alertas_sede: alertasSede.length,
+        negocios_notificados: grupos.size,
         enviados: totalEnviados,
         fallidos: totalFallidos,
         detalles: detallesEnvios,
