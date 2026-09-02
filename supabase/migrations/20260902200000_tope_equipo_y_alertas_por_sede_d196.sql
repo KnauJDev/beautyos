@@ -138,6 +138,9 @@ begin
 end;
 $$;
 
+revoke all on function private.beautyos_require_team_limit(uuid, integer) from public, anon, authenticated;
+grant execute on function private.beautyos_require_team_limit(uuid, integer) to service_role;
+
 comment on function private.beautyos_require_team_limit(uuid, integer) is
   'Como beautyos_require_limit, pero el tope de team_members se multiplica por las sedes activas del negocio (D-196): la principal cuenta si el negocio esta entitled (mismo criterio de siempre), las secundarias por su propio branch_subscriptions.status. Vive aparte de beautyos_require_limit porque esa la comparte create_branch, donde multiplicar por sedes no tiene sentido. NO ELIMINAR.';
 
