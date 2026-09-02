@@ -2,7 +2,7 @@
 
 **Bloque documentado:** decisiones **D-181 a D-184** · Pasos **8.9, 8.10, 8.11 y 8.13** de la **FASE 8**.
 
-**Estado:** `flutter analyze` limpio (0/0), **262 de 262 pruebas en verde**. `flutter analyze` limpio (0/0) y **271 de 271 pruebas en verde**. **D-181, D-182 y D-183 desplegados y verificados en producción** — el perímetro de pagos de ePayco cerrado por los dos lados y el portal de la clienta sin enumeración. **D-184 escrito, sin probar contra un salón real en Básico.**
+**Estado:** `flutter analyze` limpio (0/0), **262 de 262 pruebas en verde**. `flutter analyze` limpio (0/0) y **271 de 271 pruebas en verde**. **D-181, D-182 y D-183 desplegados y verificados en producción** — el perímetro de pagos de ePayco cerrado por los dos lados y el portal de la clienta sin enumeración. **D-184 cerrado**: los candados de plan ya no dejan que un salón vea errores de base de datos por culpa de su plan.
 
 ---
 
@@ -82,7 +82,7 @@ está bloqueada ven ahora el mismo mensaje. Si alguna llama al salón confundida
 la respuesta es "espera 15 minutos o pídeme un PIN nuevo". El bloqueo sigue
 funcionando igual; solo dejó de anunciarse.
 
-### 1.5 Paso 8.13 — TL-19, escrito y sin probar (D-184)
+### 1.5 Paso 8.13 — TL-19 cerrado (D-184)
 
 El backend hacía cumplir los planes desde el 22-jul y **Flutter no llamaba a
 `get_my_entitlements()` ni una sola vez**: `BeautyModule` solo filtraba por rol.
@@ -109,13 +109,7 @@ Configuración. Esconderlo habría arreglado el error y matado la venta.
 
 ## 2. Lo que quedó a medias
 
-### 2.1 D-184 sin probar con un salón real
-
-Las 9 pruebas nuevas cubren el modelo, pero **nadie ha entrado todavía con un
-salón en plan Básico** a ver el candado y la pantalla de mejora. Es lo que falta
-para darlo por cerrado.
-
-### 2.2 El candado 2 de D-181 nunca se ha ejercitado
+### 2.1 El candado 2 de D-181 nunca se ha ejercitado
 
 El `401` verifica el **primer** candado (la sesión). La comparación de
 `x_cust_id_cliente` **no se ha probado contra una transacción real**, y está
@@ -129,7 +123,7 @@ Cómo salir de dudas con el próximo pago real:
 curl -s https://secure.epayco.co/validation/v1/reference/REF_PAYCO_REAL | python -m json.tool | grep -i cust
 ```
 
-### 2.3 Paso 8.8 sigue pendiente
+### 2.2 Paso 8.8 sigue pendiente
 
 El onboarding guiado "Primeros pasos" sigue reservado como el último del todo.
 Las cuatro revisiones coincidieron en que hace falta antes de vender.
@@ -190,8 +184,8 @@ verificado contra el código, está en
 docs/01_arquitectura/auditorias/AUDITORIA_4_REVISIONES_2026-09-01.md.
 Ese documento NO manda sobre el Plan Maestro: es el expediente de evidencia.
 
-D-184 (TL-19, candados de plan en la interfaz) está ESCRITO y con 271/271
-pruebas en verde, pero SIN PROBAR con un salón real en Básico.
+D-184 (TL-19, candados de plan en la interfaz) está cerrado, con 271/271
+pruebas en verde.
 
 Lo siguiente en la cola:
 1. Paso 8.14: candado por botón en Fotos de trabajos y Reseñas (sale de D-184).

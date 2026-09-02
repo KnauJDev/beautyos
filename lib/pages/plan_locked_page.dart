@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_dimens.dart';
@@ -39,6 +40,32 @@ class PlanLockedPage extends StatelessWidget {
 
   /// Lleva a Configuración, donde vive la tarjeta de Suscripción (D-158).
   final VoidCallback? onIrAConfiguracion;
+
+  /// Número de soporte de Salón y Más (Colombia +57), el mismo de
+  /// `tenant_approval_status_page`, `public_plans_page` y `settings_page`.
+  static const _whatsappSoporte = '573159780158';
+
+  Future<void> _escribirASoporte() async {
+    final mensaje = Uri.encodeComponent(
+      'Hola equipo de Salón y Más 👋, me gustaría mejorar mi plan para '
+      'activar el módulo de $moduleTitle.',
+    );
+
+    final url = Uri.parse('https://wa.me/$_whatsappSoporte?text=$mensaje');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+      return;
+    }
+
+    // Mismo respaldo que en la pantalla de estado de solicitud: si no hay
+    // WhatsApp, queda el correo de soporte (D-180).
+    await launchUrl(
+      Uri.parse(
+        'mailto:hola@salonymas.com'
+        '?subject=Quiero activar el módulo de $moduleTitle',
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -167,11 +194,30 @@ class PlanLockedPage extends StatelessWidget {
                       ),
                     ),
 
-                  const SizedBox(height: AppSpacing.md),
+                  const SizedBox(height: AppSpacing.sm),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton.icon(
+                      onPressed: _escribirASoporte,
+                      icon: const Icon(
+                        Icons.chat_bubble_outline,
+                        size: 18,
+                        color: AppColors.whatsapp,
+                      ),
+                      label: const Text(
+                        'Escríbenos por WhatsApp',
+                        style: TextStyle(color: AppColors.textStrong),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: AppSpacing.xs),
 
                   Text(
-                    'Si crees que tu plan sí debería incluirlo, escríbenos por '
-                    'WhatsApp y lo revisamos contigo.',
+                    'Si crees que tu plan sí debería incluir este módulo, '
+                    'cuéntanos y lo revisamos contigo.',
+                    textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.textMuted,
