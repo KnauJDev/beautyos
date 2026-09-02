@@ -28,8 +28,8 @@ void main() {
     'prev_payments_count': 10,
     'commissions_by_stylist': const [],
     'sales_by_service': const [],
-    if (branchesCount != null) 'branches_count': branchesCount,
-    if (byBranch != null) 'by_branch': byBranch,
+    'branches_count': ?branchesCount,
+    'by_branch': ?byBranch,
   };
 
   group('D-194 — Reporte consolidado de varias sedes', () {
