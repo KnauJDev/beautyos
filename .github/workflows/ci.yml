@@ -1,0 +1,37 @@
+# Salón y Más — CI (D-197, cierra TL-07: "no existe .github/workflows").
+#
+# Corre `flutter analyze` y `flutter test` en cada push a main y en cada pull
+# request. No necesita secretos: la publishableKey de Supabase en main.dart
+# es pública por diseño (va protegida por RLS, TL-07 lo confirmó) y las
+# pruebas usan servicios falsos (Fake*Service), nunca la base real.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  analyze-and-test:
+    name: Analyze and test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.2'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
