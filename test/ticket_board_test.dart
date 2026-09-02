@@ -125,6 +125,38 @@ void main() {
       expect(uri.toString(), 'https://wa.me/573109876543');
       expect(uri.toString(), isNot(contains('+')));
     });
+
+    test(
+        'buildAppointmentReminderMessage arma el texto pre-cargado con '
+        'cliente, servicio, hora y negocio (bloque de velocidad de mostrador)',
+        () {
+      final mensaje = buildAppointmentReminderMessage(
+        clientName: 'Camila Ospina',
+        serviceNames: 'Manicure Ruso',
+        scheduledAt: DateTime(2026, 8, 17, 8, 15),
+        businessName: 'Salón Bella Vita',
+      );
+      expect(
+        mensaje,
+        'Hola Camila Ospina 👋, te recordamos tu cita de Manicure Ruso '
+        'hoy a las 08:15 en Salón Bella Vita.',
+      );
+    });
+
+    test(
+        'buildAppointmentReminderMessage cae en textos genéricos si falta '
+        'la hora o el nombre del negocio',
+        () {
+      final mensaje = buildAppointmentReminderMessage(
+        clientName: 'Camila Ospina',
+        serviceNames: 'Manicure Ruso',
+      );
+      expect(
+        mensaje,
+        'Hola Camila Ospina 👋, te recordamos tu cita de Manicure Ruso '
+        'hoy a las la hora acordada en nuestro salón.',
+      );
+    });
   });
 
   group('AgendaPage Widget Tests', () {
@@ -237,6 +269,131 @@ void main() {
       expect(find.text('✂️ Manicure Ruso · 👤 Camila Manicurista'), findsOneWidget);
       expect(find.text('Total: \$80.000'), findsOneWidget);
       expect(find.text('Saldo: \$80.000'), findsOneWidget);
+    });
+
+    testWidgets(
+        'Botón de cobro directo (bloque de velocidad de mostrador): '
+        'aparece con saldo pendiente y avisa al shell con el id del ticket',
+        (tester) async {
+      final mockCounts = [
+        const TicketBoardCount(
+          bucket: '08:15',
+          status: 'finalizado',
+          ticketCount: 1,
+          totalPrice: 80000,
+          totalPendingBalance: 50000,
+        ),
+      ];
+
+      final mockItems = [
+        TicketBoardItem(
+          id: 'test-id-2',
+          ticketNumber: 702,
+          ticketCode: '#0000702',
+          clientName: 'Camila Ospina',
+          clientPhone: '+573109876543',
+          scheduledAt: DateTime(2026, 8, 17, 8, 15),
+          status: 'finalizado',
+          channel: 'online',
+          serviceNames: 'Manicure Ruso',
+          stylistNames: 'Camila Manicurista',
+          totalPrice: 80000,
+          totalDurationMinutes: 60,
+          paidAmount: 30000,
+          pendingBalance: 50000,
+          paymentStatus: 'parcial',
+        ),
+      ];
+
+      final fakeService = FakeAgendaBoardService(
+        mockCounts: mockCounts,
+        mockItems: mockItems,
+      );
+
+      String? collectedTicketId;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AgendaPage(
+              branchId: '00000000-0000-0000-0000-000000000001',
+              agendaService: fakeService,
+              onCollectTicket: (ticketId) => collectedTicketId = ticketId,
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('1'));
+      await tester.pumpAndSettle();
+
+      final botonCobrar = find.text('Cobrar \$50.000');
+      expect(botonCobrar, findsOneWidget);
+
+      await tester.tap(botonCobrar);
+      await tester.pumpAndSettle();
+
+      expect(collectedTicketId, 'test-id-2');
+    });
+
+    testWidgets(
+        'Sin saldo pendiente no aparece el botón de cobro directo',
+        (tester) async {
+      final mockCounts = [
+        const TicketBoardCount(
+          bucket: '08:15',
+          status: 'cerrado',
+          ticketCount: 1,
+          totalPrice: 80000,
+          totalPendingBalance: 0,
+        ),
+      ];
+
+      final mockItems = [
+        TicketBoardItem(
+          id: 'test-id-3',
+          ticketNumber: 703,
+          ticketCode: '#0000703',
+          clientName: 'Camila Ospina',
+          clientPhone: '+573109876543',
+          scheduledAt: DateTime(2026, 8, 17, 8, 15),
+          status: 'cerrado',
+          channel: 'online',
+          serviceNames: 'Manicure Ruso',
+          stylistNames: 'Camila Manicurista',
+          totalPrice: 80000,
+          totalDurationMinutes: 60,
+          paidAmount: 80000,
+          pendingBalance: 0,
+          paymentStatus: 'pagado',
+        ),
+      ];
+
+      final fakeService = FakeAgendaBoardService(
+        mockCounts: mockCounts,
+        mockItems: mockItems,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: AgendaPage(
+              branchId: '00000000-0000-0000-0000-000000000001',
+              agendaService: fakeService,
+              onCollectTicket: (_) {},
+            ),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('1'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Cobrar \$'), findsNothing);
     });
 
     testWidgets('Permite alternar a vista Semana y Mes', (tester) async {

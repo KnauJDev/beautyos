@@ -102,6 +102,8 @@ class TicketsPage extends StatefulWidget {
     this.puedeResenas = true,
     this.openTicketId,
     this.onTicketOpened,
+    this.collectTicketId,
+    this.onCollectTicketOpened,
   });
 
   final String branchId;
@@ -127,6 +129,15 @@ class TicketsPage extends StatefulWidget {
   /// a mandar en el proximo build y reabra el mismo ticket.
   final VoidCallback? onTicketOpened;
 
+  /// Ticket que hay que abrir directo en el dialogo de pago, sin pasar por
+  /// la Ficha Completa (UX-03/UX-05, bloque de velocidad de mostrador). Lo
+  /// pone el shell cuando se toca "Cobrar" en la tarjeta de Agenda -- mismo
+  /// mecanismo que [openTicketId], pero saltandose la hoja de detalle.
+  final String? collectTicketId;
+
+  /// Avisa al shell que ya se consumio `collectTicketId`.
+  final VoidCallback? onCollectTicketOpened;
+
   @override
   State<TicketsPage> createState() => _TicketsPageState();
 }
@@ -149,6 +160,7 @@ class _TicketsPageState extends State<TicketsPage> {
     ticketsService = TicketsService(branchId: widget.branchId);
     ticketsFuture = ticketsService.getTicketsSummary();
     _maybeOpenPendingTicket();
+    _maybeOpenPendingCollectTicket();
   }
 
   @override
@@ -157,6 +169,10 @@ class _TicketsPageState extends State<TicketsPage> {
     if (widget.openTicketId != null &&
         widget.openTicketId != oldWidget.openTicketId) {
       _maybeOpenPendingTicket();
+    }
+    if (widget.collectTicketId != null &&
+        widget.collectTicketId != oldWidget.collectTicketId) {
+      _maybeOpenPendingCollectTicket();
     }
   }
 
@@ -193,6 +209,44 @@ class _TicketsPageState extends State<TicketsPage> {
     }
 
     if (ticket != null) {
+      await _openTicketDetailSheet(ticket);
+    }
+  }
+
+  /// Abre el dialogo de pago de `widget.collectTicketId` directo, sin la
+  /// Ficha Completa de por medio (bloque de velocidad de mostrador). Si el
+  /// ticket ya no admite gestionar pagos -- cancelado o no asistio, ver
+  /// `AccionesDeTicket.puedeGestionarPagos` -- cae a la Ficha Completa en
+  /// vez de no hacer nada, para que el toque en Agenda siempre lleve a
+  /// algun sitio util.
+  Future<void> _maybeOpenPendingCollectTicket() async {
+    final ticketId = widget.collectTicketId;
+    if (ticketId == null) {
+      return;
+    }
+
+    final tickets = await ticketsFuture;
+    if (!mounted) {
+      return;
+    }
+
+    widget.onCollectTicketOpened?.call();
+
+    TicketSummary? ticket;
+    for (final t in tickets) {
+      if (t.id == ticketId) {
+        ticket = t;
+        break;
+      }
+    }
+
+    if (ticket == null) {
+      return;
+    }
+
+    if (_canManagePayments(ticket)) {
+      await _openPaymentsDialog(ticket);
+    } else {
       await _openTicketDetailSheet(ticket);
     }
   }
@@ -1299,6 +1353,25 @@ class _TicketsPageState extends State<TicketsPage> {
   }
 }
 
+/// Un horario disponible ya resuelto a un estilista concreto.
+///
+/// Mismo patrón de "Cualquiera disponible" que `PublicBookingPage` (D-166):
+/// sin estilista elegido a mano se consultan todos los que ofrecen el
+/// servicio y se combinan sus horarios en una sola lista, recordando de cuál
+/// salió cada uno para poder reservar con el correcto (hallazgo C-01, la
+/// lógica ya estaba escrita y probada, solo no se reutilizaba aquí).
+class _ExpressSlotOption {
+  const _ExpressSlotOption({
+    required this.slot,
+    required this.stylistId,
+    required this.stylistName,
+  });
+
+  final AvailableAppointmentSlot slot;
+  final String stylistId;
+  final String stylistName;
+}
+
 class CreateAppointmentDialog extends StatefulWidget {
   const CreateAppointmentDialog({
     super.key,
@@ -1325,10 +1398,16 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
   late final List<ClientSummary> clients;
   String? selectedServiceId;
   String? selectedStylistId;
+
+  /// El estilista real al que se le va a agendar la hora elegida. Coincide
+  /// con [selectedStylistId] cuando se elige uno a mano; en modo "Cualquiera
+  /// disponible" ([selectedStylistId] queda en `null`) es el estilista del
+  /// que salió el horario que se seleccionó de la lista combinada.
+  String? _bookingStylistId;
   String? selectedClientId;
   DateTime? selectedDate;
   DateTime? scheduledAt;
-  List<AvailableAppointmentSlot>? availableSlots;
+  List<_ExpressSlotOption>? _availableSlots;
   bool isCreatingClient = false;
   bool isLoadingSlots = false;
   bool isSaving = false;
@@ -1393,9 +1472,12 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
     return null;
   }
 
-  TicketServiceOption? get selectedStylist {
+  TicketServiceOption? _stylistById(String? id) {
+    if (id == null) {
+      return null;
+    }
     for (final stylist in stylists) {
-      if (stylist.stylistId == selectedStylistId) {
+      if (stylist.stylistId == id) {
         return stylist;
       }
     }
@@ -1443,7 +1525,8 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
     setState(() {
       selectedDate = DateTime(date.year, date.month, date.day);
       scheduledAt = null;
-      availableSlots = null;
+      _bookingStylistId = null;
+      _availableSlots = null;
       slotsError = null;
     });
 
@@ -1451,30 +1534,62 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
   }
 
   Future<void> _loadAvailableSlots() async {
-    if (selectedServiceId == null ||
-        selectedStylistId == null ||
-        selectedDate == null) {
+    if (selectedServiceId == null || selectedDate == null) {
       return;
     }
 
     setState(() {
       isLoadingSlots = true;
       slotsError = null;
-      availableSlots = null;
+      _availableSlots = null;
     });
 
     try {
-      final slots = await widget.ticketsService.getAvailableAppointmentSlots(
-        serviceId: selectedServiceId!,
-        stylistId: selectedStylistId!,
-        date: selectedDate!,
+      // "Cualquiera disponible": sin estilista elegido a mano se consulta a
+      // cada uno que ofrece el servicio y se combinan los horarios (D-166,
+      // C-01). Con un estilista puntual es la misma consulta de siempre,
+      // con un solo destino.
+      final targets = selectedStylistId == null
+          ? stylists
+          : stylists
+              .where((option) => option.stylistId == selectedStylistId)
+              .toList();
+
+      final results = await Future.wait(
+        targets.map(
+          (target) => widget.ticketsService.getAvailableAppointmentSlots(
+            serviceId: selectedServiceId!,
+            stylistId: target.stylistId!,
+            date: selectedDate!,
+          ),
+        ),
       );
+
+      final merged = <_ExpressSlotOption>[];
+      final seenTimes = <DateTime>{};
+      for (var i = 0; i < targets.length; i++) {
+        for (final slot in results[i]) {
+          // Si dos estilistas coinciden en la misma hora se muestra una
+          // sola vez: son "Cualquiera disponible", no un listado por
+          // persona.
+          if (seenTimes.add(slot.startsAt)) {
+            merged.add(
+              _ExpressSlotOption(
+                slot: slot,
+                stylistId: targets[i].stylistId!,
+                stylistName: targets[i].stylistName ?? 'Sin estilista',
+              ),
+            );
+          }
+        }
+      }
+      merged.sort((a, b) => a.slot.startsAt.compareTo(b.slot.startsAt));
 
       if (!mounted) {
         return;
       }
       setState(() {
-        availableSlots = slots;
+        _availableSlots = merged;
       });
     } catch (error) {
       if (!mounted) {
@@ -1491,6 +1606,55 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
       }
     }
   }
+
+  /// Cita de paso ("walk-in", UX-01): sin dejar de calcular disponibilidad
+  /// real, encadena en un solo toque lo que antes eran tres pasos manuales
+  /// -- estilista en "Cualquiera disponible", fecha de hoy, y el primer
+  /// horario libre desde ahora. El cliente sigue siendo un campo aparte, no
+  /// bloqueado (matiz de la auditoría de UX del 01-sep): se puede elegir
+  /// antes o después de tocar este botón.
+  Future<void> _atenderYa() async {
+    if (selectedServiceId == null) {
+      return;
+    }
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    setState(() {
+      selectedStylistId = null; // Cualquiera disponible.
+      selectedDate = today;
+      scheduledAt = null;
+      _bookingStylistId = null;
+      _availableSlots = null;
+      slotsError = null;
+    });
+
+    await _loadAvailableSlots();
+
+    if (!mounted) {
+      return;
+    }
+
+    final slots = _availableSlots;
+    if (slots == null || slots.isEmpty) {
+      // El aviso de "no quedan horarios" ya lo muestra la sección de abajo.
+      return;
+    }
+
+    final proximo = slots.firstWhere(
+      (option) => !option.slot.startsAt.isBefore(now),
+      orElse: () => slots.first,
+    );
+
+    setState(() {
+      scheduledAt = proximo.slot.startsAt;
+      _bookingStylistId = proximo.stylistId;
+    });
+  }
+
+  String? get _resolvedStylistName =>
+      _stylistById(_bookingStylistId)?.stylistName;
 
   Future<void> _openQuickCreateClientDialog() async {
     final formData = await showDialog<_QuickClientFormData>(
@@ -1590,7 +1754,7 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
           .createScheduledTicketWithService(
             clientId: selectedClientId!,
             serviceId: selectedServiceId!,
-            stylistId: selectedStylistId!,
+            stylistId: _bookingStylistId!,
             scheduledAt: scheduledAt!,
             notes: notesController.text.trim().isEmpty
                 ? null
@@ -1631,7 +1795,7 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
           .createRecurringScheduledTicketWithService(
             clientId: selectedClientId!,
             serviceId: selectedServiceId!,
-            stylistId: selectedStylistId!,
+            stylistId: _bookingStylistId!,
             scheduledAt: scheduledAt!,
             repeatFrequency: repeatFrequency,
             repeatUntil: repeatUntil!,
@@ -1721,7 +1885,7 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
   @override
   Widget build(BuildContext context) {
     final service = selectedService;
-    final stylist = selectedStylist;
+    final resolvedStylistName = _resolvedStylistName;
 
     return AlertDialog(
       title: const Text('Nueva cita'),
@@ -1756,7 +1920,8 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
                       selectedServiceId = value;
                       selectedStylistId = null;
                       scheduledAt = null;
-                      availableSlots = null;
+                      _bookingStylistId = null;
+                      _availableSlots = null;
                       slotsError = null;
                     });
                   },
@@ -1764,41 +1929,55 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
                       ? 'Selecciona un servicio'
                       : null,
                 ),
+                if (selectedServiceId != null) ...[
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: OutlinedButton.icon(
+                      onPressed: isLoadingSlots ? null : _atenderYa,
+                      icon: const Icon(Icons.bolt_outlined),
+                      label: const Text('Atender ya (walk-in)'),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
+                DropdownButtonFormField<String?>(
                   key: ValueKey('appointment-stylist-$selectedServiceId'),
                   initialValue: selectedStylistId,
                   isExpanded: true,
                   decoration: const InputDecoration(
-                    labelText: '2. Estilista disponible',
+                    labelText: '2. Estilista (o cualquiera disponible)',
                     prefixIcon: Icon(Icons.badge_outlined),
                   ),
-                  items: stylists
-                      .map(
-                        (option) => DropdownMenuItem(
-                          value: option.stylistId,
-                          child: Text(option.stylistName ?? 'Sin estilista'),
-                        ),
-                      )
-                      .toList(),
+                  items: [
+                    const DropdownMenuItem<String?>(
+                      value: null,
+                      child: Text('⚡ Cualquiera disponible'),
+                    ),
+                    ...stylists.map(
+                      (option) => DropdownMenuItem<String?>(
+                        value: option.stylistId,
+                        child: Text(option.stylistName ?? 'Sin estilista'),
+                      ),
+                    ),
+                  ],
                   onChanged: selectedServiceId == null
                       ? null
                       : (value) {
                           setState(() {
                             selectedStylistId = value;
                             scheduledAt = null;
-                            availableSlots = null;
+                            _bookingStylistId = null;
+                            _availableSlots = null;
                             slotsError = null;
                           });
                           _loadAvailableSlots();
                         },
-                  validator: (value) {
+                  validator: (_) {
                     if (selectedServiceId != null && stylists.isEmpty) {
                       return 'Este servicio no tiene estilistas habilitados';
                     }
-                    return value == null || value.isEmpty
-                        ? 'Selecciona un estilista'
-                        : null;
+                    return null;
                   },
                 ),
                 const SizedBox(height: 12),
@@ -1826,7 +2005,6 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
                         onTap: _selectDate,
                       ),
                       if (selectedServiceId != null &&
-                          selectedStylistId != null &&
                           selectedDate != null) ...[
                         const SizedBox(height: 4),
                         Text(
@@ -1851,28 +2029,34 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
                             slotsError!,
                             style: const TextStyle(color: AppColors.danger),
                           )
-                        else if (availableSlots != null &&
-                            availableSlots!.isEmpty)
+                        else if (_availableSlots != null &&
+                            _availableSlots!.isEmpty)
                           const Text(
                             'No quedan horarios disponibles para este día. Elige otra fecha o estilista.',
                             style: TextStyle(color: AppColors.warning),
                           )
-                        else if (availableSlots != null)
+                        else if (_availableSlots != null)
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
-                            children: availableSlots!
+                            children: _availableSlots!
                                 .map(
-                                  (slot) => ChoiceChip(
-                                    label: Text(slot.label),
+                                  (option) => ChoiceChip(
+                                    label: Text(
+                                      selectedStylistId == null
+                                          ? '${option.slot.label} · ${option.stylistName}'
+                                          : option.slot.label,
+                                    ),
                                     selected:
-                                        scheduledAt?.isAtSameMomentAs(
-                                          slot.startsAt,
-                                        ) ??
-                                        false,
+                                        (scheduledAt?.isAtSameMomentAs(
+                                              option.slot.startsAt,
+                                            ) ??
+                                            false) &&
+                                        _bookingStylistId == option.stylistId,
                                     onSelected: (_) {
                                       setState(() {
-                                        scheduledAt = slot.startsAt;
+                                        scheduledAt = option.slot.startsAt;
+                                        _bookingStylistId = option.stylistId;
                                         bookingError = null;
                                       });
                                     },
@@ -2006,7 +2190,7 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
                   ),
                 ],
                 if (service != null &&
-                    stylist != null &&
+                    resolvedStylistName != null &&
                     scheduledAt != null) ...[
                   const SizedBox(height: 16),
                   Container(
@@ -2017,7 +2201,7 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Text(
-                      '${service.serviceName} con ${stylist.stylistName}\\n'
+                      '${service.serviceName} con $resolvedStylistName\\n'
                       '$scheduledAtText · ${service.formattedPrice} · '
                       '${service.durationMinutes} min',
                       style: TextStyle(

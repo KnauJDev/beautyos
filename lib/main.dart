@@ -207,6 +207,11 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
   /// campo vuelve a null para no reabrir el mismo ticket despues.
   String? _pendingOpenTicketId;
 
+  /// Igual que `_pendingOpenTicketId`, pero para el boton "Cobrar" de la
+  /// tarjeta de Agenda: abre el dialogo de pago directo en vez de la Ficha
+  /// Completa (bloque de velocidad de mostrador).
+  String? _pendingCollectTicketId;
+
   final MyProfileService myProfileService = const MyProfileService();
   final BranchContextService branchContextService =
       const BranchContextService();
@@ -340,6 +345,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         page: AgendaPage(
           key: ValueKey('agenda-${branch.branchId}'),
           branchId: branch.branchId,
+          businessName: branch.tenantName,
           // Agenda y Tickets comparten exactamente los mismos allowedRoles
           // y son adyacentes en esta lista: Tickets siempre queda en el
           // indice inmediatamente siguiente al de Agenda, para cualquier
@@ -347,6 +353,12 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           onOpenTicket: (ticketId) {
             setState(() {
               _pendingOpenTicketId = ticketId;
+              selectedIndex = selectedIndex + 1;
+            });
+          },
+          onCollectTicket: (ticketId) {
+            setState(() {
+              _pendingCollectTicketId = ticketId;
               selectedIndex = selectedIndex + 1;
             });
           },
@@ -369,6 +381,9 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           puedeResenas: entitlements.permite(ClaveDeCapacidad.resenas),
           openTicketId: _pendingOpenTicketId,
           onTicketOpened: () => setState(() => _pendingOpenTicketId = null),
+          collectTicketId: _pendingCollectTicketId,
+          onCollectTicketOpened: () =>
+              setState(() => _pendingCollectTicketId = null),
         ),
         allowedRoles: const <String>{'owner', 'admin', 'assistant'},
       ),

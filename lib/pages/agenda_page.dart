@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/acciones_de_ticket.dart';
 import '../models/ticket_board.dart';
 import '../services/agenda_board_service.dart';
 import '../theme/app_theme.dart';
@@ -19,6 +20,26 @@ Uri buildWhatsAppUri(String phone, {String? text}) {
     return Uri.https('wa.me', '/$cleanPhone', {'text': text.trim()});
   }
   return Uri.parse('https://wa.me/$cleanPhone');
+}
+
+/// Mensaje de recordatorio pre-armado para la tarjeta de cita de Agenda
+/// (bloque de velocidad de mostrador): solo arma el texto, la persona sigue
+/// pudiendo editarlo antes de enviarlo -- wa.me abre el chat con el texto
+/// precargado, no lo manda solo.
+String buildAppointmentReminderMessage({
+  required String clientName,
+  required String serviceNames,
+  DateTime? scheduledAt,
+  String? businessName,
+}) {
+  final hora = scheduledAt != null
+      ? '${scheduledAt.hour.toString().padLeft(2, '0')}:${scheduledAt.minute.toString().padLeft(2, '0')}'
+      : 'la hora acordada';
+  final negocio = businessName?.trim().isNotEmpty == true
+      ? businessName!.trim()
+      : 'nuestro salón';
+  return 'Hola $clientName 👋, te recordamos tu cita de '
+      '$serviceNames hoy a las $hora en $negocio.';
 }
 
 /// Modos de vista del Tablero de Agenda (D-101 / D-116).
@@ -64,16 +85,27 @@ class AgendaPage extends StatefulWidget {
     super.key,
     required this.branchId,
     this.agendaService,
+    this.businessName,
     this.onOpenTicket,
+    this.onCollectTicket,
   });
 
   final String branchId;
   final AgendaBoardService? agendaService;
 
+  /// Nombre del negocio (`BranchContext.tenantName`), para el mensaje de
+  /// WhatsApp pre-armado de la tarjeta de cita.
+  final String? businessName;
+
   /// Abre la Ficha Completa Nivel 3 de un ticket sin pasar por la pestaña de
   /// Tickets (D-163). Vive en el shell (`main.dart`), que es quien puede
   /// cambiar de pestaña y avisarle a `TicketsPage` cual ticket abrir.
   final void Function(String ticketId)? onOpenTicket;
+
+  /// Abre el diálogo de pago del ticket directo, sin pasar por la Ficha
+  /// Completa (bloque de velocidad de mostrador). Igual que [onOpenTicket],
+  /// vive en el shell.
+  final void Function(String ticketId)? onCollectTicket;
 
   @override
   State<AgendaPage> createState() => _AgendaPageState();
@@ -289,7 +321,9 @@ class _AgendaPageState extends State<AgendaPage> {
           statuses: statuses,
           bucket: bucket,
           granularity: granularity,
+          businessName: widget.businessName,
           onOpenTicket: widget.onOpenTicket,
+          onCollectTicket: widget.onCollectTicket,
         );
       },
     );
@@ -1333,7 +1367,9 @@ class _Level2Sheet extends StatelessWidget {
   final List<String>? statuses;
   final String? bucket;
   final String? granularity;
+  final String? businessName;
   final void Function(String ticketId)? onOpenTicket;
+  final void Function(String ticketId)? onCollectTicket;
 
   const _Level2Sheet({
     required this.service,
@@ -1343,11 +1379,13 @@ class _Level2Sheet extends StatelessWidget {
     this.statuses,
     this.bucket,
     this.granularity,
+    this.businessName,
     this.onOpenTicket,
+    this.onCollectTicket,
   });
 
-  Future<void> _abrirWhatsApp(String phone) async {
-    final uri = buildWhatsAppUri(phone);
+  Future<void> _abrirWhatsApp(String phone, String message) async {
+    final uri = buildWhatsAppUri(phone, text: message);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
@@ -1455,12 +1493,31 @@ class _Level2Sheet extends StatelessWidget {
                         return _TicketCardNivel2(
                           item: item,
                           onWhatsAppTap: item.clientPhone.isNotEmpty
-                              ? () => _abrirWhatsApp(item.clientPhone)
+                              ? () => _abrirWhatsApp(
+                                  item.clientPhone,
+                                  buildAppointmentReminderMessage(
+                                    clientName: item.clientName,
+                                    serviceNames: item.serviceNames,
+                                    scheduledAt: item.scheduledAt,
+                                    businessName: businessName,
+                                  ),
+                                )
                               : null,
                           onTap: onOpenTicket != null
                               ? () {
                                   Navigator.of(context).pop();
                                   onOpenTicket!(item.id);
+                                }
+                              : null,
+                          onCollectTap:
+                              onCollectTicket != null &&
+                                  item.pendingBalance > 0 &&
+                                  AccionesDeTicket.puedeGestionarPagos(
+                                    item.status,
+                                  )
+                              ? () {
+                                  Navigator.of(context).pop();
+                                  onCollectTicket!(item.id);
                                 }
                               : null,
                         );
@@ -1481,8 +1538,14 @@ class _TicketCardNivel2 extends StatelessWidget {
   final TicketBoardItem item;
   final VoidCallback? onWhatsAppTap;
   final VoidCallback? onTap;
+  final VoidCallback? onCollectTap;
 
-  const _TicketCardNivel2({required this.item, this.onWhatsAppTap, this.onTap});
+  const _TicketCardNivel2({
+    required this.item,
+    this.onWhatsAppTap,
+    this.onTap,
+    this.onCollectTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1699,6 +1762,20 @@ class _TicketCardNivel2 extends StatelessWidget {
               ),
             ],
           ),
+
+          // Botón de cobro primario: abre el diálogo de pago directo, sin
+          // pasar por la Ficha Completa (bloque de velocidad de mostrador).
+          if (onCollectTap != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: onCollectTap,
+                icon: const Icon(Icons.payments_outlined, size: 16),
+                label: Text('Cobrar ${formatCOP(item.pendingBalance)}'),
+              ),
+            ),
+          ],
         ],
       ),
     );
