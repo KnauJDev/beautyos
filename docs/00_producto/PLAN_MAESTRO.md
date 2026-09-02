@@ -70,68 +70,81 @@ saltarse algo, **se anota aquí por qué**.
 
 ---
 
-## 3. Los planes, los precios y los límites
+## 3. El plan, el precio y la sede
 
-**Decidido el 09-ago (D-124), corrige a D-004.**
+**Decidido el 01-sep (D-188). Corrige a D-004, D-124, D-136 y D-140, y resuelve
+la Idea I-14.**
 
-### Qué incluye cada plan
+### Un solo plan
 
-| Capacidad | Básico | Business | Profesional |
-|---|:---:|:---:|:---:|
-| Sedes, clientes, equipo, servicios y agenda | ✅ | ✅ | ✅ |
-| Reserva pública web / QR | ✅ | ✅ | ✅ |
-| Estados, choques de agenda y operación diaria | ✅ | ✅ | ✅ |
-| Pagos, caja y comisiones | ✅ | ✅ | ✅ |
-| Inventario, compras y gastos | ❌ | ✅ | ✅ |
-| Reportes financieros ampliados | ❌ | ✅ | ✅ |
-| **"Tu negocio en palabras" (IA)** | ❌ | ✅ | ✅ |
-| Fotos de trabajos | ❌ | ❌ | ✅ |
-| Reseñas | ❌ | ❌ | ✅ |
-| **Estudio de publicación (IA)** | ❌ | ❌ | ✅ |
-| **Respuestas a reseñas asistidas (IA)** | ❌ | ❌ | ✅ |
-| WhatsApp con agente e Instagram automático | ❌ | ❌ | ✅ *(fase 6)* |
+Se retiró la escalera de tres (Básico / Business / Profesional). Queda **un solo
+plan, "Todo Incluido"**, y el eje de cobro deja de ser *qué módulos te dejo
+usar* para pasar a ser **cuántas sedes tienes activas**.
+
+**Por qué:** enamorar al salón desde el día cero con el producto entero, quitar
+la sensación de mezquindad de los candados por módulo, y que el ingreso crezca
+con el negocio del cliente en vez de con lo que se le esconde.
+
+**Qué trae, que es todo:** agenda y citas, caja y cobros, comisiones, clientes
+con historial, inventario, compras y gastos, reportes financieros, fotos de
+trabajos, reseñas y la vitrina web pública. Sin topes de estilistas, de cuentas
+de equipo ni de fotos.
+
+**Lo único que no está incluido es lo que no existe:** WhatsApp con agente e
+Instagram automático son Fase 6, y la regla de esa fase sigue en pie — *nada de
+la fase 6 se vende como disponible hasta que exista*.
 
 ### Precios
 
-| | Precio de lista | **Precio pionero** |
-|---|---:|---:|
-| **Básico** | $160.000 | **$80.000** |
-| **Business** | $200.000 | **$100.000** |
-| **Profesional** | $240.000 | **$120.000** |
+| | Por sede al mes |
+|---|---:|
+| **Precio de lista** | $120.000 |
+| **Precio pionero** | **$80.000** |
 
-- **25 pioneros**, 50% de descuento, **de por vida mientras sigan activos.**
-- **Por qué de por vida y no 6 meses:** al mes 7 el precio se duplicaría y se
-  irían justo los 25 primeros, que son los que dan las referencias. Son
-  ~$2.000.000/mes de base garantizada y los mejores vendedores que va a tener.
+- **25 pioneros**, precio congelado **de por vida mientras sigan activos**.
+- **El pionero es un precio pactado, no un porcentaje.** Y conviene saber por
+  qué: $80.000 sobre $120.000 **no es el 50%, es el 33,33%**, y ese número no
+  cae redondo — `120000 * (1 - 33.33/100)` da **80.004**. Como
+  `beautyos_procesar_evento_epayco` compara el monto pagado contra el calculado
+  (D-159), esos cuatro pesos se verían en el checkout. Se guarda como
+  `price_cop = 80000` con su motivo.
+- ⚠️ **Por lo mismo, el descuento del pionero no se puede anunciar como "50%".
+  Es un 33%.**
 - **Todo esto es modificable desde el panel del dueño de la plataforma**, por
   cliente y con motivo registrado.
 
-> ⚠️ **A precio de lista ya no se compite por precio.** El Básico a $160.000
-> queda por encima de los ~$137.000 de la competencia. **Es a propósito:** a
-> partir del cliente 26 el argumento es ser local, con soporte en su horario y
-> factura colombiana — y para entonces habrá 25 salones funcionando que lo
-> demuestren.
+### Qué cambia de precio para quién
 
-### Límites por plan
+| | Antes | Ahora | |
+|---|---:|---:|---|
+| Salón de **1 sede** | $160.000 (Básico, sin inventario ni reportes ni fotos) | **$120.000 con todo** | más barato y completo |
+| Cadena de **3 sedes** (pionera) | $120.000 (Profesional, sedes ilimitadas) | **$240.000** | el doble |
 
-| | Básico | Business | Profesional |
-|---|:---:|:---:|:---:|
-| Sedes | 1 | 3 | Sin límite |
-| Cuentas de equipo | 5 | 15 | Sin límite |
-| Clientes, citas y tickets | Sin límite | Sin límite | Sin límite |
-| Almacenamiento de fotos | — | — | 5 GB |
-| Publicaciones asistidas por IA | — | — | 50 al mes |
+Es coherente —el valor escala con el negocio— pero **cambia para quién es barato
+el producto**: el salón de barrio, que es el cliente objetivo escrito en el
+apartado 1, sale ganando; la cadena paga más.
 
-**Los criterios, para que no se toquen sin pensar:**
+**Frente a AgendaPro** ($99.000 el capado, $510.000 el completo, precios reales
+de una cuenta de prueba, ver el benchmarking del 28-jul): su equivalente a *todo
+incluido* cuesta **más de cuatro veces**. Ese es el argumento de la primera
+visita, no el precio de entrada.
 
-- **Se limita lo que cuesta plata** (almacenamiento, IA) **y lo que vale más**
-  (sedes, cuentas). Nada más.
-- **No se limitan clientes, citas ni tickets a propósito:** es lo que más usa el
-  salón, pesa kilobytes, y limitarlo se siente mezquino justo donde el producto
-  debe sentirse generoso.
-- **Todos los límites son negociables por cliente** con
-  `tenant_feature_overrides`, que ya existe desde julio con motivo, vigencia y
-  autor.
+### Cómo se cobra la sede — en tres etapas
+
+El cobro por sede rehace el ciclo de facturación anclado (D-160), el webhook y
+las intenciones de pago (D-182), que es el código de dinero recién blindado. Por
+eso va por partes:
+
+| Etapa | Qué | Estado |
+|---|---|---|
+| 1 | Catálogo de un solo plan, capacidades abiertas, pantalla pública | 🔄 D-188 |
+| 2 | **Suscripción por sede:** tabla propia, la sede nace inactiva y se activa al pagarse | ⬜ |
+| 3 | **ePayco por sede:** intención con `branch_id`, prorrateo hasta la fecha ancla, alertas y panel por sede | ⬜ |
+
+> 🔴 **Hasta que la Etapa 3 esté hecha no se puede vender la segunda sede.** Hoy
+> un negocio paga una suscripción y puede crear las sedes que quiera sin que se
+> le cobren. Con cero clientes pagando no cuesta dinero, pero es un agujero de
+> ingreso en cuanto entre el primer salón con dos locales.
 
 ---
 
@@ -292,6 +305,9 @@ filtro) y el cuerpo pasó a dos pestañas ejecutivas: `🏪 Salones Clientes` y
 | 8.13 | 🔴 **Cerrar TL-19: la interfaz nunca consulta `get_my_entitlements()`.** Un salón en Básico ve módulos que no tiene, entra, y recibe una excepción de PostgreSQL en crudo. Toda la escalera de precios es invisible dentro del producto | 🤖 | 🔄 **Escrito 01-sep (D-184).** `EntitlementsService`, `requiredFeature` en `BeautyModule` y `PlanLockedPage`: el módulo **se ve con candado** (esconderlo mataría la venta) y explica qué gana al subir. Falla **abierto** a propósito. Acotado a Reportes, Inventario, Compras y Gastos, que son los que de verdad revientan (Fotos y Reseñas van aparte, en 8.14). Botón de WhatsApp a soporte con el mensaje pre-armado del módulo. ✅ **CERRADO 01-sep.** `flutter analyze` 0/0 y 271/271 pruebas en verde |
 | 8.14 | **Candado por botón en Fotos de trabajos y Reseñas.** El Plan Maestro §3 las reserva al Profesional, pero `portfolio` solo protege `create_work_photo` y `reviews` solo `public_create_review`: bloquear el módulo entero escondería fotos que el salón ya tiene. Necesita candado en la acción, no en el módulo | 🤖 | ✅ **CERRADO 01-sep (D-187).** `mostrarCandadoDePlan` en los dos únicos sitios que abren esas acciones. **El caso de Reseñas era el peor:** el salón manda el enlace y es **la clienta** quien recibe el error. Al estilista se le da un mensaje distinto que al dueño. 279/279 pruebas en verde. **Cierra la auditoría de 4 revisiones** |
 
+| 8.15 | 🔴 **Etapa 2 de D-188 — suscripción por sede.** Tabla propia con su estado y su ancla, la sede nace inactiva y se activa al pagarse, `beautyos_precio_efectivo` por sede. `create_branch` deja de bloquear | 🤖 | ⬜ **Bloquea vender la segunda sede** |
+| 8.16 | 🔴 **Etapa 3 de D-188 — ePayco por sede.** `create-epayco-session` y las intenciones de pago (D-182) con `branch_id`, prorrateo hasta la fecha ancla al activar a mitad de ciclo (reutiliza D-160), alertas y panel de plataforma por sede | 🤖 | ⬜ **Bloquea vender la segunda sede** |
+
 > **La auditoría de 4 revisiones del 01-sep** (técnica, UX, producto y crítica
 > brutal/seguridad) está verificada hallazgo por hallazgo en
 > `docs/01_arquitectura/auditorias/AUDITORIA_4_REVISIONES_2026-09-01.md`. Ese
@@ -320,7 +336,7 @@ toque, o se descarta con su motivo.
 | I-10 | Vista de ausencias de todo el equipo para el administrador | 27-jul | Sin asignar |
 | I-11 | **Correos del salón a SUS clientas**: cumpleaños, recordatorios de cita. Idea del propietario, 09-ago | **No existe nada.** Decidido cómo se hará cuando toque: salen del dominio propio pero **con el nombre del salón como remitente** y respuesta al correo del salón, para que la clienta vea *"Naguara de Uñas"* y no *"Salón y Más"*. Van por **subdominio aparte**, para que si algún día caen en spam no arrastren a los correos de negocio. Fase 6 |
 | I-12 | **Reenvío gratuito de `hola@salonymas.com` al Gmail del propietario** con Cloudflare Email Routing | ✅ **Cerrado 30-ago (D-180, Paso 8.7).** Enrutamiento en Cloudflare hacia `juankdev2026@gmail.com`. Arquitectura de cero colisiones con Resend (send vs raíz) y guía documentada en `docs/02_operacion/CORREO_Y_DOMINIO.md` |
-| I-14 | 🔴 **Decidir la matriz definitiva: qué módulo lleva cada plan.** El propietario **no está decidido**, y tiene una idea buena que la cambiaría: *"ayudar a los pequeños centros de estética a acceder a lo que solo tienen los grandes"* — las fotos visibles en el Básico, la publicación en Instagram en el Profesional. 12-ago | **Se aplazó a propósito (D-136), y no es pereza:** si hoy se mueven las fotos al Básico, **el Profesional se queda sin nada exclusivo que exista** — Instagram y la IA son Fase 6 y no están construidos. La matriz son **15 casillas**: una instrucción hoy, un clic desde el panel en la Fase 7. **Se decide después de las primeras cinco visitas a salones reales**, que es el dato que falta. ⚠️ **Y hay que resolver una discrepancia:** la imagen que maneja el propietario tiene 10 filas y este documento 12 — a la imagen le faltan las tres capacidades de IA de D-124 y le sobra *"WhatsApp asistido (enlace)"*, que no está escrito en ninguna parte |
+| I-14 | ~~Decidir la matriz definitiva: qué módulo lleva cada plan.~~ | ✅ **RESUELTA 01-sep (D-188), y sin decidirse: ya no hay matriz.** Se retiró la escalera de tres planes y quedó uno solo con todo dentro, cobrado por sede. Las 15 casillas que esperaban cinco visitas a salones reales dejaron de existir. La idea del propietario —*«que los pequeños accedan a lo que solo tienen los grandes»*— se cumple entera: el salón de una sede paga menos que antes y tiene todo |
 | I-13 | **Darle al asistente acceso directo a Supabase** con el conector oficial y un token revocable | Se aplazó el 09-ago hasta rotar las claves. **Ya están rotadas (D-127), así que la condición se cumplió.** Hoy el asistente dicta clics porque la extensión de Chrome tiene bloqueado el dominio de Supabase; con el conector leería registros y desplegaría funciones solo. **Es acceso permanente a producción: decisión del propietario, no del asistente** |
 | I-15 | **El desglose "Ventas por Servicio" de Reportes (Nivel 3, D-154) puede cambiar de período con el tiempo.** `get_branch_reports_v3` ubica cada venta con `coalesce(t.closed_at, t.scheduled_at)`: un ticket "finalizado" (servicio prestado, saldo pendiente) aparece en el reporte del día del servicio mientras no se cierra; si se cierra días después, la venta se traslada silenciosamente al reporte del día de cierre. El total financiero de arriba (`total_received`) no tiene este problema porque usa `tp.received_at`, que es estable | 18-ago | Sin asignar — decidir a propósito si el desglose por servicio se ancla a `scheduled_at` (estable, mismo criterio que D-153) o se mantiene con `closed_at` (fecha de cierre contable, coherente con D-150). Hallazgo de la auditoría técnica del Paso 4.7 |
 | I-16 | **Branding e identidad visual integral de Salón y Más** (diseño del logo definitivo, paleta extendida, manual de marca y kit de activos en alta resolución para marketing, pasarelas y material promocional). El propietario solicitó dejarlo explícitamente como último punto pendiente. | 23-ago | Último punto del backlog / Post-lanzamiento |

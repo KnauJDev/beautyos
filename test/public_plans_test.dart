@@ -115,24 +115,51 @@ void main() {
       expect(profesional.hasFeature('portfolio'), true);
     });
 
-    test('PublicPlansService.fallbackPlans contiene los 3 planes con límites exactos D-124 y D-136', () {
+    test('El catálogo de respaldo es UN SOLO plan Todo Incluido (D-188)', () {
       final fallback = PublicPlansService.fallbackPlans;
-      expect(fallback.length, 3);
 
-      final basico = fallback.firstWhere((p) => p.code == 'basico');
-      expect(basico.priceCop, 160000);
-      expect(basico.branchesLabel, '1 Sede principal');
-      expect(basico.teamMembersLabel, 'Hasta 5 cuentas de equipo');
+      // D-188 retiró la escalera de tres (D-124, D-136): el eje de cobro dejó
+      // de ser qué módulos te dejo usar y pasó a ser cuántas sedes tienes.
+      expect(fallback.length, 1);
 
-      final business = fallback.firstWhere((p) => p.code == 'business');
-      expect(business.priceCop, 200000);
-      expect(business.branchesLabel, 'Hasta 3 sedes');
-      expect(business.teamMembersLabel, 'Hasta 15 cuentas de equipo');
+      final pro = fallback.single;
+      expect(pro.code, 'pro');
+      expect(pro.name, 'Todo Incluido');
+      expect(pro.priceCop, 120000);
+      expect(pro.branchesLabel, 'Sedes ilimitadas');
+      expect(pro.teamMembersLabel, 'Equipo ilimitado');
+    });
 
-      final profesional = fallback.firstWhere((p) => p.code == 'profesional');
-      expect(profesional.priceCop, 240000);
-      expect(profesional.branchesLabel, 'Sedes ilimitadas');
-      expect(profesional.teamMembersLabel, 'Equipo ilimitado');
+    test('El respaldo trae todo incluido, salvo lo que no existe', () {
+      final pro = PublicPlansService.fallbackPlans.single;
+
+      bool incluye(String clave) =>
+          pro.features.firstWhere((f) => f.key == clave).enabled;
+
+      for (final clave in const [
+        'inventory',
+        'financial_reports',
+        'portfolio',
+        'reviews',
+      ]) {
+        expect(incluye(clave), true, reason: '$clave debería venir incluida');
+      }
+
+      // Fase 6, sin construir. El Plan Maestro prohíbe expresamente venderla
+      // antes de que exista, y este respaldo es lo que ve el visitante cuando
+      // la RPC no responde: si mintiera aquí, mentiría justo al fallar la red.
+      expect(incluye('social_publishing'), false);
+    });
+
+    test('El precio pionero es un número exacto, no un porcentaje (D-188)', () {
+      // $80.000 sobre $120.000 es el 33,33%, no el 50%. Modelarlo como
+      // porcentaje daba 80.004 por redondeo, y ese número acabaría en el
+      // checkout y en la validación de monto de D-159.
+      expect(PublicPlansService.precioPioneroCop, 80000);
+
+      final lista = PublicPlansService.fallbackPlans.single.priceCop;
+      expect(lista, 120000);
+      expect(PublicPlansService.precioPioneroCop, lessThan(lista));
     });
   });
 }

@@ -74,7 +74,9 @@ Deno.serve(async (req) => {
       // Body vacío
     }
 
-    const planCode = (body.planCode || "profesional").toLowerCase();
+    // D-188: el plan por defecto pasa de "profesional" a "pro", el plan unico
+    // Todo Incluido. Los tres viejos quedaron en `retired`.
+    const planCode = (body.planCode || "pro").toLowerCase();
 
     // El tenantId NUNCA se toma del cliente: se resuelve exclusivamente desde
     // la membresía activa del usuario autenticado, para que nadie pueda pagar
@@ -141,7 +143,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     const planCodeResuelto = planData?.code || planCode;
-    const planName = planData?.name || "Profesional";
+    const planName = planData?.name || "Todo Incluido";
 
     paso = "autenticar con ePayco Apify";
     const basicAuth = btoa(`${EPAYCO_PUBLIC_KEY}:${EPAYCO_PRIVATE_KEY}`);
