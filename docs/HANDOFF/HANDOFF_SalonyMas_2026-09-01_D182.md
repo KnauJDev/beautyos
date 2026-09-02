@@ -2,7 +2,7 @@
 
 **Bloque documentado:** decisiones **D-181 a D-185** · Pasos **8.9 a 8.13** de la **FASE 8**.
 
-**Estado:** `flutter analyze` limpio (0/0), **262 de 262 pruebas en verde**. `flutter analyze` limpio (0/0) y **271 de 271 pruebas en verde**. **D-181, D-182 y D-183 desplegados y verificados en producción** — el perímetro de pagos de ePayco cerrado por los dos lados y el portal de la clienta sin enumeración. **D-184 cerrado**: los candados de plan ya no dejan que un salón vea errores de base de datos por culpa de su plan. **D-185 escrito, pendiente de aplicar.**
+**Estado:** `flutter analyze` limpio (0/0), **262 de 262 pruebas en verde**. `flutter analyze` limpio (0/0) y **271 de 271 pruebas en verde**. **D-181, D-182 y D-183 desplegados y verificados en producción** — el perímetro de pagos de ePayco cerrado por los dos lados y el portal de la clienta sin enumeración. **D-184 cerrado**: los candados de plan ya no dejan que un salón vea errores de base de datos por culpa de su plan. **D-185 aplicado y verificado.** Con esto quedan cerrados los seis bloqueadores de seguridad y backend de la auditoría: TL-01, TL-02, TL-04, TL-05, TL-06 y TL-19.
 
 ---
 
@@ -105,7 +105,7 @@ Configuración. Esconderlo habría arreglado el error y matado la venta.
   `create_work_photo`, así que bloquear el módulo le escondería a un salón las
   fotos que ya tiene. Eso necesita candado por botón (paso 8.14).
 
-### 1.6 Paso 8.12 — TL-06, escrito y sin aplicar (D-185)
+### 1.6 Paso 8.12 — TL-06 cerrado y verificado (D-185)
 
 El PIN del portal era `sha256(pin || sal)` de **una sola vuelta** sobre 4
 dígitos: 10.000 combinaciones que, si la tabla se filtrara, se recorren en
@@ -116,16 +116,15 @@ Y la segunda mitad del hallazgo, que no era de hasheo: el bloqueo de 15 minutos
 permitía **dejar sin acceso a una clienta real sabiendo solo su celular**. Ahora
 escala: 1 minuto a los 5 intentos, 5 a los 10, 30 a los 15.
 
+**Verificado en producción el 01-sep:** migración aplicada y **Control 199 en
+verde (9 de 9 casos contra la base real)**, con bcrypt activo, la migración al
+vuelo probada y `ROLLBACK` limpio.
+
 ---
 
 ## 2. Lo que quedó a medias
 
-### 2.1 🔴 D-185 sin aplicar
-
-Es solo base de datos, no hay que desplegar nada. Los comandos están en el
-apartado 5.
-
-### 2.2 El candado 2 de D-181 nunca se ha ejercitado
+### 2.1 El candado 2 de D-181 nunca se ha ejercitado
 
 El `401` verifica el **primer** candado (la sesión). La comparación de
 `x_cust_id_cliente` **no se ha probado contra una transacción real**, y está
@@ -139,7 +138,7 @@ Cómo salir de dudas con el próximo pago real:
 curl -s https://secure.epayco.co/validation/v1/reference/REF_PAYCO_REAL | python -m json.tool | grep -i cust
 ```
 
-### 2.3 Paso 8.8 sigue pendiente
+### 2.2 Paso 8.8 sigue pendiente
 
 El onboarding guiado "Primeros pasos" sigue reservado como el último del todo.
 Las cuatro revisiones coincidieron en que hace falta antes de vender.
@@ -203,10 +202,10 @@ Ese documento NO manda sobre el Plan Maestro: es el expediente de evidencia.
 D-184 (TL-19, candados de plan en la interfaz) está cerrado, con 271/271
 pruebas en verde.
 
-D-185 (TL-06, PIN con bcrypt) está ESCRITO pero SIN APLICAR:
+D-185 (TL-06, PIN con bcrypt) está aplicado y verificado: Control 199 en verde.
 
-  powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\migrations\20260901160000_pin_portal_con_bcrypt_tl06.sql"
-  powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\sql\199_test_pin_portal_con_bcrypt_tl06.sql"
+Con esto quedan cerrados los seis bloqueadores de seguridad y backend de la
+auditoría: TL-01, TL-02, TL-04, TL-05, TL-06 y TL-19.
 
 Lo siguiente en la cola:
 1. Paso 8.14: candado por botón en Fotos de trabajos y Reseñas (sale de D-184).
