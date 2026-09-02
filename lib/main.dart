@@ -4,8 +4,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'models/my_profile.dart';
 import 'models/branch_context.dart';
 import 'models/pending_invitation.dart';
+import 'models/tenant_entitlements.dart';
 import 'models/tenant_subscription_status.dart';
 import 'services/branch_context_service.dart';
+import 'services/entitlements_service.dart';
 import 'services/epayco_checkout_service.dart';
 import 'services/monitoreo_service.dart';
 import 'services/my_profile_service.dart';
@@ -32,6 +34,7 @@ import 'pages/my_commission_summary_page.dart';
 import 'pages/my_stylist_agenda_page.dart';
 import 'pages/my_stylist_reviews_page.dart';
 import 'pages/my_stylist_work_photos_page.dart';
+import 'pages/plan_locked_page.dart';
 import 'pages/work_photos_page.dart';
 import 'widgets/security_settings_dialog.dart';
 import 'theme/app_theme.dart';
@@ -183,12 +186,17 @@ class _HomeContextData {
     required this.branches,
     this.pendingInvitation,
     this.subscriptionStatus,
+    this.entitlements = const TenantEntitlements.desconocido(),
   });
 
   final MyProfile? profile;
   final List<BranchContext> branches;
   final PendingInvitation? pendingInvitation;
   final TenantSubscriptionStatus? subscriptionStatus;
+
+  /// Lo que el plan del negocio permite (TL-19, D-184). Por defecto,
+  /// `desconocido()`, que no bloquea nada.
+  final TenantEntitlements entitlements;
 }
 
 class _BeautyOSHomeState extends State<BeautyOSHome> {
@@ -207,6 +215,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
   final TenantSubscriptionService tenantSubscriptionService =
       const TenantSubscriptionService();
   final EpaycoCheckoutService epaycoService = const EpaycoCheckoutService();
+  final EntitlementsService entitlementsService = const EntitlementsService();
 
   late Future<_HomeContextData> homeContextFuture;
   BranchContext? selectedBranch;
@@ -262,6 +271,11 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
 
     final branches = await branchContextService.getAccessibleBranches();
 
+    // Que permite el plan (TL-19, D-184). Nunca lanza: si quien pregunta no
+    // tiene membresia de negocio -- el dueno de la plataforma, la clienta
+    // final -- devuelve `desconocido()` y no se bloquea nada.
+    final entitlements = await entitlementsService.getMyEntitlements();
+
     // Quien y de que negocio, sin decir nombres (D-115). Sirve para saber si un
     // fallo le pasa a una persona o a un negocio entero.
     await MonitoreoService.anotarContexto(
@@ -279,6 +293,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
       profile: profile,
       branches: branches,
       subscriptionStatus: subscriptionStatus,
+      entitlements: entitlements,
     );
   }
 
@@ -449,6 +464,17 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           branchId: branch.branchId,
         ),
         allowedRoles: const <String>{'owner', 'admin'},
+        // Sus dos RPC de lectura (`get_sales_report_summary_v2` y
+        // `get_branch_financial_summary_v2`) exigen la capacidad, asi que en
+        // Basico el modulo ni siquiera cargaba: reventaba al abrirlo.
+        requiredFeature: ClaveDeCapacidad.reportesFinancieros,
+        lockExplicacion:
+            'Los reportes ampliados te dicen cuanto entro de verdad, por metodo '
+            'de pago, cuanto se llevo cada estilista en comisiones y que '
+            'servicios dejan mas dinero. Tu plan actual ya te muestra la caja '
+            'del dia; esto es la vista del mes y la comparacion con el '
+            'anterior.',
+        lockPlan: 'Business',
       ),
       BeautyModule(
         section: const BeautySection(
@@ -461,6 +487,12 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           branchId: branch.branchId,
         ),
         allowedRoles: const <String>{'owner', 'admin'},
+        requiredFeature: ClaveDeCapacidad.inventario,
+        lockExplicacion:
+            'Llevar el inventario es saber que productos tienes, cuales se '
+            'estan acabando y cuanto te cuesta cada servicio de verdad. '
+            'Incluye aviso por correo cuando algo baja del minimo.',
+        lockPlan: 'Business',
       ),
       BeautyModule(
         section: const BeautySection(
@@ -473,6 +505,11 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           branchId: branch.branchId,
         ),
         allowedRoles: const <String>{'owner', 'admin'},
+        requiredFeature: ClaveDeCapacidad.inventario,
+        lockExplicacion:
+            'Registrar las compras a proveedores mantiene el stock al dia solo '
+            'y te deja ver en que se va la plata del negocio mes a mes.',
+        lockPlan: 'Business',
       ),
       BeautyModule(
         section: const BeautySection(
@@ -485,6 +522,12 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           branchId: branch.branchId,
         ),
         allowedRoles: const <String>{'owner', 'admin'},
+        requiredFeature: ClaveDeCapacidad.inventario,
+        lockExplicacion:
+            'Anotar arriendo, servicios y sueldos es lo que separa "cuanto '
+            'vendi" de "cuanto me quedo". Sin esto, la utilidad del mes es una '
+            'suposicion.',
+        lockPlan: 'Business',
       ),
 
       // ======================================================================
@@ -630,6 +673,9 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         final profile = homeContext?.profile;
         final subscriptionStatus = homeContext?.subscriptionStatus;
         final branches = homeContext?.branches ?? const <BranchContext>[];
+        final entitlements =
+            homeContext?.entitlements ??
+            const TenantEntitlements.desconocido();
 
         if (profile == null) {
           final pendingInvitation = homeContext?.pendingInvitation;
@@ -710,11 +756,33 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         final currentIndex = selectedIndex >= modules.length
             ? 0
             : selectedIndex;
+        // TL-19 (D-184): antes de aquí, la interfaz nunca preguntaba qué
+        // permite el plan. El salón en Básico veía Inventario, entraba, y el
+        // backend le devolvía una excepción de PostgreSQL en crudo. Ahora el
+        // módulo se sigue viendo — con candado, para no matar la venta — pero
+        // se abre en una pantalla que explica en vez de reventar.
         final sections = modules
-            .map((module) => module.section)
+            .map(
+              (module) => entitlements.permite(module.requiredFeature)
+                  ? module.section
+                  : module.section.conCandado(),
+            )
             .toList(growable: false);
         final pages = modules
-            .map((module) => module.page)
+            .map(
+              (module) => entitlements.permite(module.requiredFeature)
+                  ? module.page
+                  : PlanLockedPage(
+                      moduleTitle: module.section.title,
+                      moduleIcon: module.section.icon,
+                      explicacion:
+                          module.lockExplicacion ??
+                          'Este módulo no está incluido en tu plan actual.',
+                      planSugerido: module.lockPlan ?? 'Business',
+                      onIrAConfiguracion: () =>
+                          _irAModulo(modules, 'Configuración'),
+                    ),
+            )
             .toList(growable: false);
 
         return LayoutBuilder(
@@ -950,11 +1018,24 @@ class BeautySection {
   final IconData icon;
   final BeautyCategory category;
 
+  /// El plan del negocio no cubre este módulo (TL-19, D-184). Se sigue
+  /// mostrando en el menú, con candado: esconderlo arreglaría el error y de
+  /// paso mataría la venta.
+  final bool bloqueadoPorPlan;
+
   const BeautySection(
     this.title,
     this.icon, {
     this.category = BeautyCategory.operacion,
+    this.bloqueadoPorPlan = false,
   });
+
+  BeautySection conCandado() => BeautySection(
+    title,
+    icon,
+    category: category,
+    bloqueadoPorPlan: true,
+  );
 }
 
 class BeautyModule {
@@ -962,11 +1043,28 @@ class BeautyModule {
     required this.section,
     required this.page,
     required this.allowedRoles,
+    this.requiredFeature,
+    this.lockExplicacion,
+    this.lockPlan,
   });
 
   final BeautySection section;
   final Widget page;
   final Set<String> allowedRoles;
+
+  /// Clave de `public.features` que el plan tiene que incluir para poder usar
+  /// este módulo (TL-19, D-184). `null` = lo cubren todos los planes.
+  ///
+  /// Tiene que coincidir con la que exige `beautyos_require_entitlement` dentro
+  /// de las RPC del módulo: el backend es quien manda, esto solo se adelanta
+  /// para explicar en vez de dejar que reviente.
+  final String? requiredFeature;
+
+  /// Qué hace el módulo, en el idioma del salón, para la pantalla de candado.
+  final String? lockExplicacion;
+
+  /// El plan más barato que lo incluye (Plan Maestro, apartado 3).
+  final String? lockPlan;
 
   bool canAccess(String role) {
     return allowedRoles.contains(role);
@@ -1427,6 +1525,16 @@ class _SideMenuItem extends StatelessWidget {
                   ),
                 ),
               ),
+              // El modulo se ve, pero con candado (TL-19, D-184): esconderlo
+              // arreglaria el error de plan y de paso mataria la venta.
+              if (section.bloqueadoPorPlan) ...[
+                const Icon(
+                  Icons.lock_outline,
+                  size: 14,
+                  color: AppColors.textMuted,
+                ),
+                const SizedBox(width: 6),
+              ],
               if (isSelected)
                 Container(
                   width: 6,
@@ -1561,6 +1669,7 @@ class _MobileNavBar extends StatelessWidget {
                             icon: entrada.value.icon,
                             label: entrada.value.title,
                             activo: entrada.key == currentIndex,
+                            bloqueado: entrada.value.bloqueadoPorPlan,
                             onTap: () {
                               Navigator.of(hoja).pop();
                               onSelected(entrada.key);
@@ -1614,12 +1723,17 @@ class _AccesoMas extends StatelessWidget {
     required this.label,
     required this.activo,
     required this.onTap,
+    this.bloqueado = false,
   });
 
   final IconData icon;
   final String label;
   final bool activo;
   final VoidCallback onTap;
+
+  /// El plan del negocio no cubre este modulo (TL-19, D-184). Se sigue
+  /// pudiendo tocar: abre la pantalla que explica que se gana al subir.
+  final bool bloqueado;
 
   @override
   Widget build(BuildContext context) {
@@ -1639,10 +1753,29 @@ class _AccesoMas extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              color: activo ? AppColors.brand : AppColors.textStrong,
-              size: 22,
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  icon,
+                  color: activo
+                      ? AppColors.brand
+                      : (bloqueado
+                            ? AppColors.textMuted
+                            : AppColors.textStrong),
+                  size: 22,
+                ),
+                if (bloqueado)
+                  Positioned(
+                    right: -6,
+                    top: -4,
+                    child: Icon(
+                      Icons.lock,
+                      size: 11,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
@@ -1653,7 +1786,9 @@ class _AccesoMas extends StatelessWidget {
               style: TextStyle(
                 fontSize: 11.5,
                 fontWeight: activo ? FontWeight.w700 : FontWeight.w500,
-                color: activo ? AppColors.brandDeep : AppColors.textStrong,
+                color: activo
+                    ? AppColors.brandDeep
+                    : (bloqueado ? AppColors.textMuted : AppColors.textStrong),
               ),
             ),
           ],
