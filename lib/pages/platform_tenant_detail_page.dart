@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
 import '../models/platform_tenant_detail.dart';
+import '../models/ticket_board.dart' show formatCOP;
 import '../services/platform_tenant_detail_service.dart';
 import '../widgets/foto_de_trabajo.dart';
 
@@ -174,19 +175,6 @@ String _formatDate(DateTime? date) {
   return '$day/$month/${date.year} $hour:$minute';
 }
 
-String _formatMoney(double value) {
-  final rounded = value.round().toString();
-  final buffer = StringBuffer();
-  for (var i = 0; i < rounded.length; i++) {
-    final positionFromEnd = rounded.length - i;
-    buffer.write(rounded[i]);
-    if (positionFromEnd > 1 && positionFromEnd % 3 == 1) {
-      buffer.write('.');
-    }
-  }
-  return '\$$buffer';
-}
-
 class _ClientsTab extends StatelessWidget {
   const _ClientsTab({required this.future});
 
@@ -247,7 +235,7 @@ class _TicketsTab extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(ticket.status),
-                  Text(_formatMoney(ticket.totalPrice)),
+                  Text(formatCOP(ticket.totalPrice)),
                 ],
               ),
             );
@@ -292,15 +280,15 @@ class _FinancialTab extends StatelessWidget {
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 8),
-                    Text('Ventas: ${_formatMoney(branch.totalSales)}'),
-                    Text('Compras: ${_formatMoney(branch.totalPurchases)}'),
-                    Text('Gastos: ${_formatMoney(branch.totalExpenses)}'),
+                    Text('Ventas: ${formatCOP(branch.totalSales)}'),
+                    Text('Compras: ${formatCOP(branch.totalPurchases)}'),
+                    Text('Gastos: ${formatCOP(branch.totalExpenses)}'),
                     Text(
-                      'Comisiones: ${_formatMoney(branch.totalCommissions)}',
+                      'Comisiones: ${formatCOP(branch.totalCommissions)}',
                     ),
                     const Divider(),
                     Text(
-                      'Resultado neto: ${_formatMoney(branch.netResult)}',
+                      'Resultado neto: ${formatCOP(branch.netResult)}',
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ],

@@ -3,17 +3,25 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/ticket_status.dart';
 
-/// Formateador de moneda colombiana (\$ 50.000).
+/// Formateador canónico de moneda colombiana en pesos enteros: `$50.000`,
+/// `-$50.000` (TL-12, D-198). El signo se saca ANTES de agrupar por miles:
+/// tratarlo como un dígito más desplaza el punto separador y produce
+/// `$-.100` en vez de `-$100` -- exactamente el bug que duplicaban las 13
+/// copias sueltas que reemplaza esta función.
 String formatCOP(num amount) {
-  final str = amount.round().toString();
+  final rounded = amount.round();
+  final isNegative = rounded < 0;
+  final digits = rounded.abs().toString();
+
   final buffer = StringBuffer();
-  for (int i = 0; i < str.length; i++) {
-    if (i > 0 && (str.length - i) % 3 == 0) {
+  for (int i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 == 0) {
       buffer.write('.');
     }
-    buffer.write(str[i]);
+    buffer.write(digits[i]);
   }
-  return '\$${buffer.toString()}';
+
+  return isNegative ? '-\$$buffer' : '\$$buffer';
 }
 
 /// Representa el conteo y valores agregados de tickets por cubeta y estado (Nivel 1).

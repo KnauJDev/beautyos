@@ -40,14 +40,17 @@ void main() {
       expect(metrics.conversionRatePercent, 33.3);
     });
 
-    test('formattedMrr y formattedTotalCollected separan miles con puntos', () {
+    test(
+        'formattedMrr y formattedTotalCollected separan miles con puntos y '
+        'llevan el signo de pesos (D-198: usan el formatCOP canónico, ya no '
+        'un duplicado que devolvía los dígitos sueltos)', () {
       final metrics = PlatformSaasMetrics.fromMap({
         'mrr_cop': 1240000,
         'total_collected_cop': 3720000,
       });
 
-      expect(metrics.formattedMrr, '1.240.000');
-      expect(metrics.formattedTotalCollected, '3.720.000');
+      expect(metrics.formattedMrr, '\$1.240.000');
+      expect(metrics.formattedTotalCollected, '\$3.720.000');
     });
 
     test('formattedConversionRate muestra un decimal con símbolo de porcentaje', () {

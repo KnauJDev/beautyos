@@ -1,4 +1,5 @@
 import '../widgets/ticket_status.dart';
+import 'ticket_board.dart' show formatCOP;
 
 class TicketSummary {
   final String id;
@@ -103,32 +104,15 @@ class TicketSummary {
   }
 
   String get formattedPrice {
-    return _formatMoney(totalPrice);
+    return formatCOP(totalPrice);
   }
 
   String get formattedPaidAmount {
-    return _formatMoney(paidAmount);
+    return formatCOP(paidAmount);
   }
 
   String get formattedBalanceAmount {
-    return _formatMoney(balanceAmount);
-  }
-
-  static String _formatMoney(num amount) {
-    final value = amount.toInt().toString();
-    final buffer = StringBuffer();
-
-    for (int i = 0; i < value.length; i++) {
-      final positionFromEnd = value.length - i;
-
-      buffer.write(value[i]);
-
-      if (positionFromEnd > 1 && positionFromEnd % 3 == 1) {
-        buffer.write('.');
-      }
-    }
-
-    return '\$$buffer';
+    return formatCOP(balanceAmount);
   }
 
   bool get showsPaymentInfo {

@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 
 import '../models/my_stylist_agenda_item.dart';
 import '../models/stylist_time_off.dart';
+import '../models/ticket_board.dart' show formatCOP;
 import '../services/my_stylist_agenda_service.dart';
 import '../services/stylist_time_off_service.dart';
 import '../widgets/add_work_photo_dialog.dart';
@@ -585,7 +586,7 @@ class _AgendaSummaryState extends State<_AgendaSummary> {
 
   @override
   Widget build(BuildContext context) {
-    final amountText = showMoney ? _formatMoney(widget.totalValue) : '••••••';
+    final amountText = showMoney ? formatCOP(widget.totalValue) : '••••••';
 
     return Wrap(
       spacing: 16,
@@ -662,23 +663,6 @@ class _AgendaSummaryState extends State<_AgendaSummary> {
         ),
       ],
     );
-  }
-
-  String _formatMoney(double value) {
-    final rounded = value.round().toString();
-    final buffer = StringBuffer();
-
-    for (var i = 0; i < rounded.length; i++) {
-      final positionFromEnd = rounded.length - i;
-
-      buffer.write(rounded[i]);
-
-      if (positionFromEnd > 1 && positionFromEnd % 3 == 1) {
-        buffer.write('.');
-      }
-    }
-
-    return '\$$buffer';
   }
 }
 

@@ -45,6 +45,39 @@ void main() {
       expect(formatCOP(1250000), '\$1.250.000');
     });
 
+    test('formatCOP en millones y cifras grandes', () {
+      expect(formatCOP(1000000), '\$1.000.000');
+      expect(formatCOP(25000000), '\$25.000.000');
+      expect(formatCOP(999999999), '\$999.999.999');
+    });
+
+    test('formatCOP redondea decimales a pesos enteros antes de agrupar', () {
+      expect(formatCOP(1234.4), '\$1.234');
+      expect(formatCOP(1234.5), '\$1.235');
+      expect(formatCOP(999.9), '\$1.000');
+      expect(formatCOP(0.4), '\$0');
+    });
+
+    test(
+        'formatCOP con números negativos (TL-12, D-198): el signo "-" va '
+        'antes del "\$" y nunca cuenta como un dígito más para el separador '
+        'de miles -- el bug que compartían las 13 copias sueltas producía '
+        '"\$-.100" en vez de "-\$100"',
+        () {
+      expect(formatCOP(-1), '-\$1');
+      expect(formatCOP(-100), '-\$100');
+      expect(formatCOP(-999), '-\$999');
+      expect(formatCOP(-1000), '-\$1.000');
+      expect(formatCOP(-50000), '-\$50.000');
+      expect(formatCOP(-1250000), '-\$1.250.000');
+    });
+
+    test('formatCOP redondea decimales negativos antes de agrupar', () {
+      expect(formatCOP(-1234.6), '-\$1.235');
+      // -0.4 redondea a 0 (entero), y 0 no es negativo: no debe verse "-\$0".
+      expect(formatCOP(-0.4), '\$0');
+    });
+
     test('TicketBoardCount mapea correctamente desde JSON de RPC', () {
       final map = {
         'bucket': '08:15',

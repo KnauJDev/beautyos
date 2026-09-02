@@ -1,6 +1,8 @@
 // Partners y Referidos (D-173, paso 7.3): un salón aliado o una persona
 // externa que trae clientes nuevos y gana comisión cuando ese salón paga.
 
+import 'ticket_board.dart' show formatCOP;
+
 String partnerPayoutChannelLabel(String? channel) {
   switch (channel) {
     case 'bre_b':
@@ -31,18 +33,9 @@ String partnerCommissionDurationLabel(String? duration) {
   }
 }
 
-String _formatCop(int cop) {
-  final digits = cop.toString();
-  final buffer = StringBuffer();
-  for (int i = 0; i < digits.length; i++) {
-    final pos = digits.length - i;
-    buffer.write(digits[i]);
-    if (pos > 1 && pos % 3 == 1) {
-      buffer.write('.');
-    }
-  }
-  return '\$$buffer COP';
-}
+/// Envuelve el formateador canónico (`formatCOP`, D-198) con el sufijo
+/// "COP" que ya mostraba este archivo en comisiones y montos de partners.
+String _formatCopConSufijo(int cop) => '${formatCOP(cop)} COP';
 
 DateTime? _parseDate(dynamic value) {
   if (value == null) return null;
@@ -110,7 +103,7 @@ class PlatformPartner {
     final esEntero = commissionValue == commissionValue.roundToDouble();
     final valor = commissionType == 'percentage'
         ? '${esEntero ? commissionValue.toStringAsFixed(0) : commissionValue.toStringAsFixed(1)}%'
-        : _formatCop(commissionValue.round());
+        : _formatCopConSufijo(commissionValue.round());
     final duracion =
         commissionDuration == 'first_n_months' && durationMonths != null
         ? 'primeros $durationMonths ${durationMonths == 1 ? "mes" : "meses"}'
@@ -118,8 +111,8 @@ class PlatformPartner {
     return '$valor · $duracion';
   }
 
-  String get formattedPending => _formatCop(pendingCommissionsCop);
-  String get formattedPaid => _formatCop(paidCommissionsCop);
+  String get formattedPending => _formatCopConSufijo(pendingCommissionsCop);
+  String get formattedPaid => _formatCopConSufijo(paidCommissionsCop);
 
   /// `salonymas.com/?ref=CODIGO`, para compartir por WhatsApp.
   String referralLink(String origin) => '$origin/?ref=$referralCode';
@@ -203,7 +196,7 @@ class PlatformPartnerCommission {
   bool get isPending => status == 'pending';
   bool get isPaid => status == 'paid';
 
-  String get formattedAmount => _formatCop(amountCop);
+  String get formattedAmount => _formatCopConSufijo(amountCop);
 
   factory PlatformPartnerCommission.fromMap(Map<String, dynamic> map) {
     return PlatformPartnerCommission(
@@ -281,8 +274,8 @@ class PlatformPartnersSummary {
     paidCommissionsCop: 0,
   );
 
-  String get formattedPending => _formatCop(pendingCommissionsCop);
-  String get formattedPaid => _formatCop(paidCommissionsCop);
+  String get formattedPending => _formatCopConSufijo(pendingCommissionsCop);
+  String get formattedPaid => _formatCopConSufijo(paidCommissionsCop);
 
   factory PlatformPartnersSummary.fromMap(Map<String, dynamic> map) {
     return PlatformPartnersSummary(
@@ -303,7 +296,7 @@ class PlatformPartnerSettlementResult {
   final int settledCount;
   final int settledAmountCop;
 
-  String get formattedAmount => _formatCop(settledAmountCop);
+  String get formattedAmount => _formatCopConSufijo(settledAmountCop);
 
   factory PlatformPartnerSettlementResult.fromMap(Map<String, dynamic> map) {
     return PlatformPartnerSettlementResult(

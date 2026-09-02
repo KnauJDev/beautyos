@@ -1,4 +1,4 @@
-import 'ticket_payment.dart' show formatMoney;
+import 'ticket_board.dart' show formatCOP;
 
 class BranchReportV3 {
   final DateTime startDate;
@@ -122,20 +122,20 @@ class BranchReportV3 {
     );
   }
 
-  String get formattedTotalReceived => formatMoney(totalReceived);
-  String get formattedCashReceived => formatMoney(cashReceived);
-  String get formattedCardReceived => formatMoney(cardReceived);
-  String get formattedTransferReceived => formatMoney(transferReceived);
-  String get formattedOtherReceived => formatMoney(otherReceived);
+  String get formattedTotalReceived => formatCOP(totalReceived);
+  String get formattedCashReceived => formatCOP(cashReceived);
+  String get formattedCardReceived => formatCOP(cardReceived);
+  String get formattedTransferReceived => formatCOP(transferReceived);
+  String get formattedOtherReceived => formatCOP(otherReceived);
 
-  String get formattedTotalPurchases => formatMoney(totalPurchases);
-  String get formattedTotalExpenses => formatMoney(totalExpenses);
-  String get formattedTotalCommissions => formatMoney(totalCommissions);
-  String get formattedExpectedCash => formatMoney(expectedCash);
-  String get formattedNetResult => formatMoney(netResult);
+  String get formattedTotalPurchases => formatCOP(totalPurchases);
+  String get formattedTotalExpenses => formatCOP(totalExpenses);
+  String get formattedTotalCommissions => formatCOP(totalCommissions);
+  String get formattedExpectedCash => formatCOP(expectedCash);
+  String get formattedNetResult => formatCOP(netResult);
 
-  String get formattedPrevTotalReceived => formatMoney(prevTotalReceived);
-  String get formattedPrevNetResult => formatMoney(prevNetResult);
+  String get formattedPrevTotalReceived => formatCOP(prevTotalReceived);
+  String get formattedPrevNetResult => formatCOP(prevNetResult);
 
   /// Variación porcentual de ventas vs período anterior.
   double? get salesGrowthPercent {
@@ -158,7 +158,7 @@ class BranchReportV3 {
 
   /// Variación absoluta en dinero.
   double get salesGrowthDelta => totalReceived - prevTotalReceived;
-  String get formattedSalesGrowthDelta => formatMoney(salesGrowthDelta.abs());
+  String get formattedSalesGrowthDelta => formatCOP(salesGrowthDelta.abs());
 }
 
 class ReportCommissionItem {
@@ -186,8 +186,8 @@ class ReportCommissionItem {
     );
   }
 
-  String get formattedServiceSales => formatMoney(serviceSales);
-  String get formattedCommissionTotal => formatMoney(commissionTotal);
+  String get formattedServiceSales => formatCOP(serviceSales);
+  String get formattedCommissionTotal => formatCOP(commissionTotal);
 }
 
 class ReportServiceSaleItem {
@@ -215,7 +215,7 @@ class ReportServiceSaleItem {
     );
   }
 
-  String get formattedTotalSales => formatMoney(totalSales);
+  String get formattedTotalSales => formatCOP(totalSales);
 }
 
 /// Una sede dentro del reporte consolidado (D-194).

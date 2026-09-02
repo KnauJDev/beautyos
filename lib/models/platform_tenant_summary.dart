@@ -1,3 +1,5 @@
+import 'ticket_board.dart' show formatCOP;
+
 class PlatformTenantSummary {
   const PlatformTenantSummary({
     required this.tenantId,
@@ -155,22 +157,9 @@ class PlatformTenantSummary {
     return 'Registrado hace $years ${years == 1 ? "año" : "años"}';
   }
 
-  String get formattedTotalPaid => _formatCop(totalPaidCop);
+  String get formattedTotalPaid => '${formatCOP(totalPaidCop)} COP';
 
-  String get formattedDebtAmount => _formatCop(debtAmountCop);
-
-  static String _formatCop(int cop) {
-    final digits = cop.toString();
-    final buffer = StringBuffer();
-    for (int i = 0; i < digits.length; i++) {
-      final pos = digits.length - i;
-      buffer.write(digits[i]);
-      if (pos > 1 && pos % 3 == 1) {
-        buffer.write('.');
-      }
-    }
-    return '\$$buffer COP';
-  }
+  String get formattedDebtAmount => '${formatCOP(debtAmountCop)} COP';
 
   int get effectivePriceCop {
     if (priceCop != null && priceCop! > 0) {

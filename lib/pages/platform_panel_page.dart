@@ -9,6 +9,7 @@ import '../models/platform_saas_metrics.dart';
 import '../models/platform_tenant_feature_override.dart';
 import '../models/platform_tenant_summary.dart';
 import '../models/tenant_subscription_history_entry.dart';
+import '../models/ticket_board.dart' show formatCOP;
 import '../services/platform_service.dart';
 import '../widgets/security_settings_dialog.dart';
 import '../widgets/update_banner.dart';
@@ -1318,13 +1319,13 @@ class _SaasMetricsHeader extends StatelessWidget {
                   _SaasMetricTile(
                     icon: Icons.trending_up,
                     label: 'MRR estimado',
-                    value: '\$${m.formattedMrr}',
+                    value: m.formattedMrr,
                   ),
                   const SizedBox(width: AppSpacing.md),
                   _SaasMetricTile(
                     icon: Icons.account_balance_wallet_outlined,
                     label: 'Cobrado histórico',
-                    value: '\$${m.formattedTotalCollected}',
+                    value: m.formattedTotalCollected,
                   ),
                   const SizedBox(width: AppSpacing.md),
                   _SaasMetricTile(
@@ -1894,18 +1895,7 @@ class _TenantDetailSheet extends StatelessWidget {
     return '$fecha $hora';
   }
 
-  String _formatCop(int cop) {
-    final digits = cop.toString();
-    final buffer = StringBuffer();
-    for (int i = 0; i < digits.length; i++) {
-      final pos = digits.length - i;
-      buffer.write(digits[i]);
-      if (pos > 1 && pos % 3 == 1) {
-        buffer.write('.');
-      }
-    }
-    return '\$$buffer COP';
-  }
+  String _formatCop(int cop) => '${formatCOP(cop)} COP';
 
   String _pluralize(int count, String singular, String plural) =>
       count == 1 ? singular : plural;

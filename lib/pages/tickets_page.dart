@@ -12,6 +12,7 @@ import '../models/ticket_service_management_item.dart';
 import '../models/ticket_service_correction_option.dart';
 import '../models/ticket_payment.dart';
 import '../models/acciones_de_ticket.dart';
+import '../models/ticket_board.dart' show formatCOP;
 import '../models/ticket_summary.dart';
 import '../services/clients_service.dart';
 import '../services/tickets_service.dart';
@@ -3925,15 +3926,15 @@ class _PaymentsDialogState extends State<_PaymentsDialog> {
                     children: [
                       _PaymentMetric(
                         label: 'Total',
-                        value: formatMoney(widget.summary.totalAmount),
+                        value: formatCOP(widget.summary.totalAmount),
                       ),
                       _PaymentMetric(
                         label: 'Pagado',
-                        value: formatMoney(widget.summary.paidAmount),
+                        value: formatCOP(widget.summary.paidAmount),
                       ),
                       _PaymentMetric(
                         label: 'Saldo',
-                        value: formatMoney(widget.summary.balanceAmount),
+                        value: formatCOP(widget.summary.balanceAmount),
                       ),
                     ],
                   ),
@@ -3952,7 +3953,7 @@ class _PaymentsDialogState extends State<_PaymentsDialog> {
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.payments_outlined),
                       title: Text(
-                        '${formatMoney(payment.amount)} · '
+                        '${formatCOP(payment.amount)} · '
                         '${payment.methodLabel}',
                       ),
                       subtitle: Text(
@@ -4156,7 +4157,7 @@ class _VoidPaymentDialogState extends State<_VoidPaymentDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${formatMoney(widget.payment.amount)} · '
+                '${formatCOP(widget.payment.amount)} · '
                 '${widget.payment.methodLabel}',
                 style: const TextStyle(
                   fontSize: 17,

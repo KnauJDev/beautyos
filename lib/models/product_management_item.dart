@@ -1,3 +1,5 @@
+import 'ticket_board.dart' show formatCOP;
+
 String formatUnitQuantity(num quantity, String unit) {
   final cleanUnit = unit.trim();
   final formattedNumber =
@@ -67,22 +69,7 @@ class ProductManagementItem {
 
   String get minimumStockText => formatUnitQuantity(minimumStock, unit);
 
-  String get formattedPurchasePrice => _formatCop(purchasePrice);
+  String get formattedPurchasePrice => formatCOP(purchasePrice);
 
-  String get formattedSalePrice => _formatCop(salePrice);
-
-  static String _formatCop(num value) {
-    final digits = value.toInt().toString();
-    final buffer = StringBuffer();
-
-    for (int i = 0; i < digits.length; i++) {
-      final positionFromEnd = digits.length - i;
-      buffer.write(digits[i]);
-      if (positionFromEnd > 1 && positionFromEnd % 3 == 1) {
-        buffer.write('.');
-      }
-    }
-
-    return '\$$buffer';
-  }
+  String get formattedSalePrice => formatCOP(salePrice);
 }

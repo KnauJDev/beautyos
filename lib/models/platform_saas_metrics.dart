@@ -1,3 +1,5 @@
+import 'ticket_board.dart' show formatCOP;
+
 /// Cabecera ejecutiva del Panel de Plataforma (D-172, paso 7.4). Mapea el
 /// jsonb que devuelve `public.platform_get_saas_metrics()`.
 class PlatformSaasMetrics {
@@ -41,25 +43,12 @@ class PlatformSaasMetrics {
     conversionRatePercent: 0,
   );
 
-  String get formattedMrr => _formatCop(mrrCop);
+  String get formattedMrr => formatCOP(mrrCop);
 
-  String get formattedTotalCollected => _formatCop(totalCollectedCop);
+  String get formattedTotalCollected => formatCOP(totalCollectedCop);
 
   String get formattedConversionRate =>
       '${conversionRatePercent.toStringAsFixed(1)}%';
-
-  static String _formatCop(int cop) {
-    final digits = cop.toString();
-    final buffer = StringBuffer();
-    for (int i = 0; i < digits.length; i++) {
-      final pos = digits.length - i;
-      buffer.write(digits[i]);
-      if (pos > 1 && pos % 3 == 1) {
-        buffer.write('.');
-      }
-    }
-    return buffer.toString();
-  }
 
   static int? _parseInt(dynamic value) {
     if (value == null) return null;

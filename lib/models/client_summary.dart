@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
-import 'ticket_payment.dart' show formatMoney;
+import 'ticket_board.dart' show formatCOP;
 
 class ClientSummary {
   final String id;
@@ -81,9 +81,9 @@ class ClientSummary {
     return parts.first;
   }
 
-  String get formattedTotalSpent => formatMoney(totalSpent);
-  String get formattedAverageTicket => formatMoney(averageTicket);
-  String get formattedBalanceAmount => formatMoney(balanceAmount);
+  String get formattedTotalSpent => formatCOP(totalSpent);
+  String get formattedAverageTicket => formatCOP(averageTicket);
+  String get formattedBalanceAmount => formatCOP(balanceAmount);
 
   bool get hasPendingBalance => balanceAmount > 0;
 

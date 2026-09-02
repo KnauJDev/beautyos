@@ -90,19 +90,3 @@ num _readNumber(dynamic value) {
 
   return num.tryParse(value?.toString() ?? '') ?? 0;
 }
-
-String formatMoney(num value) {
-  final rawValue = value.toStringAsFixed(0);
-  final buffer = StringBuffer();
-
-  for (var index = 0; index < rawValue.length; index++) {
-    final positionFromEnd = rawValue.length - index;
-    buffer.write(rawValue[index]);
-
-    if (positionFromEnd > 1 && positionFromEnd % 3 == 1) {
-      buffer.write('.');
-    }
-  }
-
-  return '\$$buffer';
-}

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
 import '../models/my_commission_summary_item.dart';
+import '../models/ticket_board.dart' show formatCOP;
 import '../services/my_commission_summary_service.dart';
 import '../widgets/app_widgets.dart';
 
@@ -221,7 +222,7 @@ class _TotalCommissionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final amountText = showMoney ? _formatMoney(total) : '••••••';
+    final amountText = showMoney ? formatCOP(total) : '••••••';
 
     return SizedBox(
       width: 260,
@@ -272,23 +273,6 @@ class _TotalCommissionCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _formatMoney(double value) {
-    final rounded = value.round().toString();
-    final buffer = StringBuffer();
-
-    for (var i = 0; i < rounded.length; i++) {
-      final positionFromEnd = rounded.length - i;
-
-      buffer.write(rounded[i]);
-
-      if (positionFromEnd > 1 && positionFromEnd % 3 == 1) {
-        buffer.write('.');
-      }
-    }
-
-    return '\$$buffer';
   }
 }
 

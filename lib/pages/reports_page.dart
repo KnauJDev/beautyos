@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../models/branch_context.dart';
 import '../models/branch_report_v3.dart';
-import '../models/ticket_payment.dart' show formatMoney;
+import '../models/ticket_board.dart' show formatCOP;
 import '../services/branch_reports_service.dart';
 import '../widgets/app_widgets.dart';
 
@@ -653,7 +653,7 @@ class _ReportesPageState extends State<ReportesPage> {
                         style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.brandDeep),
                       ),
                       Text(
-                        'Cobrado: ${report.formattedCashReceived}  -  Salidas: ${formatMoney(report.cashPurchases + report.cashExpenses)}',
+                        'Cobrado: ${report.formattedCashReceived}  -  Salidas: ${formatCOP(report.cashPurchases + report.cashExpenses)}',
                         style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
                       ),
                     ],

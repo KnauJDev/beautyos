@@ -1,3 +1,5 @@
+import 'ticket_board.dart' show formatCOP;
+
 class ExpenseManagementItem {
   const ExpenseManagementItem({
     required this.id,
@@ -32,7 +34,7 @@ class ExpenseManagementItem {
     );
   }
 
-  String get formattedAmount => _formatCop(amount);
+  String get formattedAmount => formatCOP(amount);
 
   String get paymentMethodText {
     switch (paymentMethod) {
@@ -71,20 +73,5 @@ class ExpenseManagementItem {
     final year = parsedDate.year.toString();
 
     return '$day/$month/$year';
-  }
-
-  static String _formatCop(num value) {
-    final digits = value.toInt().toString();
-    final buffer = StringBuffer();
-
-    for (int i = 0; i < digits.length; i++) {
-      final positionFromEnd = digits.length - i;
-      buffer.write(digits[i]);
-      if (positionFromEnd > 1 && positionFromEnd % 3 == 1) {
-        buffer.write('.');
-      }
-    }
-
-    return '\$$buffer';
   }
 }

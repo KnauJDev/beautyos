@@ -1,3 +1,5 @@
+import 'ticket_board.dart' show formatCOP;
+
 class MyCommissionSummaryItem {
   const MyCommissionSummaryItem({
     required this.serviceId,
@@ -36,22 +38,5 @@ class MyCommissionSummaryItem {
     return double.tryParse(value?.toString() ?? '') ?? 0;
   }
 
-  String get formattedCommissionTotal => _formatMoney(commissionTotal);
-
-  static String _formatMoney(double value) {
-    final rounded = value.round().toString();
-    final buffer = StringBuffer();
-
-    for (var i = 0; i < rounded.length; i++) {
-      final positionFromEnd = rounded.length - i;
-
-      buffer.write(rounded[i]);
-
-      if (positionFromEnd > 1 && positionFromEnd % 3 == 1) {
-        buffer.write('.');
-      }
-    }
-
-    return '\$$buffer';
-  }
+  String get formattedCommissionTotal => formatCOP(commissionTotal);
 }
