@@ -318,6 +318,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
     MyProfile? profile,
     BranchContext branch,
     List<BranchContext> branches,
+    TenantEntitlements entitlements,
   ) {
     final role = profile?.role ?? 'client';
 
@@ -362,6 +363,10 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           key: ValueKey('tickets-${branch.branchId}'),
           branchId: branch.branchId,
           isOwnerOrAdmin: role == 'owner' || role == 'admin',
+          // Paso 8.14 (D-187): dos acciones sueltas que el plan puede no
+          // cubrir, aunque el modulo si funcione.
+          puedePortafolio: entitlements.permite(ClaveDeCapacidad.portafolio),
+          puedeResenas: entitlements.permite(ClaveDeCapacidad.resenas),
           openTicketId: _pendingOpenTicketId,
           onTicketOpened: () => setState(() => _pendingOpenTicketId = null),
         ),
@@ -389,6 +394,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         page: MyStylistAgendaPage(
           key: ValueKey('my-agenda-${branch.branchId}'),
           branchId: branch.branchId,
+          puedePortafolio: entitlements.permite(ClaveDeCapacidad.portafolio),
         ),
         allowedRoles: const <String>{'stylist'},
       ),
@@ -736,7 +742,12 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         }
 
         final branch = selectedBranch ?? _initialBranch(branches);
-        final modules = _modulesForProfile(profile, branch, branches);
+        final modules = _modulesForProfile(
+          profile,
+          branch,
+          branches,
+          entitlements,
+        );
 
         if (modules.isEmpty) {
           return Scaffold(

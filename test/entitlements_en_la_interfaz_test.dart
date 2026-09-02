@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:salonymas/main.dart';
+import 'package:salonymas/pages/my_stylist_agenda_page.dart';
+import 'package:salonymas/pages/tickets_page.dart';
 import 'package:salonymas/models/tenant_entitlements.dart';
 
 void main() {
@@ -123,6 +125,19 @@ void main() {
       expect(bloqueada.title, 'Inventario');
       expect(bloqueada.icon, Icons.inventory_2_outlined);
       expect(bloqueada.category, BeautyCategory.finanzas);
+    });
+
+    test('las acciones sueltas del paso 8.14 fallan abiertas por defecto', () {
+      // Si alguien cambiara estos valores por defecto a false, un salón que sí
+      // paga se quedaría sin subir fotos ni mandar enlaces de reseña en cuanto
+      // la consulta de entitlements fallara una vez. Quien impide de verdad la
+      // operación es el backend (D-184, D-187).
+      const tickets = TicketsPage(branchId: 'x', isOwnerOrAdmin: true);
+      expect(tickets.puedePortafolio, true);
+      expect(tickets.puedeResenas, true);
+
+      const agenda = MyStylistAgendaPage(branchId: 'x');
+      expect(agenda.puedePortafolio, true);
     });
 
     test('un módulo sin capacidad exigida no declara ninguna', () {

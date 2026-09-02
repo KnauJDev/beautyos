@@ -9,12 +9,21 @@ import '../services/my_stylist_agenda_service.dart';
 import '../services/stylist_time_off_service.dart';
 import '../widgets/add_work_photo_dialog.dart';
 import '../widgets/app_widgets.dart';
+import '../widgets/candado_de_plan.dart';
 import '../widgets/create_time_off_dialog.dart';
 
 class MyStylistAgendaPage extends StatefulWidget {
-  const MyStylistAgendaPage({super.key, required this.branchId});
+  const MyStylistAgendaPage({
+    super.key,
+    required this.branchId,
+    this.puedePortafolio = true,
+  });
 
   final String branchId;
+
+  /// Si el plan del salon cubre el portafolio (paso 8.14, D-187). Por defecto
+  /// `true`: si no se pudo consultar no se bloquea nada (D-184).
+  final bool puedePortafolio;
 
   @override
   State<MyStylistAgendaPage> createState() => _MyStylistAgendaPageState();
@@ -199,6 +208,22 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
   }
 
   Future<void> _openAddWorkPhotoDialog(MyStylistAgendaItem item) async {
+    // Paso 8.14 (D-187). Al estilista no se le manda a Configuracion: no es su
+    // decision y esa pantalla ni siquiera la ve.
+    if (!widget.puedePortafolio) {
+      await mostrarCandadoDePlan(
+        context,
+        titulo: 'Fotos de trabajos',
+        explicacion:
+            'Las fotos de trabajos arman el portafolio del salon: lo que '
+            'hiciste, con que clienta y con que servicio. El plan que tiene el '
+            'salon todavia no las incluye.',
+        planSugerido: 'Profesional',
+        puedeMejorarElPlan: false,
+      );
+      return;
+    }
+
     final saved = await showDialog<bool>(
       context: context,
       builder: (context) => AddWorkPhotoDialog(

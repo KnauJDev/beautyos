@@ -17,6 +17,7 @@ import '../services/clients_service.dart';
 import '../services/tickets_service.dart';
 import '../widgets/add_work_photo_dialog.dart';
 import '../widgets/app_widgets.dart';
+import '../widgets/candado_de_plan.dart';
 import 'agenda_page.dart' show buildWhatsAppUri;
 
 /// Abre el diálogo de crear cita para [branchId] y devuelve `true` si la
@@ -97,6 +98,8 @@ class TicketsPage extends StatefulWidget {
     super.key,
     required this.branchId,
     required this.isOwnerOrAdmin,
+    this.puedePortafolio = true,
+    this.puedeResenas = true,
     this.openTicketId,
     this.onTicketOpened,
   });
@@ -108,6 +111,12 @@ class TicketsPage extends StatefulWidget {
   /// reservadas: anular un pago y corregir un servicio ya finalizado. El
   /// asistente cobra y atiende, pero no deshace.
   final bool isOwnerOrAdmin;
+
+  /// Lo que el plan del negocio cubre (paso 8.14, D-187). Por defecto `true`:
+  /// si no se pudo consultar no se bloquea nada, mismo criterio que D-184 --
+  /// quien impide de verdad la operacion es el backend.
+  final bool puedePortafolio;
+  final bool puedeResenas;
 
   /// Ticket que hay que abrir apenas cargue la lista, sin que el usuario lo
   /// busque (D-163: navegacion directa desde el Tablero de Agenda). Lo pone
@@ -628,6 +637,45 @@ class _TicketsPageState extends State<TicketsPage> {
   bool _canCopyReviewLink(TicketSummary ticket) =>
       AccionesDeTicket.puedeCopiarEnlaceResena(ticket.status);
 
+  /// Paso 8.14 (D-187). El enlace de resena es el caso mas feo de los dos:
+  /// si el plan no cubre `reviews`, el salon copia el enlace, se lo manda a la
+  /// clienta por WhatsApp, y **es la clienta** quien se estrella contra el
+  /// error de `public_create_review`. El dano no lo recibe quien tiene el plan.
+  Future<void> _copyReviewLinkOCandado(TicketSummary ticket) async {
+    if (!widget.puedeResenas) {
+      await mostrarCandadoDePlan(
+        context,
+        titulo: 'Resenas',
+        explicacion:
+            'Las resenas dejan que tu clienta califique el servicio y que esa '
+            'calificacion se vea en la pagina publica de tu salon. Tu plan '
+            'actual todavia no las incluye, asi que el enlace no le funcionaria '
+            'a ella.',
+        planSugerido: 'Profesional',
+      );
+      return;
+    }
+
+    await _copyReviewLink(ticket);
+  }
+
+  Future<void> _agregarFotoOCandado(TicketSummary ticket) async {
+    if (!widget.puedePortafolio) {
+      await mostrarCandadoDePlan(
+        context,
+        titulo: 'Fotos de trabajos',
+        explicacion:
+            'Las fotos de trabajos arman el portafolio de tu salon: lo que '
+            'hiciste, con que clienta y con que estilista, listo para ensenarlo '
+            'en tu pagina publica.',
+        planSugerido: 'Profesional',
+      );
+      return;
+    }
+
+    await _openAddWorkPhotoDialog(ticket);
+  }
+
   Future<void> _copyReviewLink(TicketSummary ticket) async {
     final link = '${Uri.base.origin}/?resena=${ticket.id}';
     await Clipboard.setData(ClipboardData(text: link));
@@ -816,12 +864,12 @@ class _TicketsPageState extends State<TicketsPage> {
               }
             : null,
         onCopyReviewLink: _canCopyReviewLink(ticket)
-            ? () => _copyReviewLink(ticket)
+            ? () => _copyReviewLinkOCandado(ticket)
             : null,
         onAddWorkPhoto: _canAddWorkPhoto(ticket)
             ? () {
                 Navigator.of(context).pop();
-                _openAddWorkPhotoDialog(ticket);
+                _agregarFotoOCandado(ticket);
               }
             : null,
       ),
@@ -1192,10 +1240,10 @@ class _TicketsPageState extends State<TicketsPage> {
                                   ? () => _openPaymentsDialog(ticket)
                                   : null,
                               onCopyReviewLink: _canCopyReviewLink(ticket)
-                                  ? () => _copyReviewLink(ticket)
+                                  ? () => _copyReviewLinkOCandado(ticket)
                                   : null,
                               onAddWorkPhoto: _canAddWorkPhoto(ticket)
-                                  ? () => _openAddWorkPhotoDialog(ticket)
+                                  ? () => _agregarFotoOCandado(ticket)
                                   : null,
                             ),
                           ),

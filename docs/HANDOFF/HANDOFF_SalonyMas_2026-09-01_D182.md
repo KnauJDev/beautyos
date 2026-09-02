@@ -1,8 +1,8 @@
 # HANDOFF Salón y Más — 1 de septiembre de 2026 ("Auditoría de 4 revisiones, perímetro de pagos y privacidad del portal", D-181 a D-183)
 
-**Bloque documentado:** decisiones **D-181 a D-186** · Pasos **8.8 a 8.13** de la **FASE 8**.
+**Bloque documentado:** decisiones **D-181 a D-187** · Pasos **8.8 a 8.14** de la **FASE 8**.
 
-**Estado:** `flutter analyze` limpio (0/0), **262 de 262 pruebas en verde**. `flutter analyze` limpio (0/0) y **271 de 271 pruebas en verde**. **D-181, D-182 y D-183 desplegados y verificados en producción** — el perímetro de pagos de ePayco cerrado por los dos lados y el portal de la clienta sin enumeración. **D-184 cerrado**: los candados de plan ya no dejan que un salón vea errores de base de datos por culpa de su plan. **D-185 aplicado y verificado.** Con esto quedan cerrados los seis bloqueadores de seguridad y backend de la auditoría: TL-01, TL-02, TL-04, TL-05, TL-06 y TL-19. **D-186 (el broche de oro, paso 8.8) aplicado y verificado.** De la auditoría solo queda el paso 8.14.
+**Estado:** `flutter analyze` limpio (0/0), **262 de 262 pruebas en verde**. `flutter analyze` limpio (0/0) y **271 de 271 pruebas en verde**. **D-181, D-182 y D-183 desplegados y verificados en producción** — el perímetro de pagos de ePayco cerrado por los dos lados y el portal de la clienta sin enumeración. **D-184 cerrado**: los candados de plan ya no dejan que un salón vea errores de base de datos por culpa de su plan. **D-185 aplicado y verificado.** Con esto quedan cerrados los seis bloqueadores de seguridad y backend de la auditoría: TL-01, TL-02, TL-04, TL-05, TL-06 y TL-19. **D-186 (el broche de oro, paso 8.8) aplicado y verificado.** **D-187 (paso 8.14) cierra la auditoría de 4 revisiones: no queda ningún hallazgo abierto de las cuatro.**
 
 ---
 
@@ -163,10 +163,10 @@ Cómo salir de dudas con el próximo pago real:
 curl -s https://secure.epayco.co/validation/v1/reference/REF_PAYCO_REAL | python -m json.tool | grep -i cust
 ```
 
-### 2.2 Paso 8.14 y el candado por botón
+### 2.2 D-187 sin probar con un salón en Básico
 
-Fotos de trabajos y Reseñas necesitan candado **por botón**, no por módulo
-(sale de D-184). Es lo único que queda de la auditoría además de lo de arriba.
+Como D-184: la prueba cubre el invariante (que por defecto no bloquea), no la
+pantalla. Falta tocar los dos botones con un salón que no tenga el plan.
 
 ---
 
@@ -233,6 +233,11 @@ verificados: TL-01, TL-02, TL-04, TL-05, TL-06 y TL-19.
 D-186 (paso 8.8, el broche de oro) está aplicado y verificado: Control 200
 en verde.
 
-Lo único que queda de toda la auditoría:
-1. Paso 8.14: candado por botón en Fotos de trabajos y Reseñas (sale de D-184).
+La auditoría de 4 revisiones queda CERRADA: los pasos 8.8 a 8.14 están hechos y
+no queda ningún hallazgo abierto de las cuatro revisiones.
+
+Lo que sigue ya no sale de la auditoría, sino del Plan Maestro: la Fase 3 tiene
+dos casillas de 👤 pendientes (3.2, consultar a un contador; 3.4, subir Supabase
+a plan Pro) y la Idea I-14 sigue esperando las primeras cinco visitas a salones
+reales para cerrar la matriz de módulos por plan.
 ```
