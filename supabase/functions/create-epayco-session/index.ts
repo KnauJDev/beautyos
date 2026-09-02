@@ -1,4 +1,8 @@
-// BeautyOS - Creador Seguro de Sesiones de Smart Checkout ePayco V2 (D-141 / D-158)
+// BeautyOS - Creador Seguro de Sesiones de Smart Checkout ePayco V2 (D-141 / D-158 / D-192)
+//
+// Desde D-192 acepta `branchId`: si viene, se cobra ESA sede con el prorrateo
+// hasta la fecha de corte del negocio (D-191). Si no viene, es el cobro del
+// negocio entero, exactamente como antes.
 //
 // Autentica contra Apify usando llaves del servidor (nunca expuestas en Flutter)
 // y genera un `sessionId` seguro para abrir el checkout modal oficial de ePayco.
@@ -67,7 +71,7 @@ Deno.serve(async (req) => {
     }
 
     paso = "leer parámetros de solicitud";
-    let body: { planCode?: string } = {};
+    let body: { planCode?: string; branchId?: string } = {};
     try {
       body = await req.json();
     } catch {
@@ -77,6 +81,11 @@ Deno.serve(async (req) => {
     // D-188: el plan por defecto pasa de "profesional" a "pro", el plan unico
     // Todo Incluido. Los tres viejos quedaron en `retired`.
     const planCode = (body.planCode || "pro").toLowerCase();
+
+    // D-192 (Etapa 3b): si viene una sede, se cobra ESA sede. Si no viene, es
+    // el cobro del negocio entero, que es como funcionaba hasta ahora y como
+    // siguen funcionando los enlaces de pago que ya existan por ahi.
+    const branchId = (body.branchId ?? "").toString().trim() || null;
 
     // El tenantId NUNCA se toma del cliente: se resuelve exclusivamente desde
     // la membresía activa del usuario autenticado, para que nadie pueda pagar
@@ -122,25 +131,57 @@ Deno.serve(async (req) => {
     // función ignora por completo el planCode que mandó el cliente — el
     // dropdown de Flutter ya no lo muestra en ese caso, pero esto es
     // defensa en profundidad, no depende de que el cliente se comporte.
+    // D-192: la sede tiene que ser de este negocio. El tenantId sale de la
+    // sesion (nunca del cliente), asi que comprobar la sede contra el cierra
+    // la misma clase de agujero que TL-01.
+    if (branchId) {
+      paso = "comprobar que la sede es de este negocio";
+      const { data: branchData } = await supabaseAdmin
+        .from("branches")
+        .select("id")
+        .eq("id", branchId)
+        .eq("tenant_id", tenantId)
+        .maybeSingle();
+
+      if (!branchData) {
+        return responder({ error: "La sede indicada no pertenece a tu negocio." }, 403);
+      }
+    }
+
     paso = "calcular monto y periodo a cobrar";
-    const { data: calcData, error: calcError } = await supabaseAdmin.rpc(
-      "beautyos_calcular_cargo_epayco",
-      { p_tenant_id: tenantId, p_plan_code: planCode },
-    );
+    const { data: calcData, error: calcError } = branchId
+      // Cobro de UNA sede: prorrateado hasta la fecha de corte del negocio
+      // (D-191). Un salon, una fecha de cobro.
+      ? await supabaseAdmin.rpc("beautyos_calcular_cargo_sede", {
+          p_branch_id: branchId,
+        })
+      // Cobro del negocio entero, como hasta ahora.
+      : await supabaseAdmin.rpc("beautyos_calcular_cargo_epayco", {
+          p_tenant_id: tenantId,
+          p_plan_code: planCode,
+        });
 
     if (calcError || !calcData || calcData.length === 0) {
       console.error("Error al calcular el cargo de ePayco:", calcError);
-      return responder({ error: "No se pudo calcular el monto a cobrar para este negocio." }, 500);
+      return responder({ error: "No se pudo calcular el monto a cobrar." }, 500);
     }
 
     const calc = calcData[0];
     const amount = calc.monto_cop;
 
-    const { data: planData } = await supabaseAdmin
-      .from("plans")
-      .select("code, name")
-      .eq("id", calc.plan_id_resuelto)
-      .maybeSingle();
+    // `plan_id_resuelto` solo lo devuelve el calculo por negocio; el de sede no
+    // resuelve plan porque solo hay uno (D-188).
+    const { data: planData } = calc.plan_id_resuelto
+      ? await supabaseAdmin
+          .from("plans")
+          .select("code, name")
+          .eq("id", calc.plan_id_resuelto)
+          .maybeSingle()
+      : await supabaseAdmin
+          .from("plans")
+          .select("code, name")
+          .eq("code", "pro")
+          .maybeSingle();
 
     const planCodeResuelto = planData?.code || planCode;
     const planName = planData?.name || "Todo Incluido";
@@ -169,7 +210,13 @@ Deno.serve(async (req) => {
     }
 
     paso = "crear sesión de Smart Checkout V2 en ePayco";
-    const invoiceNumber = `SUB-${tenantId.replace(/-/g, "").substring(0, 8).toUpperCase()}-${Date.now()}`;
+    // La factura lleva marca de sede para que se distinga de un vistazo en el
+    // panel de ePayco cual de los cobros de un salon es cual.
+    const marcaSede = branchId
+      ? `-SED${branchId.replace(/-/g, "").substring(0, 6).toUpperCase()}`
+      : "";
+    const invoiceNumber =
+      `SUB-${tenantId.replace(/-/g, "").substring(0, 8).toUpperCase()}${marcaSede}-${Date.now()}`;
 
     // D-182 (TL-02): se deja escrito, ANTES de que nadie pueda pagar, a qué
     // negocio y a qué plan corresponde esta factura. El webhook leerá esto en
@@ -187,6 +234,7 @@ Deno.serve(async (req) => {
       p_plan_id: calc.plan_id_resuelto ?? null,
       p_amount_cop: amount,
       p_created_by: userId,
+      p_branch_id: branchId,
     });
 
     if (intentError) {
@@ -247,6 +295,8 @@ Deno.serve(async (req) => {
       planCode: planCodeResuelto,
       planName: planName,
       motivo: calc.motivo,
+      branchId: branchId,
+      periodoFin: calc.periodo_fin ?? null,
       testMode: EPAYCO_TEST_MODE,
     }, 200);
   } catch (error) {

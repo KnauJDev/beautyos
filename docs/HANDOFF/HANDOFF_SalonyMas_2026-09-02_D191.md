@@ -1,8 +1,8 @@
-# HANDOFF Salón y Más — 2 de septiembre de 2026 ("Un solo plan por sede", D-188 a D-191)
+# HANDOFF Salón y Más — 2 de septiembre de 2026 ("Un solo plan por sede", D-188 a D-192)
 
-**Bloque documentado:** decisiones **D-188 a D-191** · Pasos **8.15 y 8.16** de la **FASE 8**.
+**Bloque documentado:** decisiones **D-188 a D-192** · Pasos **8.15 y 8.16** de la **FASE 8**.
 
-**Estado:** `flutter analyze` limpio (0/0) y **282 de 282 pruebas en verde**. Etapas 1 y 2 **aplicadas y verificadas en producción**. Etapa 3a escrita, **pendiente de aplicar**.
+**Estado:** `flutter analyze` limpio (0/0) y **282 de 282 pruebas en verde**. Etapas 1, 2 y 3a **aplicadas y verificadas en producción**. Etapa 3b: **el servidor está hecho y pendiente de aplicar; falta la pantalla**.
 
 > El bloque anterior (D-181 a D-187, la auditoría de 4 revisiones y sus seis
 > bloqueadores) está en `docs/_archivo/handoffs/HANDOFF_SalonyMas_2026-09-01_D182.md`.
@@ -47,8 +47,8 @@ cinco visitas a salones reales para repartir 15 casillas, y ya no hay casillas.
 |---|---|---|
 | **1** | Catálogo de un solo plan, capacidades abiertas, pantalla pública | ✅ **Aplicada y verificada** (D-188, D-189) |
 | **2** | Suscripción por sede: `branch_subscriptions` | ✅ **Aplicada y verificada** (D-190) |
-| **3a** | `branch_id` en las intenciones de pago + cálculo del cargo por sede | 🔄 **Escrita** (D-191), pendiente de aplicar |
-| **3b** | Checkout, webhook, alertas y pantalla de pago | ⬜ |
+| **3a** | `branch_id` en las intenciones de pago + cálculo del cargo por sede | ✅ **Aplicada y verificada** (D-191) |
+| **3b** | Checkout, webhook, alertas y pantalla de pago | 🔄 **Servidor hecho** (D-192), pendiente de aplicar. Faltan pantalla y alertas |
 
 ### 🔴 Hasta que la 3b esté hecha no se puede vender la segunda sede
 
@@ -75,21 +75,21 @@ powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "sup
 propósito: el parámetro nuevo lleva valor por defecto y la columna nueva va al
 final, así que las Edge Functions en producción siguen funcionando igual.
 
-### 3.2 La pantalla pública nunca se vio renderizada
+### 3.3 La pantalla pública nunca se vio renderizada
 
 `public_plans_page.dart` se rediseñó entera para el plan único y **compila y
 pasa las pruebas, pero nadie la ha visto con los ojos**: no se pudo levantar el
 servidor web en esas sesiones. Para una página comercial, eso es justo lo que el
 analizador no dice.
 
-### 3.3 El tope de equipo es por NEGOCIO, no por sede
+### 3.4 El tope de equipo es por NEGOCIO, no por sede
 
 `create_team_invitation` cuenta las cuentas del tenant entero. La promesa de
 *"10 por sede"* (D-189) **no es cierta para multi-sede** hasta que se arregle.
 Va con la 3b. Hoy no perjudica a nadie porque la segunda sede tampoco se puede
 vender.
 
-### 3.4 El candado 2 de D-181 sigue sin ejercitarse
+### 3.5 El candado 2 de D-181 sigue sin ejercitarse
 
 La comparación de `x_cust_id_cliente` no se ha probado contra una transacción
 real. En el próximo pago:

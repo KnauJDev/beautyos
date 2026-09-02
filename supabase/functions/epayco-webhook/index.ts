@@ -1,4 +1,4 @@
-// BeautyOS - Webhook Receptor y Validador de ePayco (Pasos 3.9 y 3.10 / D-141 / D-182)
+// BeautyOS - Webhook Receptor y Validador de ePayco (Pasos 3.9 y 3.10 / D-141 / D-182 / D-192)
 //
 // BLINDAJE DE INTENCION DE PAGO (D-182, hallazgo TL-02 de la auditoria del 01-sep):
 // La firma SHA-256 de ePayco cubre cust_id, key, ref_payco, transaction_id,
@@ -179,26 +179,47 @@ Deno.serve(async (req) => {
     }
 
     const xTenantId = intent.tenant_id as string;
+    const xBranchId = (intent.branch_id ?? null) as string | null;
     const xPlanCode = (intent.plan_code ?? "") as string;
 
     console.log(
-      `Intencion de pago resuelta: factura ${xInvoice} -> negocio ${xTenantId}, plan ${xPlanCode}.`,
+      `Intencion resuelta: factura ${xInvoice} -> negocio ${xTenantId}` +
+        (xBranchId ? `, sede ${xBranchId}` : ", cobro del negocio entero") +
+        `, plan ${xPlanCode}.`,
     );
 
     paso = "ejecutar rpc interna con service_role";
     const amountNum = Math.round(Number(xAmount) || 0);
 
-    const { data, error } = await supabase.rpc("beautyos_procesar_evento_epayco", {
-      p_tenant_id: xTenantId,
-      p_x_ref_payco: xRefPayco,
-      p_transaction_id: xTransactionId,
-      p_transaction_state: xTransactionState,
-      p_cod_transaction_state: xCodTransactionState,
-      p_amount_cop: amountNum,
-      p_currency_code: xCurrencyCode,
-      p_payload: payload,
-      p_plan_code: xPlanCode || null,
-    });
+    // D-192: dos caminos, y SOLO UNO corre por pago. No es duplicacion: las
+    // reglas de monto son distintas -- un cobro prorrateado de sede puede estar
+    // por debajo del piso de $10.000 que exige el cobro del negocio, y aquella
+    // funcion lo rechazaria. La idempotencia de D-141 sigue siendo la que
+    // garantiza que un pago se procese una sola vez, porque las dos escriben en
+    // la misma tabla de eventos.
+    const { data, error } = xBranchId
+      ? await supabase.rpc("beautyos_procesar_pago_de_sede", {
+          p_tenant_id: xTenantId,
+          p_branch_id: xBranchId,
+          p_x_ref_payco: xRefPayco,
+          p_transaction_id: xTransactionId,
+          p_transaction_state: xTransactionState,
+          p_cod_transaction_state: xCodTransactionState,
+          p_amount_cop: amountNum,
+          p_currency_code: xCurrencyCode,
+          p_payload: payload,
+        })
+      : await supabase.rpc("beautyos_procesar_evento_epayco", {
+          p_tenant_id: xTenantId,
+          p_x_ref_payco: xRefPayco,
+          p_transaction_id: xTransactionId,
+          p_transaction_state: xTransactionState,
+          p_cod_transaction_state: xCodTransactionState,
+          p_amount_cop: amountNum,
+          p_currency_code: xCurrencyCode,
+          p_payload: payload,
+          p_plan_code: xPlanCode || null,
+        });
 
     if (error) {
       console.error(`Error en beautyos_procesar_evento_epayco: ${error.message}`);

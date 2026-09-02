@@ -159,8 +159,8 @@ eso va por partes:
 |---|---|---|
 | 1 | Catálogo de un solo plan, capacidades abiertas y pantalla pública | ✅ **CERRADA 02-sep (D-188, D-189).** Migración aplicada, Control 201 en verde (8 de 8) y `create-epayco-session` desplegada con el plan por defecto `pro` |
 | 2 | **Suscripción por sede:** tabla propia, la sede nace inactiva y se activa al pagarse | ⬜ |
-| 3a | **La base:** `branch_id` en la intención de pago y el cálculo del cargo por sede con prorrateo | 🔄 **Escrita 02-sep (D-191).** Pendiente de aplicar |
-| 3b | **Lo que cobra:** checkout y webhook por sede, alertas y pantalla de pago del salón | ⬜ |
+| 3a | **La base:** `branch_id` en la intención de pago y el cálculo del cargo por sede con prorrateo | ✅ **CERRADA 02-sep (D-191).** Control 203 en verde |
+| 3b | **Lo que cobra:** checkout y webhook por sede, alertas y pantalla de pago del salón | 🔄 **Servidor hecho 02-sep (D-192).** Faltan la pantalla, las alertas por sede y arreglar `epayco_checkout_service.dart`, que quedó obsoleto |
 
 > 🔴 **Hasta que la Etapa 3 esté hecha no se puede vender la segunda sede.** Hoy
 > un negocio paga una suscripción y puede crear las sedes que quiera sin que se
@@ -365,6 +365,14 @@ toque, o se descarta con su motivo.
 ---
 
 ## 7. Deuda y hallazgos abiertos
+
+> 🔴 **`epayco_checkout_service.dart` quedó obsoleto con D-188 y nadie lo notó.**
+> Sigue ofreciendo un desplegable con los tres planes retirados y sus precios
+> viejos ($160.000 / $200.000 / $240.000), y por defecto elige `profesional`,
+> que ya no existe. **El cobro sale bien** —el servidor calcula el monto y el
+> plan retirado cae al plan real (D-159, D-160)— **pero al dueño se le enseña un
+> precio que no es el suyo.** Encontrado el 02-sep al construir D-192. Se
+> arregla junto con la pantalla de sedes.
 
 ### De la auditoría integral del 06-ago
 
