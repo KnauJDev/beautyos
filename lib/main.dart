@@ -203,6 +203,29 @@ class _HomeContextData {
 class _BeautyOSHomeState extends State<BeautyOSHome> {
   int selectedIndex = 0;
 
+  /// Modulos que el usuario ya ha abierto en esta sesion, por indice
+  /// (TL-10, D-201).
+  ///
+  /// Antes de esto, `IndexedStack` construia **los 16 modulos a la vez** al
+  /// entrar: 16 `initState`, 16 consultas a Supabase, y las 15 pantallas que
+  /// nadie estaba mirando cargadas en memoria. Ahora un modulo solo se
+  /// construye cuando se entra en el por primera vez; hasta entonces su hueco
+  /// en la pila es un `SizedBox.shrink()`.
+  ///
+  /// Arranca con el indice 0 porque es el que se ensena al abrir sesion.
+  final Set<int> _modulosAbiertos = <int>{0};
+
+  /// Cuantas veces se ha entrado a cada modulo, por indice (Hallazgo Q,
+  /// D-201).
+  ///
+  /// Este contador viaja dentro de la llave del `KeyedSubtree` que envuelve
+  /// cada pagina: al cambiar, Flutter desmonta el subarbol y lo vuelve a
+  /// montar, o sea que `initState` corre otra vez y la pagina recarga sus
+  /// datos. Es **el mismo mecanismo que el proyecto ya usaba** para el cambio
+  /// de sede -- 17 de los 19 modulos llevan `ValueKey('...-branchId')` desde
+  /// antes de este bloque -- aplicado ahora tambien al entrar.
+  final Map<int, int> _visitasPorModulo = <int, int>{};
+
   /// Ticket que Agenda pidio abrir en la pestana de Tickets (D-163). Se
   /// consume una sola vez: `TicketsPage` avisa con `onTicketOpened` y este
   /// campo vuelve a null para no reabrir el mismo ticket despues.
@@ -330,6 +353,23 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
     await Supabase.instance.client.auth.signOut();
   }
 
+  /// **El unico sitio que cambia de pestana** (TL-10 y Hallazgo Q, D-201).
+  ///
+  /// Antes habia cuatro: los dos menus, el salto de Agenda a Tickets (D-163 y
+  /// D-195) y `_irAModulo` (D-168). Cada uno escribia `selectedIndex` por su
+  /// cuenta. Con la carga perezosa y el refresco al entrar eso deja de valer:
+  /// un camino que se olvide de marcar el modulo como abierto deja la pantalla
+  /// en blanco, y uno que se olvide de contar la visita deja los datos viejos.
+  /// **Si aparece un quinto camino, tiene que pasar por aqui**; hay una prueba
+  /// que lo vigila.
+  void _irAIndice(int index) {
+    setState(() {
+      selectedIndex = index;
+      _modulosAbiertos.add(index);
+      _visitasPorModulo[index] = (_visitasPorModulo[index] ?? 0) + 1;
+    });
+  }
+
   /// Cambia de pestaña buscando el módulo por su título (D-168). Se busca
   /// dinámicamente en vez de fijar un índice: a diferencia de D-163 (que
   /// SÍ podía apoyarse en que Agenda y Tickets son siempre adyacentes),
@@ -338,7 +378,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
   void _irAModulo(List<BeautyModule> modules, String titulo) {
     final index = modules.indexWhere((m) => m.section.title == titulo);
     if (index == -1) return;
-    setState(() => selectedIndex = index);
+    _irAIndice(index);
   }
 
   List<BeautyModule> _modulesForProfile(
@@ -373,16 +413,12 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           // indice inmediatamente siguiente al de Agenda, para cualquier
           // rol que vea Agenda (D-163).
           onOpenTicket: (ticketId) {
-            setState(() {
-              _pendingOpenTicketId = ticketId;
-              selectedIndex = selectedIndex + 1;
-            });
+            setState(() => _pendingOpenTicketId = ticketId);
+            _irAIndice(selectedIndex + 1);
           },
           onCollectTicket: (ticketId) {
-            setState(() {
-              _pendingCollectTicketId = ticketId;
-              selectedIndex = selectedIndex + 1;
-            });
+            setState(() => _pendingCollectTicketId = ticketId);
+            _irAIndice(selectedIndex + 1);
           },
         ),
         allowedRoles: const <String>{'owner', 'admin', 'assistant'},
@@ -673,6 +709,9 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           isOwner: role == 'owner',
         ),
         allowedRoles: const <String>{'owner', 'admin'},
+        // La unica excepcion al refresco al entrar (D-201): aqui se escribe
+        // a mano en la propia pagina. Ver `BeautyModule.recargaAlEntrar`.
+        recargaAlEntrar: false,
       ),
     ];
 
@@ -994,6 +1033,17 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                             );
                             setState(() {
                               selectedBranch = value;
+                              // TL-10 (D-201): al cambiar de sede, TODOS los
+                              // modulos cambian su `ValueKey` de sede y se
+                              // remontan. Si los ya visitados siguieran en la
+                              // pila, se recargarian los 16 de golpe sin que
+                              // nadie los mire -- exactamente el problema que
+                              // este bloque quita. Se vuelve a empezar por el
+                              // que se esta viendo.
+                              _modulosAbiertos
+                                ..clear()
+                                ..add(currentIndex);
+                              _visitasPorModulo.clear();
                             });
                           },
                         ),
@@ -1063,16 +1113,18 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                           _CategorizedSideMenu(
                             sections: sections,
                             selectedIndex: currentIndex,
-                            onDestinationSelected: (index) {
-                              setState(() {
-                                selectedIndex = index;
-                              });
-                            },
+                            onDestinationSelected: _irAIndice,
                           ),
                         Expanded(
                           child: IndexedStack(
                             index: currentIndex,
-                            children: pages,
+                            children: pilaDeModulos(
+                              modules: modules,
+                              pages: pages,
+                              abiertos: _modulosAbiertos,
+                              visitas: _visitasPorModulo,
+                              indiceActual: currentIndex,
+                            ),
                           ),
                         ),
                       ],
@@ -1085,11 +1137,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                   : _MobileNavBar(
                       sections: sections,
                       currentIndex: currentIndex,
-                      onSelected: (index) {
-                        setState(() {
-                          selectedIndex = index;
-                        });
-                      },
+                      onSelected: _irAIndice,
                       onSignOut: signOut,
                     ),
             );
@@ -1147,6 +1195,64 @@ class BeautySection {
   );
 }
 
+/// Arma los hijos del `IndexedStack` de la pantalla principal (TL-10 y
+/// Hallazgo Q, D-201).
+///
+/// Hace dos cosas que antes no hacia nadie:
+///
+/// **1. No construye lo que nadie ha abierto.** Un modulo que todavia no se
+/// ha visitado ocupa su hueco con un `SizedBox.shrink()`. `IndexedStack`
+/// necesita que la lista tenga el mismo largo que los modulos --su `index` es
+/// una posicion, no una identidad-- pero nada le obliga a que esos huecos
+/// sean la pagina de verdad. Antes de esto se construian los 16 modulos al
+/// abrir sesion: 16 `initState`, 16 consultas, 15 pantallas que nadie mira.
+///
+/// **2. Recarga al entrar.** La llave lleva el contador de visitas, asi que
+/// entrar otra vez la cambia, Flutter desmonta el subarbol y `initState`
+/// vuelve a correr. Eso es lo que cierra el Hallazgo Q, abierto desde el
+/// 09-ago: "entrar a un modulo no recarga sus datos". **Es el mismo
+/// mecanismo que el proyecto ya usaba** para el cambio de sede -- 17 de los
+/// 19 modulos llevan `ValueKey('...-branchId')` desde antes de este bloque --
+/// aplicado ahora tambien al entrar.
+///
+/// El modulo que declara `recargaAlEntrar: false` se queda con una llave
+/// fija: se construye perezosamente igual, pero una vez montado conserva su
+/// estado. Hoy solo Configuracion, que tiene siete campos de texto en la
+/// propia pagina.
+///
+/// **[indiceActual] se construye siempre, este o no en [abiertos].** Es una
+/// red, no un adorno: si por cualquier camino el indice visible no estuviera
+/// marcado como abierto, el usuario veria un `SizedBox.shrink()`, o sea **la
+/// pantalla en blanco**, que es el peor final posible de este cambio. Con
+/// esta linea eso es imposible por construccion, sin tener que razonar sobre
+/// si todos los caminos marcaron bien.
+///
+/// Esta funcion es de nivel superior, y no un metodo privado del `State`,
+/// **para poder probarla**: entra una lista y unos contadores, sale una lista
+/// de widgets, sin sesion de Supabase de por medio.
+List<Widget> pilaDeModulos({
+  required List<BeautyModule> modules,
+  required List<Widget> pages,
+  required Set<int> abiertos,
+  required Map<int, int> visitas,
+  required int indiceActual,
+}) {
+  return <Widget>[
+    for (var i = 0; i < pages.length; i++)
+      if (i != indiceActual && !abiertos.contains(i))
+        const SizedBox.shrink()
+      else
+        KeyedSubtree(
+          key: ValueKey(
+            modules[i].recargaAlEntrar
+                ? 'modulo-$i-visita-${visitas[i] ?? 0}'
+                : 'modulo-$i',
+          ),
+          child: pages[i],
+        ),
+  ];
+}
+
 class BeautyModule {
   const BeautyModule({
     required this.section,
@@ -1155,6 +1261,7 @@ class BeautyModule {
     this.requiredFeature,
     this.lockExplicacion,
     this.lockPlan,
+    this.recargaAlEntrar = true,
   });
 
   final BeautySection section;
@@ -1174,6 +1281,24 @@ class BeautyModule {
 
   /// El plan más barato que lo incluye (Plan Maestro, apartado 3).
   final String? lockPlan;
+
+  /// Si al entrar al módulo hay que recargar sus datos (Hallazgo Q, D-201).
+  ///
+  /// **Por defecto `true`, y ese es el caso normal**: el hallazgo dice, con
+  /// razón, que entrar a un módulo tiene que traer datos frescos — quien
+  /// cobra un ticket y se pasa a Reportes espera ver ese dinero.
+  ///
+  /// Recargar significa **remontar**, y remontar borra lo que la persona
+  /// tuviera escrito o filtrado en esa pantalla. Por eso hay una excepción, y
+  /// solo una: **Configuración**, que tiene siete campos de texto en la propia
+  /// página (nombre de contacto, teléfono, WhatsApp, dirección, Instagram,
+  /// Facebook). Perder lo escrito por ir a mirar la Agenda es peor que ver un
+  /// dato viejo en un formulario que la persona está editando de todas formas.
+  ///
+  /// **Antes de poner esto en `false` en un módulo nuevo**, comprobar que de
+  /// verdad guarda algo que se escribe a mano en la página, no en un diálogo:
+  /// un diálogo es una ruta encima y no se pierde al cambiar de pestaña.
+  final bool recargaAlEntrar;
 
   bool canAccess(String role) {
     return allowedRoles.contains(role);

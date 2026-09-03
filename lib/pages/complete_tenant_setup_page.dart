@@ -25,8 +25,6 @@ class _CompleteTenantSetupPageState extends State<CompleteTenantSetupPage> {
   final cityController = TextEditingController();
 
   String selectedBusinessType = 'salon';
-  int selectedBranches = 1;
-  int selectedTeamSize = 2;
   String selectedReferralSource = 'instagram';
 
   bool isLoading = false;
@@ -39,13 +37,6 @@ class _CompleteTenantSetupPageState extends State<CompleteTenantSetupPage> {
     {'value': 'spa', 'label': 'Centro de Estética / Spa'},
     {'value': 'canina', 'label': 'Peluquería / Estética Canina'},
     {'value': 'otro', 'label': 'Otro centro de cuidado personal'},
-  ];
-
-  final List<Map<String, dynamic>> teamSizeOptions = [
-    {'value': 1, 'label': '1 persona (Trabajo individual)'},
-    {'value': 3, 'label': '2 a 5 personas'},
-    {'value': 8, 'label': '6 a 15 personas'},
-    {'value': 20, 'label': 'Más de 15 personas'},
   ];
 
   final List<Map<String, String>> referralOptions = const [
@@ -104,8 +95,12 @@ class _CompleteTenantSetupPageState extends State<CompleteTenantSetupPage> {
         whatsapp: whatsapp,
         businessType: selectedBusinessType,
         city: city,
-        estimatedBranches: selectedBranches,
-        estimatedTeamSize: selectedTeamSize,
+        // Sin `estimatedBranches` ni `estimatedTeamSize` (C-05, D-201): los
+        // dos desplegables se retiraron de este formulario porque desde D-162
+        // nadie lee esas cifras -- el Panel de Plataforma calcula las sedes y
+        // el equipo REALES en vivo. `registerTenant` los deja en 1 por
+        // defecto, igual que `register_tenant` en la base, cuyas columnas son
+        // `not null default 1`: el registro no cambia.
         referralSource: selectedReferralSource,
         referralCodeUsed:
             (referralCodeUsed != null && referralCodeUsed.isNotEmpty)
@@ -281,68 +276,6 @@ class _CompleteTenantSetupPageState extends State<CompleteTenantSetupPage> {
                               prefixIcon: Icon(Icons.location_city_outlined),
                               border: OutlineInputBorder(),
                             ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Número de sedes y tamaño de equipo
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<int>(
-                            initialValue: selectedBranches,
-                            decoration: const InputDecoration(
-                              labelText: 'Sedes',
-                              prefixIcon: Icon(Icons.apartment_outlined),
-                              border: OutlineInputBorder(),
-                            ),
-                            items: const [
-                              DropdownMenuItem(value: 1, child: Text('1 sede')),
-                              DropdownMenuItem(
-                                value: 2,
-                                child: Text('2 sedes'),
-                              ),
-                              DropdownMenuItem(
-                                value: 3,
-                                child: Text('3 sedes'),
-                              ),
-                              DropdownMenuItem(
-                                value: 5,
-                                child: Text('4 o más'),
-                              ),
-                            ],
-                            onChanged: (val) {
-                              if (val != null) {
-                                setState(() => selectedBranches = val);
-                              }
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: DropdownButtonFormField<int>(
-                            initialValue: selectedTeamSize,
-                            decoration: const InputDecoration(
-                              labelText: 'Equipo',
-                              prefixIcon: Icon(Icons.groups_outlined),
-                              border: OutlineInputBorder(),
-                            ),
-                            items: teamSizeOptions.map((opt) {
-                              return DropdownMenuItem<int>(
-                                value: opt['value'] as int,
-                                child: Text(
-                                  opt['label'] as String,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: (val) {
-                              if (val != null) {
-                                setState(() => selectedTeamSize = val);
-                              }
-                            },
                           ),
                         ),
                       ],

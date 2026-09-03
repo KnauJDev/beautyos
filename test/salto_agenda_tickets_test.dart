@@ -127,19 +127,27 @@ void main() {
       );
     });
 
-    test('el salto sigue siendo selectedIndex + 1', () {
-      // Si alguien cambia el mecanismo (por ejemplo a `_irAModulo` por título,
-      // como hace el Dashboard desde D-168), la adyacencia deja de importar y
-      // esta prueba entera se puede retirar. Mientras el `+ 1` esté ahí, no.
+    test('el salto sigue apoyándose en el índice siguiente', () {
+      // **Actualizada en D-201, y la prueba hizo justo lo que tenía que
+      // hacer.** Hasta el 02-sep el salto era `selectedIndex = selectedIndex
+      // + 1` escrito a mano en los dos callbacks de Agenda. D-201 los mandó
+      // por el embudo `_irAIndice`, así que aquella cadena desapareció y esta
+      // prueba falló — obligando a decidir a conciencia si C-03 seguía vivo.
+      //
+      // Sigue vivo: `_irAIndice(selectedIndex + 1)` se apoya en la adyacencia
+      // exactamente igual que antes. Lo que cambió es la forma, no la
+      // dependencia. Si algún día el salto busca el módulo por su título
+      // (como hace el Dashboard desde D-168), entonces sí, esta prueba entera
+      // se puede retirar.
       expect(
-        fuenteCompleta.contains('selectedIndex = selectedIndex + 1'),
+        fuenteCompleta.contains('_irAIndice(selectedIndex + 1)'),
         isTrue,
         reason:
-            'Ya no hay ningún "selectedIndex = selectedIndex + 1" en '
-            'lib/main.dart. Si el salto Agenda → Tickets ahora busca el módulo '
-            'por su título, esta prueba sobra y se puede borrar entera (C-03 '
-            'quedaría cerrado por construcción). Si se borró por error, es un '
-            'fallo: revísalo antes de tocar la prueba.',
+            'Ya no hay ningún "_irAIndice(selectedIndex + 1)" en lib/main.dart. '
+            'Si el salto Agenda → Tickets ahora busca el módulo por su título, '
+            'esta prueba sobra y se puede borrar entera (C-03 quedaría cerrado '
+            'por construcción). Si se borró por error, es un fallo: revísalo '
+            'antes de tocar la prueba.',
       );
     });
   });
