@@ -327,7 +327,10 @@ orden en que se fueron creando. **No se reescribe para ocultar el pasado.**
 218. `_archivo/handoffs/HANDOFF_SalonyMas_2026-09-02_D198.md` (handoff de D-198, reemplazado)
 219. `../lib/services/image_compression.dart`, los 5 servicios de subida, `../lib/services/tickets_service.dart` y `../lib/pages/tickets_page.dart` (**Bloque 5 "Rendimiento, Resiliencia y Optimización de Carga"**: fuera el `catch (_)` ciego y su respaldo — TL-16 —, compresión de imágenes a 1920 px y calidad 85 en un solo sitio — TL-20 — y la lista de Tickets por tandas de 10 con botón "Ver más" — TL-09 — D-199)
 220. `../test/salto_agenda_tickets_test.dart`, `../test/compresion_de_imagenes_test.dart` y `../test/tickets_rendimiento_y_resiliencia_test.dart` (**12 pruebas guardianas** del Bloque 5, incluida la de C-03 que blinda la adyacencia Agenda→Tickets de la que depende el salto de D-163 — D-199)
-221. `HANDOFF/HANDOFF_SalonyMas_2026-09-02_D199.md` (**handoff vigente**, con el prompt exacto para retomar)
+221. `_archivo/handoffs/HANDOFF_SalonyMas_2026-09-02_D199.md` (handoff de D-199, reemplazado)
+222. `../lib/models/aviso_de_pago.dart`, `../lib/main.dart` y `../lib/pages/tickets_page.dart` (**Bloque 6 "Velocidad de Caja y Feedback de Pasarela"**: atajo "Pagar saldo exacto" al cobrar — UX-07 —, el retorno de ePayco deja de ser mudo sin convertir un fallo del atajo en un pago fallido, y `TicketRow` baja de ocho callbacks obligatorios a tres — C-02 — D-200)
+223. `../test/aviso_de_pago_epayco_test.dart` y `../test/saldo_exacto_en_cobro_test.dart` (**20 pruebas nuevas** del Bloque 6; a diferencia de las de D-199 ejercitan el comportamiento, no leen el código fuente — D-200)
+224. `HANDOFF/HANDOFF_SalonyMas_2026-09-02_D200.md` (**handoff vigente**, con el prompt exacto para retomar)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión
 estructural. No se reescriben para ocultar el pasado: una decisión futura la
