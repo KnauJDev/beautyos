@@ -13,31 +13,23 @@ class TicketsService {
 
   final String branchId;
 
+  /// Lista los tickets de la sede.
+  ///
+  /// **Cambio del 02-sep (TL-16, D-199):** antes esta llamada estaba envuelta
+  /// en un `catch (_)` ciego que caia a `get_tickets_summary_v2` ante
+  /// *cualquier* excepcion. Con eso, un fallo de red o un rechazo de permisos
+  /// de sede no se distinguia de "no hay tickets": el error real quedaba
+  /// tragado y la pantalla mostraba el respaldo sin avisar a nadie. Ahora la
+  /// excepcion sube y `FutureBuilder` la ensena, igual que hace el resto de
+  /// esta clase y que `AgendaBoardService.getBoardList`.
   Future<List<TicketSummary>> getTicketsSummary() async {
-    try {
-      final response = await Supabase.instance.client.rpc(
-        'get_ticket_board_list_v2',
-        params: {
-          'p_branch_id': branchId,
-          'p_start_date': null,
-          'p_end_date': null,
-        },
-      );
-
-      if (response is List) {
-        return (response)
-            .map<TicketSummary>(
-              (item) => TicketSummary.fromMap(item as Map<String, dynamic>),
-            )
-            .toList();
-      }
-    } catch (_) {
-      // Fallback a get_tickets_summary_v2 si fuera necesario
-    }
-
     final response = await Supabase.instance.client.rpc(
-      'get_tickets_summary_v2',
-      params: {'p_branch_id': branchId},
+      'get_ticket_board_list_v2',
+      params: {
+        'p_branch_id': branchId,
+        'p_start_date': null,
+        'p_end_date': null,
+      },
     );
 
     return (response as List<dynamic>)

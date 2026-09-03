@@ -2,6 +2,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
+import 'image_compression.dart';
 import 'storage_cleanup.dart';
 
 /// Sube la portada de un artículo de blog al bucket público `blog-covers`
@@ -13,8 +14,9 @@ class BlogCoverUploadService {
 
   static const _uuid = Uuid();
 
+  /// Comprime antes de subir (TL-20, D-199): ver `image_compression.dart`.
   Future<XFile?> pickImage() {
-    return ImagePicker().pickImage(source: ImageSource.gallery);
+    return elegirImagenComprimida();
   }
 
   Future<String> uploadCoverPhoto({

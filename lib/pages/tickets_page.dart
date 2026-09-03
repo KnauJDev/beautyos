@@ -155,6 +155,18 @@ class _TicketsPageState extends State<TicketsPage> {
   String _selectedStateFilter = 'todos'; // 'todos', 'por_confirmar', 'confirmado', 'en_proceso', 'por_cobrar', 'cerrado', 'cancelado'
   String _selectedStylist = 'todos';
 
+  /// Cuantos tickets se pintan de golpe (TL-09, D-199).
+  ///
+  /// Antes se pintaban **todos** los del historial: la lista venia sin
+  /// limite de fechas, y un salon con dos anos de operacion construia
+  /// miles de `TicketRow` de una vez, todos en memoria, aunque solo se
+  /// vieran ocho en pantalla.
+  static const int _ticketsPorTanda = 10;
+
+  /// Tope actual de tickets pintados. Sube de tanda en tanda con el boton
+  /// "Ver mas" y vuelve a empezar cada vez que cambia un filtro.
+  int _ticketsVisibles = _ticketsPorTanda;
+
   @override
   void initState() {
     super.initState();
@@ -252,8 +264,19 @@ class _TicketsPageState extends State<TicketsPage> {
     }
   }
 
+  /// Devuelve la lista al tope inicial (TL-09, D-199).
+  ///
+  /// Se llama **dentro** de cada `setState` que toca un filtro: si alguien
+  /// amplio la lista a 60 tickets y despues escribe en el buscador, lo
+  /// coherente es volver a empezar por los 10 primeros del resultado nuevo,
+  /// no arrastrar el tope de la busqueda anterior.
+  void _reiniciarPaginacion() {
+    _ticketsVisibles = _ticketsPorTanda;
+  }
+
   void _refreshTickets() {
     setState(() {
+      _reiniciarPaginacion();
       ticketsFuture = ticketsService.getTicketsSummary();
     });
   }
@@ -986,6 +1009,17 @@ class _TicketsPageState extends State<TicketsPage> {
             final allTickets = snapshot.data ?? [];
             final filteredTickets = _filterTickets(allTickets);
 
+            // TL-09 (D-199): de la lista filtrada solo se construyen los
+            // primeros `_ticketsVisibles`. Lo que no cabe en la tanda no se
+            // convierte en widget, que era justo el problema: el historial
+            // llega entero desde la base (sin filtro de fechas) y antes se
+            // pintaba entero tambien.
+            final ticketsALaVista = filteredTickets
+                .take(_ticketsVisibles)
+                .toList(growable: false);
+            final ticketsOcultos =
+                filteredTickets.length - ticketsALaVista.length;
+
             // Obtener lista de estilistas únicos para el filtro
             final stylistsSet = <String>{};
             for (final t in allTickets) {
@@ -1023,6 +1057,7 @@ class _TicketsPageState extends State<TicketsPage> {
                                       setState(() {
                                         _searchController.clear();
                                         _searchQuery = '';
+                                        _reiniciarPaginacion();
                                       });
                                     },
                                   )
@@ -1039,6 +1074,7 @@ class _TicketsPageState extends State<TicketsPage> {
                           onChanged: (value) {
                             setState(() {
                               _searchQuery = value;
+                              _reiniciarPaginacion();
                             });
                           },
                         ),
@@ -1086,6 +1122,7 @@ class _TicketsPageState extends State<TicketsPage> {
                                     setState(() {
                                       _selectedDateFilter = 'personalizado';
                                       _customDateRange = picked;
+                                      _reiniciarPaginacion();
                                     });
                                   }
                                 },
@@ -1185,6 +1222,7 @@ class _TicketsPageState extends State<TicketsPage> {
                                   if (val != null) {
                                     setState(() {
                                       _selectedStylist = val;
+                                      _reiniciarPaginacion();
                                     });
                                   }
                                 },
@@ -1231,6 +1269,7 @@ class _TicketsPageState extends State<TicketsPage> {
                                   _selectedStateFilter = 'todos';
                                   _selectedStylist = 'todos';
                                   _customDateRange = null;
+                                  _reiniciarPaginacion();
                                 });
                               },
                               icon: const Icon(Icons.clear_all),
@@ -1253,7 +1292,10 @@ class _TicketsPageState extends State<TicketsPage> {
                           Row(
                             children: [
                               Text(
-                                'Tickets (${filteredTickets.length})',
+                                ticketsOcultos > 0
+                                    ? 'Tickets (${ticketsALaVista.length} '
+                                          'de ${filteredTickets.length})'
+                                    : 'Tickets (${filteredTickets.length})',
                                 style: TextStyle(
                                   fontSize: 17,
                                   fontWeight: FontWeight.bold,
@@ -1272,7 +1314,7 @@ class _TicketsPageState extends State<TicketsPage> {
                             ],
                           ),
                           const SizedBox(height: 16),
-                          ...filteredTickets.map(
+                          ...ticketsALaVista.map(
                             (ticket) => TicketRow(
                               ticket: ticket,
                               onTap: () => _openTicketDetailSheet(ticket),
@@ -1302,6 +1344,23 @@ class _TicketsPageState extends State<TicketsPage> {
                                   : null,
                             ),
                           ),
+                          if (ticketsOcultos > 0) ...[
+                            const SizedBox(height: 8),
+                            Center(
+                              child: OutlinedButton.icon(
+                                onPressed: () => setState(() {
+                                  _ticketsVisibles += _ticketsPorTanda;
+                                }),
+                                icon: const Icon(Icons.expand_more),
+                                label: Text(
+                                  ticketsOcultos <= _ticketsPorTanda
+                                      ? 'Ver los $ticketsOcultos restantes'
+                                      : 'Ver $_ticketsPorTanda más '
+                                            '($ticketsOcultos pendientes)',
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -1324,6 +1383,7 @@ class _TicketsPageState extends State<TicketsPage> {
         if (selected) {
           setState(() {
             _selectedDateFilter = value;
+            _reiniciarPaginacion();
           });
         }
       },
@@ -1347,6 +1407,7 @@ class _TicketsPageState extends State<TicketsPage> {
         if (selected) {
           setState(() {
             _selectedStateFilter = value;
+            _reiniciarPaginacion();
           });
         }
       },
