@@ -29,7 +29,7 @@ plantilla en desuso.
 | `GUIA_TECNICA_PARA_PRODUCCION_2026-08-08.md` | Qué corre y cuánto cuesta | Fundido (sección 10) |
 | `PLANTILLA_DE_SOLICITUD.md` | Plantilla del 19-jul | Nunca se usó |
 
-## `handoffs/` — 12 documentos
+## `handoffs/` — 45 documentos
 
 Todos los puntos de retomada anteriores al vigente. **Solo vale el más reciente
 en `docs/HANDOFF/`.** Estos se conservan porque cuentan, sesión por sesión, cómo

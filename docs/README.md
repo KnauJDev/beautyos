@@ -318,7 +318,13 @@ orden en que se fueron creando. **No se reescribe para ocultar el pasado.**
 209. `../lib/models/branch_subscription.dart`, `../lib/services/branch_subscriptions_service.dart` y `../lib/widgets/sedes_suscripcion_card.dart` (**cierra la etapa 3b**: pantalla de sedes con su estado y botón de pago, y limpieza de `epayco_checkout_service.dart`, que enseñaba los tres planes retirados — D-193)
 210. `../supabase/migrations/20260902180000_reportes_consolidados_multisede_d194.sql` y `../supabase/sql/205_test_reportes_consolidados_multisede.sql` (reportes consolidados de todas las sedes: `get_tenant_reports_v3` llama a la de una sede y suma, en vez de duplicar sus 250 líneas — D-194)
 211. `../lib/pages/tickets_page.dart` y `../lib/pages/agenda_page.dart` (**Bloque 1 "Velocidad Operativa de Mostrador"**: cita express reutilizando "Cualquiera disponible", cobro directo desde la tarjeta de Agenda, y WhatsApp con mensaje pre-armado — D-195)
-212. `HANDOFF/HANDOFF_SalonyMas_2026-09-02_D195.md` (**handoff vigente**, con el prompt exacto para retomar)
+212. `_archivo/handoffs/HANDOFF_SalonyMas_2026-09-02_D195.md` (handoff de D-195, reemplazado)
+213. `../supabase/migrations/20260902200000_tope_equipo_y_alertas_por_sede_d196.sql`, `../supabase/sql/206_test_tope_equipo_y_alertas_por_sede.sql` y `../supabase/functions/send-subscription-expiry-alerts/index.ts` (**Bloque 2 "Pulido Multi-Sede y Alertas de Suscripción"**: tope de equipo proporcional `9 * sedes_activas` y alertas por sede agrupadas en un solo correo por negocio — D-196)
+214. `_archivo/handoffs/HANDOFF_SalonyMas_2026-09-02_D196.md` (handoff de D-196, reemplazado)
+215. `../.github/workflows/ci.yml` (**Bloque 3 "Pipeline de Integración Continua"**: GitHub Actions corriendo `flutter analyze` y `flutter test` en cada push a main y pull request, cierra TL-07 — D-197)
+216. `_archivo/handoffs/HANDOFF_SalonyMas_2026-09-02_D197.md` (handoff de D-197, reemplazado)
+217. `../lib/models/ticket_board.dart` y 13 archivos migrados (**Bloque 4 "Función canónica de moneda"**: `formatCOP` único, arreglado para números negativos `-$100`, eliminando 13 copias dispersas de `_formatCop` y `formatMoney`, cierra TL-12 — D-198)
+218. `HANDOFF/HANDOFF_SalonyMas_2026-09-02_D198.md` (**handoff vigente**, con el prompt exacto para retomar)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión
 estructural. No se reescriben para ocultar el pasado: una decisión futura la
