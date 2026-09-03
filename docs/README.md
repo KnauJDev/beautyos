@@ -324,7 +324,10 @@ orden en que se fueron creando. **No se reescribe para ocultar el pasado.**
 215. `../.github/workflows/ci.yml` (**Bloque 3 "Pipeline de Integración Continua"**: GitHub Actions corriendo `flutter analyze` y `flutter test` en cada push a main y pull request, cierra TL-07 — D-197)
 216. `_archivo/handoffs/HANDOFF_SalonyMas_2026-09-02_D197.md` (handoff de D-197, reemplazado)
 217. `../lib/models/ticket_board.dart` y 13 archivos migrados (**Bloque 4 "Función canónica de moneda"**: `formatCOP` único, arreglado para números negativos `-$100`, eliminando 13 copias dispersas de `_formatCop` y `formatMoney`, cierra TL-12 — D-198)
-218. `HANDOFF/HANDOFF_SalonyMas_2026-09-02_D198.md` (**handoff vigente**, con el prompt exacto para retomar)
+218. `_archivo/handoffs/HANDOFF_SalonyMas_2026-09-02_D198.md` (handoff de D-198, reemplazado)
+219. `../lib/services/image_compression.dart`, los 5 servicios de subida, `../lib/services/tickets_service.dart` y `../lib/pages/tickets_page.dart` (**Bloque 5 "Rendimiento, Resiliencia y Optimización de Carga"**: fuera el `catch (_)` ciego y su respaldo — TL-16 —, compresión de imágenes a 1920 px y calidad 85 en un solo sitio — TL-20 — y la lista de Tickets por tandas de 10 con botón "Ver más" — TL-09 — D-199)
+220. `../test/salto_agenda_tickets_test.dart`, `../test/compresion_de_imagenes_test.dart` y `../test/tickets_rendimiento_y_resiliencia_test.dart` (**12 pruebas guardianas** del Bloque 5, incluida la de C-03 que blinda la adyacencia Agenda→Tickets de la que depende el salto de D-163 — D-199)
+221. `HANDOFF/HANDOFF_SalonyMas_2026-09-02_D199.md` (**handoff vigente**, con el prompt exacto para retomar)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión
 estructural. No se reescriben para ocultar el pasado: una decisión futura la
