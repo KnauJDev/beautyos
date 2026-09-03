@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:salonymas/models/acciones_de_ticket.dart';
 import 'package:salonymas/models/ticket_summary.dart';
 import 'package:salonymas/pages/tickets_page.dart';
 import 'package:salonymas/theme/app_theme.dart';
@@ -102,14 +103,8 @@ void main() {
           home: Scaffold(
             body: TicketRow(
               ticket: ticket,
-              onAddService: () {},
-              onManageServices: () {},
-              onReschedule: () {},
               onChangeStatus: () {},
-              onCorrectCompletion: null,
               onManagePayments: () {},
-              onCopyReviewLink: null,
-              onAddWorkPhoto: () {},
             ),
           ),
         ),
@@ -155,14 +150,8 @@ void main() {
           home: Scaffold(
             body: TicketRow(
               ticket: ticket,
-              onAddService: null,
-              onManageServices: null,
-              onReschedule: null,
               onChangeStatus: null,
-              onCorrectCompletion: null,
               onManagePayments: () {},
-              onCopyReviewLink: () {},
-              onAddWorkPhoto: null,
             ),
           ),
         ),
@@ -176,6 +165,111 @@ void main() {
       // StatusPill cerrado
       expect(find.byType(StatusPill), findsOneWidget);
       expect(find.text('Cerrado'), findsOneWidget);
+    });
+  });
+
+  group('C-02 — TicketRow solo pide lo que de verdad pinta (D-200)', () {
+    TicketSummary ticketEn(String estado) {
+      return TicketSummary.fromMap({
+        'id': 't3',
+        'ticket_code': '0000703',
+        'client_name': 'Paula Rincón',
+        'client_phone': '+573001234567',
+        'scheduled_at': '2026-09-02T10:00:00Z',
+        'status': estado,
+        'channel': 'manual',
+        'service_names': 'Manicure',
+        'stylist_names': 'Sara Duque',
+        'total_price': 60000,
+        'total_duration_minutes': 45,
+        'paid_amount': 0,
+        'balance_amount': 60000,
+        'payment_status': 'sin_pago',
+      });
+    }
+
+    Widget montar(TicketSummary ticket, {
+      VoidCallback? onChangeStatus,
+      VoidCallback? onManagePayments,
+    }) {
+      return MaterialApp(
+        theme: AppTheme.light(),
+        home: Scaffold(
+          body: TicketRow(
+            ticket: ticket,
+            onChangeStatus: onChangeStatus,
+            onManagePayments: onManagePayments,
+          ),
+        ),
+      );
+    }
+
+    test('agregar servicios implica poder cobrar', () {
+      // **Esta es la prueba que sostiene el cambio.** La barra de acciones
+      // se mostraba con `onManagePayments != null || onChangeStatus != null
+      // || onAddService != null`, y el tercer término se retiró por ser
+      // redundante: los estados que admiten agregar servicios son un
+      // subconjunto de los que admiten cobrar. Si esa relación dejara de
+      // cumplirse, la barra desaparecería en silencio para algún estado.
+      const estados = [
+        'solicitado', 'cotizado', 'apartado', 'confirmado', 'en_espera',
+        'en_proceso', 'finalizado', 'cerrado', 'cancelado', 'no_asistio',
+      ];
+
+      for (final estado in estados) {
+        if (!AccionesDeTicket.puedeAgregarServicios(estado)) continue;
+
+        expect(
+          AccionesDeTicket.puedeGestionarPagos(estado),
+          isTrue,
+          reason:
+              'En "$estado" se pueden agregar servicios pero no cobrar. La '
+              'barra de acciones de TicketRow dejaría de verse para ese '
+              'estado: hay que devolverle su propia condición.',
+        );
+      }
+    });
+
+    testWidgets('con pagos y cambio de estado se ven los tres botones', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        montar(
+          ticketEn('confirmado'),
+          onChangeStatus: () {},
+          onManagePayments: () {},
+        ),
+      );
+
+      expect(find.text('Ver ficha'), findsOneWidget);
+      expect(find.text('Pagos y saldo'), findsOneWidget);
+      expect(find.text('Estado'), findsOneWidget);
+    });
+
+    testWidgets('una cita cancelada no enseña barra de acciones', (
+      tester,
+    ) async {
+      // `cancelado` no admite cobro ni cambio de estado, así que los dos
+      // callbacks llegan nulos y la barra entera desaparece -- igual que
+      // antes de retirar el término sobrante de la condición.
+      await tester.pumpWidget(montar(ticketEn('cancelado')));
+
+      expect(find.text('Ver ficha'), findsNothing);
+      expect(find.text('Pagos y saldo'), findsNothing);
+      expect(find.text('Estado'), findsNothing);
+      // La tarjeta sigue ahí: lo que desaparece es la barra, no el ticket.
+      expect(find.text('#0000703'), findsOneWidget);
+    });
+
+    testWidgets('un ticket cerrado cobra pero ya no cambia de estado', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        montar(ticketEn('cerrado'), onManagePayments: () {}),
+      );
+
+      expect(find.text('Ver pagos'), findsOneWidget);
+      expect(find.text('Estado'), findsNothing);
     });
   });
 }

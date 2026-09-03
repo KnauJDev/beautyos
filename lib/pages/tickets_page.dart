@@ -619,7 +619,7 @@ class _TicketsPageState extends State<TicketsPage> {
 
       final dialogResult = await showDialog<Object>(
         context: context,
-        builder: (context) => _PaymentsDialog(
+        builder: (context) => PaymentsDialog(
           ticket: ticket,
           summary: summary,
           payments: payments,
@@ -1318,29 +1318,11 @@ class _TicketsPageState extends State<TicketsPage> {
                             (ticket) => TicketRow(
                               ticket: ticket,
                               onTap: () => _openTicketDetailSheet(ticket),
-                              onAddService: _canAddServices(ticket)
-                                  ? () => _openAddTicketServiceDialog(ticket)
-                                  : null,
-                              onManageServices: _canManageServices(ticket)
-                                  ? () => _openManageTicketServicesDialog(ticket)
-                                  : null,
-                              onReschedule: _canReschedule(ticket)
-                                  ? () => _openRescheduleTicketDialog(ticket)
-                                  : null,
                               onChangeStatus: _canChangeStatus(ticket)
                                   ? () => _openChangeTicketStatusDialog(ticket)
                                   : null,
-                              onCorrectCompletion: _canCorrectCompletion(ticket)
-                                  ? () => _openCorrectCompletionDialog(ticket)
-                                  : null,
                               onManagePayments: _canManagePayments(ticket)
                                   ? () => _openPaymentsDialog(ticket)
-                                  : null,
-                              onCopyReviewLink: _canCopyReviewLink(ticket)
-                                  ? () => _copyReviewLinkOCandado(ticket)
-                                  : null,
-                              onAddWorkPhoto: _canAddWorkPhoto(ticket)
-                                  ? () => _agregarFotoOCandado(ticket)
                                   : null,
                             ),
                           ),
@@ -3872,8 +3854,16 @@ class _CorrectionFormData {
   final String reason;
 }
 
-class _PaymentsDialog extends StatefulWidget {
-  const _PaymentsDialog({
+/// El dialogo de "Pagos y saldo".
+///
+/// **Es publico a proposito, igual que `TicketRow`:** en Dart lo privado
+/// lo es para toda la biblioteca, asi que un `_PaymentsDialog` no se puede
+/// montar desde `test/`. Y aqui se cuenta dinero -- el atajo de saldo
+/// exacto de D-200 rellena el monto que se va a cobrar -- que es
+/// exactamente lo que H-03 pedia poder comprobar sin abrir un navegador.
+class PaymentsDialog extends StatefulWidget {
+  const PaymentsDialog({
+    super.key,
     required this.ticket,
     required this.summary,
     required this.payments,
@@ -3890,15 +3880,20 @@ class _PaymentsDialog extends StatefulWidget {
   final bool canVoid;
 
   @override
-  State<_PaymentsDialog> createState() => _PaymentsDialogState();
+  State<PaymentsDialog> createState() => _PaymentsDialogState();
 }
 
-class _PaymentsDialogState extends State<_PaymentsDialog> {
+class _PaymentsDialogState extends State<PaymentsDialog> {
   final formKey = GlobalKey<FormState>();
   final amountController = TextEditingController();
   final referenceController = TextEditingController();
   final notesController = TextEditingController();
   String method = 'efectivo';
+
+  /// Foco del boton "Registrar pago" (UX-07, D-200). El atajo de saldo
+  /// exacto deja el cursor aqui: quien cobra en el mostrador rellena y
+  /// confirma sin volver a tocar la pantalla.
+  final FocusNode confirmarFocus = FocusNode();
 
   // D-163: el servidor ya acepta abonos en cualquier estado activo
   // (`register_ticket_payment`); el formulario tiene que reflejar la misma
@@ -3919,7 +3914,26 @@ class _PaymentsDialogState extends State<_PaymentsDialog> {
     amountController.dispose();
     referenceController.dispose();
     notesController.dispose();
+    confirmarFocus.dispose();
     super.dispose();
+  }
+
+  /// Rellena el monto con el saldo exacto y pasa el foco a confirmar
+  /// (UX-07, D-200).
+  ///
+  /// **Lo que faltaba no era el valor inicial:** `initState` ya rellenaba
+  /// el campo con el saldo. Lo que no habia era **vuelta atras**. En el
+  /// mostrador pasa todo el rato: la clienta dice "te abono 50", se
+  /// teclea 50, y luego dice "mejor lo pago todo" -- y ahi tocaba borrar
+  /// y volver a teclear la cifra completa a mano, con el riesgo de
+  /// equivocarse en un digito y dejar el ticket con un saldo suelto.
+  void _rellenarConSaldoExacto() {
+    final exacto = widget.summary.balanceAmount.toStringAsFixed(0);
+    amountController.value = TextEditingValue(
+      text: exacto,
+      selection: TextSelection.collapsed(offset: exacto.length),
+    );
+    confirmarFocus.requestFocus();
   }
 
   num? _parseAmount(String value) {
@@ -4049,6 +4063,21 @@ class _PaymentsDialogState extends State<_PaymentsDialog> {
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 12),
+                  // Atajo de saldo exacto (UX-07, D-200). Va ENCIMA del
+                  // campo porque es lo primero que se decide al cobrar:
+                  // "paga todo" o "paga una parte".
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: ActionChip(
+                      avatar: const Icon(Icons.done_all, size: 17),
+                      label: Text(
+                        'Pagar saldo exacto '
+                        '(${formatCOP(widget.summary.balanceAmount)})',
+                      ),
+                      onPressed: _rellenarConSaldoExacto,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                   TextFormField(
                     controller: amountController,
                     keyboardType: const TextInputType.numberWithOptions(
@@ -4133,6 +4162,7 @@ class _PaymentsDialogState extends State<_PaymentsDialog> {
         ),
         if (canRegisterPayment)
           FilledButton.icon(
+            focusNode: confirmarFocus,
             onPressed: _submit,
             icon: const Icon(Icons.save_outlined),
             label: const Text('Registrar pago'),
@@ -4276,30 +4306,41 @@ class _VoidPaymentFormData {
 String _ticketStatusLabel(String status) =>
     TicketStatus.desde(status).etiqueta;
 
+/// Una fila de la lista de Tickets.
+///
+/// **Solo pide las tres acciones que de verdad pinta (C-02, D-200).**
+/// Hasta el 02-sep exigia ocho callbacks `required`: cinco no se usaban
+/// en ningun sitio del `build` y uno --`onAddService`-- solo aparecia
+/// dentro de una condicion de visibilidad, sin llegar a ser el
+/// `onPressed` de nada. Quedaron de cuando la tarjeta tenia su propio
+/// menu de acciones; hoy ese menu vive en la Ficha Completa
+/// (`_TicketDetailSheet`), que si las usa las ocho.
+///
+/// **No se perdio ninguna accion.** Reprogramar, gestionar servicios,
+/// corregir finalizacion, copiar el enlace de resena y agregar foto se
+/// siguen ofreciendo en la Ficha Completa, a la que se llega tocando la
+/// tarjeta o el boton "Ver ficha".
+///
+/// **Y la condicion que se retiro era redundante, no un cambio de
+/// comportamiento.** Los estados en que se pueden agregar servicios
+/// (`AccionesDeTicket.puedeAgregarServicios`) son un subconjunto de
+/// aquellos en que se pueden gestionar pagos (`puedeGestionarPagos`, que
+/// solo excluye `cancelado` y `no_asistio`): siempre que `onAddService`
+/// no era nulo, `onManagePayments` tampoco lo era. Hay una prueba que fija
+/// esa relacion, porque si algun dia deja de cumplirse la barra de
+/// acciones desapareceria en silencio.
 class TicketRow extends StatelessWidget {
   final TicketSummary ticket;
   final VoidCallback? onTap;
-  final VoidCallback? onAddService;
-  final VoidCallback? onManageServices;
-  final VoidCallback? onReschedule;
   final VoidCallback? onChangeStatus;
-  final VoidCallback? onCorrectCompletion;
   final VoidCallback? onManagePayments;
-  final VoidCallback? onCopyReviewLink;
-  final VoidCallback? onAddWorkPhoto;
 
   const TicketRow({
     super.key,
     required this.ticket,
     this.onTap,
-    required this.onAddService,
-    required this.onManageServices,
-    required this.onReschedule,
     required this.onChangeStatus,
-    required this.onCorrectCompletion,
     required this.onManagePayments,
-    required this.onCopyReviewLink,
-    required this.onAddWorkPhoto,
   });
 
   @override
@@ -4509,9 +4550,7 @@ class TicketRow extends StatelessWidget {
               ],
             ),
 
-            if (onManagePayments != null ||
-                onChangeStatus != null ||
-                onAddService != null) ...[
+            if (onManagePayments != null || onChangeStatus != null) ...[
               const SizedBox(height: 10),
               const Divider(height: 1),
               const SizedBox(height: 8),

@@ -8,6 +8,7 @@ import 'models/tenant_entitlements.dart';
 import 'models/tenant_subscription_status.dart';
 import 'services/branch_context_service.dart';
 import 'services/entitlements_service.dart';
+import 'models/aviso_de_pago.dart';
 import 'services/epayco_checkout_service.dart';
 import 'services/monitoreo_service.dart';
 import 'services/my_profile_service.dart';
@@ -225,6 +226,14 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
   late Future<_HomeContextData> homeContextFuture;
   BranchContext? selectedBranch;
 
+  /// Aviso que hay que ensenar al volver de la pasarela (D-200).
+  ///
+  /// Lo escribe `_loadHomeContext`, que corre desde `initState` y por
+  /// tanto no puede tocar un `ScaffoldMessenger` todavia: en ese momento
+  /// no hay `Scaffold` montado. Se guarda aqui y `build` lo consume una
+  /// sola vez, ya con el arbol en pie.
+  AvisoDePago? _avisoDePagoPendiente;
+
   @override
   void initState() {
     super.initState();
@@ -232,20 +241,33 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
   }
 
   Future<_HomeContextData> _loadHomeContext() async {
-    // Si la URL contiene una confirmación de pago de ePayco (ej. ?ref_payco=...), verificarla
+    // Si la URL contiene una confirmación de pago de ePayco (ej. ?ref_payco=...), verificarla.
+    //
+    // **D-200: el resultado ya no se tira.** Antes esta llamada no dejaba
+    // rastro en la pantalla ni cuando iba bien ni cuando iba mal: el dueño
+    // acababa de pagar $150.000 y volvía a una aplicación muda. Ahora se
+    // traduce a un aviso y `build` lo enseña en cuanto hay árbol montado.
+    //
+    // El `catch` sigue sin propagar **a propósito, y no es un catch ciego
+    // como el de TL-16**: la vía autoritativa de activación es el webhook
+    // (D-141), así que un fallo aquí no es un pago perdido. Se reporta a
+    // monitoreo para que quede rastro, y al dueño se le dice la verdad --
+    // que se está validando-- en vez de un error que no le corresponde.
     final refPayco = Uri.base.queryParameters['ref_payco'];
     if (refPayco != null && refPayco.isNotEmpty) {
       try {
-        await Supabase.instance.client.functions.invoke(
+        final respuesta = await Supabase.instance.client.functions.invoke(
           'verify-epayco-transaction',
           body: {'ref_payco': refPayco},
         );
+        _avisoDePagoPendiente = AvisoDePago.desdeLaPasarela(respuesta.data);
       } catch (e, st) {
         MonitoreoService.reportarError(
           e,
           st,
           motivo: 'Fallo al verificar confirmación ePayco $refPayco',
         );
+        _avisoDePagoPendiente = AvisoDePago.enValidacion();
       }
     }
 
@@ -659,6 +681,56 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         .toList(growable: false);
   }
 
+  /// Ensena el aviso de vuelta de la pasarela, si hay uno pendiente
+  /// (D-200). Se consume una sola vez.
+  void _mostrarAvisoDePagoSiHayUno(BuildContext context) {
+    final aviso = _avisoDePagoPendiente;
+    if (aviso == null) return;
+
+    // `maybeOf` y no `of`: si por lo que sea no hubiera un `ScaffoldMessenger`
+    // encima, `of` lanzaria **durante el build**, y quien acaba de pagar
+    // $150.000 se encontraria una pantalla rota en vez de un aviso. Callarse
+    // es el comportamiento que habia antes de D-200; reventar, no.
+    final mensajero = ScaffoldMessenger.maybeOf(context);
+    if (mensajero == null) return;
+
+    // Se consume aqui y no dentro del callback: `build` puede volver a
+    // correr antes de que termine el fotograma, y entonces el mismo aviso
+    // se encolaria dos veces. Y despues de resolver el mensajero, para no
+    // perder el aviso si todavia no habia donde ensenarlo.
+    _avisoDePagoPendiente = null;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      mensajero.showSnackBar(
+        SnackBar(
+          content: Text(aviso.mensaje),
+          backgroundColor: _colorDeAviso(aviso.tono),
+          behavior: SnackBarBehavior.floating,
+          // Mas de los 4 segundos por defecto: quien vuelve de pagar
+          // esta mirando si le cobraron, no la esquina de la pantalla.
+          duration: const Duration(seconds: 10),
+          action: SnackBarAction(
+            label: 'Entendido',
+            textColor: Colors.white,
+            onPressed: mensajero.hideCurrentSnackBar,
+          ),
+        ),
+      );
+    });
+  }
+
+  static Color _colorDeAviso(TonoDeAviso tono) {
+    switch (tono) {
+      case TonoDeAviso.exito:
+        return AppColors.success;
+      case TonoDeAviso.advertencia:
+        return AppColors.warning;
+      case TonoDeAviso.informacion:
+        return AppColors.brandDeep;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<_HomeContextData>(
@@ -670,6 +742,11 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
             body: Center(child: CircularProgressIndicator()),
           );
         }
+
+        // Antes de la rama de error a proposito: si `_loadHomeContext`
+        // reventa despues de volver de la pasarela, el dueno igual tiene
+        // derecho a saber que paso con su pago.
+        _mostrarAvisoDePagoSiHayUno(context);
 
         if (snapshot.hasError) {
           return Scaffold(
