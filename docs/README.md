@@ -330,7 +330,11 @@ orden en que se fueron creando. **No se reescribe para ocultar el pasado.**
 221. `_archivo/handoffs/HANDOFF_SalonyMas_2026-09-02_D199.md` (handoff de D-199, reemplazado)
 222. `../lib/models/aviso_de_pago.dart`, `../lib/main.dart` y `../lib/pages/tickets_page.dart` (**Bloque 6 "Velocidad de Caja y Feedback de Pasarela"**: atajo "Pagar saldo exacto" al cobrar — UX-07 —, el retorno de ePayco deja de ser mudo sin convertir un fallo del atajo en un pago fallido, y `TicketRow` baja de ocho callbacks obligatorios a tres — C-02 — D-200)
 223. `../test/aviso_de_pago_epayco_test.dart` y `../test/saldo_exacto_en_cobro_test.dart` (**20 pruebas nuevas** del Bloque 6; a diferencia de las de D-199 ejercitan el comportamiento, no leen el código fuente — D-200)
-224. `HANDOFF/HANDOFF_SalonyMas_2026-09-02_D200.md` (**handoff vigente**, con el prompt exacto para retomar)
+224. `_archivo/handoffs/HANDOFF_SalonyMas_2026-09-02_D200.md` (handoff de D-200, reemplazado)
+225. `../lib/main.dart` (**Bloque 7 "Ciclo de vida reactivo de pestañas"**: `pilaDeModulos` con carga perezosa y contador de visitas, el embudo `_irAIndice` como único camino de navegación, y `BeautyModule.recargaAlEntrar` — **cierra TL-10 y con él el Hallazgo Q**, abierto desde el 09-ago — D-201)
+226. `../lib/pages/complete_tenant_setup_page.dart` (**C-05**: fuera los desplegables "Sedes" y "Equipo" del registro, huérfanos desde D-162 — verificado antes que ninguna pantalla los muestra — D-201)
+227. `../test/ciclo_de_vida_de_pestanas_test.dart` (**8 pruebas que cuentan montajes reales** de `initState` en vez de leer el código: lo no abierto no se monta, volver a entrar remonta, y la red que impide la pantalla en blanco — D-201)
+228. `HANDOFF/HANDOFF_SalonyMas_2026-09-03_D201.md` (**handoff vigente**, con el prompt exacto para retomar)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión
 estructural. No se reescriben para ocultar el pasado: una decisión futura la
