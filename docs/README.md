@@ -336,7 +336,9 @@ orden en que se fueron creando. **No se reescribe para ocultar el pasado.**
 227. `../test/ciclo_de_vida_de_pestanas_test.dart` (**8 pruebas que cuentan montajes reales** de `initState` en vez de leer el código: lo no abierto no se monta, volver a entrar remonta, y la red que impide la pantalla en blanco — D-201)
 228. `_archivo/handoffs/HANDOFF_SalonyMas_2026-09-03_D201.md` (handoff de D-201, reemplazado)
 229. `../web/_headers` y `../test/web_headers_security_test.dart` (**Bloque 8 "Blindaje de cabeceras web de seguridad"**: `X-Frame-Options: DENY`, `Content-Security-Policy: frame-ancestors 'none'` y `Permissions-Policy` apagando cámara, micrófono y ubicación — cierra la parte de **TL-03** que no necesita el panel de Cloudflare; **HSTS queda como paso 8.25, pendiente del propietario** — D-202)
-230. `HANDOFF/HANDOFF_SalonyMas_2026-09-04_D202.md` (**handoff vigente**, con el prompt exacto para retomar)
+230. `_archivo/handoffs/HANDOFF_SalonyMas_2026-09-04_D202.md` (handoff de D-202, reemplazado)
+231. `../lib/services/tickets_service.dart` y `../test/contrato_rpc_fechas_test.dart` (🔴 **hotfix de producción**: la pantalla de Tickets caía con `Rango de fechas invalido.` porque `get_ticket_board_list_v2` rechaza fechas nulas **desde que existe** y un `catch (_)` lo tapaba desde el 17-ago. **Corrige a D-199**, y la prueba nueva compara el Dart con el SQL — la que lo habría cazado — D-203)
+232. `HANDOFF/HANDOFF_SalonyMas_2026-09-04_D203.md` (**handoff vigente**, con el prompt exacto para retomar)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión
 estructural. No se reescriben para ocultar el pasado: una decisión futura la
