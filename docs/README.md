@@ -342,7 +342,9 @@ orden en que se fueron creando. **No se reescribe para ocultar el pasado.**
 233. `../lib/services/tickets_service.dart` y `../test/historial_de_tickets_test.dart` (**paso 8.27**: la lista de Tickets vuelve a `get_ticket_board_list_v2` con rango de fechas y se reordena en el cliente — recupera el chip `VTA-0000045`, el botón de WhatsApp y la búsqueda por teléfono tras 2,5 semanas invisibles. El saldo cambia de nombre entre las dos RPC (`pending_balance` / `balance_amount`) y el orden viene invertido: las dos diferencias fallan en silencio — D-204)
 234. `_archivo/handoffs/HANDOFF_SalonyMas_2026-09-04_D204.md` (handoff de D-204, reemplazado)
 235. `../lib/pages/dashboard_page.dart`, `../lib/main.dart` y `../test/dashboard_page_test.dart` (**paso 8.28**: el Dashboard hace caso a la píldora de sede en vez de abrir siempre en consolidado, y su desplegable de sedes se sustituye por el botón de dos posiciones de Reportes — `ControlesDelDashboard` y `sedesDelDashboard` quedan públicos para poder probarlos — D-205)
-236. `HANDOFF/HANDOFF_SalonyMas_2026-09-04_D205.md` (**handoff vigente**, con el prompt exacto para retomar)
+236. `_archivo/handoffs/HANDOFF_SalonyMas_2026-09-04_D205.md` (handoff de D-205, reemplazado)
+237. 9 páginas de `../lib/pages/` y `../test/sin_jerga_tecnica_test.dart` (**paso 8.29**: fuera las tarjetas fijas de cabecera del prototipo; las tres que llevaban reglas de permisos pasan al subtítulo en vez de borrarse, y la mención legal a Supabase en Términos se conserva a propósito — D-206)
+238. `HANDOFF/HANDOFF_SalonyMas_2026-09-04_D206.md` (**handoff vigente**, con el prompt exacto para retomar)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión
 estructural. No se reescriben para ocultar el pasado: una decisión futura la
