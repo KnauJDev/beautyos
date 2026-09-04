@@ -334,7 +334,9 @@ orden en que se fueron creando. **No se reescribe para ocultar el pasado.**
 225. `../lib/main.dart` (**Bloque 7 "Ciclo de vida reactivo de pestañas"**: `pilaDeModulos` con carga perezosa y contador de visitas, el embudo `_irAIndice` como único camino de navegación, y `BeautyModule.recargaAlEntrar` — **cierra TL-10 y con él el Hallazgo Q**, abierto desde el 09-ago — D-201)
 226. `../lib/pages/complete_tenant_setup_page.dart` (**C-05**: fuera los desplegables "Sedes" y "Equipo" del registro, huérfanos desde D-162 — verificado antes que ninguna pantalla los muestra — D-201)
 227. `../test/ciclo_de_vida_de_pestanas_test.dart` (**8 pruebas que cuentan montajes reales** de `initState` en vez de leer el código: lo no abierto no se monta, volver a entrar remonta, y la red que impide la pantalla en blanco — D-201)
-228. `HANDOFF/HANDOFF_SalonyMas_2026-09-03_D201.md` (**handoff vigente**, con el prompt exacto para retomar)
+228. `_archivo/handoffs/HANDOFF_SalonyMas_2026-09-03_D201.md` (handoff de D-201, reemplazado)
+229. `../web/_headers` y `../test/web_headers_security_test.dart` (**Bloque 8 "Blindaje de cabeceras web de seguridad"**: `X-Frame-Options: DENY`, `Content-Security-Policy: frame-ancestors 'none'` y `Permissions-Policy` apagando cámara, micrófono y ubicación — cierra la parte de **TL-03** que no necesita el panel de Cloudflare; **HSTS queda como paso 8.25, pendiente del propietario** — D-202)
+230. `HANDOFF/HANDOFF_SalonyMas_2026-09-04_D202.md` (**handoff vigente**, con el prompt exacto para retomar)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión
 estructural. No se reescriben para ocultar el pasado: una decisión futura la
