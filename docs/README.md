@@ -340,7 +340,9 @@ orden en que se fueron creando. **No se reescribe para ocultar el pasado.**
 231. `../lib/services/tickets_service.dart` y `../test/contrato_rpc_fechas_test.dart` (🔴 **hotfix de producción**: la pantalla de Tickets caía con `Rango de fechas invalido.` porque `get_ticket_board_list_v2` rechaza fechas nulas **desde que existe** y un `catch (_)` lo tapaba desde el 17-ago. **Corrige a D-199**, y la prueba nueva compara el Dart con el SQL — la que lo habría cazado — D-203)
 232. `_archivo/handoffs/HANDOFF_SalonyMas_2026-09-04_D203.md` (handoff de D-203, reemplazado)
 233. `../lib/services/tickets_service.dart` y `../test/historial_de_tickets_test.dart` (**paso 8.27**: la lista de Tickets vuelve a `get_ticket_board_list_v2` con rango de fechas y se reordena en el cliente — recupera el chip `VTA-0000045`, el botón de WhatsApp y la búsqueda por teléfono tras 2,5 semanas invisibles. El saldo cambia de nombre entre las dos RPC (`pending_balance` / `balance_amount`) y el orden viene invertido: las dos diferencias fallan en silencio — D-204)
-234. `HANDOFF/HANDOFF_SalonyMas_2026-09-04_D204.md` (**handoff vigente**, con el prompt exacto para retomar)
+234. `_archivo/handoffs/HANDOFF_SalonyMas_2026-09-04_D204.md` (handoff de D-204, reemplazado)
+235. `../lib/pages/dashboard_page.dart`, `../lib/main.dart` y `../test/dashboard_page_test.dart` (**paso 8.28**: el Dashboard hace caso a la píldora de sede en vez de abrir siempre en consolidado, y su desplegable de sedes se sustituye por el botón de dos posiciones de Reportes — `ControlesDelDashboard` y `sedesDelDashboard` quedan públicos para poder probarlos — D-205)
+236. `HANDOFF/HANDOFF_SalonyMas_2026-09-04_D205.md` (**handoff vigente**, con el prompt exacto para retomar)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión
 estructural. No se reescriben para ocultar el pasado: una decisión futura la
