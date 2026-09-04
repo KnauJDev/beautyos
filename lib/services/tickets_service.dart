@@ -8,64 +8,126 @@ import '../models/ticket_service_correction_option.dart';
 import '../models/ticket_payment.dart';
 import '../models/ticket_summary.dart';
 
+/// Primer dia del rango que esta pantalla pide al servidor (D-204).
+///
+/// No es una fecha con significado de negocio: es un limite lo bastante atras
+/// como para que "todos" siga queriendo decir todos. Existe porque la RPC
+/// **exige** un rango y no acepta nulos (D-203).
+final DateTime inicioDelHistorial = DateTime.utc(2000, 1, 1);
+
+/// Ultimo dia del rango. Tiene que ir al futuro: los tickets programados son
+/// citas que todavia no han ocurrido, y si el rango acabara hoy no se verian.
+final DateTime finDelHistorial = DateTime.utc(2100, 1, 1);
+
+/// Ordena los tickets como los espera ver el historial: **lo mas reciente
+/// primero** (D-204).
+///
+/// `get_ticket_board_list_v2` los devuelve al reves --de mas antiguo a mas
+/// nuevo-- porque es la RPC del Tablero de Agenda, que es una linea de tiempo.
+/// Esta pantalla es un historial. Se reordena aqui, en el cliente, y no
+/// cambiando el `order by` de la RPC, porque esa misma RPC la usa el Tablero
+/// de Agenda (D-148) y ahi el orden ascendente es el correcto.
+///
+/// Reproduce el orden que la pantalla ha tenido siempre
+/// (`scheduled_at desc nulls last`, de `get_tickets_summary_v2`). El desempate
+/// es por numero de ticket descendente: el codigo va relleno de ceros a la
+/// izquierda con el mismo ancho, asi que ordenarlo como texto ordena igual que
+/// como numero.
+List<TicketSummary> ordenarTicketsParaLaLista(List<TicketSummary> tickets) {
+  final ordenados = List<TicketSummary>.of(tickets);
+
+  ordenados.sort((a, b) {
+    final fechaA = a.scheduledAt;
+    final fechaB = b.scheduledAt;
+
+    // Los que no tienen fecha van al final, como hacia `nulls last`.
+    if (fechaA == null && fechaB == null) {
+      return b.ticketCode.compareTo(a.ticketCode);
+    }
+    if (fechaA == null) return 1;
+    if (fechaB == null) return -1;
+
+    final porFecha = fechaB.compareTo(fechaA);
+    if (porFecha != 0) return porFecha;
+
+    return b.ticketCode.compareTo(a.ticketCode);
+  });
+
+  return ordenados;
+}
+
 class TicketsService {
   const TicketsService({required this.branchId});
 
   final String branchId;
 
-  /// Lista los tickets de la sede.
+  /// Lista los tickets de la sede (D-204).
   ///
-  /// **Llama a `get_tickets_summary_v2`, y eso NO es un descuido.** Hay otra
-  /// RPC que parece mejor candidata --`get_ticket_board_list_v2`, la del
-  /// Tablero de Agenda (D-147)-- y esta pantalla la llamaba. **Nunca
-  /// funciono.** Lee esto antes de "corregirlo".
+  /// **Por que manda fechas y no nulos.** `get_ticket_board_list_v2` rechaza
+  /// las fechas nulas desde que existe (D-147). Mandarselas nulas es lo que
+  /// tumbo esta pantalla en produccion el 04-sep: fallaba en cada carga, un
+  /// `catch (_)` lo tapaba, y la pantalla vivia de `get_tickets_summary_v2`
+  /// sin que nadie lo supiera (D-199, D-203). El rango de abajo reproduce
+  /// exactamente el "todo el historial" que la pantalla siempre ha mostrado.
   ///
-  /// **La historia, porque cuesta creerla.** Desde el 17-ago esta funcion
-  /// llamaba a `get_ticket_board_list_v2` con `p_start_date: null` y
-  /// `p_end_date: null`. Esa RPC **rechaza las fechas nulas** desde que
-  /// existe:
+  /// **Lo que se recupera al volver a esta RPC.** El respaldo devolvia menos
+  /// columnas, y por eso durante dos semanas y media no se vio: el chip del
+  /// numero de venta `VTA-0000045` (`sale_number`/`sale_code`, D-150), el
+  /// boton de WhatsApp con mensaje pre-armado (`client_phone`, D-195) y la
+  /// busqueda por telefono o por numero de venta. Volvian vacios sin quejarse
+  /// porque en `TicketSummary` son opcionales.
   ///
-  /// ```sql
-  /// if p_start_date is null or p_end_date is null or p_start_date > p_end_date then
-  ///   raise exception 'Rango de fechas invalido.';
-  /// ```
+  /// **El saldo llega con otro nombre, y esta previsto.** Esta RPC devuelve
+  /// `pending_balance` donde la otra devolvia `balance_amount`.
+  /// `TicketSummary.fromMap` lee las dos (`balance_amount ?? pending_balance`),
+  /// asi que el saldo sigue siendo correcto. Se comprobo antes de cambiar:
+  /// equivocarse ahi habria enseniado saldo cero en todos los tickets, o sea
+  /// "esta todo pagado" cuando no lo esta.
   ///
-  /// O sea que la llamada fallaba **en cada carga, sin excepcion**. Un
-  /// `catch (_)` ciego se tragaba el error y caia a `get_tickets_summary_v2`,
-  /// asi que la pantalla funcionaba y nadie se entero en dos semanas y media.
-  /// Al retirar ese `catch` (TL-16, D-199) el fallo salio a la superficie y
-  /// **tumbo la pantalla de Tickets en produccion**.
+  /// **Lo que este cambio NO cierra.** El tercio de TL-09 que decia que la
+  /// consulta trae el historial completo **sigue abierto**: el rango es
+  /// amplio a proposito, para no cambiar lo que la pantalla ensenia. Acotarlo
+  /// de verdad es una decision de producto (que significa "todos") y va
+  /// aparte.
   ///
-  /// **La leccion, que es lo que de verdad hay que recordar:** se retiro un
-  /// respaldo sin comprobar antes que el camino principal funcionara. Quitar
-  /// el `catch` estaba bien --el error era real y llevaba semanas oculto--
-  /// pero el respaldo era lo unico que sostenia la pantalla.
-  ///
-  /// **Lo que este arreglo NO resuelve, a proposito.** `get_tickets_summary_v2`
-  /// devuelve menos columnas que la del tablero: no trae `sale_number`,
-  /// `sale_code`, `closed_at`, `client_id` ni `client_phone`. Todas son
-  /// opcionales en `TicketSummary`, asi que llegan vacias sin quejarse, y por
-  /// eso llevan 2 semanas y media sin verse el chip del numero de venta
-  /// (D-150), el boton de WhatsApp (D-195) y la busqueda por telefono. **Esto
-  /// es un hotfix: devuelve la pantalla a como estaba ayer, ni mas ni menos.**
-  /// Pasar a la RPC del tablero es otro trabajo y tiene su propio riesgo --esa
-  /// filtra `scheduled_at is not null`, o sea que **un ticket sin fecha
-  /// programada desapareceria de la lista**, y un ticket que no se ve es un
-  /// ticket que no se cobra. Hay que contar primero cuantos hay en la base.
+  /// **El riesgo que queda anotado.** Esta RPC filtra
+  /// `and tk.scheduled_at is not null`; la anterior no. El propietario
+  /// confirmo el 04-sep que hoy hay **cero** tickets sin fecha programada,
+  /// por eso se pudo cambiar. Pero la columna admite nulos, asi que si algun
+  /// dia se crea uno sin fecha **desaparecera de esta lista en silencio**, y
+  /// un ticket que no se ve es un ticket que no se cobra. El arreglo durable
+  /// es una migracion que deje de excluirlos.
   ///
   /// **Sin `catch`**: si esto falla, la excepcion sube y la pantalla la
-  /// ensena. Es lo unico de D-199 que hay que conservar intacto.
+  /// ensenia. Es lo unico de D-199 que hay que conservar intacto.
   Future<List<TicketSummary>> getTicketsSummary() async {
     final response = await Supabase.instance.client.rpc(
-      'get_tickets_summary_v2',
-      params: {'p_branch_id': branchId},
+      'get_ticket_board_list_v2',
+      params: {
+        'p_branch_id': branchId,
+        'p_start_date': _soloFecha(inicioDelHistorial),
+        'p_end_date': _soloFecha(finDelHistorial),
+      },
     );
 
-    return (response as List<dynamic>)
+    final tickets = (response as List<dynamic>)
         .map<TicketSummary>(
           (item) => TicketSummary.fromMap(item as Map<String, dynamic>),
         )
         .toList();
+
+    // La RPC ordena de mas antiguo a mas nuevo porque es la del **Tablero de
+    // Agenda**, que es una linea de tiempo. Esta pantalla es un historial y
+    // quiere lo contrario. Sin esto, y con la paginacion de diez en diez de
+    // D-199, abrir Tickets enseniaria los diez tickets mas VIEJOS del salon.
+    return ordenarTicketsParaLaLista(tickets);
+  }
+
+  String _soloFecha(DateTime fecha) {
+    final anio = fecha.year.toString().padLeft(4, '0');
+    final mes = fecha.month.toString().padLeft(2, '0');
+    final dia = fecha.day.toString().padLeft(2, '0');
+    return '$anio-$mes-$dia';
   }
 
   Future<List<TicketServiceOption>> getTicketServiceOptions() async {
