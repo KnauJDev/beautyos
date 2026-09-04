@@ -137,17 +137,27 @@ todo cuelga.
 
 ## 7. Lo que sigue abierto
 
-1. **El armazón de navegación de D-201 sigue sin verificarse con los ojos.**
-   Van **siete sesiones**.
-2. Siete descripciones de error nombran funciones internas de la base al salón
+> ✅ **CERRADO el 04-sep: el armazón de navegación de D-201 queda certificado
+> por el propietario.** Estuvo siete sesiones en esta lista. Recorrió a mano
+> los 16 módulos en producción: el cambio de sede actualiza los datos sin
+> fallos, el selector segmentado del Dashboard (D-205) responde con las cifras
+> reales y consolidadas, y el flujo Agenda → Tickets → Cobro → Reportes va
+> limpio. **Cero pantallas rojas.**
+>
+> Es la regla 21 haciendo su trabajo: ninguna de las 375 pruebas podía ver
+> eso, porque ninguna monta la aplicación real con sesión. Con esto quedan
+> ejercitados a mano los tres cambios grandes de la semana — el armazón
+> (D-201), el ámbito del Dashboard (D-205) y la limpieza de cabeceras (D-206).
+
+1. Siete descripciones de error nombran funciones internas de la base al salón
    (D-206).
-3. El tercio de **TL-09**: la consulta de Tickets trae el historial completo.
-4. Los tickets con `scheduled_at` nulo desaparecerían de la lista. Hoy hay cero
+2. El tercio de **TL-09**: la consulta de Tickets trae el historial completo.
+3. Los tickets con `scheduled_at` nulo desaparecerían de la lista. Hoy hay cero
    (D-204).
-5. **HSTS** en el panel de Cloudflare — paso 8.25, 👤 propietario.
-6. La otra mitad de **UX-07** (Nequi vs. Daviplata), que **no es interfaz**.
-7. Fase 3 con dos casillas de 👤 abiertas (3.2 DIAN/IVA, 3.4 Supabase a Pro).
-8. Hallazgos **Z** y **X**.
+4. **HSTS** en el panel de Cloudflare — paso 8.25, 👤 propietario.
+5. La otra mitad de **UX-07** (Nequi vs. Daviplata), que **no es interfaz**.
+6. Fase 3 con dos casillas de 👤 abiertas (3.2 DIAN/IVA, 3.4 Supabase a Pro).
+7. Hallazgos **Z** y **X**.
 
 > **Lo que el propietario tiene que probar en cuanto despliegue, y esta vez hay
 > una forma de provocar el fallo a propósito:**
@@ -175,15 +185,15 @@ Preguntar primero si el propietario ya pudo cobrar en producción, y si probó
 el caso que provoca el fallo a propósito: dejar la pestaña más de una hora sin
 tocar y entonces darle a renovar.
 
-Y por séptima sesión: el armazón de navegación de D-201 sigue sin verificarse
-con los ojos.
+El armazón de navegación de D-201 quedó CERTIFICADO por el propietario el
+04-sep: recorrió a mano los 16 módulos en producción, cero pantallas rojas.
+Estuvo siete sesiones pendiente y ya NO hay que volver a sacarlo.
 
 Lo que sigue abierto, por orden de daño:
-1. Verificar a mano el armazón de navegación de D-201.
-2. Siete descripciones de error nombran funciones internas de la base (D-206).
-3. El tercio de TL-09: la consulta de Tickets trae el historial completo.
-4. HSTS (paso 8.25), del propietario.
-5. La otra mitad de UX-07 (Nequi vs Daviplata), que NO es interfaz.
+1. Siete descripciones de error nombran funciones internas de la base (D-206).
+2. El tercio de TL-09: la consulta de Tickets trae el historial completo.
+3. HSTS (paso 8.25), del propietario.
+4. La otra mitad de UX-07 (Nequi vs Daviplata), que NO es interfaz.
 
 Ojo con lo que NO hay que tocar: no volver a leer currentSession a mano para
 armar una cabecera -- ese es el fallo, no la solución. Y no confiar en la
