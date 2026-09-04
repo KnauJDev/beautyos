@@ -51,19 +51,32 @@ void main() {
       );
     });
 
-    test('getTicketsSummary ya no cae al respaldo get_tickets_summary_v2', () {
+    test('getTicketsSummary llama a una sola RPC, sin respaldo detras', () {
+      // **Reescrita en D-203, y la version anterior estaba equivocada.**
+      //
+      // D-199 dio por hecho que `get_ticket_board_list_v2` era el camino bueno
+      // y `get_tickets_summary_v2` un respaldo heredado. Era al reves: la del
+      // tablero exige fechas no nulas y esta pantalla se las mandaba nulas, o
+      // sea que **fallaba en cada carga desde el 17-ago** y el `catch (_)` lo
+      // tapaba. Al quitar el catch, Tickets se cayo en produccion.
+      //
+      // Lo que hay que vigilar no es *cual* de las dos se llama: es que se
+      // llame **una sola**, sin una segunda tapando el fallo de la primera.
+      final llamadas = RegExp(r"rpc\(\s*'(get_ticket[^']+)'")
+          .allMatches(fuente)
+          .map((m) => m.group(1))
+          .where((nombre) => nombre == 'get_tickets_summary_v2' ||
+              nombre == 'get_ticket_board_list_v2')
+          .toList();
+
       expect(
-        fuente.contains('get_ticket_board_list_v2'),
-        isTrue,
-        reason: 'La llamada al tablero desapareció de TicketsService.',
-      );
-      expect(
-        fuente.contains('get_tickets_summary_v2'),
-        isFalse,
+        llamadas.length,
+        1,
         reason:
-            'Volvió el respaldo a get_tickets_summary_v2. Existía solo para '
-            'cubrir la migración a get_ticket_board_list_v2 (D-147), y lo que '
-            'hacía de verdad era esconder el error real.',
+            'getTicketsSummary tiene que llamar a UNA sola RPC de listado. Se '
+            'encontraron ${llamadas.length}: $llamadas. Dos es un respaldo, y '
+            'un respaldo es lo que escondio durante dos semanas y media que '
+            'la llamada principal no funcionaba (D-199, corregido en D-203).',
       );
     });
   });
