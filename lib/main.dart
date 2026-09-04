@@ -814,8 +814,8 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
             body: Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text(
-                  'No pudimos cargar las sedes autorizadas.\n${snapshot.error}',
+                child: const Text(
+                  'No pudimos cargar las sedes autorizadas.\nRevisa tu conexión a internet o intenta nuevamente más tarde.',
                   textAlign: TextAlign.center,
                 ),
               ),

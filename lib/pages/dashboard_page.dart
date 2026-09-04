@@ -253,7 +253,8 @@ class _DashboardPageState extends State<DashboardPage> {
             if (snapshot.hasError) {
               return ErrorState(
                 titulo: 'No se pudo cargar el resumen',
-                detalle: '${snapshot.error}',
+                detalle:
+                    'Revisa tu conexión a internet o intenta nuevamente más tarde.',
                 onReintentar: _recargar,
               );
             }

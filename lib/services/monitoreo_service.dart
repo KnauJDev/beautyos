@@ -160,16 +160,34 @@ class MonitoreoService {
       }
     }
 
+    final breadcrumbs = evento.breadcrumbs;
+    if (breadcrumbs != null && breadcrumbs.isNotEmpty) {
+      for (final b in breadcrumbs) {
+        if (b.message != null) {
+          b.message = _tapar(b.message!);
+        }
+      }
+    }
+
     return evento;
   }
 
   static final _correo = RegExp(r'[\w.\-+]+@[\w\-]+\.[\w.\-]+');
+  static final _telefonoConEspacios = RegExp(
+    r'\b(?:\+?57[\s.-]?)?3\d{2}[\s.-]\d{3}[\s.-]\d{4}\b',
+  );
   static final _telefono = RegExp(r'\b\d{7,15}\b');
 
   /// Oculta correos electrónicos y secuencias telefónicas en cualquier cadena.
   static String taparDatosSensibles(String texto) => _tapar(texto);
 
+  /// Expuesto para pruebas unitarias de sanitización de eventos de Sentry.
+  @visibleForTesting
+  static SentryEvent limpiarEventoParaPruebas(SentryEvent evento) =>
+      _limpiar(evento);
+
   static String _tapar(String texto) => texto
       .replaceAll(_correo, '[correo oculto]')
+      .replaceAll(_telefonoConEspacios, '[número oculto]')
       .replaceAll(_telefono, '[número oculto]');
 }

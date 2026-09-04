@@ -18,7 +18,7 @@ documentos entiendes el proyecto entero.**
 | 2 | **`00_producto/PLAN_MAESTRO.md`** | **¿Qué es, qué falta y en qué orden?** El único que manda sobre el plan |
 | 3 | `00_producto/REGISTRO_DE_DECISIONES.md` | **¿Por qué está hecho así?** Empieza por el final |
 
-**No empieces por el código.** Este proyecto tiene 195 decisiones registradas
+**No empieces por el código.** Este proyecto tiene 210 decisiones registradas
 con su porqué; leer el código sin ellas es reconstruir a ciegas razonamientos
 que ya están escritos.
 
@@ -36,7 +36,7 @@ mensajes de commit y en los documentos. **Son sistemas distintos:**
 
 | Código | Qué es | Dónde vive |
 |---|---|---|
-| **D-001 … D-195** | **Decisiones.** El porqué de cada cosa, con lo que se descartó y por qué | `00_producto/REGISTRO_DE_DECISIONES.md` |
+| **D-001 … D-210** | **Decisiones.** El porqué de cada cosa, con lo que se descartó y por qué | `00_producto/REGISTRO_DE_DECISIONES.md` |
 | **H-01 … H-13** | **Hallazgos** de la auditoría integral del 6 de agosto | `01_arquitectura/auditorias/AUDITORIA_INTEGRAL_2026-08-06.md` |
 | **A … Z** | **Anotado en el camino** | `PLAN_MAESTRO`, sección 7 |
 | **I-01 … I-14** | **Buzón de ideas**: lo que aún no tiene fase | `PLAN_MAESTRO`, sección 6 |
@@ -350,7 +350,9 @@ orden en que se fueron creando. **No se reescribe para ocultar el pasado.**
 241. `../lib/pages/settings_page.dart`, `../lib/pages/inventory_page.dart` y `../test/sin_jerga_tecnica_test.dart` (**paso 8.31**: las 6 tarjetas de error dejan de nombrar funciones de la base; el guardián pasa a leer las migraciones y cubrir las 219 funciones del proyecto — D-208)
 242. `_archivo/handoffs/HANDOFF_SalonyMas_2026-09-04_D208.md` (handoff de D-208, reemplazado)
 243. `../lib/services/monitoreo_service.dart`, los servicios de `../lib/services/`, 16 páginas de `../lib/pages/` y `../test/monitoreo_service_test.dart` (**paso 8.32**: reporte sistemático de errores técnicos a Sentry con `MonitoreoService.capturar` una sola vez por fallo asíncrono, sanitización estricta de PII (Ley 1581) en mensajes y excepciones, y erradicación total de `snapshot.error.toString()` en pantallas — D-209)
-244. `HANDOFF/HANDOFF_SalonyMas_2026-09-04_D209.md` (**handoff vigente**, con el prompt exacto para retomar)
+244. `_archivo/handoffs/HANDOFF_SalonyMas_2026-09-04_D209.md` (handoff de D-209, reemplazado)
+245. `../lib/services/monitoreo_service.dart`, 6 archivos de interfaz en `../lib/pages/`, `../lib/widgets/`, `../lib/main.dart` y `../test/monitoreo_service_test.dart` (**paso 8.33**: blindaje total de excepciones en UI, sanitización de breadcrumbs y teléfonos con espacios en Sentry, y guardián ampliado con lista blanca estricta para paneles de plataforma — D-210)
+246. `HANDOFF/HANDOFF_SalonyMas_2026-09-04_D210.md` (**handoff vigente**, con el prompt exacto para retomar)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión
 estructural. No se reescriben para ocultar el pasado: una decisión futura la

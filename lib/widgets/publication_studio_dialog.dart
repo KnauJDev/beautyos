@@ -141,9 +141,6 @@ class _PublicationStudioDialogState extends State<_PublicationStudioDialog> {
                 }
 
                 if (snapshot.hasError) {
-                  final message = snapshot.error is PostgrestException
-                      ? (snapshot.error as PostgrestException).message
-                      : snapshot.error.toString();
                   return Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -156,9 +153,9 @@ class _PublicationStudioDialogState extends State<_PublicationStudioDialog> {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.md),
-                      Text(
-                        message,
-                        style: const TextStyle(color: AppColors.danger),
+                      const Text(
+                        'No se pudo preparar la imagen para publicación. Revisa tu conexión a internet o intenta nuevamente más tarde.',
+                        style: TextStyle(color: AppColors.danger),
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       Align(

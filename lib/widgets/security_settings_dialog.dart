@@ -231,7 +231,9 @@ class _SecuritySettingsDialogState extends State<SecuritySettingsDialog> {
                   }
 
                   if (snapshot.hasError) {
-                    return Text('No se pudo cargar: ${snapshot.error}');
+                    return const Text(
+                      'No se pudo cargar la configuración de seguridad. Intenta más tarde.',
+                    );
                   }
 
                   final factors = snapshot.data ?? [];

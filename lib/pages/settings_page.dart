@@ -2010,9 +2010,9 @@ class _StylistCommissionOverridesDialogState
             }
 
             if (snapshot.hasError) {
-              return Text(
-                'No se pudieron cargar los servicios: ${snapshot.error}',
-                style: const TextStyle(color: Colors.red),
+              return const Text(
+                'No se pudieron cargar los servicios. Revisa tu conexión a internet o intenta nuevamente más tarde.',
+                style: TextStyle(color: Colors.red),
               );
             }
 
