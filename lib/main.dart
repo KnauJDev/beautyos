@@ -11,6 +11,7 @@ import 'services/entitlements_service.dart';
 import 'models/aviso_de_pago.dart';
 import 'services/epayco_checkout_service.dart';
 import 'services/monitoreo_service.dart';
+import 'services/sesion_supabase.dart';
 import 'services/my_profile_service.dart';
 import 'services/team_invitations_service.dart';
 import 'services/tenant_subscription_service.dart';
@@ -281,6 +282,11 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
       try {
         final respuesta = await Supabase.instance.client.functions.invoke(
           'verify-epayco-transaction',
+          // Token fresco (D-207): esta funcion exige sesion desde D-181, y
+          // con el token vencido devolvia 401. Aqui el fallo era blando --se
+          // convierte en "estamos validando tu pago" (D-200)-- asi que el
+          // dueno se quedaba sin confirmacion y nadie sabia por que.
+          headers: await cabecerasParaEdgeFunction(),
           body: {'ref_payco': refPayco},
         );
         _avisoDePagoPendiente = AvisoDePago.desdeLaPasarela(respuesta.data);

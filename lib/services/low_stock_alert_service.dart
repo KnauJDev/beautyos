@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'sesion_supabase.dart';
 
 /// Dispara la alarma de stock por correo (punto 8 del benchmarking) tras
 /// registrar un consumo interno. La Edge Function `send-low-stock-alert`
@@ -15,6 +16,10 @@ class LowStockAlertService {
     try {
       await Supabase.instance.client.functions.invoke(
         'send-low-stock-alert',
+        // Token fresco (D-207). Aqui el 401 era **invisible**: el `catch` de
+        // abajo se lo tragaba por diseno, asi que la alerta de stock bajo
+        // simplemente no salia y no habia forma de notarlo.
+        headers: await cabecerasParaEdgeFunction(),
         body: {'branch_id': branchId, 'product_id': productId},
       );
     } catch (_) {

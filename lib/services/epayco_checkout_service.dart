@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'sesion_supabase.dart';
+
 import '../models/tenant_subscription_status.dart';
 import '../theme/app_colors.dart';
 import 'epayco_modal_launcher.dart';
@@ -232,19 +234,18 @@ class EpaycoCheckoutService {
     );
 
     try {
-      final currentSession = Supabase.instance.client.auth.currentSession;
-      final headers = <String, String>{};
-      if (currentSession?.accessToken != null) {
-        headers['Authorization'] = 'Bearer ${currentSession!.accessToken}';
-      }
-
       // 1. Invocar Edge Function para crear sesión de pago en ePayco Apify.
       // El tenantId y el monto a cobrar los calcula el servidor a partir de la
       // sesión autenticada y del precio pactado: nunca se envían desde el
       // cliente, para que no puedan manipularse.
       final sessionResponse = await Supabase.instance.client.functions.invoke(
         'create-epayco-session',
-        headers: headers,
+        // El token se refresca si hace falta ANTES de llamar (D-207). Antes
+        // se leia `currentSession` tal cual, asi que un token vencido --una
+        // hora sin tocar la pestana-- llegaba igual a la Edge Function y esta
+        // respondia 401: "Se requiere una sesion autenticada". El dueno no
+        // podia pagar, y el mensaje no le decia que volviera a entrar.
+        headers: await cabecerasParaEdgeFunction(),
         body: {
           'planCode': 'pro',
           if (esSede) 'branchId': branchId,

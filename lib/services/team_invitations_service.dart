@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'sesion_supabase.dart';
 
 import '../models/pending_invitation.dart';
 import '../models/team_invitation.dart';
@@ -30,6 +31,10 @@ class TeamInvitationsService {
     try {
       await Supabase.instance.client.functions.invoke(
         'send-invitation-email',
+        // Token fresco (D-207). Con el token vencido esto devolvia 401, el
+        // `catch` lo convertia en `false`, y el resultado era una invitacion
+        // creada cuyo correo nunca salia: la persona invitada no se enteraba.
+        headers: await cabecerasParaEdgeFunction(),
         body: {'invitation_id': invitationId, 'app_url': Uri.base.origin},
       );
       return true;
