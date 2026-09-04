@@ -1,39 +1,50 @@
-﻿import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/beauty_service.dart';
 import '../models/service_management_item.dart';
+import 'monitoreo_service.dart';
 
 class ServicesService {
   const ServicesService();
 
   Future<List<BeautyService>> getActiveVisibleServices() async {
-    final response = await Supabase.instance.client
-        .from('services')
-        .select('id, name, category, duration_minutes, price')
-        .eq('active', true)
-        .eq('visible_to_customer', true)
-        .order('name');
+    return MonitoreoService.capturar(
+      () async {
+        final response = await Supabase.instance.client
+            .from('services')
+            .select('id, name, category, duration_minutes, price')
+            .eq('active', true)
+            .eq('visible_to_customer', true)
+            .order('name');
 
-    return response
-        .map<BeautyService>((item) => BeautyService.fromMap(item))
-        .toList();
+        return response
+            .map<BeautyService>((item) => BeautyService.fromMap(item))
+            .toList();
+      },
+      motivo: 'Fallo al consultar services activos',
+    );
   }
 
   Future<List<ServiceManagementItem>> getServicesForManagement(
     String branchId,
   ) async {
-    final response = await Supabase.instance.client.rpc(
-      'get_services_for_management',
-      params: {'p_branch_id': branchId},
-    );
+    return MonitoreoService.capturar(
+      () async {
+        final response = await Supabase.instance.client.rpc(
+          'get_services_for_management',
+          params: {'p_branch_id': branchId},
+        );
 
-    return (response as List)
-        .map(
-          (item) => ServiceManagementItem.fromMap(
-            Map<String, dynamic>.from(item as Map),
-          ),
-        )
-        .toList();
+        return (response as List)
+            .map(
+              (item) => ServiceManagementItem.fromMap(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
+            .toList();
+      },
+      motivo: 'Fallo al consultar get_services_for_management()',
+    );
   }
 
   Future<void> createService({

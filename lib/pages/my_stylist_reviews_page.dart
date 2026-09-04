@@ -56,10 +56,11 @@ class _MyStylistReviewsPageState extends State<MyStylistReviewsPage> {
             }
 
             if (snapshot.hasError) {
-              return InfoPanel(
+              return const InfoPanel(
                 icon: Icons.error_outline,
                 title: 'No pudimos cargar tus reseñas',
-                description: snapshot.error.toString(),
+                description:
+                    'Revisa tu conexión a internet o intenta nuevamente más tarde.',
               );
             }
 

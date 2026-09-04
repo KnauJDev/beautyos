@@ -1,26 +1,37 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/client_summary.dart';
+import 'monitoreo_service.dart';
 
 class ClientsService {
   const ClientsService();
 
   Future<List<ClientSummary>> getClientsSummary() async {
-    final response = await Supabase.instance.client.rpc('get_clients_summary');
+    return MonitoreoService.capturar(
+      () async {
+        final response = await Supabase.instance.client.rpc('get_clients_summary');
 
-    return response
-        .map<ClientSummary>((item) => ClientSummary.fromMap(item))
-        .toList();
+        return response
+            .map<ClientSummary>((item) => ClientSummary.fromMap(item))
+            .toList();
+      },
+      motivo: 'Fallo al consultar get_clients_summary()',
+    );
   }
 
   Future<List<ClientSummary>> getClientsManagementSummary() async {
-    final response = await Supabase.instance.client.rpc(
-      'get_clients_management_summary',
-    );
+    return MonitoreoService.capturar(
+      () async {
+        final response = await Supabase.instance.client.rpc(
+          'get_clients_management_summary',
+        );
 
-    return response
-        .map<ClientSummary>((item) => ClientSummary.fromMap(item))
-        .toList();
+        return response
+            .map<ClientSummary>((item) => ClientSummary.fromMap(item))
+            .toList();
+      },
+      motivo: 'Fallo al consultar get_clients_management_summary()',
+    );
   }
 
   Future<ClientSummary?> createClient({

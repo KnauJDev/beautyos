@@ -1,17 +1,23 @@
-﻿import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/business_settings.dart';
+import 'monitoreo_service.dart';
 
 class BusinessSettingsService {
   const BusinessSettingsService();
 
   Future<BusinessSettings> getBusinessSettings() async {
-    final response = await Supabase.instance.client
-        .rpc('get_business_settings')
-        .single();
+    return MonitoreoService.capturar(
+      () async {
+        final response = await Supabase.instance.client
+            .rpc('get_business_settings')
+            .single();
 
-    return BusinessSettings.fromMap(
-      Map<String, dynamic>.from(response),
+        return BusinessSettings.fromMap(
+          Map<String, dynamic>.from(response),
+        );
+      },
+      motivo: 'Fallo al consultar get_business_settings()',
     );
   }
 

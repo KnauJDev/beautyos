@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/purchase_management_item.dart';
+import 'monitoreo_service.dart';
 
 class PurchasesService {
   const PurchasesService({required this.branchId});
@@ -8,18 +9,23 @@ class PurchasesService {
   final String branchId;
 
   Future<List<PurchaseManagementItem>> getPurchasesForManagement() async {
-    final response = await Supabase.instance.client.rpc(
-      'get_purchases_for_management',
-      params: {'p_branch_id': branchId},
-    );
+    return MonitoreoService.capturar(
+      () async {
+        final response = await Supabase.instance.client.rpc(
+          'get_purchases_for_management',
+          params: {'p_branch_id': branchId},
+        );
 
-    return (response as List)
-        .map(
-          (item) => PurchaseManagementItem.fromMap(
-            Map<String, dynamic>.from(item as Map),
-          ),
-        )
-        .toList();
+        return (response as List)
+            .map(
+              (item) => PurchaseManagementItem.fromMap(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
+            .toList();
+      },
+      motivo: 'Fallo al consultar get_purchases_for_management()',
+    );
   }
 
   Future<void> createPurchase({

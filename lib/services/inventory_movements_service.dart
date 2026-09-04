@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/inventory_movement_summary.dart';
+import 'monitoreo_service.dart';
 
 class InventoryMovementsService {
   const InventoryMovementsService({required this.branchId});
@@ -8,16 +9,21 @@ class InventoryMovementsService {
   final String branchId;
 
   Future<List<InventoryMovementSummary>> getInventoryMovementsSummary() async {
-    final response = await Supabase.instance.client.rpc(
-      'get_inventory_movements_summary_v2',
-      params: {'p_branch_id': branchId},
-    );
+    return MonitoreoService.capturar(
+      () async {
+        final response = await Supabase.instance.client.rpc(
+          'get_inventory_movements_summary_v2',
+          params: {'p_branch_id': branchId},
+        );
 
-    return response
-        .map<InventoryMovementSummary>(
-          (item) => InventoryMovementSummary.fromMap(item),
-        )
-        .toList();
+        return response
+            .map<InventoryMovementSummary>(
+              (item) => InventoryMovementSummary.fromMap(item),
+            )
+            .toList();
+      },
+      motivo: 'Fallo al consultar get_inventory_movements_summary_v2()',
+    );
   }
 
   Future<void> createStockConsumption({

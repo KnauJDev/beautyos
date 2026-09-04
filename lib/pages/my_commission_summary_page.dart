@@ -89,10 +89,11 @@ class _MyCommissionSummaryPageState extends State<MyCommissionSummaryPage> {
             }
 
             if (snapshot.hasError) {
-              return InfoPanel(
+              return const InfoPanel(
                 icon: Icons.error_outline,
                 title: 'No pudimos cargar tu panel financiero',
-                description: snapshot.error.toString(),
+                description:
+                    'Revisa tu conexión a internet o intenta nuevamente más tarde.',
               );
             }
 

@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/sale_numbering.dart';
+import 'monitoreo_service.dart';
 
 class BranchSaleNumberingService {
   final String branchId;
@@ -8,22 +9,27 @@ class BranchSaleNumberingService {
 
   /// Obtiene la configuración de numeración de ventas y DIAN para la sede
   Future<BranchSaleNumbering> getBranchSaleNumbering() async {
-    final response = await Supabase.instance.client.rpc(
-      'get_branch_sale_numbering',
-      params: {'p_branch_id': branchId},
+    return MonitoreoService.capturar(
+      () async {
+        final response = await Supabase.instance.client.rpc(
+          'get_branch_sale_numbering',
+          params: {'p_branch_id': branchId},
+        );
+
+        if (response is List && response.isNotEmpty) {
+          return BranchSaleNumbering.fromJson(
+            Map<String, dynamic>.from(response.first as Map),
+          );
+        } else if (response is Map) {
+          return BranchSaleNumbering.fromJson(
+            Map<String, dynamic>.from(response),
+          );
+        }
+
+        throw StateError('No se encontró configuración de numeración para la sede.');
+      },
+      motivo: 'Fallo al consultar get_branch_sale_numbering()',
     );
-
-    if (response is List && response.isNotEmpty) {
-      return BranchSaleNumbering.fromJson(
-        Map<String, dynamic>.from(response.first as Map),
-      );
-    } else if (response is Map) {
-      return BranchSaleNumbering.fromJson(
-        Map<String, dynamic>.from(response),
-      );
-    }
-
-    throw StateError('No se encontró configuración de numeración para la sede.');
   }
 
   /// Guarda o actualiza la configuración de numeración y Resolución DIAN

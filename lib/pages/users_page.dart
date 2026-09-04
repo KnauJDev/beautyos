@@ -184,10 +184,11 @@ class _UsuariosPageState extends State<UsuariosPage> {
             }
 
             if (snapshot.hasError) {
-              return InfoPanel(
+              return const InfoPanel(
                 icon: Icons.error_outline,
                 title: 'No se pudieron cargar los usuarios',
-                description: snapshot.error.toString(),
+                description:
+                    'Revisa tu conexión a internet o intenta nuevamente más tarde.',
               );
             }
 

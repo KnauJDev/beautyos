@@ -999,10 +999,11 @@ class _TicketsPageState extends State<TicketsPage> {
             }
 
             if (snapshot.hasError) {
-              return InfoPanel(
+              return const InfoPanel(
                 icon: Icons.error_outline,
                 title: 'No se pudieron cargar los tickets',
-                description: snapshot.error.toString(),
+                description:
+                    'Revisa tu conexión a internet o intenta nuevamente más tarde.',
               );
             }
 

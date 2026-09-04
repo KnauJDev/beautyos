@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/appointment_policy.dart';
+import 'monitoreo_service.dart';
 
 class AppointmentPolicyService {
   const AppointmentPolicyService({required this.branchId});
@@ -8,11 +9,16 @@ class AppointmentPolicyService {
   final String branchId;
 
   Future<AppointmentPolicy> getAppointmentPolicy() async {
-    final response = await Supabase.instance.client
-        .rpc('get_appointment_policy_v2', params: {'p_branch_id': branchId})
-        .single();
+    return MonitoreoService.capturar(
+      () async {
+        final response = await Supabase.instance.client
+            .rpc('get_appointment_policy_v2', params: {'p_branch_id': branchId})
+            .single();
 
-    return AppointmentPolicy.fromMap(Map<String, dynamic>.from(response));
+        return AppointmentPolicy.fromMap(Map<String, dynamic>.from(response));
+      },
+      motivo: 'Fallo al consultar get_appointment_policy_v2()',
+    );
   }
 
   Future<void> updateAppointmentPolicy({

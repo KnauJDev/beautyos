@@ -220,10 +220,11 @@ class _ResenasPageState extends State<ResenasPage> {
         }
 
         if (snapshot.hasError) {
-          return InfoPanel(
+          return const InfoPanel(
             icon: Icons.error_outline,
             title: 'Error al cargar reseñas',
-            description: snapshot.error.toString(),
+            description:
+                'Revisa tu conexión a internet o intenta nuevamente más tarde.',
           );
         }
 

@@ -199,10 +199,11 @@ class _EstilistasPageState extends State<EstilistasPage> {
             }
 
             if (snapshot.hasError) {
-              return InfoPanel(
+              return const InfoPanel(
                 icon: Icons.error_outline,
                 title: 'No se pudieron cargar los estilistas',
-                description: snapshot.error.toString(),
+                description:
+                    'Revisa tu conexión a internet o intenta nuevamente más tarde.',
               );
             }
 

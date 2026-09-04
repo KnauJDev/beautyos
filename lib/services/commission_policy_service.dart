@@ -1,7 +1,8 @@
-﻿import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/commission_policy.dart';
 import '../models/stylist_commission_override.dart';
+import 'monitoreo_service.dart';
 
 class CommissionPolicyService {
   const CommissionPolicyService({required this.branchId});
@@ -9,12 +10,17 @@ class CommissionPolicyService {
   final String branchId;
 
   Future<CommissionPolicy> getCommissionPolicy() async {
-    final response = await Supabase.instance.client
-        .rpc('get_commission_policy')
-        .single();
+    return MonitoreoService.capturar(
+      () async {
+        final response = await Supabase.instance.client
+            .rpc('get_commission_policy')
+            .single();
 
-    return CommissionPolicy.fromMap(
-      Map<String, dynamic>.from(response),
+        return CommissionPolicy.fromMap(
+          Map<String, dynamic>.from(response),
+        );
+      },
+      motivo: 'Fallo al consultar get_commission_policy()',
     );
   }
 

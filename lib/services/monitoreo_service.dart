@@ -120,23 +120,54 @@ class MonitoreoService {
     );
   }
 
+  /// Ejecuta una operación asíncrona registrando cualquier excepción en
+  /// MonitoreoService antes de propagarla (`rethrow`).
+  ///
+  /// Garantiza que el error se reporte una sola vez en el momento exacto en
+  /// que ocurre, sin enviar PII (datos personales) y sin re-disparar en
+  /// reconstrucciones de la interfaz (rebuilds de Flutter).
+  static Future<T> capturar<T>(
+    Future<T> Function() accion, {
+    required String motivo,
+  }) async {
+    try {
+      return await accion();
+    } catch (error, stackTrace) {
+      await reportarError(error, stackTrace, motivo: motivo);
+      rethrow;
+    }
+  }
+
   /// Tapa lo que parezca un correo o un teléfono en cualquier texto del
   /// reporte. **No debería hacer falta nunca**, y precisamente por eso está:
-  /// las fugas de datos personales ocurren en el mensaje que nadie reviso.
+  /// las fugas de datos personales ocurren en el mensaje que nadie revisó.
   static SentryEvent _limpiar(SentryEvent evento) {
     final mensaje = evento.message;
-    if (mensaje == null) return evento;
+    if (mensaje != null) {
+      evento.message = SentryMessage(
+        _tapar(mensaje.formatted),
+        template: mensaje.template != null ? _tapar(mensaje.template!) : null,
+        params: mensaje.params?.map((p) => p is String ? _tapar(p) : p).toList(),
+      );
+    }
 
-    evento.message = SentryMessage(
-      _tapar(mensaje.formatted),
-      template: mensaje.template,
-    );
+    final exceptions = evento.exceptions;
+    if (exceptions != null && exceptions.isNotEmpty) {
+      for (final ex in exceptions) {
+        if (ex.value != null) {
+          ex.value = _tapar(ex.value!);
+        }
+      }
+    }
 
     return evento;
   }
 
   static final _correo = RegExp(r'[\w.\-+]+@[\w\-]+\.[\w.\-]+');
   static final _telefono = RegExp(r'\b\d{7,15}\b');
+
+  /// Oculta correos electrónicos y secuencias telefónicas en cualquier cadena.
+  static String taparDatosSensibles(String texto) => _tapar(texto);
 
   static String _tapar(String texto) => texto
       .replaceAll(_correo, '[correo oculto]')

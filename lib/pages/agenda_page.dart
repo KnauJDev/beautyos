@@ -1464,9 +1464,10 @@ class _Level2Sheet extends StatelessWidget {
                       return const Center(child: CircularProgressIndicator());
                     }
                     if (snapshot.hasError) {
-                      return ErrorState(
+                      return const ErrorState(
                         titulo: 'No se pudieron cargar los tickets',
-                        detalle: snapshot.error.toString(),
+                        detalle:
+                            'Revisa tu conexión a internet o intenta nuevamente más tarde.',
                       );
                     }
 

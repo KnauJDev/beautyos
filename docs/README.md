@@ -347,8 +347,10 @@ orden en que se fueron creando. **No se reescribe para ocultar el pasado.**
 238. `_archivo/handoffs/HANDOFF_SalonyMas_2026-09-04_D206.md` (handoff de D-206, reemplazado)
 239. `../lib/services/sesion_supabase.dart`, los 4 sitios que llaman Edge Functions y `../test/sesion_fresca_test.dart` (🔴 **paso 8.30**: el token vencido devolvía 401 y no se podía pagar; nadie forzaba el refresco antes de llamar. El mismo fallo estaba en los cuatro sitios y en dos era invisible — el correo de invitación y la alerta de stock no salían — D-207)
 240. `_archivo/handoffs/HANDOFF_SalonyMas_2026-09-04_D207.md` (handoff de D-207, reemplazado)
-241. `../lib/pages/settings_page.dart`, `../lib/pages/inventory_page.dart` y `../test/sin_jerga_tecnica_test.dart` (**paso 8.31**: las 6 tarjetas de error dejan de nombrar funciones de la base; el guardián pasa a leer las migraciones y cubrir las 219 funciones del proyecto. **Anotado:** esos paneles son `const` y descartan el error, así que sigue sin saberse qué falló — D-208)
-242. `HANDOFF/HANDOFF_SalonyMas_2026-09-04_D208.md` (**handoff vigente**, con el prompt exacto para retomar)
+241. `../lib/pages/settings_page.dart`, `../lib/pages/inventory_page.dart` y `../test/sin_jerga_tecnica_test.dart` (**paso 8.31**: las 6 tarjetas de error dejan de nombrar funciones de la base; el guardián pasa a leer las migraciones y cubrir las 219 funciones del proyecto — D-208)
+242. `_archivo/handoffs/HANDOFF_SalonyMas_2026-09-04_D208.md` (handoff de D-208, reemplazado)
+243. `../lib/services/monitoreo_service.dart`, los servicios de `../lib/services/`, 16 páginas de `../lib/pages/` y `../test/monitoreo_service_test.dart` (**paso 8.32**: reporte sistemático de errores técnicos a Sentry con `MonitoreoService.capturar` una sola vez por fallo asíncrono, sanitización estricta de PII (Ley 1581) en mensajes y excepciones, y erradicación total de `snapshot.error.toString()` en pantallas — D-209)
+244. `HANDOFF/HANDOFF_SalonyMas_2026-09-04_D209.md` (**handoff vigente**, con el prompt exacto para retomar)
 
 Los ADR dentro de `01_arquitectura/ADR/` explican por qué se tomó cada decisión
 estructural. No se reescriben para ocultar el pasado: una decisión futura la

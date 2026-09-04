@@ -129,10 +129,11 @@ class _BlogPageState extends State<BlogPage> {
         }
 
         if (snapshot.hasError) {
-          return InfoPanel(
+          return const InfoPanel(
             icon: Icons.error_outline,
             title: 'Error al cargar el blog',
-            description: snapshot.error.toString(),
+            description:
+                'Revisa tu conexión a internet o intenta nuevamente más tarde.',
           );
         }
 

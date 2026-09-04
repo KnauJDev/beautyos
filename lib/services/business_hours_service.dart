@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/business_hour.dart';
+import 'monitoreo_service.dart';
 
 class BusinessHoursService {
   const BusinessHoursService({required this.branchId});
@@ -8,14 +9,19 @@ class BusinessHoursService {
   final String branchId;
 
   Future<List<BusinessHour>> getBusinessHours() async {
-    final response = await Supabase.instance.client.rpc(
-      'get_business_hours_v2',
-      params: {'p_branch_id': branchId},
-    );
+    return MonitoreoService.capturar(
+      () async {
+        final response = await Supabase.instance.client.rpc(
+          'get_business_hours_v2',
+          params: {'p_branch_id': branchId},
+        );
 
-    return response
-        .map<BusinessHour>((item) => BusinessHour.fromMap(item))
-        .toList();
+        return response
+            .map<BusinessHour>((item) => BusinessHour.fromMap(item))
+            .toList();
+      },
+      motivo: 'Fallo al consultar get_business_hours_v2()',
+    );
   }
 
   Future<void> updateBusinessHours(List<BusinessHour> hours) async {

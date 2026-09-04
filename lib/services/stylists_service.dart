@@ -1,19 +1,25 @@
-﻿import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/stylist_for_invitation.dart';
 import '../models/stylist_management_item.dart';
 import '../models/stylist_summary.dart';
+import 'monitoreo_service.dart';
 
 class StylistsService {
   const StylistsService();
 
   Future<List<StylistSummary>> getStylistsSummary() async {
-    final response = await Supabase.instance.client
-        .rpc('get_stylists_summary');
+    return MonitoreoService.capturar(
+      () async {
+        final response = await Supabase.instance.client
+            .rpc('get_stylists_summary');
 
-    return response
-        .map<StylistSummary>((item) => StylistSummary.fromMap(item))
-        .toList();
+        return response
+            .map<StylistSummary>((item) => StylistSummary.fromMap(item))
+            .toList();
+      },
+      motivo: 'Fallo al consultar get_stylists_summary()',
+    );
   }
 
   /// Los estilistas que se pueden invitar **en esta sede**, marcando cuáles ya
@@ -25,35 +31,45 @@ class StylistsService {
   Future<List<StylistForInvitation>> getStylistsForInvitation(
     String branchId,
   ) async {
-    final response = await Supabase.instance.client.rpc(
-      'get_stylists_for_invitation',
-      params: {'p_branch_id': branchId},
-    );
+    return MonitoreoService.capturar(
+      () async {
+        final response = await Supabase.instance.client.rpc(
+          'get_stylists_for_invitation',
+          params: {'p_branch_id': branchId},
+        );
 
-    return (response as List)
-        .map<StylistForInvitation>(
-          (item) => StylistForInvitation.fromMap(
-            Map<String, dynamic>.from(item as Map),
-          ),
-        )
-        .toList();
+        return (response as List)
+            .map<StylistForInvitation>(
+              (item) => StylistForInvitation.fromMap(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
+            .toList();
+      },
+      motivo: 'Fallo al consultar get_stylists_for_invitation()',
+    );
   }
 
   Future<List<StylistManagementItem>> getStylistsForManagement(
     String branchId,
   ) async {
-    final response = await Supabase.instance.client.rpc(
-      'get_stylists_for_management',
-      params: {'p_branch_id': branchId},
-    );
+    return MonitoreoService.capturar(
+      () async {
+        final response = await Supabase.instance.client.rpc(
+          'get_stylists_for_management',
+          params: {'p_branch_id': branchId},
+        );
 
-    return (response as List)
-        .map(
-          (item) => StylistManagementItem.fromMap(
-            Map<String, dynamic>.from(item as Map),
-          ),
-        )
-        .toList();
+        return (response as List)
+            .map(
+              (item) => StylistManagementItem.fromMap(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
+            .toList();
+      },
+      motivo: 'Fallo al consultar get_stylists_for_management()',
+    );
   }
 
   Future<void> createStylist({

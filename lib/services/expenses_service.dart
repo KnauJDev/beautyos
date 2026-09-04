@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/expense_management_item.dart';
+import 'monitoreo_service.dart';
 
 class ExpensesService {
   const ExpensesService({required this.branchId});
@@ -8,18 +9,23 @@ class ExpensesService {
   final String branchId;
 
   Future<List<ExpenseManagementItem>> getExpensesForManagement() async {
-    final response = await Supabase.instance.client.rpc(
-      'get_expenses_for_management',
-      params: {'p_branch_id': branchId},
-    );
+    return MonitoreoService.capturar(
+      () async {
+        final response = await Supabase.instance.client.rpc(
+          'get_expenses_for_management',
+          params: {'p_branch_id': branchId},
+        );
 
-    return (response as List)
-        .map(
-          (item) => ExpenseManagementItem.fromMap(
-            Map<String, dynamic>.from(item as Map),
-          ),
-        )
-        .toList();
+        return (response as List)
+            .map(
+              (item) => ExpenseManagementItem.fromMap(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
+            .toList();
+      },
+      motivo: 'Fallo al consultar get_expenses_for_management()',
+    );
   }
 
   Future<void> createExpense({

@@ -272,10 +272,11 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
             }
 
             if (snapshot.hasError) {
-              return InfoPanel(
+              return const InfoPanel(
                 icon: Icons.error_outline,
                 title: 'No pudimos cargar tu agenda',
-                description: snapshot.error.toString(),
+                description:
+                    'Revisa tu conexión a internet o intenta nuevamente más tarde.',
               );
             }
 
@@ -481,9 +482,9 @@ class _TimeOffSection extends StatelessWidget {
                 }
 
                 if (snapshot.hasError) {
-                  return Text(
-                    'No pudimos cargar tus bloqueos: ${snapshot.error}',
-                    style: const TextStyle(color: Colors.red),
+                  return const Text(
+                    'No pudimos cargar tus bloqueos. Intenta más tarde.',
+                    style: TextStyle(color: Colors.red),
                   );
                 }
 

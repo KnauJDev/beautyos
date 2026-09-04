@@ -5,6 +5,7 @@ import '../models/dashboard_metrics.dart';
 import '../models/dashboard_overview.dart';
 import '../models/dashboard_serie.dart';
 import '../models/periodo_dashboard.dart';
+import 'monitoreo_service.dart';
 
 /// Resultado de pedir el resumen: los numeros y **los rangos con los que se
 /// calcularon**.
@@ -30,11 +31,16 @@ class DashboardService {
   final String branchId;
 
   Future<DashboardMetrics> getMetrics() async {
-    final response = await Supabase.instance.client
-        .rpc('get_dashboard_metrics_v2', params: {'p_branch_id': branchId})
-        .single();
+    return MonitoreoService.capturar(
+      () async {
+        final response = await Supabase.instance.client
+            .rpc('get_dashboard_metrics_v2', params: {'p_branch_id': branchId})
+            .single();
 
-    return DashboardMetrics.fromMap(Map<String, dynamic>.from(response));
+        return DashboardMetrics.fromMap(Map<String, dynamic>.from(response));
+      },
+      motivo: 'Fallo al consultar get_dashboard_metrics_v2()',
+    );
   }
 
   /// Trae la Vista 1 para [periodo].
@@ -56,20 +62,25 @@ class DashboardService {
     required PeriodoDashboard periodo,
     List<String> branchIds = const <String>[],
   }) async {
-    final conjetura = DateTime.now();
-    var resultado = await _pedirOverview(periodo, branchIds, conjetura);
+    return MonitoreoService.capturar(
+      () async {
+        final conjetura = DateTime.now();
+        var resultado = await _pedirOverview(periodo, branchIds, conjetura);
 
-    final hoyReal = resultado.datos.hoyEnLaSede;
-    final desalineado =
-        hoyReal.year != conjetura.year ||
-        hoyReal.month != conjetura.month ||
-        hoyReal.day != conjetura.day;
+        final hoyReal = resultado.datos.hoyEnLaSede;
+        final desalineado =
+            hoyReal.year != conjetura.year ||
+            hoyReal.month != conjetura.month ||
+            hoyReal.day != conjetura.day;
 
-    if (desalineado) {
-      resultado = await _pedirOverview(periodo, branchIds, hoyReal);
-    }
+        if (desalineado) {
+          resultado = await _pedirOverview(periodo, branchIds, hoyReal);
+        }
 
-    return resultado;
+        return resultado;
+      },
+      motivo: 'Fallo al consultar get_dashboard_overview()',
+    );
   }
 
   /// El bloque de hoy y los avisos.
@@ -79,14 +90,19 @@ class DashboardService {
   Future<DashboardHoy> getHoy({
     List<String> branchIds = const <String>[],
   }) async {
-    final response = await Supabase.instance.client
-        .rpc(
-          'get_dashboard_today',
-          params: {'p_branch_ids': branchIds.isEmpty ? null : branchIds},
-        )
-        .single();
+    return MonitoreoService.capturar(
+      () async {
+        final response = await Supabase.instance.client
+            .rpc(
+              'get_dashboard_today',
+              params: {'p_branch_ids': branchIds.isEmpty ? null : branchIds},
+            )
+            .single();
 
-    return DashboardHoy.fromMap(Map<String, dynamic>.from(response));
+        return DashboardHoy.fromMap(Map<String, dynamic>.from(response));
+      },
+      motivo: 'Fallo al consultar get_dashboard_today()',
+    );
   }
 
   /// La serie del gráfico para el mismo rango que se está mirando.
@@ -99,20 +115,25 @@ class DashboardService {
     required RangoFechas rango,
     List<String> branchIds = const <String>[],
   }) async {
-    final response = await Supabase.instance.client.rpc(
-      'get_dashboard_series',
-      params: {
-        'p_branch_ids': branchIds.isEmpty ? null : branchIds,
-        'p_from': _fecha(rango.desde),
-        'p_to': _fecha(rango.hasta),
+    return MonitoreoService.capturar(
+      () async {
+        final response = await Supabase.instance.client.rpc(
+          'get_dashboard_series',
+          params: {
+            'p_branch_ids': branchIds.isEmpty ? null : branchIds,
+            'p_from': _fecha(rango.desde),
+            'p_to': _fecha(rango.hasta),
+          },
+        );
+
+        final filas = (response as List)
+            .map((fila) => Map<String, dynamic>.from(fila as Map))
+            .toList(growable: false);
+
+        return SerieDashboard.fromRows(filas);
       },
+      motivo: 'Fallo al consultar get_dashboard_series()',
     );
-
-    final filas = (response as List)
-        .map((fila) => Map<String, dynamic>.from(fila as Map))
-        .toList(growable: false);
-
-    return SerieDashboard.fromRows(filas);
   }
 
   Future<ResumenDashboard> _pedirOverview(
