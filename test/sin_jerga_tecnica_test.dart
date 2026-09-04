@@ -24,19 +24,17 @@ void main() {
   /// **La lista es corta a propósito.** Si crece, la pregunta no es cómo
   /// añadir una excepción: es por qué la aplicación le está contando a un
   /// salón cómo está construida por dentro.
+  ///
+  /// **Bajó de tres a una en D-208.** `settings_page` e `inventory_page`
+  /// estaban aquí porque sus descripciones de error decían *"Revisa la
+  /// conexión con Supabase o la función `get_business_settings`"*. Al
+  /// reescribirlas en el idioma del salón, sus excepciones quedaron muertas —
+  /// y la prueba de abajo lo detectó sola, citando el motivo que tenían.
   const permitidos = <String, String>{
     'lib/pages/terms_and_privacy_page.dart':
         'Declaración legal: Supabase figura como encargado del tratamiento de '
         'datos (Ley 1581, D-144). Quitarlo de ahí sería una regresión de '
         'cumplimiento, no una limpieza.',
-    'lib/pages/settings_page.dart':
-        'Descripciones de error que orientan a quien depura ("Revisa la '
-        'conexión con Supabase o la función get_business_settings"). Son '
-        'estados de fallo, no cabecera. Reescribirlas en el idioma del salón '
-        'es un trabajo aparte que D-206 dejó anotado.',
-    'lib/pages/inventory_page.dart':
-        'Misma razón que settings_page: una descripción de error, no una '
-        'tarjeta de cabecera.',
   };
 
   test('ninguna pantalla nueva le enseña "Supabase" al salón', () {
@@ -99,5 +97,84 @@ void main() {
             'tenía: ${entrada.value}',
       );
     }
+  });
+
+  test('ninguna pantalla le enseña al salón el nombre de una función', () {
+    // **Lee los dos lados y los compara** (D-208), como
+    // `contrato_rpc_fechas_test.dart` (D-203) y `sesion_fresca_test.dart`
+    // (D-207): saca de las migraciones **todas** las funciones que existen y
+    // comprueba que ninguna aparece en un texto de pantalla.
+    //
+    // Se hace así, y no con una lista de dos o tres nombres a mano, porque el
+    // proyecto tiene 219 funciones y mañana tendrá más. Una lista escrita a
+    // mano solo vigila lo que ya se rompió una vez.
+    final declaradas = <String>{};
+    final declaracion = RegExp(
+      r'create\s+or\s+replace\s+function\s+(?:public|private)\.([a-z0-9_]+)',
+      caseSensitive: false,
+      multiLine: true,
+    );
+
+    for (final entidad in Directory('supabase/migrations').listSync()) {
+      if (entidad is! File || !entidad.path.endsWith('.sql')) continue;
+      for (final m in declaracion.allMatches(entidad.readAsStringSync())) {
+        final nombre = m.group(1)!;
+        // Un nombre corto o sin guión bajo podría chocar con una palabra
+        // normal del texto. Los del proyecto son todos largos y con guión.
+        if (nombre.length >= 8 && nombre.contains('_')) declaradas.add(nombre);
+      }
+    }
+
+    expect(
+      declaradas.length,
+      greaterThan(50),
+      reason:
+          'Se leyeron solo ${declaradas.length} funciones de las migraciones. '
+          'Si cambió la forma de declararlas, esta prueba dejó de vigilar '
+          'casi nada y hay que arreglarla antes de fiarse de que pasa.',
+    );
+
+    final literal = RegExp("'([^']*)'");
+    final infractores = <String>[];
+
+    for (final entidad in Directory('lib/pages').listSync(recursive: true)) {
+      if (entidad is! File || !entidad.path.endsWith('.dart')) continue;
+
+      final ruta = entidad.path.replaceAll(r'\', '/');
+      final lineas = entidad.readAsLinesSync();
+
+      for (var i = 0; i < lineas.length; i++) {
+        final recortada = lineas[i].trimLeft();
+        if (recortada.startsWith('//')) continue;
+        // Las rutas de import son cadenas, pero no son texto de pantalla, y
+        // un archivo puede llamarse como una función (create_branch_dialog).
+        if (recortada.startsWith('import') || recortada.startsWith('export')) {
+          continue;
+        }
+
+        for (final m in literal.allMatches(lineas[i])) {
+          final texto = m.group(1)!;
+          for (final funcion in declaradas) {
+            if (texto.contains(funcion)) {
+              infractores.add('$ruta:${i + 1} -> $funcion');
+            }
+          }
+        }
+      }
+    }
+
+    expect(
+      infractores,
+      isEmpty,
+      reason:
+          'Hay texto en una pantalla que nombra una función de la base. A un '
+          'salón no le sirve de nada saber que falló `get_business_settings`: '
+          'no puede hacer nada con eso, y solo aprende que la aplicación está '
+          'rota por dentro. Dile qué puede hacer él ("Revisa tu conexión a '
+          'internet o intenta nuevamente más tarde"). Y si esto saltó porque '
+          'una página llama a una RPC directamente, el sitio de esa llamada '
+          'es un servicio de `lib/services/`, no la pantalla:\n'
+          '${infractores.join('\n')}',
+    );
   });
 }

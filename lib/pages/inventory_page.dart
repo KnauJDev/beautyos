@@ -355,7 +355,7 @@ class _InventarioPageState extends State<InventarioPage> {
                 icon: Icons.error_outline,
                 title: 'No se pudieron cargar los movimientos',
                 description:
-                    'Revisa la conexión con Supabase o las funciones de inventario.',
+                    'Revisa tu conexión a internet o intenta nuevamente más tarde.',
               );
             }
 

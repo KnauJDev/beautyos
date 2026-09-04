@@ -195,7 +195,7 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
                 icon: Icons.error_outline,
                 title: 'No se pudieron cargar los datos',
                 description:
-                    'Revisa la conexión con Supabase o la función get_business_settings.',
+                    'Revisa tu conexión a internet o intenta nuevamente más tarde.',
               );
             }
 
@@ -299,7 +299,7 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
                 icon: Icons.error_outline,
                 title: 'No se pudieron cargar los horarios',
                 description:
-                    'Revisa la conexión con Supabase o el acceso a la sede seleccionada.',
+                    'Revisa tu conexión a internet o intenta nuevamente más tarde.',
               );
             }
 
@@ -339,7 +339,7 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
                 icon: Icons.error_outline,
                 title: 'No se pudieron cargar las políticas',
                 description:
-                    'Revisa la conexión con Supabase o el acceso a la sede seleccionada.',
+                    'Revisa tu conexión a internet o intenta nuevamente más tarde.',
               );
             }
 
@@ -377,7 +377,7 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
                 icon: Icons.error_outline,
                 title: 'No se pudieron cargar las comisiones',
                 description:
-                    'Revisa la conexión con Supabase o la función get_commission_policy.',
+                    'Revisa tu conexión a internet o intenta nuevamente más tarde.',
               );
             }
 
@@ -415,7 +415,7 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
                 icon: Icons.error_outline,
                 title: 'No se pudieron cargar los estilistas',
                 description:
-                    'Revisa la conexión con Supabase o el acceso a la sede seleccionada.',
+                    'Revisa tu conexión a internet o intenta nuevamente más tarde.',
               );
             }
 
