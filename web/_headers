@@ -31,7 +31,53 @@
 # diera cache larga, una version nueva de `main.dart.js` podria quedar hablando
 # con un motor grafico viejo.
 
+# ---------------------------------------------------------------------------
+# Cabeceras de seguridad (TL-03, D-202)
+# ---------------------------------------------------------------------------
+#
+# La auditoria del 01-sep confirmo que faltaban CSP, HSTS y proteccion contra
+# clickjacking. `nosniff` y `Referrer-Policy` ya estaban; lo demas no.
+#
+# ANTES DE ANADIR NADA A LA LINEA DE `Content-Security-Policy`, LEER ESTO:
+#
+# La CSP de aqui abajo lleva **solo** `frame-ancestors`, y eso es a proposito.
+# CSP es opt-in por directiva: lo que no se nombra, no se restringe. En cuanto
+# alguien anada `default-src`, `script-src` o `frame-src` a esa linea, se
+# rompen dos cosas a la vez, y una de ellas es cobrar:
+#
+#   1. `https://checkout.epayco.co/checkout-v2.js` (`web/index.html`), que es
+#      la pasarela de pago. Se romperia el cobro de suscripciones para todos.
+#   2. `passkeys_bundle.js`, que usa WebAuthn.
+#
+# Es un fallo que no se ve en `flutter test` ni en `flutter analyze`: solo
+# aparece cuando un negocio real intenta pagar.
+#
+# Por que `frame-ancestors` NO afecta a la pasarela: restringe quien puede
+# enmarcarnos a NOSOTROS, no lo que nosotros enmarcamos. El modal de ePayco es
+# un iframe que insertamos en nuestra propia pagina, asi que le da igual.
+#
+# `X-Frame-Options: DENY` va ademas de `frame-ancestors 'none'` porque es la
+# version vieja de lo mismo: los navegadores modernos usan `frame-ancestors` e
+# ignoran la otra, pero no cuesta nada cubrir a los que no.
+#
+# `DENY` y no `SAMEORIGIN` porque esta aplicacion no se enmarca a si misma en
+# ningun sitio: no hay un solo `<iframe>` propio en todo el repositorio.
+#
+# `Permissions-Policy` apaga camara, microfono y ubicacion porque la aplicacion
+# no usa ninguna de las tres (se comprobo: `image_picker` abre la galeria, no
+# la camara). Apagar solo esas tres es deliberado: la lista NO incluye
+# `publickey-credentials-get` ni `publickey-credentials-create`, que es lo que
+# necesitan las passkeys de `passkeys_bundle.js`.
+#
+# LO QUE ESTE ARCHIVO NO PUEDE HACER: **HSTS**. En Cloudflare se activa desde
+# el panel (SSL/TLS > Edge Certificates > HSTS), no desde aqui. Escribirlo a
+# mano en `_headers` no lo activa. Sigue pendiente y lo tiene que hacer el
+# propietario.
+
 /*
   Cache-Control: public, max-age=0, must-revalidate
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Content-Security-Policy: frame-ancestors 'none';
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
