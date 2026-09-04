@@ -72,9 +72,15 @@ class _DashboardPageState extends State<DashboardPage> {
 
   PeriodoDashboard _periodo = PeriodoDashboard.esteMes;
 
-  /// `null` = todas las sedes que el usuario alcanza, que es el valor por
-  /// defecto: "¿cómo va mi negocio?" para quien tiene dos locales son los dos.
-  String? _sedeElegida;
+  /// Mirar el negocio entero en vez de esta sede (D-205). Mismo nombre y
+  /// mismo significado que en `ReportesPage` (D-194), a proposito.
+  ///
+  /// **Arranca en `false`, o sea en la sede activa, y eso es un cambio.**
+  /// Hasta D-205 el Dashboard abria siempre en consolidado y **no hacia caso
+  /// a la pildora de sede de la cabecera**: se cambiaba de sede arriba y los
+  /// numeros seguian siendo los de todo el negocio. Ahora la pildora manda, y
+  /// este boton es el que decide si se mira una sede o todas.
+  bool _consolidado = false;
 
   late Future<ResumenDashboard> _resumen;
   late Future<SerieDashboard> _serie;
@@ -116,7 +122,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   List<String> get _sedes =>
-      _sedeElegida == null ? const <String>[] : <String>[_sedeElegida!];
+      sedesDelDashboard(consolidado: _consolidado, branchId: widget.branchId);
 
   /// Se recarga al cambiar de sede, pero **no al cambiar el rango de fechas**:
   /// hoy es hoy, mire el propietario el mes o el ano.
@@ -136,6 +142,23 @@ class _DashboardPageState extends State<DashboardPage> {
     _serie = _resumen.then(
       (r) => dashboardService.getSerie(rango: r.rango, branchIds: _sedes),
     );
+  }
+
+  /// Cambia entre "esta sede" y "todas las sedes" (D-205).
+  ///
+  /// **No recarga "Primeros pasos" a proposito.** Esa lista se pide con
+  /// `widget.branchId` y no depende del ambito: es el progreso de puesta en
+  /// marcha de **esta** sede, mire uno los numeros de una o de todas. Pedirla
+  /// otra vez aqui seria una consulta de mas en cada toque del boton. Al
+  /// cambiar de sede si se recarga, porque entonces la pagina entera se
+  /// remonta (la llave lleva el `branchId` desde D-205).
+  void _cambiarAmbito(bool consolidado) {
+    if (_consolidado == consolidado) return;
+    setState(() {
+      _consolidado = consolidado;
+      _cargarTodo();
+      _cargarHoy();
+    });
   }
 
   void _recargar() {
@@ -265,24 +288,18 @@ class _DashboardPageState extends State<DashboardPage> {
                     );
                   },
                 ),
-                _Controles(
+                ControlesDelDashboard(
                   periodo: _periodo,
                   hoy: datos.hoyEnLaSede,
                   branches: widget.branches,
-                  sedeElegida: _sedeElegida,
+                  consolidado: _consolidado,
                   onPeriodo: (p) {
                     setState(() {
                       _periodo = p;
                       _cargarTodo();
                     });
                   },
-                  onSede: (id) {
-                    setState(() {
-                      _sedeElegida = id;
-                      _cargarTodo();
-                      _cargarHoy();
-                    });
-                  },
+                  onAmbito: _cambiarAmbito,
                 ),
                 const SizedBox(height: AppSpacing.lg),
 
@@ -384,22 +401,47 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 }
 
-class _Controles extends StatelessWidget {
-  const _Controles({
+/// Las sedes que el Dashboard consulta segun el ambito elegido (D-205).
+///
+/// La lista **vacia** significa "todas las sedes que este usuario alcanza":
+/// `DashboardService` la traduce a `p_branch_ids: null` y el SQL lo trata como
+/// sin filtro (`p_branch_ids is null or cardinality(...) = 0`).
+///
+/// Es una funcion de nivel superior, y no un `get` privado del `State`, para
+/// poder probarla: entra el ambito, sale la lista, sin sesion de Supabase de
+/// por medio. Es la leccion que dejaron D-203 y D-204.
+List<String> sedesDelDashboard({
+  required bool consolidado,
+  required String branchId,
+}) {
+  return consolidado ? const <String>[] : <String>[branchId];
+}
+
+/// Los controles de la cabecera del Dashboard: periodo y ambito.
+///
+/// **Publico a proposito**, como `PaymentsDialog` en D-200: en Dart lo privado
+/// lo es para toda la biblioteca, y aqui hay un control nuevo que conviene
+/// poder ejercitar en una prueba de widget en vez de solo leerlo.
+class ControlesDelDashboard extends StatelessWidget {
+  const ControlesDelDashboard({
+    super.key,
     required this.periodo,
     required this.hoy,
     required this.branches,
-    required this.sedeElegida,
+    required this.consolidado,
     required this.onPeriodo,
-    required this.onSede,
+    required this.onAmbito,
   });
 
   final PeriodoDashboard periodo;
   final DateTime hoy;
   final List<BranchContext> branches;
-  final String? sedeElegida;
+
+  /// Si se estan mirando todas las sedes en vez de la activa (D-205).
+  final bool consolidado;
+
   final ValueChanged<PeriodoDashboard> onPeriodo;
-  final ValueChanged<String?> onSede;
+  final ValueChanged<bool> onAmbito;
 
   @override
   Widget build(BuildContext context) {
@@ -411,41 +453,27 @@ class _Controles extends StatelessWidget {
         FiltroPeriodo(periodo: periodo, onCambio: onPeriodo, hoy: hoy),
 
         // Con una sola sede el selector no aporta nada y estorba, igual que el
-        // icono de la casita en la barra de celular (D-106).
+        // icono de la casita en la barra de celular (D-106). Mismo criterio
+        // que en Reportes (D-194): con una sede seria un boton que no hace
+        // nada.
         if (branches.length > 1)
-          Container(
-            // Acotado igual que el filtro de fechas: el nombre de una sede
-            // puede ser largo y en un telefono empujaria el control fuera de
-            // la pantalla.
-            constraints: const BoxConstraints(maxWidth: 260),
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.border),
-              borderRadius: BorderRadius.circular(AppRadius.control),
-              color: AppColors.surface,
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String?>(
-                value: sedeElegida,
-                isExpanded: true,
-                borderRadius: BorderRadius.circular(AppRadius.control),
-                onChanged: onSede,
-                items: [
-                  const DropdownMenuItem<String?>(
-                    value: null,
-                    child: Text('Todas las sedes'),
-                  ),
-                  for (final sede in branches)
-                    DropdownMenuItem<String?>(
-                      value: sede.branchId,
-                      child: Text(
-                        sede.branchName,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                ],
+          SegmentedButton<bool>(
+            segments: const [
+              ButtonSegment<bool>(
+                value: false,
+                icon: Icon(Icons.storefront_outlined, size: 16),
+                label: Text('Esta sede'),
               ),
-            ),
+              ButtonSegment<bool>(
+                value: true,
+                icon: Icon(Icons.public, size: 16),
+                label: Text('Todas las sedes'),
+              ),
+            ],
+            selected: {consolidado},
+            onSelectionChanged: (s) => onAmbito(s.first),
+            showSelectedIcon: false,
+            style: const ButtonStyle(visualDensity: VisualDensity.compact),
           ),
       ],
     );

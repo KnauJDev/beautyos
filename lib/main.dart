@@ -518,7 +518,12 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           category: BeautyCategory.finanzas,
         ),
         page: DashboardPage(
-          key: const ValueKey('dashboard'),
+          // Como los otros 17 modulos (D-205). Desde D-201 el modulo visible
+          // ya se remonta al cambiar de sede --el contador de visitas se
+          // reinicia y con el la llave del `KeyedSubtree`-- asi que esto no
+          // arregla un fallo vivo: lo hace explicito y deja de depender de un
+          // efecto lateral de la navegacion.
+          key: ValueKey('dashboard-${branch.branchId}'),
           branchId: branch.branchId,
           branches: branches,
           // "Tu negocio en palabras" (D-168) saluda al titular; si su
