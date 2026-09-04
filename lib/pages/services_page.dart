@@ -110,13 +110,6 @@ class _ServiciosPageState extends State<ServiciosPage> {
       title: 'Servicios',
       subtitle: 'Catálogo de servicios y precios del negocio.',
       children: [
-        const InfoPanel(
-          icon: Icons.spa_outlined,
-          title: 'Catálogo de servicios conectado a Supabase',
-          description:
-              'Crea, edita o desactiva los servicios de tu centro de estética. Los servicios activos se ofrecen en la agenda y reservas públicas.',
-        ),
-        const SizedBox(height: 16),
         Align(
           alignment: Alignment.centerLeft,
           child: FilledButton.icon(

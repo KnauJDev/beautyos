@@ -250,15 +250,10 @@ class _PurchasesContentState extends State<_PurchasesContent> {
 
     return AppPage(
       title: 'Compras',
-      subtitle: 'Control de compras a proveedores e insumos.',
+      subtitle:
+          'Control de compras a proveedores e insumos. Solo el propietario '
+          'puede editar el encabezado o anular una compra.',
       children: [
-        const InfoPanel(
-          icon: Icons.shopping_cart_outlined,
-          title: 'Compras del negocio',
-          description:
-              'Registra compras para alimentar el stock y el costo promedio de tus productos. Solo el propietario puede editar el encabezado o anular una compra.',
-        ),
-        const SizedBox(height: 16),
         Align(
           alignment: Alignment.centerLeft,
           child: FilledButton.icon(

@@ -114,15 +114,10 @@ class _UsuariosPageState extends State<UsuariosPage> {
   Widget build(BuildContext context) {
     return AppPage(
       title: 'Usuarios',
-      subtitle: 'Accesos y roles del equipo del centro.',
+      subtitle:
+          'Accesos y roles del equipo del centro. Las contraseñas no se '
+          'muestran ni se modifican aquí.',
       children: [
-        const InfoPanel(
-          icon: Icons.manage_accounts_outlined,
-          title: 'Administración de accesos',
-          description:
-              'El propietario o un administrador pueden activar, desactivar o cambiar el rol de cuentas existentes. Las contraseñas no se muestran ni se modifican aquí.',
-        ),
-        const SizedBox(height: 16),
         Wrap(
           spacing: 12,
           runSpacing: 12,

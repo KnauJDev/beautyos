@@ -177,13 +177,6 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
       title: 'Configuración',
       subtitle: 'Reglas generales del centro de estética.',
       children: [
-        const InfoPanel(
-          icon: Icons.settings_outlined,
-          title: 'Módulo base de Configuración',
-          description:
-              'Aquí configuraremos datos del negocio, horarios, políticas de agenda, anticipos, comisiones y reglas futuras de WhatsApp e IA.',
-        ),
-        const SizedBox(height: 16),
         const SectionTitle('Datos del negocio'),
         FutureBuilder<BusinessSettings>(
           future: businessSettingsFuture,

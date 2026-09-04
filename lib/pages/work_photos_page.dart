@@ -331,13 +331,6 @@ class _WorkPhotosContent extends StatelessWidget {
       subtitle:
           'Portafolio visual, evidencia de servicios con ticket y control de publicación.',
       children: [
-        const InfoPanel(
-          icon: Icons.photo_library_outlined,
-          title: 'Galería conectada a Supabase',
-          description:
-              'Visualiza fotos antes, después y finales vinculadas a cada cita (#ticket). Filtra por estilista o cliente y aprueba las mejores para el portafolio público.',
-        ),
-        const SizedBox(height: 16),
         Wrap(
           spacing: 16,
           runSpacing: 16,

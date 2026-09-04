@@ -208,15 +208,10 @@ class _ExpensesContentState extends State<_ExpensesContent> {
 
     return AppPage(
       title: 'Gastos',
-      subtitle: 'Control de gastos operativos del negocio.',
+      subtitle:
+          'Control de gastos operativos del negocio. Solo el propietario '
+          'puede editar o anular un gasto ya guardado.',
       children: [
-        const InfoPanel(
-          icon: Icons.payments_outlined,
-          title: 'Gastos del negocio',
-          description:
-              'Registra los gastos que afectan la utilidad real del centro. Solo el propietario puede editar o anular un gasto ya guardado.',
-        ),
-        const SizedBox(height: 16),
         Align(
           alignment: Alignment.centerLeft,
           child: FilledButton.icon(

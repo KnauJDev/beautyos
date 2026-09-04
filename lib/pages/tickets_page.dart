@@ -991,7 +991,7 @@ class _TicketsPageState extends State<TicketsPage> {
                     children: [
                       CircularProgressIndicator(),
                       SizedBox(width: 16),
-                      Text('Cargando tickets desde Supabase...'),
+                      Text('Cargando tickets...'),
                     ],
                   ),
                 ),

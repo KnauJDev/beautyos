@@ -161,13 +161,6 @@ class _InventarioPageState extends State<InventarioPage> {
       title: 'Inventario',
       subtitle: 'Productos, insumos y control de stock.',
       children: [
-        const InfoPanel(
-          icon: Icons.inventory_2_outlined,
-          title: 'Inventario conectado a Supabase',
-          description:
-              'Crea, edita o desactiva productos para venta e insumos internos. El stock sube al registrar una compra y baja al registrar un consumo interno; aquí se ajustan nombre, categoría, precios y mínimos.',
-        ),
-        const SizedBox(height: 16),
         Align(
           alignment: Alignment.centerLeft,
           child: FilledButton.icon(

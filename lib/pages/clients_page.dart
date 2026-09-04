@@ -223,7 +223,7 @@ class _ClientesPageState extends State<ClientesPage> {
                     children: [
                       CircularProgressIndicator(),
                       SizedBox(width: 16),
-                      Text('Cargando clientes desde Supabase...'),
+                      Text('Cargando clientes...'),
                     ],
                   ),
                 ),

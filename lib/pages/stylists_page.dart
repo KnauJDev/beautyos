@@ -176,13 +176,6 @@ class _EstilistasPageState extends State<EstilistasPage> {
       title: 'Estilistas',
       subtitle: 'Equipo de trabajo, especialidades y servicios asignados.',
       children: [
-        const InfoPanel(
-          icon: Icons.badge_outlined,
-          title: 'Equipo conectado a Supabase',
-          description:
-              'Crea, edita o desactiva estilistas y administra los servicios que puede realizar cada profesional.',
-        ),
-        const SizedBox(height: 16),
         Align(
           alignment: Alignment.centerLeft,
           child: FilledButton.icon(

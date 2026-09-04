@@ -294,13 +294,6 @@ class _ReviewsContent extends StatelessWidget {
       subtitle:
           'Calificaciones, comentarios y moderación de opiniones de clientes.',
       children: [
-        const InfoPanel(
-          icon: Icons.rate_review_outlined,
-          title: 'Reseñas conectadas con Supabase',
-          description:
-              'Aqui veremos las opiniones de clientes, su calificacion, estado de moderacion y visibilidad publica.',
-        ),
-        const SizedBox(height: 16),
         OutlinedButton.icon(
           onPressed: onRefresh,
           icon: const Icon(Icons.refresh_outlined),
