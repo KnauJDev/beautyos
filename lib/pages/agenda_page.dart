@@ -1359,7 +1359,7 @@ class _MonthProportionBar extends StatelessWidget {
 // MODAL DE NIVEL 2: LISTA AMPLIADA DE TICKETS (D-101 / D-116 / D-147)
 // =============================================================================
 
-class _Level2Sheet extends StatelessWidget {
+class _Level2Sheet extends StatefulWidget {
   final AgendaBoardService service;
   final String titulo;
   final DateTime startDate;
@@ -1383,6 +1383,25 @@ class _Level2Sheet extends StatelessWidget {
     this.onOpenTicket,
     this.onCollectTicket,
   });
+
+  @override
+  State<_Level2Sheet> createState() => _Level2SheetState();
+}
+
+class _Level2SheetState extends State<_Level2Sheet> {
+  late final Future<List<TicketBoardItem>> _boardListFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _boardListFuture = widget.service.getBoardList(
+      startDate: widget.startDate,
+      endDate: widget.endDate,
+      statuses: widget.statuses,
+      bucket: widget.bucket,
+      granularity: widget.granularity,
+    );
+  }
 
   Future<void> _abrirWhatsApp(String phone, String message) async {
     final uri = buildWhatsAppUri(phone, text: message);
@@ -1431,7 +1450,7 @@ class _Level2Sheet extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        titulo,
+                        widget.titulo,
                         style: TextStyle(
                           fontSize: 17,
                           fontWeight: FontWeight.bold,
@@ -1452,13 +1471,7 @@ class _Level2Sheet extends StatelessWidget {
               // Contenido con FutureBuilder
               Expanded(
                 child: FutureBuilder<List<TicketBoardItem>>(
-                  future: service.getBoardList(
-                    startDate: startDate,
-                    endDate: endDate,
-                    statuses: statuses,
-                    bucket: bucket,
-                    granularity: granularity,
-                  ),
+                  future: _boardListFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
@@ -1500,25 +1513,25 @@ class _Level2Sheet extends StatelessWidget {
                                     clientName: item.clientName,
                                     serviceNames: item.serviceNames,
                                     scheduledAt: item.scheduledAt,
-                                    businessName: businessName,
+                                    businessName: widget.businessName,
                                   ),
                                 )
                               : null,
-                          onTap: onOpenTicket != null
+                          onTap: widget.onOpenTicket != null
                               ? () {
                                   Navigator.of(context).pop();
-                                  onOpenTicket!(item.id);
+                                  widget.onOpenTicket!(item.id);
                                 }
                               : null,
                           onCollectTap:
-                              onCollectTicket != null &&
+                              widget.onCollectTicket != null &&
                                   item.pendingBalance > 0 &&
                                   AccionesDeTicket.puedeGestionarPagos(
                                     item.status,
                                   )
                               ? () {
                                   Navigator.of(context).pop();
-                                  onCollectTicket!(item.id);
+                                  widget.onCollectTicket!(item.id);
                                 }
                               : null,
                         );

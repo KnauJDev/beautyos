@@ -1852,7 +1852,7 @@ class _TenantCard extends StatelessWidget {
 // ============================================================================
 // FICHA COMPLETA DEL NEGOCIO / TENANT (NIVEL 3 - SEGÚN BOSQUEJO A MANO)
 // ============================================================================
-class _TenantDetailSheet extends StatelessWidget {
+class _TenantDetailSheet extends StatefulWidget {
   const _TenantDetailSheet({
     required this.tenant,
     required this.isOwner,
@@ -1880,6 +1880,21 @@ class _TenantDetailSheet extends StatelessWidget {
   final ValueChanged<PlatformTenantSummary> onUpdateContact;
   final ValueChanged<PlatformTenantSummary> onViewSupportData;
   final ValueChanged<PlatformTenantSummary> onAssignPartner;
+
+  @override
+  State<_TenantDetailSheet> createState() => _TenantDetailSheetState();
+}
+
+class _TenantDetailSheetState extends State<_TenantDetailSheet> {
+  late final Future<List<TenantSubscriptionHistoryEntry>> _historyFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _historyFuture = widget.platformService.getTenantSubscriptionHistory(
+      widget.tenant.tenantId,
+    );
+  }
 
   String _formatDate(DateTime? date) {
     if (date == null) return '—';
@@ -1914,6 +1929,19 @@ class _TenantDetailSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tenant = widget.tenant;
+    final isOwner = widget.isOwner;
+    final platformService = widget.platformService;
+    final onApprove = widget.onApprove;
+    final onReject = widget.onReject;
+    final onSuspend = widget.onSuspend;
+    final onReactivate = widget.onReactivate;
+    final onExtendTrial = widget.onExtendTrial;
+    final onUpdatePricing = widget.onUpdatePricing;
+    final onUpdateContact = widget.onUpdateContact;
+    final onViewSupportData = widget.onViewSupportData;
+    final onAssignPartner = widget.onAssignPartner;
+
     final status = tenant.subscriptionStatus;
     final isPending = tenant.isPending;
 
@@ -2401,9 +2429,7 @@ class _TenantDetailSheet extends StatelessWidget {
                       icon: Icons.history,
                       children: [
                         FutureBuilder<List<TenantSubscriptionHistoryEntry>>(
-                          future: platformService.getTenantSubscriptionHistory(
-                            tenant.tenantId,
-                          ),
+                          future: _historyFuture,
                           builder: (context, snapshot) {
                             if (snapshot.connectionState ==
                                 ConnectionState.waiting) {

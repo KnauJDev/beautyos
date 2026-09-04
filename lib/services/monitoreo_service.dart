@@ -174,11 +174,15 @@ class MonitoreoService {
 
   static final _correo = RegExp(r'[\w.\-+]+@[\w\-]+\.[\w.\-]+');
   static final _telefonoConEspacios = RegExp(
-    r'\b(?:\+?57[\s.-]?)?3\d{2}[\s.-]\d{3}[\s.-]\d{4}\b',
+    r'\b(?:\+?57[\s.-]?)?[1-9]\d{2}[\s.-]\d{3}[\s.-]\d{4}\b',
   );
   static final _telefono = RegExp(r'\b\d{7,15}\b');
+  static final _postgresKeyDetails = RegExp(
+    r'Key \([^)]+\)=\([^)]+\)',
+    caseSensitive: false,
+  );
 
-  /// Oculta correos electrónicos y secuencias telefónicas en cualquier cadena.
+  /// Oculta correos electrónicos, teléfonos y detalles sensibles de claves en cualquier cadena.
   static String taparDatosSensibles(String texto) => _tapar(texto);
 
   /// Expuesto para pruebas unitarias de sanitización de eventos de Sentry.
@@ -189,5 +193,6 @@ class MonitoreoService {
   static String _tapar(String texto) => texto
       .replaceAll(_correo, '[correo oculto]')
       .replaceAll(_telefonoConEspacios, '[número oculto]')
-      .replaceAll(_telefono, '[número oculto]');
+      .replaceAll(_telefono, '[número oculto]')
+      .replaceAll(_postgresKeyDetails, 'Key ([campo])=([valor oculto])');
 }
