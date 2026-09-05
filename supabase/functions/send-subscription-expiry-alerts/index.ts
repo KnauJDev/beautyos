@@ -16,7 +16,22 @@ import { createClient } from "@supabase/supabase-js";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+// Se prefiere la clave secreta service_role y se cae a otras variables si hace falta
+const CLAVE_SECRETA = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || (() => {
+  const secretas = Deno.env.get("SUPABASE_SECRET_KEYS");
+  if (secretas) {
+    try {
+      const dic = JSON.parse(secretas) as Record<string, string>;
+      const primera = Object.values(dic)[0];
+      if (primera) return primera;
+    } catch {
+      return secretas;
+    }
+  }
+  return "";
+})();
+
 const CRON_SECRET = Deno.env.get("CRON_SECRET") ?? Deno.env.get("SUBSCRIPTION_CRON_SECRET") ?? "";
 const APP_URL = Deno.env.get("APP_URL") ?? "https://salonymas.com";
 const WHATSAPP_SUPPORT_URL = "https://wa.me/573159780158?text=Hola%20equipo%20de%20Salon%20y%20Mas,%20necesito%20ayuda%20con%20mi%20suscripcion";
@@ -354,12 +369,12 @@ Deno.serve(async (req) => {
     }
 
     paso = "revisar configuracion";
-    if (!RESEND_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    if (!RESEND_API_KEY || !SUPABASE_URL || !CLAVE_SECRETA) {
       console.error("Configuracion incompleta en variables de entorno (RESEND_API_KEY o SUPABASE)");
       return responder({ error: "Configuracion interna de servidor incompleta." }, 500);
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    const supabase = createClient(SUPABASE_URL, CLAVE_SECRETA, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 

@@ -33,7 +33,37 @@
 import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+// Se prefiere la clave secreta service_role y se cae a otras variables si hace falta
+const CLAVE_SECRETA = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || (() => {
+  const secretas = Deno.env.get("SUPABASE_SECRET_KEYS");
+  if (secretas) {
+    try {
+      const dic = JSON.parse(secretas) as Record<string, string>;
+      const primera = Object.values(dic)[0];
+      if (primera) return primera;
+    } catch {
+      return secretas;
+    }
+  }
+  return "";
+})();
+
+// Se prefiere la clave anon y se cae a publishable_keys si hace falta
+const CLAVE_PUBLICA = Deno.env.get("SUPABASE_ANON_KEY") || (() => {
+  const nuevas = Deno.env.get("SUPABASE_PUBLISHABLE_KEYS");
+  if (nuevas) {
+    try {
+      const dic = JSON.parse(nuevas) as Record<string, string>;
+      const primera = Object.values(dic)[0];
+      if (primera) return primera;
+    } catch {
+      return nuevas;
+    }
+  }
+  return "";
+})();
+
 const EPAYCO_P_CUST_ID = Deno.env.get("EPAYCO_P_CUST_ID") ?? Deno.env.get("EPAYCO_CUSTOMER_ID") ?? "";
 
 const CORS = {
@@ -57,8 +87,8 @@ Deno.serve(async (req) => {
   let paso = "inicio";
   try {
     paso = "revisar configuración";
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      return responder({ error: "Falta configuración interna de base de datos." }, 500);
+    if (!SUPABASE_URL || !CLAVE_SECRETA) {
+      return responder({ error: "Falta configuración interna de base de datos en el servidor." }, 500);
     }
 
     // FAIL-CLOSED (D-181): sin el identificador de comercio no se puede saber si
@@ -69,28 +99,54 @@ Deno.serve(async (req) => {
       return responder({ error: "Configuración de seguridad de pasarela incompleta en el servidor." }, 500);
     }
 
-    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-
     // 1er CANDADO (D-181): sesión obligatoria. `verify_jwt = true` ya rechaza en
     // el perímetro sin despertar este contenedor, pero el usuario hace falta
     // igualmente para resolver el negocio, así que se vuelve a leer aquí.
     paso = "verificar sesión autenticada";
     const autorizacion = req.headers.get("Authorization");
+    if (!autorizacion) {
+      return responder({ error: "Se requiere una sesión autenticada para verificar un pago." }, 401);
+    }
+
+    const token = autorizacion.replace(/^Bearer\s+/i, "").trim();
     let userId: string | null = null;
 
-    if (autorizacion) {
-      const token = autorizacion.replace(/^Bearer\s+/i, "").trim();
-      if (token) {
-        const { data: userData } = await supabaseAdmin.auth.getUser(token);
-        userId = userData?.user?.id ?? null;
+    // 1. Extraer sub directamente del payload JWT verificado por el gateway de Supabase
+    try {
+      const parts = token.split(".");
+      if (parts.length === 3) {
+        const payloadStr = atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"));
+        const payload = JSON.parse(payloadStr);
+        if (payload?.sub) {
+          userId = payload.sub;
+        }
+      }
+    } catch (e) {
+      console.warn("Aviso al decodificar JWT payload:", e);
+    }
+
+    // 2. Si no se obtuvo del payload, consultar auth.getUser(token)
+    if (!userId && (CLAVE_SECRETA || CLAVE_PUBLICA)) {
+      try {
+        const supabaseAuth = createClient(SUPABASE_URL, CLAVE_SECRETA || CLAVE_PUBLICA, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+        const { data: userData } = await supabaseAuth.auth.getUser(token);
+        if (userData?.user?.id) {
+          userId = userData.user.id;
+        }
+      } catch (e) {
+        console.warn("Aviso al validar usuario con auth.getUser:", e);
       }
     }
 
     if (!userId) {
       return responder({ error: "Se requiere una sesión autenticada para verificar un pago." }, 401);
     }
+
+    const supabaseAdmin = createClient(SUPABASE_URL, CLAVE_SECRETA, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
 
     paso = "extraer ref_payco";
     const url = new URL(req.url);

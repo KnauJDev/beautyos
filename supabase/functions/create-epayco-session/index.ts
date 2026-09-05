@@ -14,7 +14,36 @@ const EPAYCO_PRIVATE_KEY = Deno.env.get("EPAYCO_PRIVATE_KEY") ?? Deno.env.get("E
 const EPAYCO_TEST_MODE = (Deno.env.get("EPAYCO_TEST_MODE") ?? "true").toLowerCase() === "true";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+// Se prefiere la clave secreta service_role y se cae a otras variables si hace falta
+const CLAVE_SECRETA = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || (() => {
+  const secretas = Deno.env.get("SUPABASE_SECRET_KEYS");
+  if (secretas) {
+    try {
+      const dic = JSON.parse(secretas) as Record<string, string>;
+      const primera = Object.values(dic)[0];
+      if (primera) return primera;
+    } catch {
+      return secretas;
+    }
+  }
+  return "";
+})();
+
+// Se prefiere la clave anon y se cae a publishable_keys si hace falta
+const CLAVE_PUBLICA = Deno.env.get("SUPABASE_ANON_KEY") || (() => {
+  const nuevas = Deno.env.get("SUPABASE_PUBLISHABLE_KEYS");
+  if (nuevas) {
+    try {
+      const dic = JSON.parse(nuevas) as Record<string, string>;
+      const primera = Object.values(dic)[0];
+      if (primera) return primera;
+    } catch {
+      return nuevas;
+    }
+  }
+  return "";
+})();
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -46,29 +75,57 @@ Deno.serve(async (req) => {
       return responder({ error: "La pasarela de pago no está configurada en el servidor." }, 500);
     }
 
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      console.error("Falta SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY en el servidor.");
-      return responder({ error: "Error de configuración de base de datos." }, 500);
+    if (!SUPABASE_URL || !CLAVE_SECRETA) {
+      console.error("Falta SUPABASE_URL o CLAVE_SECRETA de Supabase en el servidor.");
+      return responder({ error: "Error de configuración de base de datos en el servidor." }, 500);
     }
 
     paso = "verificar sesión autenticada";
     const autorizacion = req.headers.get("Authorization");
-    const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
+    if (!autorizacion) {
+      return responder({ error: "Se requiere una sesión autenticada para generar la sesión de pago." }, 401);
+    }
 
+    const token = autorizacion.replace(/^Bearer\s+/i, "").trim();
     let userId: string | null = null;
-    if (autorizacion) {
-      const token = autorizacion.replace(/^Bearer\s+/i, "").trim();
-      if (token) {
-        const { data: userData } = await supabaseAdmin.auth.getUser(token);
-        userId = userData?.user?.id ?? null;
+
+    // 1. Extraer sub directamente del payload JWT verificado por el gateway de Supabase
+    try {
+      const parts = token.split(".");
+      if (parts.length === 3) {
+        const payloadStr = atob(parts[1].replace(/-/g, "+").replace(/_/g, "/"));
+        const payload = JSON.parse(payloadStr);
+        if (payload?.sub) {
+          userId = payload.sub;
+        }
+      }
+    } catch (e) {
+      console.warn("Aviso al decodificar JWT payload:", e);
+    }
+
+    // 2. Si no se obtuvo del payload, consultar auth.getUser(token)
+    if (!userId && (CLAVE_SECRETA || CLAVE_PUBLICA)) {
+      try {
+        const supabaseAuth = createClient(SUPABASE_URL, CLAVE_SECRETA || CLAVE_PUBLICA, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+        const { data: userData } = await supabaseAuth.auth.getUser(token);
+        if (userData?.user?.id) {
+          userId = userData.user.id;
+        }
+      } catch (e) {
+        console.warn("Aviso al validar usuario con auth.getUser:", e);
       }
     }
 
     if (!userId) {
+      console.error("No se pudo resolver el usuario autenticado desde el token.");
       return responder({ error: "Se requiere una sesión autenticada para generar la sesión de pago." }, 401);
     }
+
+    const supabaseAdmin = createClient(SUPABASE_URL, CLAVE_SECRETA, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
 
     paso = "leer parámetros de solicitud";
     let body: { planCode?: string; branchId?: string } = {};

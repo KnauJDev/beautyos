@@ -23,7 +23,21 @@ import { createClient } from "@supabase/supabase-js";
 const EPAYCO_P_CUST_ID = Deno.env.get("EPAYCO_P_CUST_ID") ?? Deno.env.get("EPAYCO_CUSTOMER_ID") ?? "";
 const EPAYCO_P_KEY = Deno.env.get("EPAYCO_P_KEY") ?? Deno.env.get("EPAYCO_PRIVATE_KEY") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+// Se prefiere la clave secreta service_role y se cae a otras variables si hace falta
+const CLAVE_SECRETA = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || (() => {
+  const secretas = Deno.env.get("SUPABASE_SECRET_KEYS");
+  if (secretas) {
+    try {
+      const dic = JSON.parse(secretas) as Record<string, string>;
+      const primera = Object.values(dic)[0];
+      if (primera) return primera;
+    } catch {
+      return secretas;
+    }
+  }
+  return "";
+})();
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -61,8 +75,8 @@ Deno.serve(async (req) => {
     }
 
     paso = "revisar configuracion de servidor";
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      console.error("Falta SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY en los secretos de la Edge Function.");
+    if (!SUPABASE_URL || !CLAVE_SECRETA) {
+      console.error("Falta SUPABASE_URL o CLAVE_SECRETA en los secretos de la Edge Function.");
       return responder({ error: "Configuracion interna de base de datos incompleta." }, 500);
     }
 
@@ -142,7 +156,7 @@ Deno.serve(async (req) => {
     console.log("Firma criptografica de ePayco verificada con exito en el servidor.");
 
     paso = "preparar cliente de base de datos";
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    const supabase = createClient(SUPABASE_URL, CLAVE_SECRETA, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
