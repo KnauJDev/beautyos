@@ -223,18 +223,40 @@ Deno.serve(async (req) => {
     // desambiguar cuando la persona pertenece a más de un negocio, y siempre
     // contrastado contra sus membresías reales.
     paso = "resolver negocio desde la sesión";
+    let tenantsDelUsuario: string[] = [];
+
+    // 1. Consultar tenant_memberships activas
     const { data: membresias, error: memError } = await supabaseAdmin
       .from("tenant_memberships")
       .select("tenant_id")
       .eq("user_id", userId)
       .eq("active", true);
 
-    if (memError) {
-      console.error("Error al leer membresías:", memError);
-      return responder({ error: "No se pudo resolver el negocio del usuario." }, 500);
+    if (membresias && membresias.length > 0) {
+      tenantsDelUsuario = membresias.map((m) => m.tenant_id as string);
     }
 
-    const tenantsDelUsuario = (membresias ?? []).map((m) => m.tenant_id as string);
+    // 2. Fallback a user_profiles
+    if (tenantsDelUsuario.length === 0) {
+      const { data: profiles } = await supabaseAdmin
+        .from("user_profiles")
+        .select("tenant_id")
+        .eq("user_id", userId);
+      if (profiles && profiles.length > 0) {
+        tenantsDelUsuario = profiles.map((p) => p.tenant_id as string).filter(Boolean);
+      }
+    }
+
+    // 3. Fallback a owner_user_id en tenants
+    if (tenantsDelUsuario.length === 0) {
+      const { data: ownerTenants } = await supabaseAdmin
+        .from("tenants")
+        .select("id")
+        .eq("owner_user_id", userId);
+      if (ownerTenants && ownerTenants.length > 0) {
+        tenantsDelUsuario = ownerTenants.map((t) => t.id as string).filter(Boolean);
+      }
+    }
 
     if (tenantsDelUsuario.length === 0) {
       return responder({ error: "El usuario autenticado no tiene un negocio activo asociado." }, 403);

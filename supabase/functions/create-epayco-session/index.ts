@@ -145,20 +145,73 @@ Deno.serve(async (req) => {
     const branchId = (body.branchId ?? "").toString().trim() || null;
 
     // El tenantId NUNCA se toma del cliente: se resuelve exclusivamente desde
-    // la membresía activa del usuario autenticado, para que nadie pueda pagar
-    // (ni de menos, ni a nombre de otro negocio) suplantando un tenantId ajeno.
+    // la identidad y membresías del usuario autenticado en el servidor.
     paso = "resolver negocio del usuario autenticado";
-    const { data: memData } = await supabaseAdmin
-      .from("tenant_memberships")
-      .select("tenant_id")
-      .eq("user_id", userId)
-      .eq("active", true)
-      .limit(1)
-      .maybeSingle();
+    let tenantId: string | null = null;
 
-    const tenantId = memData?.tenant_id;
+    // 1. Intentar resolver mediante RPC get_my_tenant_id con el token del usuario
+    if (CLAVE_PUBLICA || CLAVE_SECRETA) {
+      try {
+        const userClient = createClient(SUPABASE_URL, CLAVE_PUBLICA || CLAVE_SECRETA, {
+          global: { headers: { Authorization: autorizacion } },
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+        const { data: rpcTenantId, error: rpcErr } = await userClient.rpc("get_my_tenant_id");
+        if (rpcTenantId) {
+          tenantId = rpcTenantId as string;
+        } else if (rpcErr) {
+          console.warn("Aviso al consultar RPC get_my_tenant_id:", rpcErr.message);
+        }
+      } catch (e) {
+        console.warn("Excepción al consultar RPC get_my_tenant_id:", e);
+      }
+    }
+
+    // 2. Si no se resolvió, buscar en tenant_memberships activas
+    if (!tenantId) {
+      const { data: memData } = await supabaseAdmin
+        .from("tenant_memberships")
+        .select("tenant_id")
+        .eq("user_id", userId)
+        .eq("active", true)
+        .limit(1)
+        .maybeSingle();
+
+      if (memData?.tenant_id) {
+        tenantId = memData.tenant_id;
+      }
+    }
+
+    // 3. Si aún no, buscar en user_profiles (perfil principal del usuario)
+    if (!tenantId) {
+      const { data: profileData } = await supabaseAdmin
+        .from("user_profiles")
+        .select("tenant_id")
+        .eq("user_id", userId)
+        .limit(1)
+        .maybeSingle();
+
+      if (profileData?.tenant_id) {
+        tenantId = profileData.tenant_id;
+      }
+    }
+
+    // 4. Si aún no, buscar si el usuario es owner_user_id en la tabla tenants
+    if (!tenantId) {
+      const { data: ownerTenant } = await supabaseAdmin
+        .from("tenants")
+        .select("id")
+        .eq("owner_user_id", userId)
+        .limit(1)
+        .maybeSingle();
+
+      if (ownerTenant?.id) {
+        tenantId = ownerTenant.id;
+      }
+    }
 
     if (!tenantId) {
+      console.error(`No se encontró tenant para el usuario ${userId}`);
       return responder({ error: "El usuario autenticado no tiene un negocio activo asociado." }, 403);
     }
 
