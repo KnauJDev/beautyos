@@ -15,34 +15,38 @@ const EPAYCO_TEST_MODE = (Deno.env.get("EPAYCO_TEST_MODE") ?? "true").toLowerCas
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 
-// Se prefiere la clave secreta service_role y se cae a otras variables si hace falta
-const CLAVE_SECRETA = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || (() => {
+// Se prefiere la clave secreta nueva (SUPABASE_SECRET_KEYS) para evitar "Legacy API keys are disabled"
+const CLAVE_SECRETA = (() => {
   const secretas = Deno.env.get("SUPABASE_SECRET_KEYS");
   if (secretas) {
     try {
-      const dic = JSON.parse(secretas) as Record<string, string>;
-      const primera = Object.values(dic)[0];
-      if (primera) return primera;
+      const dic = JSON.parse(secretas);
+      if (typeof dic === "object" && dic !== null) {
+        const valores = Object.values(dic) as string[];
+        if (valores.length > 0 && valores[0]) return valores[0];
+      }
     } catch {
-      return secretas;
+      if (secretas.trim().length > 0) return secretas.trim();
     }
   }
-  return "";
+  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 })();
 
-// Se prefiere la clave anon y se cae a publishable_keys si hace falta
-const CLAVE_PUBLICA = Deno.env.get("SUPABASE_ANON_KEY") || (() => {
+// Se prefiere la clave publicable nueva (SUPABASE_PUBLISHABLE_KEYS)
+const CLAVE_PUBLICA = (() => {
   const nuevas = Deno.env.get("SUPABASE_PUBLISHABLE_KEYS");
   if (nuevas) {
     try {
-      const dic = JSON.parse(nuevas) as Record<string, string>;
-      const primera = Object.values(dic)[0];
-      if (primera) return primera;
+      const dic = JSON.parse(nuevas);
+      if (typeof dic === "object" && dic !== null) {
+        const valores = Object.values(dic) as string[];
+        if (valores.length > 0 && valores[0]) return valores[0];
+      }
     } catch {
-      return nuevas;
+      if (nuevas.trim().length > 0) return nuevas.trim();
     }
   }
-  return "";
+  return Deno.env.get("SUPABASE_ANON_KEY") ?? "";
 })();
 
 const CORS = {

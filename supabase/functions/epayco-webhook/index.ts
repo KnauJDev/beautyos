@@ -24,19 +24,21 @@ const EPAYCO_P_CUST_ID = Deno.env.get("EPAYCO_P_CUST_ID") ?? Deno.env.get("EPAYC
 const EPAYCO_P_KEY = Deno.env.get("EPAYCO_P_KEY") ?? Deno.env.get("EPAYCO_PRIVATE_KEY") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 
-// Se prefiere la clave secreta service_role y se cae a otras variables si hace falta
-const CLAVE_SECRETA = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || (() => {
+// Se prefiere la clave secreta nueva (SUPABASE_SECRET_KEYS) para evitar "Legacy API keys are disabled"
+const CLAVE_SECRETA = (() => {
   const secretas = Deno.env.get("SUPABASE_SECRET_KEYS");
   if (secretas) {
     try {
-      const dic = JSON.parse(secretas) as Record<string, string>;
-      const primera = Object.values(dic)[0];
-      if (primera) return primera;
+      const dic = JSON.parse(secretas);
+      if (typeof dic === "object" && dic !== null) {
+        const valores = Object.values(dic) as string[];
+        if (valores.length > 0 && valores[0]) return valores[0];
+      }
     } catch {
-      return secretas;
+      if (secretas.trim().length > 0) return secretas.trim();
     }
   }
-  return "";
+  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 })();
 
 const CORS = {
