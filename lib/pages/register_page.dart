@@ -17,9 +17,14 @@ import 'terms_and_privacy_page.dart';
 /// montada de forma estable) la que registre el negocio, se evita esa
 /// condición de carrera.
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({super.key, required this.onRegisterSuccess});
+  const RegisterPage({
+    super.key,
+    required this.onRegisterSuccess,
+    this.isCollaborator = false,
+  });
 
   final VoidCallback onRegisterSuccess;
+  final bool isCollaborator;
 
   @override
   State<RegisterPage> createState() => _RegisterPageState();
@@ -163,7 +168,9 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     const SizedBox(height: 18),
                     Text(
-                      'Registra tu negocio en Salón y Más',
+                      widget.isCollaborator
+                          ? 'Crea tu cuenta de colaborador'
+                          : 'Registra tu negocio en Salón y Más',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 24,
@@ -172,10 +179,15 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      '21 días de prueba gratis, sin tarjeta.',
+                    Text(
+                      widget.isCollaborator
+                          ? 'Ingresa el correo al que te llegó la invitación y define tu contraseña.'
+                          : '21 días de prueba gratis, sin tarjeta.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                     const SizedBox(height: 24),
                     if (confirmationMessage != null) ...[
@@ -304,7 +316,13 @@ class _RegisterPageState extends State<RegisterPage> {
                                   ),
                                 )
                               : const Icon(Icons.rocket_launch_outlined),
-                          label: Text(isLoading ? 'Creando...' : 'Continuar'),
+                          label: Text(
+                            isLoading
+                                ? 'Creando...'
+                                : widget.isCollaborator
+                                    ? 'Crear mi cuenta'
+                                    : 'Continuar',
+                          ),
                         ),
                       ),
                       const SizedBox(height: 14),
@@ -312,29 +330,33 @@ class _RegisterPageState extends State<RegisterPage> {
                         onPressed: isLoading
                             ? null
                             : () => Navigator.of(context).pop(),
-                        child: const Text(
-                          '¿Ya tienes cuenta o te invitaron a un equipo? Inicia sesión',
+                        child: Text(
+                          widget.isCollaborator
+                              ? '¿Ya tienes contraseña? Inicia sesión'
+                              : '¿Ya tienes cuenta o te invitaron a un equipo? Inicia sesión',
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      TextButton.icon(
-                        onPressed: isLoading
-                            ? null
-                            : () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => const PublicPlansPage(),
-                                  ),
-                                );
-                              },
-                        icon: const Icon(Icons.info_outline, size: 16),
-                        label: const Text('Ver qué incluye cada plan'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppColors.textSecondary,
-                          textStyle: const TextStyle(fontSize: 13),
+                      if (!widget.isCollaborator) ...[
+                        const SizedBox(height: 4),
+                        TextButton.icon(
+                          onPressed: isLoading
+                              ? null
+                              : () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => const PublicPlansPage(),
+                                    ),
+                                  );
+                                },
+                          icon: const Icon(Icons.info_outline, size: 16),
+                          label: const Text('Ver qué incluye cada plan'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.textSecondary,
+                            textStyle: const TextStyle(fontSize: 13),
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ],
                 ),

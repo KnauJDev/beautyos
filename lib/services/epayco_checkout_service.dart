@@ -310,16 +310,22 @@ class EpaycoCheckoutService {
         String mensajeUsuario;
         final errorStr = e.toString();
         if (e is FunctionException && e.status == 401) {
+          final details = e.details?.toString() ?? '';
+          if (details.contains('autenticada') ||
+              details.contains('JWT') ||
+              details.contains('token')) {
+            mensajeUsuario =
+                'Tu sesión ha expirado. Por favor inicia sesión de nuevo para continuar con el pago.';
+          } else {
+            mensajeUsuario =
+                'Error de autorización: ${details.isNotEmpty ? details : (e.reasonPhrase ?? e.toString())}';
+          }
+        } else if (errorStr.contains('Tu sesión ha expirado')) {
           mensajeUsuario =
               'Tu sesión ha expirado. Por favor inicia sesión de nuevo para continuar con el pago.';
-        } else if (errorStr.contains('401') ||
-            errorStr.contains('sesión') ||
-            errorStr.contains('session')) {
-          mensajeUsuario =
-              'Tu sesión ha expirado o no es válida. Por favor inicia sesión de nuevo.';
         } else {
-          mensajeUsuario =
-              'No se pudo abrir la pasarela de ePayco: ${errorStr.replaceAll('Exception: ', '')}';
+          final limpio = errorStr.replaceAll('Exception: ', '').trim();
+          mensajeUsuario = 'No se pudo abrir la pasarela de ePayco: $limpio';
         }
 
         ScaffoldMessenger.of(context).showSnackBar(

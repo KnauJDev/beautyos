@@ -213,30 +213,72 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 18),
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 10,
-                      ),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: AppColors.brandSurface,
                         borderRadius: BorderRadius.circular(AppRadius.control),
                         border: Border.all(color: AppColors.border),
                       ),
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.group_outlined,
-                            size: 20,
-                            color: AppColors.brand,
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.group_outlined,
+                                size: 18,
+                                color: AppColors.brand,
+                              ),
+                              const SizedBox(width: 8),
+                              const Expanded(
+                                child: Text(
+                                  '¿Te invitaron a un equipo?',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 10),
-                          const Expanded(
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Inicia sesión con el correo de tu invitación si ya tienes contraseña.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                              height: 1.3,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          InkWell(
+                            onTap: isLoading
+                                ? null
+                                : () async {
+                                    final registered =
+                                        await Navigator.of(context).push<bool>(
+                                      MaterialPageRoute(
+                                        builder: (_) => RegisterPage(
+                                          isCollaborator: true,
+                                          onRegisterSuccess: () {
+                                            Navigator.of(context).pop(true);
+                                          },
+                                        ),
+                                      ),
+                                    );
+
+                                    if (registered == true) {
+                                      widget.onLoginSuccess();
+                                    }
+                                  },
                             child: Text(
-                              '¿Te invitaron a un equipo?\nInicia sesión con el correo de tu invitación',
+                              '¿Primera vez? Crea tu contraseña de colaborador →',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: AppColors.textSecondary,
-                                height: 1.3,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.brand,
+                                decoration: TextDecoration.underline,
                               ),
                             ),
                           ),

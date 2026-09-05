@@ -148,8 +148,8 @@ void main() {
     });
   });
 
-  group('Paso 8.5 — Clarificar pantalla de acceso para invitados (Hallazgo S)', () {
-    testWidgets('LoginPage muestra guía para colaboradores invitados y botón para registrar salón', (tester) async {
+  group('Paso 8.5 / Paso 8.36 — Clarificar pantalla de acceso para invitados (D-178, D-213)', () {
+    testWidgets('LoginPage muestra guía para colaboradores invitados, enlace directo para crear contraseña y botón para registrar salón', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: LoginPage(
@@ -171,6 +171,10 @@ void main() {
         find.textContaining('Inicia sesión con el correo de tu invitación'),
         findsOneWidget,
       );
+      expect(
+        find.textContaining('¿Primera vez? Crea tu contraseña de colaborador'),
+        findsOneWidget,
+      );
 
       // Camino explícito de registrar negocio nuevo
       expect(
@@ -183,7 +187,7 @@ void main() {
       );
     });
 
-    testWidgets('RegisterPage clarifica que es para registrar un negocio y orienta a invitados a iniciar sesión', (tester) async {
+    testWidgets('RegisterPage en modo dueño clarifica que es para registrar un negocio y orienta a invitados a iniciar sesión', (tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: RegisterPage(
@@ -202,6 +206,31 @@ void main() {
         find.text('¿Ya tienes cuenta o te invitaron a un equipo? Inicia sesión'),
         findsOneWidget,
       );
+      expect(find.text('Ver qué incluye cada plan'), findsOneWidget);
+    });
+
+    testWidgets('RegisterPage en modo colaborador (D-213) muestra título de colaborador y oculta planes comerciales', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: RegisterPage(
+            isCollaborator: true,
+            onRegisterSuccess: () {},
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Título y subtítulo contextual de colaborador invitado
+      expect(find.text('Crea tu cuenta de colaborador'), findsOneWidget);
+      expect(
+        find.text('Ingresa el correo al que te llegó la invitación y define tu contraseña.'),
+        findsOneWidget,
+      );
+      expect(find.text('Crear mi cuenta'), findsOneWidget);
+      expect(find.text('¿Ya tienes contraseña? Inicia sesión'), findsOneWidget);
+
+      // No muestra botón irrelevante de planes comerciales
+      expect(find.text('Ver qué incluye cada plan'), findsNothing);
     });
   });
 }
