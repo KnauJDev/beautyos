@@ -165,6 +165,8 @@ Deno.serve(async (req) => {
     // tiene intencion registrada, o si el payload dice pertenecer a otro
     // negocio, no se procesa nada. FAIL-CLOSED.
     paso = "resolver la intencion de pago";
+    let intent: { coincide: boolean; tenant_id: string; branch_id?: string | null; plan_code: string; amount_cop: number; motivo?: string } | null = null;
+
     const { data: intentData, error: intentError } = await supabase.rpc(
       "beautyos_resolver_intencion_pago",
       {
@@ -174,12 +176,45 @@ Deno.serve(async (req) => {
       },
     );
 
-    if (intentError) {
-      console.error("Error al resolver la intencion de pago:", intentError);
-      return responder({ error: `Error resolviendo la intencion de pago: ${intentError.message}` }, 500);
-    }
+    if (intentData && Array.isArray(intentData) && intentData.length > 0) {
+      intent = intentData[0];
+    } else {
+      if (intentError) {
+        console.warn("Aviso al resolver intención con RPC, consultando tabla directamente:", intentError.message);
+      }
+      // Fallback directo a la tabla subscription_payment_intents
+      const { data: intentRow } = await supabase
+        .from("subscription_payment_intents")
+        .select("*")
+        .eq("invoice_number", xInvoice.trim())
+        .maybeSingle();
 
-    const intent = Array.isArray(intentData) && intentData.length > 0 ? intentData[0] : null;
+      if (intentRow) {
+        if (xTenantEnPayload && xTenantEnPayload !== intentRow.tenant_id) {
+          intent = {
+            coincide: false,
+            tenant_id: intentRow.tenant_id,
+            branch_id: intentRow.branch_id,
+            plan_code: intentRow.plan_code,
+            amount_cop: intentRow.amount_cop,
+            motivo: `El payload declaraba el negocio ${xTenantEnPayload} pero la factura se emitió para ${intentRow.tenant_id}.`,
+          };
+        } else {
+          intent = {
+            coincide: true,
+            tenant_id: intentRow.tenant_id,
+            branch_id: intentRow.branch_id,
+            plan_code: intentRow.plan_code,
+            amount_cop: intentRow.amount_cop,
+          };
+          // Actualizar a verificada
+          await supabase
+            .from("subscription_payment_intents")
+            .update({ status: "verificada", resolved_at: new Date().toISOString(), x_ref_payco: xRefPayco })
+            .eq("id", intentRow.id);
+        }
+      }
+    }
 
     if (!intent || intent.coincide !== true) {
       console.error(

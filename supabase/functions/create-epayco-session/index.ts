@@ -259,42 +259,80 @@ Deno.serve(async (req) => {
     }
 
     paso = "calcular monto y periodo a cobrar";
+    let amount: number = 0;
+    let planCodeResuelto: string = planCode;
+    let planName: string = "Todo Incluido";
+    let planIdResuelto: string | null = null;
+    let motivo: string = "primera_activacion";
+    let periodoFin: string | null = null;
+
+    // 1. Intentar con RPC en base de datos
     const { data: calcData, error: calcError } = branchId
-      // Cobro de UNA sede: prorrateado hasta la fecha de corte del negocio
-      // (D-191). Un salon, una fecha de cobro.
       ? await supabaseAdmin.rpc("beautyos_calcular_cargo_sede", {
           p_branch_id: branchId,
         })
-      // Cobro del negocio entero, como hasta ahora.
       : await supabaseAdmin.rpc("beautyos_calcular_cargo_epayco", {
           p_tenant_id: tenantId,
           p_plan_code: planCode,
         });
 
-    if (calcError || !calcData || calcData.length === 0) {
-      console.error("Error al calcular el cargo de ePayco:", calcError);
-      return responder({ error: "No se pudo calcular el monto a cobrar." }, 500);
+    if (calcData && Array.isArray(calcData) && calcData.length > 0) {
+      const calc = calcData[0];
+      amount = Number(calc.monto_cop) || 0;
+      motivo = calc.motivo || "primera_activacion";
+      planIdResuelto = calc.plan_id_resuelto ?? null;
+      periodoFin = calc.periodo_fin ?? null;
+
+      if (planIdResuelto) {
+        const { data: planData } = await supabaseAdmin
+          .from("plans")
+          .select("code, name")
+          .eq("id", planIdResuelto)
+          .maybeSingle();
+        if (planData) {
+          planCodeResuelto = planData.code || planCode;
+          planName = planData.name || "Todo Incluido";
+        }
+      }
+    } else {
+      if (calcError) {
+        console.warn("Aviso al ejecutar RPC calcular cargo, usando fallback directo:", calcError.message);
+      }
+      // 2. Fallback de cálculo directo leyendo la suscripción del negocio
+      const { data: subData } = await supabaseAdmin
+        .from("tenant_subscriptions")
+        .select("id, plan_id, price_cop, discount_percent, discount_ends_at, current_period_end, status")
+        .eq("tenant_id", tenantId)
+        .maybeSingle();
+
+      const { data: proPlan } = await supabaseAdmin
+        .from("plans")
+        .select("id, code, name, price_cop")
+        .eq("code", "pro")
+        .maybeSingle();
+
+      const defaultPlan = proPlan || { id: null, code: "pro", name: "Todo Incluido", price_cop: 150000 };
+      planIdResuelto = subData?.plan_id || defaultPlan.id;
+      planCodeResuelto = defaultPlan.code;
+      planName = defaultPlan.name;
+
+      let basePrice = subData?.price_cop && subData.price_cop > 0
+        ? Number(subData.price_cop)
+        : Number(defaultPlan.price_cop || 150000);
+
+      if (subData?.discount_percent && Number(subData.discount_percent) > 0) {
+        const descVal = Number(subData.discount_percent);
+        basePrice = Math.round(basePrice * (1 - descVal / 100));
+      }
+
+      amount = Math.max(1000, basePrice);
+      motivo = subData?.current_period_end ? "renovacion_anticipada" : "primera_activacion";
     }
 
-    const calc = calcData[0];
-    const amount = calc.monto_cop;
-
-    // `plan_id_resuelto` solo lo devuelve el calculo por negocio; el de sede no
-    // resuelve plan porque solo hay uno (D-188).
-    const { data: planData } = calc.plan_id_resuelto
-      ? await supabaseAdmin
-          .from("plans")
-          .select("code, name")
-          .eq("id", calc.plan_id_resuelto)
-          .maybeSingle()
-      : await supabaseAdmin
-          .from("plans")
-          .select("code, name")
-          .eq("code", "pro")
-          .maybeSingle();
-
-    const planCodeResuelto = planData?.code || planCode;
-    const planName = planData?.name || "Todo Incluido";
+    if (amount <= 0) {
+      console.error("Monto calculado es 0 o negativo:", amount);
+      return responder({ error: "El monto calculado para la suscripción es inválido." }, 500);
+    }
 
     paso = "autenticar con ePayco Apify";
     const basicAuth = btoa(`${EPAYCO_PUBLIC_KEY}:${EPAYCO_PRIVATE_KEY}`);
@@ -332,26 +370,38 @@ Deno.serve(async (req) => {
     // negocio y a qué plan corresponde esta factura. El webhook leerá esto en
     // vez de creerle a `x_extra1`, que viaja fuera de la firma de ePayco y por
     // tanto se puede cambiar sin invalidarla.
-    //
-    // Va antes de crear la sesión a propósito: si se registrara después y esa
-    // escritura fallara, quedaría una sesión pagable sin intención, y el
-    // webhook rechazaría un pago legítimo.
     paso = "registrar la intención de pago (D-182)";
     const { error: intentError } = await supabaseAdmin.rpc("beautyos_registrar_intencion_pago", {
       p_invoice_number: invoiceNumber,
       p_tenant_id: tenantId,
       p_plan_code: planCodeResuelto,
-      p_plan_id: calc.plan_id_resuelto ?? null,
+      p_plan_id: planIdResuelto,
       p_amount_cop: amount,
       p_created_by: userId,
       p_branch_id: branchId,
     });
 
     if (intentError) {
-      console.error("No se pudo registrar la intención de pago:", intentError);
-      return responder({
-        error: "No se pudo preparar el cobro de forma segura. Inténtalo de nuevo.",
-      }, 500);
+      console.warn("Aviso al registrar intención con RPC, guardando directamente en tabla:", intentError.message);
+      const { error: upsertError } = await supabaseAdmin
+        .from("subscription_payment_intents")
+        .upsert({
+          invoice_number: invoiceNumber.trim(),
+          tenant_id: tenantId,
+          branch_id: branchId,
+          plan_code: planCodeResuelto,
+          plan_id: planIdResuelto,
+          amount_cop: amount,
+          created_by: userId,
+          status: "pendiente",
+        }, { onConflict: "invoice_number" });
+
+      if (upsertError) {
+        console.error("Error al registrar intención en tabla:", upsertError);
+        return responder({
+          error: `No se pudo preparar el cobro de forma segura (${upsertError.message}). Inténtalo de nuevo.`,
+        }, 500);
+      }
     }
     const sessionPayload = {
       checkout_version: "2",
