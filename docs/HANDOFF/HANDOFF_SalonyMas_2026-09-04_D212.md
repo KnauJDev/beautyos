@@ -2,7 +2,7 @@
 
 **Bloque documentado:** decisión **D-212** · Paso **8.35** de la **FASE 8**.
 
-**Estado:** ✅ **CERRADO.** `flutter analyze` 0/0 y **386 de 386 pruebas en verde** (1 nueva). Migración SQL `20260904180000_platform_pricing_fallback_pro_d212.sql` lista para aplicar.
+**Estado:** ✅ **CERRADO Y APLICADO.** `flutter analyze` 0/0 y **386 de 386 pruebas en verde** (1 nueva). Migración SQL `20260904180000_platform_pricing_fallback_pro_d212.sql` aplicada exitosamente en Supabase por el propietario.
 
 > El bloque anterior (D-211) está archivado en
 > `docs/_archivo/handoffs/HANDOFF_SalonyMas_2026-09-04_D211.md`.
@@ -41,15 +41,13 @@ Se resolvieron los cuatro problemas identificados por el propietario en las capt
 
 - **Análisis estático:** `flutter analyze` 0/0 (0 errores, 0 advertencias).
 - **Suite de pruebas:** **386 de 386 pruebas en verde** (`flutter test`).
-- **Pruebas añadidas:** `test/filtro_aceptacion_test.dart` con pruebas unitarias para `isTrialExpired`, `isTrialActive` y formateo de plan `pro`.
+- **Migración en base de datos:** `20260904180000_platform_pricing_fallback_pro_d212.sql` aplicada mediante `scripts\aplicar_sql.ps1` contra producción.
 
 ---
 
 ## 3. Acciones para el Propietario
 
-1. **Aplicar Migración SQL en Supabase:**
-   - Archivo: `supabase/migrations/20260904180000_platform_pricing_fallback_pro_d212.sql`.
-   - Ejecutar vía `.\aplicar_sql.ps1` o mediante el editor SQL del panel de Supabase.
+- Todas las acciones de este bloque están completadas. Probar el cambio de tarifa y el checkout en la aplicación web en producción.
 
 ---
 
@@ -69,8 +67,7 @@ Lee el HANDOFF más reciente en docs/HANDOFF/ (D-212: corrección integral de pa
 de plataforma, estado de prueba vencida, fallback plan pro y resiliencia ePayco).
 
 flutter analyze 0/0 y 386/386 pruebas en verde.
-Migración pendiente de aplicar en Supabase:
-supabase/migrations/20260904180000_platform_pricing_fallback_pro_d212.sql
+Migración SQL aplicada en Supabase: 20260904180000_platform_pricing_fallback_pro_d212.sql
 
 Próximo paso según Plan Maestro: continuar con las tareas de la Fase 8 o atender
 observaciones de verificación en producción.
