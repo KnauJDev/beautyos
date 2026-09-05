@@ -27,18 +27,24 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Si hay que pedir un token nuevo antes de llamar.
 ///
+/// Si hay que pedir un token nuevo antes de llamar.
+///
 /// `Session.isExpired` trae **30 segundos de margen** (`Constants.expiryMargin`)
 /// a proposito: un token al que le quedan menos de 30 segundos ya se considera
 /// vencido, porque si no la llamada podria salir con un token que caduca en
-/// vuelo. (El comentario del propio `gotrue` dice "10 seconds" y esta
-/// desactualizado respecto a su constante: manda la constante.)
-///
-/// **Ojo con un detalle de `isExpired`:** devuelve `false` cuando no puede
-/// leer la fecha de caducidad, o sea cuando el token no es un JWT que se pueda
-/// decodificar. Es lo correcto --no se puede afirmar que algo vencio si no se
-/// sabe cuando vence-- pero significa que un token con forma rara pasa de
-/// largo y sera el servidor quien lo rechace.
-bool necesitaRefresco(Session? sesion) => sesion == null || sesion.isExpired;
+/// vuelo. Si faltan menos de 5 minutos, se refresca proactivamente.
+bool necesitaRefresco(Session? sesion) {
+  if (sesion == null) return true;
+  if (sesion.isExpired) return true;
+  final expiresAt = sesion.expiresAt;
+  if (expiresAt != null) {
+    final expDate = DateTime.fromMillisecondsSinceEpoch(expiresAt * 1000);
+    if (expDate.difference(DateTime.now()).inMinutes < 5) {
+      return true;
+    }
+  }
+  return false;
+}
 
 /// La cabecera de autorizacion de una sesion.
 ///
@@ -71,9 +77,25 @@ Future<Session> sesionFresca() async {
   return sesion;
 }
 
+/// Fuerza la renovación inmediata del token con Supabase Auth.
+Future<Session> forzarRefresco() async {
+  final auth = Supabase.instance.client.auth;
+  final refrescada = await auth.refreshSession();
+  final sesion = refrescada.session;
+
+  if (sesion == null) {
+    throw Exception(
+      'Tu sesión ha expirado. Por favor inicia sesión de nuevo.',
+    );
+  }
+
+  return sesion;
+}
+
 /// Atajo para `functions.invoke`: las cabeceras con el token ya fresco.
 ///
 /// Uso: `headers: await cabecerasParaEdgeFunction()`.
 Future<Map<String, String>> cabecerasParaEdgeFunction() async {
   return cabeceraDeSesion(await sesionFresca());
 }
+

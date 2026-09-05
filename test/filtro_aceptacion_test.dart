@@ -87,5 +87,48 @@ void main() {
       final result = TenantRegistrationResult.fromMap(resultMap);
       expect(result.status, equals('pending'));
     });
+
+    test('TenantSubscriptionStatus y PlatformTenantSummary detectan pruebas vencidas (D-212)', () {
+      final expiredDate = DateTime.now().subtract(const Duration(days: 5));
+      final activeDate = DateTime.now().add(const Duration(days: 10));
+
+      final subExpired = TenantSubscriptionStatus.fromMap({
+        'tenant_id': '111',
+        'tenant_name': 'Prueba Barberia Elite',
+        'subscription_status': 'trialing',
+        'trial_ends_at': expiredDate.toIso8601String(),
+      });
+      expect(subExpired.isTrialing, isTrue);
+      expect(subExpired.isTrialExpired, isTrue);
+      expect(subExpired.isTrialActive, isFalse);
+      expect(subExpired.statusLabel, equals('Prueba Vencida'));
+
+      final subActive = TenantSubscriptionStatus.fromMap({
+        'tenant_id': '222',
+        'tenant_name': 'Barberia Activa',
+        'subscription_status': 'trialing',
+        'trial_ends_at': activeDate.toIso8601String(),
+      });
+      expect(subActive.isTrialing, isTrue);
+      expect(subActive.isTrialExpired, isFalse);
+      expect(subActive.isTrialActive, isTrue);
+      expect(subActive.statusLabel, equals('Prueba Gratis'));
+
+      final platformSummaryExpired = PlatformTenantSummary.fromMap({
+        'tenant_id': '111',
+        'tenant_name': 'Prueba Barberia Elite',
+        'contact_email': 'test@elite.com',
+        'whatsapp': '3001234567',
+        'tenant_active': true,
+        'is_demo': false,
+        'plan_code': 'pro',
+        'subscription_status': 'trialing',
+        'trial_ends_at': expiredDate.toIso8601String(),
+      });
+      expect(platformSummaryExpired.isTrialing, isTrue);
+      expect(platformSummaryExpired.isTrialExpired, isTrue);
+      expect(platformSummaryExpired.isTrialActive, isFalse);
+      expect(platformSummaryExpired.planNameFormatted, equals('Todo Incluido'));
+    });
   });
 }

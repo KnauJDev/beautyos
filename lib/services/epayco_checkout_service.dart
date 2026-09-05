@@ -238,19 +238,32 @@ class EpaycoCheckoutService {
       // El tenantId y el monto a cobrar los calcula el servidor a partir de la
       // sesión autenticada y del precio pactado: nunca se envían desde el
       // cliente, para que no puedan manipularse.
-      final sessionResponse = await Supabase.instance.client.functions.invoke(
-        'create-epayco-session',
-        // El token se refresca si hace falta ANTES de llamar (D-207). Antes
-        // se leia `currentSession` tal cual, asi que un token vencido --una
-        // hora sin tocar la pestana-- llegaba igual a la Edge Function y esta
-        // respondia 401: "Se requiere una sesion autenticada". El dueno no
-        // podia pagar, y el mensaje no le decia que volviera a entrar.
-        headers: await cabecerasParaEdgeFunction(),
-        body: {
-          'planCode': 'pro',
-          if (esSede) 'branchId': branchId,
-        },
-      );
+      FunctionResponse sessionResponse;
+      try {
+        sessionResponse = await Supabase.instance.client.functions.invoke(
+          'create-epayco-session',
+          headers: await cabecerasParaEdgeFunction(),
+          body: {
+            'planCode': 'pro',
+            if (esSede) 'branchId': branchId,
+          },
+        );
+      } on FunctionException catch (fe) {
+        if (fe.status == 401) {
+          // Si el token caducó en el servidor, forzar refresco y reintentar una vez
+          await forzarRefresco();
+          sessionResponse = await Supabase.instance.client.functions.invoke(
+            'create-epayco-session',
+            headers: await cabecerasParaEdgeFunction(),
+            body: {
+              'planCode': 'pro',
+              if (esSede) 'branchId': branchId,
+            },
+          );
+        } else {
+          rethrow;
+        }
+      }
 
       // Cerrar modal de carga
       if (context.mounted) {
@@ -294,9 +307,24 @@ class EpaycoCheckoutService {
             : 'Fallo al inicializar Smart Checkout ePayco para tenant \${subscription.tenantId}',
       );
       if (context.mounted) {
+        String mensajeUsuario;
+        final errorStr = e.toString();
+        if (e is FunctionException && e.status == 401) {
+          mensajeUsuario =
+              'Tu sesión ha expirado. Por favor inicia sesión de nuevo para continuar con el pago.';
+        } else if (errorStr.contains('401') ||
+            errorStr.contains('sesión') ||
+            errorStr.contains('session')) {
+          mensajeUsuario =
+              'Tu sesión ha expirado o no es válida. Por favor inicia sesión de nuevo.';
+        } else {
+          mensajeUsuario =
+              'No se pudo abrir la pasarela de ePayco: ${errorStr.replaceAll('Exception: ', '')}';
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('No se pudo abrir la pasarela de ePayco: $e'),
+            content: Text(mensajeUsuario),
             backgroundColor: AppColors.danger,
           ),
         );

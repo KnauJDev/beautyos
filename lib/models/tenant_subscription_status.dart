@@ -37,6 +37,10 @@ class TenantSubscriptionStatus {
 
   bool get isPending => subscriptionStatus == 'pending';
   bool get isTrialing => subscriptionStatus == 'trialing';
+  bool get isTrialExpired =>
+      isTrialing && trialEndsAt != null && trialEndsAt!.isBefore(DateTime.now());
+  bool get isTrialActive =>
+      isTrialing && (trialEndsAt == null || trialEndsAt!.isAfter(DateTime.now()));
   bool get isActive => subscriptionStatus == 'active';
   bool get isRejected => subscriptionStatus == 'rejected';
   bool get isSuspended => subscriptionStatus == 'suspended';
@@ -85,6 +89,9 @@ class TenantSubscriptionStatus {
   }
 
   String get statusLabel {
+    if (isTrialExpired) {
+      return 'Prueba Vencida';
+    }
     switch (subscriptionStatus) {
       case 'active':
         return 'Suscripción Activa';

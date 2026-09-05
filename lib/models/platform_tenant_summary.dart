@@ -123,6 +123,10 @@ class PlatformTenantSummary {
 
   bool get isPending => subscriptionStatus == 'pending';
   bool get isTrialing => subscriptionStatus == 'trialing';
+  bool get isTrialExpired =>
+      isTrialing && trialEndsAt != null && trialEndsAt!.isBefore(DateTime.now());
+  bool get isTrialActive =>
+      isTrialing && (trialEndsAt == null || trialEndsAt!.isAfter(DateTime.now()));
   bool get isActive => subscriptionStatus == 'active';
   bool get isRejected => subscriptionStatus == 'rejected';
   bool get isGrace => subscriptionStatus == 'grace';
@@ -132,6 +136,8 @@ class PlatformTenantSummary {
 
   String get planNameFormatted {
     switch (planCode?.toLowerCase()) {
+      case 'pro':
+        return 'Todo Incluido';
       case 'basico':
         return 'Básico';
       case 'business':
@@ -139,7 +145,7 @@ class PlatformTenantSummary {
       case 'profesional':
         return 'Profesional';
       default:
-        return planCode ?? 'Profesional';
+        return planCode ?? 'Todo Incluido';
     }
   }
 
@@ -165,9 +171,10 @@ class PlatformTenantSummary {
     if (priceCop != null && priceCop! > 0) {
       return priceCop!;
     }
-    int basePrice = 240000;
+    int basePrice = 150000;
     if (planCode == 'basico') basePrice = 160000;
     if (planCode == 'business') basePrice = 200000;
+    if (planCode == 'profesional') basePrice = 240000;
 
     if (isFounder) {
       return (basePrice * 0.5).round();

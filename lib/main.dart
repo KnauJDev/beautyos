@@ -1476,6 +1476,46 @@ class _TrialHeaderBadge extends StatelessWidget {
 
     if (status.isTrialing) {
       final days = status.trialDaysRemaining;
+      if (status.isTrialExpired || (days != null && days < 0)) {
+        return Padding(
+          padding: const EdgeInsets.only(right: AppSpacing.sm),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () => epayco.iniciarPago(
+              context,
+              status,
+              onPaymentLaunched: onRefresh,
+            ),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: AppColors.dangerTint,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppColors.danger),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.warning_amber_rounded,
+                    size: 14,
+                    color: AppColors.danger,
+                  ),
+                  SizedBox(width: 5),
+                  Text(
+                    'Prueba vencida · Activar plan',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.danger,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
       if (days != null && days <= 10) {
         return Padding(
           padding: const EdgeInsets.only(right: AppSpacing.sm),

@@ -98,7 +98,12 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
   }
 
   Future<void> handleApprove(PlatformTenantSummary tenant) async {
-    String selectedPlan = tenant.planCode ?? 'profesional';
+    String selectedPlan = tenant.planCode ?? 'pro';
+    if (selectedPlan == 'profesional' ||
+        selectedPlan == 'basico' ||
+        selectedPlan == 'business') {
+      selectedPlan = 'pro';
+    }
     bool isFounder = tenant.isFounder;
     int trialDays = 21;
     final priceController = TextEditingController(
@@ -156,21 +161,9 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                     ),
                     items: const [
                       DropdownMenuItem(
-                        value: 'basico',
+                        value: 'pro',
                         child: Text(
-                          'Básico — \$160.000/mes (1 sede, 5 cuentas)',
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: 'business',
-                        child: Text(
-                          'Business — \$200.000/mes (3 sedes, 15 cuentas)',
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: 'profesional',
-                        child: Text(
-                          'Profesional — \$240.000/mes (Ilimitado + IA)',
+                          'Todo Incluido — \$150.000/mes por sede',
                         ),
                       ),
                     ],
@@ -345,7 +338,12 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
   }
 
   Future<void> handleUpdatePricing(PlatformTenantSummary tenant) async {
-    String selectedPlan = tenant.planCode ?? 'profesional';
+    String selectedPlan = tenant.planCode ?? 'pro';
+    if (selectedPlan == 'profesional' ||
+        selectedPlan == 'basico' ||
+        selectedPlan == 'business') {
+      selectedPlan = 'pro';
+    }
     bool isFounder = tenant.isFounder;
     final priceController = TextEditingController(
       text: tenant.priceCop != null ? tenant.priceCop.toString() : '',
@@ -394,21 +392,9 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                     ),
                     items: const [
                       DropdownMenuItem(
-                        value: 'basico',
+                        value: 'pro',
                         child: Text(
-                          'Básico — \$160.000/mes (1 sede, 5 cuentas)',
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: 'business',
-                        child: Text(
-                          'Business — \$200.000/mes (3 sedes, 15 cuentas)',
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: 'profesional',
-                        child: Text(
-                          'Profesional — \$240.000/mes (Ilimitado + IA)',
+                          'Todo Incluido — \$150.000/mes por sede',
                         ),
                       ),
                     ],
@@ -1216,6 +1202,9 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
             child: Row(
               children: [
                 ChoiceChip(
+                  showCheckmark: false,
+                  visualDensity: VisualDensity.compact,
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 6),
                   label: const Text('Todos'),
                   selected: selectedFilter == 'todos',
                   onSelected: (val) {
@@ -1224,7 +1213,15 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 ChoiceChip(
-                  label: Text('🟡 Por Aprobar ($pending)'),
+                  showCheckmark: false,
+                  visualDensity: VisualDensity.compact,
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+                  avatar: const Icon(
+                    Icons.hourglass_top,
+                    size: 14,
+                    color: AppColors.statePending,
+                  ),
+                  label: Text('Por Aprobar ($pending)'),
                   selected: selectedFilter == 'pendientes',
                   selectedColor: AppColors.statePendingTint,
                   onSelected: (val) {
@@ -1233,7 +1230,15 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 ChoiceChip(
-                  label: Text('🟢 Activos ($active)'),
+                  showCheckmark: false,
+                  visualDensity: VisualDensity.compact,
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+                  avatar: const Icon(
+                    Icons.check_circle_outline,
+                    size: 14,
+                    color: AppColors.success,
+                  ),
+                  label: Text('Activos ($active)'),
                   selected: selectedFilter == 'activos',
                   selectedColor: AppColors.successTint,
                   onSelected: (val) {
@@ -1242,7 +1247,15 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 ChoiceChip(
-                  label: Text('⏱️ En Prueba ($trialing)'),
+                  showCheckmark: false,
+                  visualDensity: VisualDensity.compact,
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+                  avatar: Icon(
+                    Icons.timer_outlined,
+                    size: 14,
+                    color: AppColors.brand,
+                  ),
+                  label: Text('En Prueba ($trialing)'),
                   selected: selectedFilter == 'trialing',
                   selectedColor: AppColors.brandTintSoft,
                   onSelected: (val) {
@@ -1251,7 +1264,15 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 ChoiceChip(
-                  label: const Text('🧪 Demos'),
+                  showCheckmark: false,
+                  visualDensity: VisualDensity.compact,
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+                  avatar: const Icon(
+                    Icons.science_outlined,
+                    size: 14,
+                    color: AppColors.textSecondary,
+                  ),
+                  label: const Text('Demos'),
                   selected: selectedFilter == 'demo',
                   onSelected: (val) {
                     if (val) setState(() => selectedFilter = 'demo');
@@ -1259,7 +1280,15 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 ChoiceChip(
-                  label: const Text('⏸️ Suspendidos'),
+                  showCheckmark: false,
+                  visualDensity: VisualDensity.compact,
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+                  avatar: const Icon(
+                    Icons.pause_circle_outline,
+                    size: 14,
+                    color: AppColors.danger,
+                  ),
+                  label: const Text('Suspendidos'),
                   selected: selectedFilter == 'suspendidos',
                   onSelected: (val) {
                     if (val) setState(() => selectedFilter = 'suspendidos');
@@ -1418,8 +1447,11 @@ class _TenantCard extends StatelessWidget {
   final ValueChanged<PlatformTenantSummary> onUpdatePricing;
   final ValueChanged<PlatformTenantSummary> onViewSupportData;
 
-  Color _statusColor(String? status) {
-    switch (status) {
+  Color _statusColor(PlatformTenantSummary item) {
+    if (item.isTrialExpired) {
+      return AppColors.warning;
+    }
+    switch (item.subscriptionStatus) {
       case 'pending':
         return AppColors.statePending;
       case 'trialing':
@@ -1430,7 +1462,6 @@ class _TenantCard extends StatelessWidget {
       case 'grace':
         return AppColors.warning;
       case 'suspended':
-        return AppColors.danger;
       case 'rejected':
         return AppColors.danger;
       case 'cancelled':
@@ -1440,8 +1471,11 @@ class _TenantCard extends StatelessWidget {
     }
   }
 
-  String _statusLabel(String? status) {
-    switch (status) {
+  String _statusLabel(PlatformTenantSummary item) {
+    if (item.isTrialExpired) {
+      return 'PRUEBA VENCIDA';
+    }
+    switch (item.subscriptionStatus) {
       case 'pending':
         return 'POR APROBAR';
       case 'trialing':
@@ -1459,7 +1493,7 @@ class _TenantCard extends StatelessWidget {
       case 'cancelled':
         return 'CANCELADO';
       default:
-        return status?.toUpperCase() ?? 'SIN ESTADO';
+        return item.subscriptionStatus?.toUpperCase() ?? 'SIN ESTADO';
     }
   }
 
@@ -1479,7 +1513,6 @@ class _TenantCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status = tenant.subscriptionStatus;
     final isPending = tenant.isPending;
 
     return Card(
@@ -1579,15 +1612,15 @@ class _TenantCard extends StatelessWidget {
                       vertical: 3,
                     ),
                     decoration: BoxDecoration(
-                      color: _statusColor(status).withValues(alpha: 0.12),
+                      color: _statusColor(tenant).withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(AppRadius.pill),
                     ),
                     child: Text(
-                      _statusLabel(status),
+                      _statusLabel(tenant),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: _statusColor(status),
+                        color: _statusColor(tenant),
                       ),
                     ),
                   ),
@@ -1619,9 +1652,9 @@ class _TenantCard extends StatelessWidget {
                     ),
                     const Spacer(),
                     Text(
-                      status == 'pending'
+                      tenant.subscriptionStatus == 'pending'
                           ? 'Solicitado: ${_formatDate(tenant.createdAt)}'
-                          : status == 'trialing'
+                          : tenant.subscriptionStatus == 'trialing'
                           ? 'Prueba: ${_formatDate(tenant.createdAt)} al ${_formatDate(tenant.trialEndsAt)}'
                           : 'Vence: ${_formatDate(tenant.currentPeriodEnd)}',
                       style: const TextStyle(
