@@ -23,7 +23,7 @@ Lee, en este orden:
    qué quedó a medias. Solo vale el último.
 2. **`docs/00_producto/PLAN_MAESTRO.md`** — **el único documento que manda
    sobre qué falta y en qué orden.** Trae la visión del producto, los planes y
-   precios, el estado de los 16 módulos, las 8 fases con sus pasos, el buzón de
+   precios, el estado de los módulos, las fases con sus pasos, el buzón de
    ideas y las reglas de trabajo.
 3. `docs/00_producto/REGISTRO_DE_DECISIONES.md` — **las últimas 15 entradas.**
    Muchas dudas ya tienen respuesta ahí, con lo que se descartó y por qué.
@@ -32,7 +32,7 @@ Lee, en este orden:
 está mal: siete se fundieron en el Plan Maestro el 09-ago (D-126) y lo anterior
 vive en `docs/_archivo/`, que no manda sobre nada.
 
-**No empieces por el código.** Este proyecto tiene más de 129 decisiones
+**No empieces por el código.** Este proyecto tiene más de doscientas decisiones
 registradas con su porqué; leer el código sin ellas es reconstruir a ciegas
 razonamientos que ya están escritos.
 
