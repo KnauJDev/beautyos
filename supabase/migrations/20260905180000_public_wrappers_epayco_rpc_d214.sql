@@ -1,4 +1,4 @@
-﻿-- ============================================================================
+-- ============================================================================
 -- MIGRACIÓN: 20260905180000_public_wrappers_epayco_rpc_d214.sql
 -- DESCRIPCIÓN: Wrappers en schema public para RPCs internas de ePayco (D-214).
 --              PostgREST / Supabase JS requiere que las funciones invocadas
@@ -22,9 +22,9 @@ returns table (
 language sql
 security definer
 set search_path = pg_catalog, public
-as \$\$
+as $$
   select * from private.beautyos_calcular_cargo_epayco(p_tenant_id, p_plan_code);
-\$\$;
+$$;
 
 revoke all on function public.beautyos_calcular_cargo_epayco(uuid, text) from public, anon, authenticated;
 grant execute on function public.beautyos_calcular_cargo_epayco(uuid, text) to service_role;
@@ -41,9 +41,9 @@ returns table (
 language sql
 security definer
 set search_path = pg_catalog, public
-as \$\$
+as $$
   select * from private.beautyos_calcular_cargo_sede(p_branch_id);
-\$\$;
+$$;
 
 revoke all on function public.beautyos_calcular_cargo_sede(uuid) from public, anon, authenticated;
 grant execute on function public.beautyos_calcular_cargo_sede(uuid) to service_role;
@@ -62,11 +62,11 @@ returns uuid
 language sql
 security definer
 set search_path = pg_catalog, public
-as \$\$
+as $$
   select private.beautyos_registrar_intencion_pago(
     p_invoice_number, p_tenant_id, p_plan_code, p_plan_id, p_amount_cop, p_created_by, p_branch_id
   );
-\$\$;
+$$;
 
 revoke all on function public.beautyos_registrar_intencion_pago(text, uuid, text, uuid, bigint, uuid, uuid) from public, anon, authenticated;
 grant execute on function public.beautyos_registrar_intencion_pago(text, uuid, text, uuid, bigint, uuid, uuid) to service_role;
@@ -88,9 +88,9 @@ returns table (
 language sql
 security definer
 set search_path = pg_catalog, public
-as \$\$
+as $$
   select * from private.beautyos_resolver_intencion_pago(p_invoice_number, p_tenant_en_payload, p_x_ref_payco);
-\$\$;
+$$;
 
 revoke all on function public.beautyos_resolver_intencion_pago(text, uuid, text) from public, anon, authenticated;
 grant execute on function public.beautyos_resolver_intencion_pago(text, uuid, text) to service_role;
@@ -116,12 +116,12 @@ returns table (
 language sql
 security definer
 set search_path = pg_catalog, public
-as \$\$
+as $$
   select * from private.beautyos_procesar_evento_epayco(
     p_tenant_id, p_x_ref_payco, p_transaction_id, p_transaction_state,
     p_cod_transaction_state, p_amount_cop, p_currency_code, p_payload, p_plan_code
   );
-\$\$;
+$$;
 
 revoke all on function public.beautyos_procesar_evento_epayco(uuid, text, text, text, text, bigint, text, jsonb, text) from public, anon, authenticated;
 grant execute on function public.beautyos_procesar_evento_epayco(uuid, text, text, text, text, bigint, text, jsonb, text) to service_role;
@@ -147,12 +147,12 @@ returns table (
 language sql
 security definer
 set search_path = pg_catalog, public
-as \$\$
+as $$
   select * from private.beautyos_procesar_pago_de_sede(
     p_tenant_id, p_branch_id, p_x_ref_payco, p_transaction_id, p_transaction_state,
     p_cod_transaction_state, p_amount_cop, p_currency_code, p_payload
   );
-\$\$;
+$$;
 
 revoke all on function public.beautyos_procesar_pago_de_sede(uuid, uuid, text, text, text, text, bigint, text, jsonb) from public, anon, authenticated;
 grant execute on function public.beautyos_procesar_pago_de_sede(uuid, uuid, text, text, text, text, bigint, text, jsonb) to service_role;

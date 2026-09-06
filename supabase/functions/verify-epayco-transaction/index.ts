@@ -30,43 +30,11 @@
 // (`epayco-webhook`), que valida la firma SHA-256. Si esta falla, el negocio se
 // activa igual por esa vía.
 
-import { createClient } from "@supabase/supabase-js";
-
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-
-// Se prefiere la clave secreta nueva (SUPABASE_SECRET_KEYS) para evitar "Legacy API keys are disabled"
-const CLAVE_SECRETA = (() => {
-  const secretas = Deno.env.get("SUPABASE_SECRET_KEYS");
-  if (secretas) {
-    try {
-      const dic = JSON.parse(secretas);
-      if (typeof dic === "object" && dic !== null) {
-        const valores = Object.values(dic) as string[];
-        if (valores.length > 0 && valores[0]) return valores[0];
-      }
-    } catch {
-      if (secretas.trim().length > 0) return secretas.trim();
-    }
-  }
-  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-})();
-
-// Se prefiere la clave publicable nueva (SUPABASE_PUBLISHABLE_KEYS)
-const CLAVE_PUBLICA = (() => {
-  const nuevas = Deno.env.get("SUPABASE_PUBLISHABLE_KEYS");
-  if (nuevas) {
-    try {
-      const dic = JSON.parse(nuevas);
-      if (typeof dic === "object" && dic !== null) {
-        const valores = Object.values(dic) as string[];
-        if (valores.length > 0 && valores[0]) return valores[0];
-      }
-    } catch {
-      if (nuevas.trim().length > 0) return nuevas.trim();
-    }
-  }
-  return Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-})();
+import {
+  crearSupabaseAdmin,
+  resolverClaveSecreta,
+  SUPABASE_URL,
+} from "../_shared/supabase_keys.ts";
 
 const EPAYCO_P_CUST_ID = Deno.env.get("EPAYCO_P_CUST_ID") ?? Deno.env.get("EPAYCO_CUSTOMER_ID") ?? "";
 
@@ -91,7 +59,8 @@ Deno.serve(async (req) => {
   let paso = "inicio";
   try {
     paso = "revisar configuración";
-    if (!SUPABASE_URL || !CLAVE_SECRETA) {
+    const { key: secretKey } = resolverClaveSecreta();
+    if (!SUPABASE_URL || !secretKey) {
       return responder({ error: "Falta configuración interna de base de datos en el servidor." }, 500);
     }
 
@@ -130,11 +99,9 @@ Deno.serve(async (req) => {
     }
 
     // 2. Si no se obtuvo del payload, consultar auth.getUser(token)
-    if (!userId && (CLAVE_SECRETA || CLAVE_PUBLICA)) {
+    if (!userId) {
       try {
-        const supabaseAuth = createClient(SUPABASE_URL, CLAVE_SECRETA || CLAVE_PUBLICA, {
-          auth: { persistSession: false, autoRefreshToken: false },
-        });
+        const supabaseAuth = crearSupabaseAdmin();
         const { data: userData } = await supabaseAuth.auth.getUser(token);
         if (userData?.user?.id) {
           userId = userData.user.id;
@@ -148,9 +115,7 @@ Deno.serve(async (req) => {
       return responder({ error: "Se requiere una sesión autenticada para verificar un pago." }, 401);
     }
 
-    const supabaseAdmin = createClient(SUPABASE_URL, CLAVE_SECRETA, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
+    const supabaseAdmin = crearSupabaseAdmin();
 
     paso = "extraer ref_payco";
     const url = new URL(req.url);

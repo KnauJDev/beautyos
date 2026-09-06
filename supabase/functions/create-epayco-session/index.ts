@@ -7,47 +7,16 @@
 // Autentica contra Apify usando llaves del servidor (nunca expuestas en Flutter)
 // y genera un `sessionId` seguro para abrir el checkout modal oficial de ePayco.
 
-import { createClient } from "@supabase/supabase-js";
+import {
+  crearSupabaseAdmin,
+  crearSupabaseUsuario,
+  resolverClaveSecreta,
+  SUPABASE_URL,
+} from "../_shared/supabase_keys.ts";
 
 const EPAYCO_PUBLIC_KEY = Deno.env.get("EPAYCO_PUBLIC_KEY") ?? "a20a90e36c84335c754a73fba80a0978";
 const EPAYCO_PRIVATE_KEY = Deno.env.get("EPAYCO_PRIVATE_KEY") ?? Deno.env.get("EPAYCO_P_KEY") ?? "";
 const EPAYCO_TEST_MODE = (Deno.env.get("EPAYCO_TEST_MODE") ?? "true").toLowerCase() === "true";
-
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-
-// Se prefiere la clave secreta nueva (SUPABASE_SECRET_KEYS) para evitar "Legacy API keys are disabled"
-const CLAVE_SECRETA = (() => {
-  const secretas = Deno.env.get("SUPABASE_SECRET_KEYS");
-  if (secretas) {
-    try {
-      const dic = JSON.parse(secretas);
-      if (typeof dic === "object" && dic !== null) {
-        const valores = Object.values(dic) as string[];
-        if (valores.length > 0 && valores[0]) return valores[0];
-      }
-    } catch {
-      if (secretas.trim().length > 0) return secretas.trim();
-    }
-  }
-  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-})();
-
-// Se prefiere la clave publicable nueva (SUPABASE_PUBLISHABLE_KEYS)
-const CLAVE_PUBLICA = (() => {
-  const nuevas = Deno.env.get("SUPABASE_PUBLISHABLE_KEYS");
-  if (nuevas) {
-    try {
-      const dic = JSON.parse(nuevas);
-      if (typeof dic === "object" && dic !== null) {
-        const valores = Object.values(dic) as string[];
-        if (valores.length > 0 && valores[0]) return valores[0];
-      }
-    } catch {
-      if (nuevas.trim().length > 0) return nuevas.trim();
-    }
-  }
-  return Deno.env.get("SUPABASE_ANON_KEY") ?? "";
-})();
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -79,8 +48,9 @@ Deno.serve(async (req) => {
       return responder({ error: "La pasarela de pago no está configurada en el servidor." }, 500);
     }
 
-    if (!SUPABASE_URL || !CLAVE_SECRETA) {
-      console.error("Falta SUPABASE_URL o CLAVE_SECRETA de Supabase en el servidor.");
+    const { key: secretKey } = resolverClaveSecreta();
+    if (!SUPABASE_URL || !secretKey) {
+      console.error("Falta SUPABASE_URL o clave secreta en el servidor.");
       return responder({ error: "Error de configuración de base de datos en el servidor." }, 500);
     }
 
@@ -108,11 +78,9 @@ Deno.serve(async (req) => {
     }
 
     // 2. Si no se obtuvo del payload, consultar auth.getUser(token)
-    if (!userId && (CLAVE_SECRETA || CLAVE_PUBLICA)) {
+    if (!userId) {
       try {
-        const supabaseAuth = createClient(SUPABASE_URL, CLAVE_SECRETA || CLAVE_PUBLICA, {
-          auth: { persistSession: false, autoRefreshToken: false },
-        });
+        const supabaseAuth = crearSupabaseAdmin();
         const { data: userData } = await supabaseAuth.auth.getUser(token);
         if (userData?.user?.id) {
           userId = userData.user.id;
@@ -127,9 +95,7 @@ Deno.serve(async (req) => {
       return responder({ error: "Se requiere una sesión autenticada para generar la sesión de pago." }, 401);
     }
 
-    const supabaseAdmin = createClient(SUPABASE_URL, CLAVE_SECRETA, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
+    const supabaseAdmin = crearSupabaseAdmin();
 
     paso = "leer parámetros de solicitud";
     let body: { planCode?: string; branchId?: string } = {};
@@ -154,21 +120,16 @@ Deno.serve(async (req) => {
     let tenantId: string | null = null;
 
     // 1. Intentar resolver mediante RPC get_my_tenant_id con el token del usuario
-    if (CLAVE_PUBLICA || CLAVE_SECRETA) {
-      try {
-        const userClient = createClient(SUPABASE_URL, CLAVE_PUBLICA || CLAVE_SECRETA, {
-          global: { headers: { Authorization: autorizacion } },
-          auth: { persistSession: false, autoRefreshToken: false },
-        });
-        const { data: rpcTenantId, error: rpcErr } = await userClient.rpc("get_my_tenant_id");
-        if (rpcTenantId) {
-          tenantId = rpcTenantId as string;
-        } else if (rpcErr) {
-          console.warn("Aviso al consultar RPC get_my_tenant_id:", rpcErr.message);
-        }
-      } catch (e) {
-        console.warn("Excepción al consultar RPC get_my_tenant_id:", e);
+    try {
+      const userClient = crearSupabaseUsuario(autorizacion);
+      const { data: rpcTenantId, error: rpcErr } = await userClient.rpc("get_my_tenant_id");
+      if (rpcTenantId) {
+        tenantId = rpcTenantId as string;
+      } else if (rpcErr) {
+        console.warn("Aviso al consultar RPC get_my_tenant_id:", rpcErr.message);
       }
+    } catch (e) {
+      console.warn("Excepción al consultar RPC get_my_tenant_id:", e);
     }
 
     // 2. Si no se resolvió, buscar en tenant_memberships activas

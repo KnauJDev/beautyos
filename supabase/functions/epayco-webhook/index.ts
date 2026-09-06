@@ -18,28 +18,14 @@
 // exclusivamente en el servidor (FAIL-CLOSED: obligatorio), y ejecuta de forma atomica
 // e idempotente la RPC interna `private.beautyos_procesar_evento_epayco` con privilegios de `service_role`.
 
-import { createClient } from "@supabase/supabase-js";
+import {
+  crearSupabaseAdmin,
+  resolverClaveSecreta,
+  SUPABASE_URL,
+} from "../_shared/supabase_keys.ts";
 
 const EPAYCO_P_CUST_ID = Deno.env.get("EPAYCO_P_CUST_ID") ?? Deno.env.get("EPAYCO_CUSTOMER_ID") ?? "";
 const EPAYCO_P_KEY = Deno.env.get("EPAYCO_P_KEY") ?? Deno.env.get("EPAYCO_PRIVATE_KEY") ?? "";
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-
-// Se prefiere la clave secreta nueva (SUPABASE_SECRET_KEYS) para evitar "Legacy API keys are disabled"
-const CLAVE_SECRETA = (() => {
-  const secretas = Deno.env.get("SUPABASE_SECRET_KEYS");
-  if (secretas) {
-    try {
-      const dic = JSON.parse(secretas);
-      if (typeof dic === "object" && dic !== null) {
-        const valores = Object.values(dic) as string[];
-        if (valores.length > 0 && valores[0]) return valores[0];
-      }
-    } catch {
-      if (secretas.trim().length > 0) return secretas.trim();
-    }
-  }
-  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-})();
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -77,8 +63,9 @@ Deno.serve(async (req) => {
     }
 
     paso = "revisar configuracion de servidor";
-    if (!SUPABASE_URL || !CLAVE_SECRETA) {
-      console.error("Falta SUPABASE_URL o CLAVE_SECRETA en los secretos de la Edge Function.");
+    const { key: secretKey } = resolverClaveSecreta();
+    if (!SUPABASE_URL || !secretKey) {
+      console.error("Falta SUPABASE_URL o clave secreta en los secretos de la Edge Function.");
       return responder({ error: "Configuracion interna de base de datos incompleta." }, 500);
     }
 
@@ -158,9 +145,7 @@ Deno.serve(async (req) => {
     console.log("Firma criptografica de ePayco verificada con exito en el servidor.");
 
     paso = "preparar cliente de base de datos";
-    const supabase = createClient(SUPABASE_URL, CLAVE_SECRETA, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
+    const supabase = crearSupabaseAdmin();
 
     // D-182 (TL-02): quien decide el negocio y el plan es la intencion que el
     // servidor escribio al abrir el checkout, no el payload. Si la factura no

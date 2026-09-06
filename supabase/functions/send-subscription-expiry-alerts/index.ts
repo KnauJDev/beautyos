@@ -12,28 +12,13 @@
 //    (la del negocio y la de cada sede) en el log anti-spam, para que el filtro de "no repetir hoy" siga
 //    funcionando por componente aunque el correo salga combinado.
 
-import { createClient } from "@supabase/supabase-js";
+import {
+  crearSupabaseAdmin,
+  resolverClaveSecreta,
+  SUPABASE_URL,
+} from "../_shared/supabase_keys.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
-
-// Se prefiere la clave secreta nueva (SUPABASE_SECRET_KEYS) para evitar "Legacy API keys are disabled"
-const CLAVE_SECRETA = (() => {
-  const secretas = Deno.env.get("SUPABASE_SECRET_KEYS");
-  if (secretas) {
-    try {
-      const dic = JSON.parse(secretas);
-      if (typeof dic === "object" && dic !== null) {
-        const valores = Object.values(dic) as string[];
-        if (valores.length > 0 && valores[0]) return valores[0];
-      }
-    } catch {
-      if (secretas.trim().length > 0) return secretas.trim();
-    }
-  }
-  return Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-})();
-
 const CRON_SECRET = Deno.env.get("CRON_SECRET") ?? Deno.env.get("SUBSCRIPTION_CRON_SECRET") ?? "";
 const APP_URL = Deno.env.get("APP_URL") ?? "https://salonymas.com";
 const WHATSAPP_SUPPORT_URL = "https://wa.me/573159780158?text=Hola%20equipo%20de%20Salon%20y%20Mas,%20necesito%20ayuda%20con%20mi%20suscripcion";
@@ -371,14 +356,13 @@ Deno.serve(async (req) => {
     }
 
     paso = "revisar configuracion";
-    if (!RESEND_API_KEY || !SUPABASE_URL || !CLAVE_SECRETA) {
+    const { key: secretKey } = resolverClaveSecreta();
+    if (!RESEND_API_KEY || !SUPABASE_URL || !secretKey) {
       console.error("Configuracion incompleta en variables de entorno (RESEND_API_KEY o SUPABASE)");
       return responder({ error: "Configuracion interna de servidor incompleta." }, 500);
     }
 
-    const supabase = createClient(SUPABASE_URL, CLAVE_SECRETA, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
+    const supabase = crearSupabaseAdmin();
 
     paso = "suspender suscripciones con gracia vencida";
     // Sigue siendo solo del NEGOCIO (D-143). Ninguna sede secundaria se
