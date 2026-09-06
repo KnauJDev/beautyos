@@ -3,7 +3,8 @@
 **Bloque documentado:** decisión **D-214** · Paso **8.37** de la **FASE 8**.
 
 **Estado:** ✅ **CERRADO EN CÓDIGO.** `flutter analyze` 0/0 y **387 de 387 pruebas en verde**.
-⚠️ **NO APLICADO EN BASE DE DATOS.** La migración `20260905180000_public_wrappers_epayco_rpc_d214.sql` sigue pendiente de aplicar en Supabase. **Hasta que se aplique, el cobro por ePayco no funciona.**
+✅ **MIGRACIÓN APLICADA** el 06-sep por el propietario con `scripts\aplicar_sql.ps1` contra producción: seis `CREATE FUNCTION` y `COMMIT` limpio. Los cuerpos `language sql` los valida PostgreSQL al crearlos, así que las seis `private.beautyos_*` existen con la firma esperada. Respaldo previo en `Backup_2026-09-06_08-17-20`.
+⚠️ **EDGE FUNCTIONS SIN DESPLEGAR.** Las cuatro funciones del cobro siguen corriendo el código anterior. **Hasta que se desplieguen, el cobro por ePayco no funciona.**
 
 > El bloque anterior (D-213) está archivado en
 > `docs/_archivo/handoffs/HANDOFF_SalonyMas_2026-09-05_D213.md`.
@@ -47,7 +48,7 @@ Las cuatro Edge Functions del cobro leían `SUPABASE_SERVICE_ROLE_KEY` y `SUPABA
 
 **Primero, y bloquea el cobro:**
 
-1. 👤 **Aplicar la migración** `20260905180000_public_wrappers_epayco_rpc_d214.sql` en Supabase con `scripts\aplicar_sql.ps1`, y **registrar aquí que quedó aplicada**, como se hizo con D-212.
+1. ✅ ~~Aplicar la migración~~ **HECHO el 06-sep**, con respaldo previo. Queda registrado arriba.
 2. 👤 **Desplegar las cuatro Edge Functions** modificadas (`create-epayco-session`, `verify-epayco-transaction`, `epayco-webhook`, `send-subscription-expiry-alerts`) junto con `_shared/supabase_keys.ts`.
 3. 👤 **Confirmar en Supabase** que existe una clave moderna en `SUPABASE_SECRET_KEYS` o en `BEAUTYOS_SUPABASE_SECRET_KEY`. Si solo hay legacy, el arreglo 3 no sirve de nada.
 4. **Probar un cobro real de punta a punta.** Es la única prueba que existe para esto.
