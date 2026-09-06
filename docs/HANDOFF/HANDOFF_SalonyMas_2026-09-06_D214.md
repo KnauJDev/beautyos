@@ -5,7 +5,7 @@
 **Estado:** ✅ **CERRADO EN CÓDIGO.** `flutter analyze` 0/0 y **387 de 387 pruebas en verde**.
 ✅ **MIGRACIÓN APLICADA** el 06-sep por el propietario con `scripts\aplicar_sql.ps1` contra producción: seis `CREATE FUNCTION` y `COMMIT` limpio. Los cuerpos `language sql` los valida PostgreSQL al crearlos, así que las seis `private.beautyos_*` existen con la firma esperada. Respaldo previo en `Backup_2026-09-06_08-17-20`.
 ✅ **EDGE FUNCTIONS DESPLEGADAS** el 06-sep 13:26-13:27 UTC. La CLI sube `_shared/supabase_keys.ts` como asset junto a cada función, verificado en la salida de las cuatro. Versiones confirmadas contra la foto previa: `create-epayco-session` 17→18, `verify-epayco-transaction` 14→15, `epayco-webhook` 13→14, `send-subscription-expiry-alerts` 6→7. `send-invitation-email` y `send-low-stock-alert` siguen en 10, sin tocar (hallazgo AA).
-⚠️ **SIN PROBAR CONTRA UN COBRO REAL.** Ni la migración ni las Edge Functions tienen cobertura automática: la única prueba que existe es un pago de punta a punta.
+⚠️ **PROBADO EN PRODUCCIÓN Y CORREGIDO SOBRE LA MARCHA.** El primer intento de checkout falló con `calc is not defined` — no por las claves ni por la migración, sino porque la reestructuración de D-214 dejó dos referencias a `calc` fuera de su ámbito en el `return`. **Ese fallo prueba lo demás:** para llegar ahí, la función ya había resuelto la clave, resuelto el negocio, ejecutado los wrappers de la migración, registrado la intención de pago y creado la sesión en ePayco. Corregido y redesplegado. Queda anotado el hallazgo **AB**: `supabase/functions/` no pasa ninguna verificación estática.
 
 > El bloque anterior (D-213) está archivado en
 > `docs/_archivo/handoffs/HANDOFF_SalonyMas_2026-09-05_D213.md`.

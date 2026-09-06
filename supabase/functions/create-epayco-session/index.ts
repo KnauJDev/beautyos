@@ -419,9 +419,9 @@ Deno.serve(async (req) => {
       amount: amount,
       planCode: planCodeResuelto,
       planName: planName,
-      motivo: calc.motivo,
+      motivo: motivo,
       branchId: branchId,
-      periodoFin: calc.periodo_fin ?? null,
+      periodoFin: periodoFin,
       testMode: EPAYCO_TEST_MODE,
     }, 200);
   } catch (error) {
