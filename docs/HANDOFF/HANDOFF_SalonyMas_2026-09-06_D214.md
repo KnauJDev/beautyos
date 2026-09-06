@@ -57,7 +57,7 @@ Las cuatro Edge Functions del cobro leían `SUPABASE_SERVICE_ROLE_KEY` y `SUPABA
 **Heredado y anotado:**
 
 5. Hallazgo **W**: decidir si el fallback del cargo debe existir o si un fallo de la RPC debe fallar a la vista (contradice D-193).
-6. Hallazgo **AA**: `send-invitation-email` y `send-low-stock-alert` siguen con claves heredadas.
+6. Hallazgo **AA**, con el enunciado corregido: las dos funciones **no están rotas** — prefieren `SUPABASE_PUBLISHABLE_KEYS` y operan bajo RLS en el contexto del usuario. Lo que queda es la duplicación de la cascada de claves en tres sitios. Sin urgencia.
 7. La otra mitad de **UX-07** (Nequi vs. Daviplata en BD y Reportes).
 8. El tercio de **TL-09**: acotar la consulta histórica de Tickets.
 9. **HSTS** en el panel de Cloudflare — paso 8.25, 👤 propietario.
