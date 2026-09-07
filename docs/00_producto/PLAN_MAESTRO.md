@@ -421,6 +421,11 @@ filtro) y el cuerpo pasó a dos pestañas ejecutivas: `🏪 Salones Clientes` y
 | # | Qué | Quién | Estado |
 |---|---|---|---|
 | 9.21 | **I-16, la identidad visual**: logo definitivo y paleta extendida. Lleva en el buzón sin asignar desde que se anotó, y **el cliente cero ve la marca antes que el producto** | 👥 | ⬜ |
+| 9.22 | 🔴 **Fijar la cifra de la tarifa preferencial de los 10 pioneros.** El anuncio público del 07-sep promete "tarifa preferencial congelada de por vida" **sin decir cuánto**, y la lista es de 150.000 por sede (D-189). Hay diez personas que pueden escribir mañana esperando un descuento que nadie ha decidido (D-217) | 👤 | ⬜ **Urgente: antes de que responda el primer interesado.** El mecanismo ya existe y manda sobre la lista (D-158, D-160) |
+| 9.23 | **Cerrar lo que queda de las redes:** fijar la publicación en el perfil de Instagram, añadir el enlace a `salonymas.com` desde la app móvil (el escritorio no lo permite) y atender el grupo "Peluquerías Bogotá" | 👤 | ⬜ Detalle en `02_operacion/REDES_SOCIALES.md` |
+| 9.24 | 🔴 **Observar un día entero de trabajo en el salón piloto.** Sin demostrar nada y sin hablar: mirar y contar. Cuántos WhatsApp entran y qué pasa con cada uno, dónde se apunta físicamente una cita, qué ocurre con quien llega sin cita, cómo cobran y quién apunta qué, cómo cuadran la caja al cerrar, cómo y cuándo le pagan a la estilista, y dónde están hoy las fotos de los trabajos | 👤 | ⬜ **Bloquea al 9.25.** El propietario no tiene salón propio y nunca ha visto uno trabajar: sin esto, la estructura de D-219 es una hipótesis |
+| 9.25 | **Reestructurar de 15 módulos a 5 lugares** (HOY, CLIENTAS, MI DINERO, MI VITRINA, AJUSTES) y separar la app de la estilista, según D-219. **No se borra ningún módulo: cambia dónde se entra.** La maquinaria ya existe — `requiredFeature` y `PlanLockedPage` de D-184 sirven igual para escalonar lo que se ve | 🤖 | ⬜ **Bloqueado por el 9.24.** Cierra también el hallazgo Ñ: las fotos no son un sitio, son un paso |
+| 9.26 | **Arrancar la verificación de empresa con Meta** para el agente de WhatsApp (era 6.5). Son **semanas de espera, no de trabajo**: el trámite corre solo mientras se construye otra cosa | 👤 | ⬜ Por D-219, el agente de WhatsApp deja de ser un extra y pasa a ser la cuña competitiva |
 
 
 ---
@@ -555,6 +560,10 @@ toque, o se descarta con su motivo.
     `powershell -ExecutionPolicy Bypass -File scripts\respaldo_supabase.ps1`
 16. **Las migraciones las aplica el propietario:**
     `powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "<ruta>"`
+
+16-bis. **Un solo editor del repositorio: Claude Code.** Antigravity **revisa, opina y sugiere** — su ventana de 2 millones de
+    tokens le deja tener el proyecto entero en contexto— **pero no escribe**: ni código, ni migraciones, ni documentación,
+    ni mueve archivos. Sus hallazgos entran como texto y se aplican por el camino normal, con su decisión y su commit (D-218).
 
 ### Qué queda escrito
 
