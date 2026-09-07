@@ -365,7 +365,25 @@ filtro) y el cuerpo pasó a dos pestañas ejecutivas: `🏪 Salones Clientes` y
 
 **No es un rediseño.** Es cerrar el producto que ya existe. Estimación: dos a tres semanas.
 
-**El orden no es negociable en dos puntos:** el bloque A va primero porque no se puede planificar sobre documentos que mienten, y **C va antes que D** porque el ensayo general dice qué duele de verdad; refactorizar sin esa información es adivinar caro.
+**El orden cambió el 07-sep.** Cuando nació esta fase (D-216), el bloque A iba primero: no se puede planificar sobre documentos que mienten. Sigue siendo cierto, pero dejó de ser lo más urgente: la salida a redes (D-217) puso diez personas esperando una tarifa, y la auditoría (D-220) destapó que la base la sobrescribe sola. **El orden vigente es el de la tabla de abajo**; los bloques A a F se conservan porque agrupan bien por tema, pero ya no dictan la secuencia. Lo único que no se negocia nunca: **el ensayo general (9.24) va antes que el rediseño (9.25)** — sin ver un salón trabajando, reestructurar es adivinar caro.
+
+#### El orden de ejecución
+
+Los bloques A a F de abajo **agrupan por tema**. Esta tabla dice **en qué orden se hacen**, que no es el mismo,
+porque la auditoría del 07-sep (D-220) y la salida a redes (D-217) cambiaron las urgencias. **No se pasa de turno
+sin cerrar el anterior.**
+
+| Turno | Pasos | Puerta |
+|---|---|---|
+| **1. La puerta del piloto** | 9.28 → 9.22 → 9.29 → 9.19 → 9.15 | Nada de esto puede estar mal cuando entre el salón 1 |
+| **2. El camino del dinero** | 9.27, 9.10, 9.7, 9.8 | Antes de que alguien pague de verdad |
+| **3. La red** | 9.6, 9.9 | Antes de tocar el código grande |
+| **4. La base: seguridad y estabilidad** | 9.15, 9.17, 9.18 | Antes de guardar datos de otra persona |
+| **5. Higiene** | 9.1 a 9.5, 9.11, 9.30, 9.31, 9.32 | Cuando haya hueco |
+| **6. El campo, y solo entonces el rediseño** | 9.33 → 9.24 → 9.25, con 9.26 en paralelo | **9.25 no se toca sin 9.24** |
+
+**Por qué 9.28 va primero:** mientras la base clave un 50% automático al marcar "Pionero", decidir la tarifa pactada
+no sirve de nada — se sobrescribe sola (D-221). Y ya hay diez personas invitadas en público (D-217).
 
 #### Bloque A — Que los papeles digan la verdad
 
@@ -426,6 +444,13 @@ filtro) y el cuerpo pasó a dos pestañas ejecutivas: `🏪 Salones Clientes` y
 | 9.24 | 🔴 **Observar un día entero de trabajo en el salón piloto.** Sin demostrar nada y sin hablar: mirar y contar. Cuántos WhatsApp entran y qué pasa con cada uno, dónde se apunta físicamente una cita, qué ocurre con quien llega sin cita, cómo cobran y quién apunta qué, cómo cuadran la caja al cerrar, cómo y cuándo le pagan a la estilista, y dónde están hoy las fotos de los trabajos | 👤 | ⬜ **Bloquea al 9.25.** El propietario no tiene salón propio y nunca ha visto uno trabajar: sin esto, la estructura de D-219 es una hipótesis |
 | 9.25 | **Reestructurar de 15 módulos a 5 lugares** (HOY, CLIENTAS, MI DINERO, MI VITRINA, AJUSTES) y separar la app de la estilista, según D-219. **No se borra ningún módulo: cambia dónde se entra.** La maquinaria ya existe — `requiredFeature` y `PlanLockedPage` de D-184 sirven igual para escalonar lo que se ve | 🤖 | ⬜ **Bloqueado por el 9.24.** Cierra también el hallazgo Ñ: las fotos no son un sitio, son un paso |
 | 9.26 | **Arrancar la verificación de empresa con Meta** para el agente de WhatsApp (era 6.5). Son **semanas de espera, no de trabajo**: el trámite corre solo mientras se construye otra cosa | 👤 | ⬜ Por D-219, el agente de WhatsApp deja de ser un extra y pasa a ser la cuña competitiva |
+| 9.27 | 🔴 **P0 — una sede secundaria pagada nunca se activa.** `verify-epayco-transaction` no lee `branch_id` y llama siempre a `beautyos_procesar_evento_epayco`; el webhook sí bifurca a `beautyos_procesar_pago_de_sede`, pero llega después, encuentra el evento ya insertado y aborta por idempotencia. **El dinero sale y la sede queda en `pending` para siempre** (D-220) | 🤖 | ⬜ Que resuelva la intención, extraiga `branch_id` y derive igual que el webhook |
+| 9.28 | **Quitar el 50% automático del pionero.** D-212 había reintroducido lo que D-188 y D-189 abolieron: marcar "Pionero" pisaba el precio pactado | 🤖 | ✅ **CERRADO 07-sep (D-221).** `is_founder` vuelve a ser etiqueta, y marcar pionero sin precio ni descuento **falla a propósito**. Migración `20260907120000`. **Pendiente aplicarla en Supabase** |
+| 9.29 | 🔴 **Nadie puede marcar un negocio como de prueba.** D-120 creó `is_demo` con un `update` a mano dentro de una migración y **no dejó ni RPC ni botón**. Consulta del 07-sep: **los tres negocios en `is_demo = false`** — Naguara (que el script de ePayco revirtió), Prueba Barbería Elite y Exportadora, que nacieron con el `default false`. Las métricas del SaaS llevan meses contando ensayos (D-220) | 🤖 + 👤 | ⬜ Marcar los tres **y** dar una forma de hacerlo desde el Panel |
+| 9.30 | La URL del webhook está quemada en `create-epayco-session:385`. Si el proyecto se clona o se mueve, ePayco sigue avisando al backend viejo sin que nadie se entere | 🤖 | ⬜ Usar `${SUPABASE_URL}`, que el módulo compartido ya exporta |
+| 9.31 | **Hallazgo AA:** `send-invitation-email` y `send-low-stock-alert` repiten a mano la cascada de claves en vez de importar `_shared/supabase_keys.ts`. **No están rotas** — prefieren la clave publicable— pero la misma lógica vive en tres sitios | 🤖 | ⬜ Sin urgencia |
+| 9.32 | **`applies_after_discount` promete algo que no cumple.** Se guarda en cada fila de comisión y el cálculo nunca lo mira. **Hoy es inofensivo: la caja no aplica descuentos.** Se vuelve real el día que se añadan (D-220) | 🤖 | ⬜ Documentarlo como pendiente, o quitar la columna. Lo que no puede quedarse es a medias |
+| 9.33 | 🔴 **El protocolo de bienvenida de los 10 pioneros.** Hoy, si alguien escribe por WhatsApp, la respuesta es improvisar. Debe quedar escrito: qué se responde, la demostración de 20 minutos **empezando por el día de trabajo y no por el menú**, el precio pactado con su motivo, crear y aprobar el negocio (D-138, *nadie entra solo*), la configuración inicial acompañada —que es donde se pierden los clientes—, qué se mira en los días 3, 10 y 20, y **la conversación de precio del día 21 con fecha en el calendario**. Y qué recibe el proyecto a cambio: mirar un día de trabajo, avisar cuando algo se rompe, y decir la verdad | 👥 | ⬜ Documento vivo en `02_operacion/`. Un piloto que solo recibe no da información |
 
 
 ---
