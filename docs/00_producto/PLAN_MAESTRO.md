@@ -375,15 +375,15 @@ sin cerrar el anterior.**
 
 | Turno | Pasos | Puerta |
 |---|---|---|
-| **1. La puerta del piloto** | 9.28 → 9.22 → 9.29 → 9.19 → 9.15 | Nada de esto puede estar mal cuando entre el salón 1 |
+| **1. La puerta del piloto** | ~~9.28~~ → ~~9.22~~ → **9.29 → 9.19 → 9.15** | Nada de esto puede estar mal cuando entre el salón 1 |
 | **2. El camino del dinero** | 9.27, 9.10, 9.7, 9.8 | Antes de que alguien pague de verdad |
 | **3. La red** | 9.6, 9.9 | Antes de tocar el código grande |
 | **4. La base: seguridad y estabilidad** | 9.15, 9.17, 9.18 | Antes de guardar datos de otra persona |
 | **5. Higiene** | 9.1 a 9.5, 9.11, 9.30, 9.31, 9.32 | Cuando haya hueco |
 | **6. El campo, y solo entonces el rediseño** | 9.33 → 9.24 → 9.25, con 9.26 en paralelo | **9.25 no se toca sin 9.24** |
 
-**Por qué 9.28 va primero:** mientras la base clave un 50% automático al marcar "Pionero", decidir la tarifa pactada
-no sirve de nada — se sobrescribe sola (D-221). Y ya hay diez personas invitadas en público (D-217).
+**Actualizado el 07-sep:** 9.28 y 9.22 quedaron cerrados el mismo día. La tarifa es **50.000 fijos** (D-222) y se puede cobrar hoy sin aplicar la migración, simplemente sin marcar la casilla "Pionero". **El turno 1 arranca ahora en 9.29:** las métricas cuentan tres negocios de ensayo y nadie puede marcarlos.
+
 
 #### Bloque A — Que los papeles digan la verdad
 
@@ -439,13 +439,13 @@ no sirve de nada — se sobrescribe sola (D-221). Y ya hay diez personas invitad
 | # | Qué | Quién | Estado |
 |---|---|---|---|
 | 9.21 | **I-16, la identidad visual**: logo definitivo y paleta extendida. Lleva en el buzón sin asignar desde que se anotó, y **el cliente cero ve la marca antes que el producto** | 👥 | ⬜ |
-| 9.22 | 🔴 **Fijar la cifra de la tarifa preferencial de los 10 pioneros.** El anuncio público del 07-sep promete "tarifa preferencial congelada de por vida" **sin decir cuánto**, y la lista es de 150.000 por sede (D-189). Hay diez personas que pueden escribir mañana esperando un descuento que nadie ha decidido (D-217) | 👤 | ⬜ **Urgente: antes de que responda el primer interesado.** El mecanismo ya existe y manda sobre la lista (D-158, D-160) |
+| 9.22 | **Fijar la tarifa de los diez primeros.** El anuncio del 07-sep prometía "tarifa preferencial congelada de por vida" sin decir cuánto (D-217) | 👤 | ✅ **CERRADO 07-sep (D-222): 50.000 fijos, congelados de por vida, por el negocio; las sedes adicionales a tarifa vigente.** No son pioneros sino **socios de diseño**. Se aplica con `price_cop = 50000` y `discount_percent` **vacío** — se acumulan, no se eligen |
 | 9.23 | **Cerrar lo que queda de las redes:** fijar la publicación en el perfil de Instagram, añadir el enlace a `salonymas.com` desde la app móvil (el escritorio no lo permite) y atender el grupo "Peluquerías Bogotá" | 👤 | ⬜ Detalle en `02_operacion/REDES_SOCIALES.md` |
 | 9.24 | 🔴 **Observar un día entero de trabajo en el salón piloto.** Sin demostrar nada y sin hablar: mirar y contar. Cuántos WhatsApp entran y qué pasa con cada uno, dónde se apunta físicamente una cita, qué ocurre con quien llega sin cita, cómo cobran y quién apunta qué, cómo cuadran la caja al cerrar, cómo y cuándo le pagan a la estilista, y dónde están hoy las fotos de los trabajos | 👤 | ⬜ **Bloquea al 9.25.** El propietario no tiene salón propio y nunca ha visto uno trabajar: sin esto, la estructura de D-219 es una hipótesis |
 | 9.25 | **Reestructurar de 15 módulos a 5 lugares** (HOY, CLIENTAS, MI DINERO, MI VITRINA, AJUSTES) y separar la app de la estilista, según D-219. **No se borra ningún módulo: cambia dónde se entra.** La maquinaria ya existe — `requiredFeature` y `PlanLockedPage` de D-184 sirven igual para escalonar lo que se ve | 🤖 | ⬜ **Bloqueado por el 9.24.** Cierra también el hallazgo Ñ: las fotos no son un sitio, son un paso |
 | 9.26 | **Arrancar la verificación de empresa con Meta** para el agente de WhatsApp (era 6.5). Son **semanas de espera, no de trabajo**: el trámite corre solo mientras se construye otra cosa | 👤 | ⬜ Por D-219, el agente de WhatsApp deja de ser un extra y pasa a ser la cuña competitiva |
 | 9.27 | 🔴 **P0 — una sede secundaria pagada nunca se activa.** `verify-epayco-transaction` no lee `branch_id` y llama siempre a `beautyos_procesar_evento_epayco`; el webhook sí bifurca a `beautyos_procesar_pago_de_sede`, pero llega después, encuentra el evento ya insertado y aborta por idempotencia. **El dinero sale y la sede queda en `pending` para siempre** (D-220) | 🤖 | ⬜ Que resuelva la intención, extraiga `branch_id` y derive igual que el webhook |
-| 9.28 | **Quitar el 50% automático del pionero.** D-212 había reintroducido lo que D-188 y D-189 abolieron: marcar "Pionero" pisaba el precio pactado | 🤖 | ✅ **CERRADO 07-sep (D-221).** `is_founder` vuelve a ser etiqueta, y marcar pionero sin precio ni descuento **falla a propósito**. Migración `20260907120000`. **Pendiente aplicarla en Supabase** |
+| 9.28 | **Quitar el 50% automático del pionero.** D-212 había reintroducido lo que D-188 y D-189 abolieron: marcar "Pionero" pisaba el precio pactado | 🤖 | ✅ **CERRADO 07-sep (D-221).** `is_founder` vuelve a ser etiqueta, y marcar pionero sin precio ni descuento **falla a propósito**. Migración `20260907120000`. **Pendiente aplicarla en Supabase.** Ya **no bloquea** al 9.22: se puede cobrar hoy sin marcar la casilla. Pero sin ella se pierde la etiqueta de quiénes fueron los diez primeros, y el 50% sigue armado para quien la pulse mañana (D-222) |
 | 9.29 | 🔴 **Nadie puede marcar un negocio como de prueba.** D-120 creó `is_demo` con un `update` a mano dentro de una migración y **no dejó ni RPC ni botón**. Consulta del 07-sep: **los tres negocios en `is_demo = false`** — Naguara (que el script de ePayco revirtió), Prueba Barbería Elite y Exportadora, que nacieron con el `default false`. Las métricas del SaaS llevan meses contando ensayos (D-220) | 🤖 + 👤 | ⬜ Marcar los tres **y** dar una forma de hacerlo desde el Panel |
 | 9.30 | La URL del webhook está quemada en `create-epayco-session:385`. Si el proyecto se clona o se mueve, ePayco sigue avisando al backend viejo sin que nadie se entere | 🤖 | ⬜ Usar `${SUPABASE_URL}`, que el módulo compartido ya exporta |
 | 9.31 | **Hallazgo AA:** `send-invitation-email` y `send-low-stock-alert` repiten a mano la cascada de claves en vez de importar `_shared/supabase_keys.ts`. **No están rotas** — prefieren la clave publicable— pero la misma lógica vive en tres sitios | 🤖 | ⬜ Sin urgencia |
