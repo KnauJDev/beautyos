@@ -1,4 +1,4 @@
-﻿# HANDOFF Salón y Más — 4 de septiembre de 2026 ("Guardián de lista blanca, sanitización de fijos/Postgres y FutureBuilder blindado", D-211)
+# HANDOFF Salón y Más — 4 de septiembre de 2026 ("Guardián de lista blanca, sanitización de fijos/Postgres y FutureBuilder blindado", D-211)
 
 **Bloque documentado:** decisión **D-211** · Paso **8.34** de la **FASE 8**.
 

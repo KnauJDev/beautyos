@@ -1,4 +1,4 @@
-﻿# HANDOFF Salón y Más — 4 de septiembre de 2026 ("Reporte a Sentry y adiós a las excepciones en pantalla", D-209)
+# HANDOFF Salón y Más — 4 de septiembre de 2026 ("Reporte a Sentry y adiós a las excepciones en pantalla", D-209)
 
 **Bloque documentado:** decisión **D-209** · Paso **8.32** de la **FASE 8**.
 

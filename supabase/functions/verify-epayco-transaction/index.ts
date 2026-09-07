@@ -258,21 +258,115 @@ Deno.serve(async (req) => {
       );
     }
 
-    paso = "ejecutar beautyos_procesar_evento_epayco";
-    const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc("beautyos_procesar_evento_epayco", {
-      p_tenant_id: tenantId,
-      p_x_ref_payco: xRefPayco,
-      p_transaction_id: xTransactionId,
-      p_transaction_state: xTransactionState,
-      p_cod_transaction_state: xCodTransactionState,
-      p_amount_cop: Math.round(xAmount),
-      p_currency_code: xCurrencyCode,
-      p_payload: data,
-      p_plan_code: xPlanCode || null,
-    });
+    // -----------------------------------------------------------------------
+    // D-192 / paso 9.27: resolver la INTENCIÓN antes de procesar.
+    //
+    // Hasta el 07-sep esta función llamaba siempre a
+    // `beautyos_procesar_evento_epayco`, sin mirar si el cobro era de una sede.
+    // El webhook sí bifurcaba (D-192), pero llega después: encontraba el
+    // evento ya insertado por esta función y abortaba por idempotencia.
+    // Resultado: **se pagaba una sede secundaria, el dinero salía, y la sede
+    // se quedaba en `pending` para siempre.** Lo encontró la auditoría del
+    // 07-sep (D-220).
+    //
+    // La intención es además la fuente correcta del negocio: la escribe el
+    // servidor al abrir el checkout (D-182), mientras que `x_extra1` viaja
+    // fuera de la firma de ePayco y se puede alterar. La comprobación de
+    // pertenencia de D-181 se mantiene sobre el negocio ya resuelto, así que
+    // esto no afloja el perímetro: lo endurece.
+    // -----------------------------------------------------------------------
+    paso = "resolver la intención de pago (D-182)";
+    let branchId: string | null = null;
+    // `xPlanCode` viene del payload y es `const` a propósito. El plan que manda
+    // es el de la intención (D-182); se guarda aparte en vez de mutar aquélla.
+    let planCodeEfectivo: string = xPlanCode;
+
+    const { data: intentData, error: intentError } = await supabaseAdmin.rpc(
+      "beautyos_resolver_intencion_pago",
+      {
+        p_invoice_number: xInvoice,
+        p_tenant_en_payload: tenantEnPago || null,
+        p_x_ref_payco: xRefPayco,
+      },
+    );
+
+    let intent = Array.isArray(intentData) && intentData.length > 0 ? intentData[0] : null;
+
+    if (!intent) {
+      if (intentError) {
+        console.warn("Aviso al resolver intención con RPC, consultando la tabla:", intentError.message);
+      }
+      const { data: intentRow } = await supabaseAdmin
+        .from("subscription_payment_intents")
+        .select("tenant_id, branch_id, plan_code")
+        .eq("invoice_number", xInvoice.trim())
+        .maybeSingle();
+      if (intentRow) {
+        intent = { coincide: true, ...intentRow };
+      }
+    }
+
+    if (intent?.tenant_id) {
+      // La intención manda sobre el payload, pero el usuario tiene que seguir
+      // siendo miembro activo del negocio que va a activar (D-181).
+      if (!tenantsDelUsuario.includes(intent.tenant_id)) {
+        console.error(
+          `ALERTA DE SEGURIDAD: el usuario ${userId} intentó confirmar la factura ${xInvoice}, ` +
+            `emitida para el negocio ${intent.tenant_id}, del que no es miembro activo.`,
+        );
+        return responder({ error: "Este pago no corresponde a tu negocio." }, 403);
+      }
+      tenantId = intent.tenant_id;
+      branchId = (intent.branch_id ?? null) as string | null;
+      if (intent.plan_code) planCodeEfectivo = intent.plan_code as string;
+    } else {
+      // Sin intención registrada (facturas anteriores a D-182). Se sigue con
+      // el negocio deducido del payload, y el cobro se trata como del negocio
+      // entero, que es exactamente lo que esta función hacía antes.
+      console.warn(
+        `Factura ${xInvoice} sin intención registrada. Se procesa como cobro del negocio ${tenantId}.`,
+      );
+    }
+
+    console.log(
+      `Intención resuelta: factura ${xInvoice} -> negocio ${tenantId}` +
+        (branchId ? `, sede ${branchId}` : ", cobro del negocio entero") + ".",
+    );
+
+    // D-192: dos caminos, y SOLO UNO corre por pago. Las reglas de monto son
+    // distintas: un cobro prorrateado de sede puede quedar por debajo del piso
+    // de $10.000 que exige el cobro del negocio, y aquella función lo
+    // rechazaría. Es la misma bifurcación que hace `epayco-webhook`.
+    paso = branchId
+      ? "ejecutar beautyos_procesar_pago_de_sede"
+      : "ejecutar beautyos_procesar_evento_epayco";
+
+    const { data: rpcData, error: rpcError } = branchId
+      ? await supabaseAdmin.rpc("beautyos_procesar_pago_de_sede", {
+          p_tenant_id: tenantId,
+          p_branch_id: branchId,
+          p_x_ref_payco: xRefPayco,
+          p_transaction_id: xTransactionId,
+          p_transaction_state: xTransactionState,
+          p_cod_transaction_state: xCodTransactionState,
+          p_amount_cop: Math.round(xAmount),
+          p_currency_code: xCurrencyCode,
+          p_payload: data,
+        })
+      : await supabaseAdmin.rpc("beautyos_procesar_evento_epayco", {
+          p_tenant_id: tenantId,
+          p_x_ref_payco: xRefPayco,
+          p_transaction_id: xTransactionId,
+          p_transaction_state: xTransactionState,
+          p_cod_transaction_state: xCodTransactionState,
+          p_amount_cop: Math.round(xAmount),
+          p_currency_code: xCurrencyCode,
+          p_payload: data,
+          p_plan_code: planCodeEfectivo || null,
+        });
 
     if (rpcError) {
-      console.error("Error en beautyos_procesar_evento_epayco:", rpcError);
+      console.error(`Error en ${paso}:`, rpcError);
       return responder({ error: `Error procesando evento en base de datos: ${rpcError.message}` }, 500);
     }
 
@@ -281,6 +375,7 @@ Deno.serve(async (req) => {
     return responder({
       success: true,
       tenantId: tenantId,
+      branchId: branchId,
       transactionState: xTransactionState,
       codResponse: xCodTransactionState,
       amount: xAmount,

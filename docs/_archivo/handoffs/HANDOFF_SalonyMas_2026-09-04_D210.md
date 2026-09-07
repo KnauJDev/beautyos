@@ -1,4 +1,4 @@
-﻿# HANDOFF Salón y Más — 4 de septiembre de 2026 ("Blindaje total de excepciones en UI, sanitización de breadcrumbs en Sentry y guardián ampliado", D-210)
+# HANDOFF Salón y Más — 4 de septiembre de 2026 ("Blindaje total de excepciones en UI, sanitización de breadcrumbs en Sentry y guardián ampliado", D-210)
 
 **Bloque documentado:** decisión **D-210** · Paso **8.33** de la **FASE 8**.
 

@@ -30,6 +30,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Verificar la documentacion (D-223)
+        run: python3 scripts/verificar_documentos.py
+
       - name: Analyze
         run: flutter analyze
 
