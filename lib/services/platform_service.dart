@@ -119,6 +119,23 @@ class PlatformService {
     );
   }
 
+  /// Marca o desmarca un negocio como de ensayo (D-225, paso 9.29).
+  ///
+  /// Un negocio marcado sale de las metricas del SaaS y deja de recibir los
+  /// avisos de vencimiento. Es reversible a proposito: para probar esos
+  /// correos hay que poder desmarcarlo, probar, y volver a marcarlo.
+  ///
+  /// La RPC comprueba por dentro que quien llama sea el dueno de plataforma.
+  Future<void> setTenantDemo({
+    required String tenantId,
+    required bool isDemo,
+  }) async {
+    await Supabase.instance.client.rpc(
+      'platform_set_tenant_demo',
+      params: {'p_tenant_id': tenantId, 'p_is_demo': isDemo},
+    );
+  }
+
   Future<List<TenantSubscriptionHistoryEntry>> getTenantSubscriptionHistory(
     String tenantId,
   ) async {

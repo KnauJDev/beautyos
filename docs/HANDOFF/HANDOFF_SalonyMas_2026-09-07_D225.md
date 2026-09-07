@@ -64,6 +64,20 @@ El control 6 del 207 es el que más vale: si el precio pactado y el descuento po
 
 **Queda pendiente rotar la contraseña de la base** (hallazgo X, paso 9.17): resuelve esto y cierra una casilla de seguridad que ya estaba abierta.
 
+## 3-bis. El botón del Panel, ya puesto
+
+La ficha de cada negocio tiene ahora una fila **"Negocio de ensayo"** que dice en qué estado está —*"Fuera de las metricas y sin avisos"* o *"Cuenta como salon real"*— y un botón para cambiarlo, **solo visible para el dueño de plataforma**. Antes de aplicar avisa de las dos consecuencias y recuerda que se puede deshacer.
+
+`flutter analyze` 0/0 y **388 pruebas en verde**.
+
+**Sobre la prueba nueva, dicho sin adornos.** Vigila que `setTenantDemo` siga existiendo **con su firma completa** — si alguien le quita el parámetro `isDemo` y la deja en "marcar y punto", se cae. Eso es lo único que cubre, y es a propósito: el fallo de D-120 no fue de lógica, fue que **la vía para hacerlo dejó de existir**.
+
+Lo que **no** cubre: que el botón llame al servicio. `PlatformService` usa `Supabase.instance.client` directamente, así que no se puede sustituir por un doble en una prueba. Cubrirlo exige que el servicio sea inyectable, que es justo lo que abriría el paso 9.13.
+
+*(La primera versión de esta prueba tenía un segundo caso que no probaba nada — `expect(() => f(), isA<void Function()>())` pasa siempre. Se quitó: una prueba tautológica es peor que ninguna, porque da confianza falsa.)*
+
+---
+
 ## 4. Lo que sigue
 
 - **Paso 9.29, la otra mitad:** el botón en el Panel de Plataforma para marcar un negocio sin escribir SQL.

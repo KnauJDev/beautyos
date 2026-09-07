@@ -735,6 +735,58 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
     }
   }
 
+  /// Marca o desmarca un negocio como de ensayo (D-225, paso 9.29).
+  ///
+  /// Hasta el 07-sep esta marca solo se podia poner escribiendo SQL a mano:
+  /// D-120 la creo con un `update` dentro de una migracion y no dejo forma de
+  /// volver a ponerla. Resultado: tres negocios de prueba contaban como
+  /// salones reales en las metricas durante meses.
+  Future<void> handleToggleDemo(PlatformTenantSummary tenant) async {
+    final marcar = !tenant.isDemo;
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          marcar
+              ? 'Marcar como negocio de ensayo'
+              : 'Quitar la marca de ensayo',
+        ),
+        content: Text(
+          marcar
+              ? '"${tenant.tenantName}" dejara de contar en las metricas de la '
+                    'plataforma y dejara de recibir los avisos de vencimiento.\n\n'
+                    'Se puede deshacer cuando quieras.'
+              : '"${tenant.tenantName}" volvera a contar como un salon real en '
+                    'las metricas y recibira los avisos de vencimiento.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(marcar ? 'Marcar como ensayo' : 'Quitar la marca'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmado != true || !mounted) {
+      return;
+    }
+
+    try {
+      await platformService.setTenantDemo(
+        tenantId: tenant.tenantId,
+        isDemo: marcar,
+      );
+      reload();
+    } on PostgrestException catch (error) {
+      _showError(error.message);
+    }
+  }
+
   Future<void> handleExtendTrial(PlatformTenantSummary tenant) async {
     final newDate = await showDatePicker(
       context: context,
@@ -879,6 +931,10 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
         onAssignPartner: (t) {
           Navigator.of(context).pop();
           handleAssignPartner(t);
+        },
+        onToggleDemo: (t) {
+          Navigator.of(context).pop();
+          handleToggleDemo(t);
         },
         onViewSupportData: (t) {
           Navigator.of(context).pop();
@@ -1899,6 +1955,7 @@ class _TenantDetailSheet extends StatefulWidget {
     required this.onUpdateContact,
     required this.onViewSupportData,
     required this.onAssignPartner,
+    required this.onToggleDemo,
   });
 
   final PlatformTenantSummary tenant;
@@ -1913,6 +1970,7 @@ class _TenantDetailSheet extends StatefulWidget {
   final ValueChanged<PlatformTenantSummary> onUpdateContact;
   final ValueChanged<PlatformTenantSummary> onViewSupportData;
   final ValueChanged<PlatformTenantSummary> onAssignPartner;
+  final ValueChanged<PlatformTenantSummary> onToggleDemo;
 
   @override
   State<_TenantDetailSheet> createState() => _TenantDetailSheetState();
@@ -1974,6 +2032,7 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
     final onUpdateContact = widget.onUpdateContact;
     final onViewSupportData = widget.onViewSupportData;
     final onAssignPartner = widget.onAssignPartner;
+    final onToggleDemo = widget.onToggleDemo;
 
     final status = tenant.subscriptionStatus;
     final isPending = tenant.isPending;
@@ -2145,6 +2204,32 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                             ),
                           ),
                         ],
+                        _buildInfoRow(
+                          'Negocio de ensayo:',
+                          tenant.isDemo
+                              ? 'Si. Fuera de las metricas y sin avisos de vencimiento'
+                              : 'No. Cuenta como salon real',
+                          action: isOwner
+                              ? OutlinedButton.icon(
+                                  onPressed: () => onToggleDemo(tenant),
+                                  icon: Icon(
+                                    tenant.isDemo
+                                        ? Icons.check_circle_outline
+                                        : Icons.science_outlined,
+                                    size: 14,
+                                  ),
+                                  label: Text(
+                                    tenant.isDemo
+                                        ? 'Quitar la marca'
+                                        : 'Marcar como ensayo',
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    visualDensity: VisualDensity.compact,
+                                    foregroundColor: AppColors.brand,
+                                  ),
+                                )
+                              : null,
+                        ),
                         const Divider(height: 24),
                         _buildSubsectionLabel(
                           'B. Capacidad Operativa Real (en vivo)',
