@@ -43,17 +43,26 @@ Los tres contaban como salones reales en las métricas del SaaS, con sus tickets
 
 ---
 
-## 3. 👤 Lo que hay que correr, en este orden
+## 3. ✅ Aplicado y verificado el 07-sep
 
-**Con respaldo previo, porque son migraciones.**
+Migración `20260907140000` aplicada **desde el SQL Editor**, y control 207 corrido en verde.
 
-1. `scripts\respaldo_supabase.ps1`
-2. `scripts\aplicar_sql.ps1` con `supabase\migrations\20260907140000_marcar_negocios_de_prueba_d225.sql`
-3. `scripts\aplicar_sql.ps1` con `supabase\sql\207_test_pionero_sin_porcentaje.sql` — **este termina en `ROLLBACK`, no cambia nada**; debe imprimir *"CONTROL 207 COMPLETO: 7 de 7 en verde"*
+| Comprobación | Resultado |
+|---|---|
+| Los tres negocios de ensayo | `is_demo = true` los tres |
+| `anon` alcanza `platform_set_tenant_demo` | `false` |
+| `authenticated` la alcanza | `true` — correcto: la función comprueba por dentro que quien llama sea el dueño de plataforma |
+| **Control 207** | **7 de 7.** Sin excepción y con `rollback` limpio |
 
-**Aviso de una ventana a la vez:** el 07-sep se cruzaron dos comandos en la misma consola y las salidas quedaron mezcladas, hasta el punto de no saber si una migración había aplicado. Un comando, se espera, se lee, y luego el siguiente.
+El control 6 del 207 es el que más vale: si el precio pactado y el descuento porcentual **no** se acumularan, habría reventado. **La trampa de D-222 queda demostrada contra la base real**, no solo advertida en un documento.
 
----
+### Una nota de operación que costó dos intentos
+
+`aplicar_sql.ps1` falló dos veces con *"password authentication failed"*. **No era el guion:** se comparó línea por línea con `respaldo_supabase.ps1` —que había funcionado un minuto antes— y manejan la contraseña con el mismo código exacto. Eran 13 asteriscos cuando funcionaba y 12 cuando fallaba: la contraseña llegaba incompleta.
+
+**Se aplicó por el SQL Editor, que no pide contraseña.** Es una vía válida para cualquier migración con su propio `begin`/`commit`, y también para los controles: sus fallos son `raise exception`, así que un «Success» significa que pasaron todos. Lo único que se pierde son los `raise notice`.
+
+**Queda pendiente rotar la contraseña de la base** (hallazgo X, paso 9.17): resuelve esto y cierra una casilla de seguridad que ya estaba abierta.
 
 ## 4. Lo que sigue
 
