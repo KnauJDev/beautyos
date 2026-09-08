@@ -591,6 +591,11 @@ toque, o se descarta con su motivo.
     tokens le deja tener el proyecto entero en contexto— **pero no escribe**: ni código, ni migraciones, ni documentación,
     ni mueve archivos. Sus hallazgos entran como texto y se aplican por el camino normal, con su decisión y su commit (D-218).
 
+16-ter. **Cuando una decisión cambia lo que hace el servidor, la pantalla que lo ofrece cambia en el mismo bloque.**
+    Si no, queda un cartel mintiendo encima del botón. Pasó dos veces el mismo día: los mensajes nuevos de D-227 llegaban
+    envueltos en la traza de la excepción, y el interruptor de pionero seguía prometiendo el 50% que D-221 había
+    retirado 24 horas antes (D-229, D-230). **Incluye los rótulos, los textos de ayuda y lo que se autorellena.**
+
 ### Qué queda escrito
 
 17. **Registrar cada decisión con su porqué**, incluyendo lo descartado.

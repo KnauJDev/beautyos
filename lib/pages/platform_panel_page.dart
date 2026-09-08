@@ -115,9 +115,9 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
           : '',
     );
     final reasonController = TextEditingController();
+    // D-230: el descuento cuenta como tarifa especial aunque sea pionero.
     bool customPricing =
-        tenant.priceCop != null ||
-        (tenant.discountPercent != null && !isFounder);
+        tenant.priceCop != null || tenant.discountPercent != null;
 
     final approved = await showDialog<bool>(
       context: context,
@@ -228,6 +228,9 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                         controller: reasonController,
                         decoration: const InputDecoration(
                           labelText: 'Motivo del precio especial *',
+                          helperText:
+                              'Reemplaza el motivo actual. Escribelo aunque no cambies la cifra.',
+                          helperMaxLines: 2,
                           hintText: 'Ej. Tarifa acordada en WhatsApp / Amigo',
                           border: OutlineInputBorder(),
                         ),
@@ -353,16 +356,23 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
       text: tenant.priceCop != null ? tenant.priceCop.toString() : '',
     );
     final discountController = TextEditingController(
-      text: tenant.discountPercent != null && !isFounder
+      // D-230: se muestra el descuento REAL. Antes se ocultaba cuando el
+      // negocio era pionero, porque el 50% se daba por implicito (D-212).
+      // Desde D-221 no hay 50% implicito, y esconder un descuento guardado
+      // hacia que al guardar se borrara sin que nadie lo viera.
+      text: tenant.discountPercent != null
           ? tenant.discountPercent.toString()
           : '',
     );
-    final reasonController = TextEditingController(
-      text: isFounder ? 'Socio de diseno, tarifa pactada' : '',
-    );
+    // D-230: NO se autorellena. El modelo no trae `priceReason`, asi que
+    // prellenar un texto generico y guardar sobrescribia el motivo pactado:
+    // Exportadora tenia escrito "Pionero fundador: 80.000 por sede" y se
+    // habria perdido con un clic. Vacio obliga a escribir el motivo nuevo,
+    // que es lo correcto si se esta cambiando el precio.
+    final reasonController = TextEditingController();
+    // D-230: el descuento cuenta como tarifa especial aunque sea pionero.
     bool customPricing =
-        tenant.priceCop != null ||
-        (tenant.discountPercent != null && !isFounder);
+        tenant.priceCop != null || tenant.discountPercent != null;
 
     final updated = await showDialog<bool>(
       context: context,
@@ -472,6 +482,9 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                         controller: reasonController,
                         decoration: const InputDecoration(
                           labelText: 'Motivo del precio especial *',
+                          helperText:
+                              'Reemplaza el motivo actual. Escribelo aunque no cambies la cifra.',
+                          helperMaxLines: 2,
                           hintText:
                               'Ej. Convenio especial amigo / Acuerdo comercial',
                           border: OutlineInputBorder(),
@@ -1660,7 +1673,7 @@ class _TenantCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(AppRadius.pill),
                       ),
                       child: Text(
-                        '★ PIONERO 50%',
+                        '★ PIONERO',
                         style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w800,
@@ -2100,7 +2113,7 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                                     ),
                                   ),
                                   child: Text(
-                                    '★ PIONERO 50%',
+                                    '★ PIONERO',
                                     style: TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w800,
