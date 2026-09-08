@@ -38,6 +38,28 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 class MonitoreoService {
   MonitoreoService._();
 
+  /// La direccion del proyecto en Sentry. **Va en el codigo a proposito, y no
+  /// es una fuga** (D-228).
+  ///
+  /// `AGENTS.md` dice "nunca incluir secretos en Flutter, Git o documentos", y
+  /// esto lo parece hasta que se mira de cerca. Dos razones por las que no lo es:
+  ///
+  /// 1. Un DSN es **de solo escritura**: sirve para MANDAR errores, no para
+  ///    leerlos. Con el, un tercero podria mandarnos fallos inventados y
+  ///    gastarnos la cuota. No puede ver ni un dato.
+  /// 2. Y la razon de fondo: **una app web no puede esconderle nada al
+  ///    navegador.** Todo lo que el navegador necesita para funcionar, el
+  ///    navegador lo puede mostrar. Meter esto en una variable de entorno no lo
+  ///    ocultaria: acabaria dentro de `main.dart.js` igual, solo mas dificil de
+  ///    encontrar para nosotros.
+  ///
+  /// Mismo caso que la `publishableKey` de Supabase, que vive en `main.dart` a
+  /// proposito y esta confirmado en el CI (D-197). Lo que protege de verdad no
+  /// es esconder la llave: es que la llave no pueda hacer dano -- RLS en la base,
+  /// y solo-escritura aqui.
+  ///
+  /// **NO mover esto a una variable de entorno "por seguridad".** No añade
+  /// ninguna y rompe la publicacion en Cloudflare Pages.
   static const _dsn =
       'https://c7be6391d3b39ed19738ca6c5dd6eeae@o4511878127288320.ingest.us.sentry.io/4511878160646144';
 
