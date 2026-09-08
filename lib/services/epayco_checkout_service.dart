@@ -303,8 +303,8 @@ class EpaycoCheckoutService {
         e,
         st,
         motivo: esSede
-            ? 'Fallo al inicializar Smart Checkout ePayco para la sede \$branchId'
-            : 'Fallo al inicializar Smart Checkout ePayco para tenant \${subscription.tenantId}',
+            ? 'Fallo al inicializar Smart Checkout ePayco para la sede $branchId'
+            : 'Fallo al inicializar Smart Checkout ePayco para tenant ${subscription.tenantId}',
       );
       if (context.mounted) {
         String mensajeUsuario;
@@ -324,8 +324,21 @@ class EpaycoCheckoutService {
           mensajeUsuario =
               'Tu sesión ha expirado. Por favor inicia sesión de nuevo para continuar con el pago.';
         } else {
-          final limpio = errorStr.replaceAll('Exception: ', '').trim();
-          mensajeUsuario = 'No se pudo abrir la pasarela de ePayco: $limpio';
+          // D-227 (paso 9.10): mostrar lo que el servidor QUISO decir, no la
+          // maquinaria alrededor. `FunctionException.toString()` produce
+          // `FunctionException(status: 409, details: {error: ...})`, y eso es
+          // lo que leia el salon: en el fallo de D-224 el propietario vio la
+          // traza entera en un aviso rojo. Las Edge Functions responden
+          // siempre `{ "error": "<texto para la persona>" }`, asi que se lee
+          // ese campo y se muestra tal cual, sin prefijo: un "no tienes un
+          // cobro pendiente" no es un fallo de la pasarela.
+          final delServidor = mensajeDelServidor(e);
+          if (delServidor != null) {
+            mensajeUsuario = delServidor;
+          } else {
+            final limpio = errorStr.replaceAll('Exception: ', '').trim();
+            mensajeUsuario = 'No se pudo abrir la pasarela de ePayco: $limpio';
+          }
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -336,5 +349,26 @@ class EpaycoCheckoutService {
         );
       }
     }
+  }
+
+  /// Saca el mensaje que la Edge Function quiso dar a la persona.
+  ///
+  /// Publica a proposito para poder probarla, igual que se hizo con
+  /// `ControlesDelDashboard` en D-205.
+  ///
+  /// Todas responden con `{ "error": "<texto>" }` (ver `responder()` en cada
+  /// una), pero `FunctionException.toString()` envuelve eso en
+  /// `FunctionException(status: N, details: {...}, reasonPhrase: )`. Mostrar
+  /// la excepcion entera es lo que hizo que el propietario leyera una traza
+  /// de JavaScript en un aviso rojo (D-224). Devuelve `null` cuando no hay
+  /// un mensaje del servidor y hay que caer al texto generico.
+  static String? mensajeDelServidor(Object e) {
+    if (e is! FunctionException) return null;
+    final detalles = e.details;
+    if (detalles is Map) {
+      final texto = detalles["error"]?.toString().trim() ?? "";
+      if (texto.isNotEmpty) return texto;
+    }
+    return null;
   }
 }

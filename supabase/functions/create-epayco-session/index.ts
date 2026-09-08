@@ -223,15 +223,29 @@ Deno.serve(async (req) => {
       }
     }
 
+    // -----------------------------------------------------------------------
+    // D-227 / paso 9.10 (hallazgo W): aquí NO se adivina.
+    //
+    // Hasta el 08-sep, si la RPC de cálculo no devolvía fila, esta función
+    // calculaba el monto por su cuenta leyendo tablas y, si tampoco encontraba
+    // nada, usaba 150000 escrito a mano. D-193 había quitado exactamente esas
+    // cifras del cliente porque "esa cuenta vive en el servidor", y el fallback
+    // las devolvió al borde. Con socios de diseño a 50.000 (D-222), un fallo
+    // momentáneo del cálculo podía cobrarles el triple.
+    //
+    // Y al ir a quitarlo aparecieron tres defectos más:
+    //   * Leía `discount_ends_at` y no lo miraba en ninguna condición: aplicaba
+    //     descuentos ya vencidos.
+    //   * Ignoraba `branchId` por completo. Si fallaba el cálculo de una SEDE,
+    //     cobraba por ella el monto del NEGOCIO entero.
+    //   * Ignoraba el prorrateo y el anclaje de ciclo de D-160.
+    //
+    // En el camino del dinero, fallar a la vista es mejor que acertar por
+    // casualidad. Quien manda sobre el monto es la base de datos, y si no
+    // puede decirlo, no se abre la pasarela.
+    // -----------------------------------------------------------------------
     paso = "calcular monto y periodo a cobrar";
-    let amount: number = 0;
-    let planCodeResuelto: string = planCode;
-    let planName: string = "Todo Incluido";
-    let planIdResuelto: string | null = null;
-    let motivo: string = "primera_activacion";
-    let periodoFin: string | null = null;
 
-    // 1. Intentar con RPC en base de datos
     const { data: calcData, error: calcError } = branchId
       ? await supabaseAdmin.rpc("beautyos_calcular_cargo_sede", {
           p_branch_id: branchId,
@@ -241,62 +255,62 @@ Deno.serve(async (req) => {
           p_plan_code: planCode,
         });
 
-    if (calcData && Array.isArray(calcData) && calcData.length > 0) {
-      const calc = calcData[0];
-      amount = Number(calc.monto_cop) || 0;
-      motivo = calc.motivo || "primera_activacion";
-      planIdResuelto = calc.plan_id_resuelto ?? null;
-      periodoFin = calc.periodo_fin ?? null;
-
-      if (planIdResuelto) {
-        const { data: planData } = await supabaseAdmin
-          .from("plans")
-          .select("code, name")
-          .eq("id", planIdResuelto)
-          .maybeSingle();
-        if (planData) {
-          planCodeResuelto = planData.code || planCode;
-          planName = planData.name || "Todo Incluido";
-        }
-      }
-    } else {
-      if (calcError) {
-        console.warn("Aviso al ejecutar RPC calcular cargo, usando fallback directo:", calcError.message);
-      }
-      // 2. Fallback de cálculo directo leyendo la suscripción del negocio
-      const { data: subData } = await supabaseAdmin
-        .from("tenant_subscriptions")
-        .select("id, plan_id, price_cop, discount_percent, discount_ends_at, current_period_end, status")
-        .eq("tenant_id", tenantId)
-        .maybeSingle();
-
-      const { data: proPlan } = await supabaseAdmin
-        .from("plans")
-        .select("id, code, name, price_cop")
-        .eq("code", "pro")
-        .maybeSingle();
-
-      const defaultPlan = proPlan || { id: null, code: "pro", name: "Todo Incluido", price_cop: 150000 };
-      planIdResuelto = subData?.plan_id || defaultPlan.id;
-      planCodeResuelto = defaultPlan.code;
-      planName = defaultPlan.name;
-
-      let basePrice = subData?.price_cop && subData.price_cop > 0
-        ? Number(subData.price_cop)
-        : Number(defaultPlan.price_cop || 150000);
-
-      if (subData?.discount_percent && Number(subData.discount_percent) > 0) {
-        const descVal = Number(subData.discount_percent);
-        basePrice = Math.round(basePrice * (1 - descVal / 100));
-      }
-
-      amount = Math.max(1000, basePrice);
-      motivo = subData?.current_period_end ? "renovacion_anticipada" : "primera_activacion";
+    if (calcError) {
+      console.error(
+        `Error al calcular el cargo (negocio ${tenantId}` +
+          (branchId ? `, sede ${branchId}` : "") + `): ${calcError.message}`,
+      );
+      return responder({
+        error: "No pudimos calcular lo que hay que cobrar en este momento. " +
+          "No abrimos la pasarela para no cobrarte un monto equivocado. " +
+          "Vuelve a intentarlo en un minuto.",
+      }, 503);
     }
 
+    const calc = Array.isArray(calcData) && calcData.length > 0 ? calcData[0] : null;
+
+    if (!calc) {
+      console.error(
+        `Sin cargo que calcular: negocio ${tenantId}` +
+          (branchId ? `, sede ${branchId}` : "") + ".",
+      );
+      return responder({
+        error: branchId
+          ? "Esta sede no tiene un cobro pendiente por ahora. Revisa su estado en la pantalla de sedes."
+          : "Este negocio no tiene un cobro pendiente por ahora. Si acabas de registrarte, espera un momento y vuelve a intentarlo.",
+      }, 409);
+    }
+
+    const amount: number = Number(calc.monto_cop) || 0;
+    const motivo: string = calc.motivo || "primera_activacion";
+    const planIdResuelto: string | null = (calc.plan_id_resuelto ?? null) as string | null;
+    const periodoFin: string | null = (calc.periodo_fin ?? null) as string | null;
+
+    let planCodeResuelto: string = planCode;
+    let planName: string = "Todo Incluido";
+
+    if (planIdResuelto) {
+      const { data: planData } = await supabaseAdmin
+        .from("plans")
+        .select("code, name")
+        .eq("id", planIdResuelto)
+        .maybeSingle();
+      if (planData) {
+        planCodeResuelto = planData.code || planCode;
+        planName = planData.name || "Todo Incluido";
+      }
+    }
+
+    // Cinturón: la base dijo un monto, pero si no tiene sentido tampoco se
+    // cobra. Antes este guardián tapaba al fallback; ahora vigila a la RPC.
     if (amount <= 0) {
-      console.error("Monto calculado es 0 o negativo:", amount);
-      return responder({ error: "El monto calculado para la suscripción es inválido." }, 500);
+      console.error(
+        `La base devolvió un monto inválido (${amount}) para el negocio ${tenantId}` +
+          (branchId ? `, sede ${branchId}` : "") + ".",
+      );
+      return responder({
+        error: "El monto a cobrar salió en cero. No abrimos la pasarela: avísanos para revisarlo.",
+      }, 500);
     }
 
     paso = "autenticar con ePayco Apify";

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:salonymas/models/tenant_subscription_status.dart';
 import 'package:salonymas/services/epayco_checkout_service.dart';
 
@@ -91,6 +92,71 @@ void main() {
       );
 
       expect(() => service.buildCheckoutUri(sub), throwsArgumentError);
+    });
+  });
+  _pruebasDelMensajeDelServidor();
+}
+
+// ---------------------------------------------------------------------------
+// D-227 / paso 9.10 — el mensaje que ve el salón cuando el cobro no se puede
+// calcular.
+//
+// POR QUE ESTA PRUEBA
+//
+// El 07-sep el propietario vio esto en un aviso rojo, dentro de su app:
+//
+//   FunctionException(status: 500, details: {error: Error interno al generar
+//   sesion de pago (registrar la intencion de pago (D-182)): calc is not
+//   defined}, reasonPhrase: )
+//
+// Las Edge Functions responden siempre `{ "error": "<texto para la persona>" }`,
+// pero el manejador volcaba la excepcion entera. Al cerrar el hallazgo W esas
+// respuestas pasaron a ser mensajes cuidados -- "esta sede no tiene un cobro
+// pendiente por ahora" -- y habrian llegado igual de envueltas en maquinaria.
+//
+// Esto vigila que lo que el servidor escribio para la persona sea lo que la
+// persona lee.
+void _pruebasDelMensajeDelServidor() {
+  group('D-227 — el mensaje del servidor llega limpio al salón', () {
+    test('extrae el texto de details["error"] sin la maquinaria alrededor', () {
+      final e = FunctionException(
+        status: 409,
+        details: {
+          'error': 'Esta sede no tiene un cobro pendiente por ahora.',
+        },
+      );
+      expect(
+        EpaycoCheckoutService.mensajeDelServidor(e),
+        'Esta sede no tiene un cobro pendiente por ahora.',
+        reason:
+            'Si vuelve a devolver la excepcion entera, el salon lee '
+            '"FunctionException(status: 409, details: {...})" otra vez.',
+      );
+    });
+
+    test('devuelve null cuando no hay mensaje del servidor', () {
+      expect(
+        EpaycoCheckoutService.mensajeDelServidor(
+          FunctionException(status: 500, details: 'texto suelto'),
+        ),
+        isNull,
+        reason: 'Sin un campo "error" hay que caer al texto generico.',
+      );
+      expect(
+        EpaycoCheckoutService.mensajeDelServidor(Exception('otra cosa')),
+        isNull,
+        reason: 'Solo interpreta respuestas de Edge Functions.',
+      );
+    });
+
+    test('un campo "error" vacío no se muestra como mensaje', () {
+      expect(
+        EpaycoCheckoutService.mensajeDelServidor(
+          FunctionException(status: 500, details: {'error': '   '}),
+        ),
+        isNull,
+        reason: 'Un aviso rojo en blanco es peor que el texto generico.',
+      );
     });
   });
 }
