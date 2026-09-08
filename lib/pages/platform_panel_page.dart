@@ -175,11 +175,12 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     title: const Text(
-                      'Precio Pionero (50% de por vida)',
+                      'Marcar como pionero (solo etiqueta)',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     subtitle: const Text(
-                      'Aplica el 50% de descuento vitalicio para los primeros salones.',
+                      'NO aplica ningun descuento (D-221). Es solo una marca para reconocer '
+                      'despues a los primeros. La tarifa se pacta abajo, una a una.',
                     ),
                     value: isFounder,
                     onChanged: (val) {
@@ -214,8 +215,11 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                         controller: discountController,
                         keyboardType: TextInputType.number,
                         decoration: const InputDecoration(
-                          labelText: 'Descuento en % (opcional)',
+                          labelText: 'Descuento en % — se SUMA al precio',
                           hintText: 'Ej. 30',
+                          helperText:
+                              'Si pones precio Y descuento se multiplican: 10.000 con 50% cobra 5.000 (D-222).',
+                          helperMaxLines: 3,
                           border: OutlineInputBorder(),
                         ),
                       ),
@@ -305,7 +309,7 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
 
       if (isFounder) {
         discountPercent = 50.0;
-        priceReason = 'Pionero (50% de por vida)';
+        priceReason = 'Socio de diseno, tarifa pactada';
       } else if (customPricing) {
         priceCop = int.tryParse(priceController.text.trim());
         discountPercent = double.tryParse(discountController.text.trim());
@@ -354,7 +358,7 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
           : '',
     );
     final reasonController = TextEditingController(
-      text: isFounder ? 'Pionero (50% de por vida)' : '',
+      text: isFounder ? 'Socio de diseno, tarifa pactada' : '',
     );
     bool customPricing =
         tenant.priceCop != null ||
@@ -406,11 +410,12 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     title: const Text(
-                      'Precio Pionero (50% de por vida)',
+                      'Marcar como pionero (solo etiqueta)',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     subtitle: const Text(
-                      'Aplica el 50% de descuento vitalicio sobre el plan elegido.',
+                      'NO aplica ningun descuento (D-221). Es solo una marca para reconocer '
+                      'despues a los primeros. La tarifa se pacta abajo, una a una.',
                     ),
                     value: isFounder,
                     onChanged: (val) {
@@ -419,7 +424,7 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                         if (isFounder) {
                           customPricing = false;
                           priceController.clear();
-                          reasonController.text = 'Pionero (50% de por vida)';
+                          reasonController.text = 'Socio de diseno, tarifa pactada';
                         }
                       });
                     },
@@ -454,8 +459,11 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                         keyboardType: TextInputType.number,
                         decoration: const InputDecoration(
                           labelText:
-                              'Descuento en % (opcional si ya fijó precio en COP)',
+                              'Descuento en % — se SUMA al precio de arriba',
                           hintText: 'Ej. 30',
+                          helperText:
+                              'Si pones precio Y descuento se multiplican: 10.000 con 50% cobra 5.000 (D-222).',
+                          helperMaxLines: 3,
                           border: OutlineInputBorder(),
                         ),
                       ),
@@ -517,7 +525,7 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
 
       if (isFounder) {
         discountPercent = 50.0;
-        priceReason = 'Pionero (50% de por vida)';
+        priceReason = 'Socio de diseno, tarifa pactada';
       } else if (customPricing) {
         priceCop = int.tryParse(priceController.text.trim());
         discountPercent = double.tryParse(discountController.text.trim());
