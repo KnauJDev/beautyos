@@ -29,6 +29,12 @@
 -- NOTA: `branches.slug` es NOT NULL sin default y unico por negocio. La
 -- primera version de este control lo omitio y fallo antes de probar nada.
 -- Si se anaden sedes de prueba, cada una necesita su slug.
+--
+-- NOTA 2: un disparador (`branches_crear_suscripcion`, D-190) le crea su
+-- suscripcion `pending` a cada sede en cuanto nace. Por eso las fixtures usan
+-- `on conflict (branch_id) do update` y no un insert a secas: la fila ya
+-- existe. **Eso confirma de paso que una sede nueva nace pendiente**, que es
+-- lo que promete D-222.
 
 begin;
 
@@ -47,6 +53,10 @@ declare
   v_delta       bigint;
   v_payload     jsonb;
   v_res         record;
+  -- Referencia unica por corrida: si una quedara commiteada, el candado de
+  -- idempotencia de D-141 haria que la siguiente no procesara nada y el
+  -- control fallara por una razon que no es la que prueba.
+  v_ref         text := 'ref-c208-' || replace(gen_random_uuid()::text, '-', '');
 begin
   select id into v_plan from public.plans where code = 'pro' and status = 'active' limit 1;
   if v_plan is null then
@@ -92,7 +102,13 @@ begin
   values
     (v_tenant, v_sede_a,   'active', 30000, 'Control 208', now(), now() + interval '30 days'),
     (v_tenant, v_sede_b,   'active', 30000, 'Control 208', now(), now() + interval '30 days'),
-    (v_tenant, v_sede_off, 'active', 30000, 'Control 208', now(), now() + interval '30 days');
+    (v_tenant, v_sede_off, 'active', 30000, 'Control 208', now(), now() + interval '30 days')
+  on conflict (branch_id) do update set
+    status = excluded.status,
+    price_cop = excluded.price_cop,
+    price_reason = excluded.price_reason,
+    current_period_start = excluded.current_period_start,
+    current_period_end = excluded.current_period_end;
 
   -- Un negocio DEMO con una sede activa y caro: no debe aportar nada.
   insert into public.tenants (name, business_type, contact_email, whatsapp, is_demo, active)
@@ -107,7 +123,12 @@ begin
 
   insert into public.branch_subscriptions
     (tenant_id, branch_id, status, price_cop, price_reason, current_period_end)
-  values (v_demo, v_sede_demo, 'active', 99000, 'Control 208 demo', now() + interval '30 days');
+  values (v_demo, v_sede_demo, 'active', 99000, 'Control 208 demo', now() + interval '30 days')
+  on conflict (branch_id) do update set
+    status = excluded.status,
+    price_cop = excluded.price_cop,
+    price_reason = excluded.price_reason,
+    current_period_end = excluded.current_period_end;
 
   select (public.platform_get_saas_metrics()->>'mrr_cop')::bigint into v_mrr_despues;
   v_delta := v_mrr_despues - v_mrr_antes;
@@ -124,14 +145,14 @@ begin
 
   -- 4 y 5: el pago de una sede deja monto_cop_recibido en el evento
   select * into v_res from private.beautyos_procesar_pago_de_sede(
-    v_tenant, v_sede_b, 'ref-control-208', 'tx-control-208',
+    v_tenant, v_sede_b, v_ref, 'tx-' || v_ref,
     'Aceptada', '1', 30000, 'COP',
-    jsonb_build_object('x_ref_payco', 'ref-control-208')
+    jsonb_build_object('x_ref_payco', v_ref)
   );
 
   select payload into v_payload
   from public.subscription_events
-  where provider = 'epayco' and provider_event_id = 'ref-control-208';
+  where provider = 'epayco' and provider_event_id = v_ref;
 
   if v_payload is null then
     raise exception 'FALLO 4: el pago de sede no dejo evento registrado';
