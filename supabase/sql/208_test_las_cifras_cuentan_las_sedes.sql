@@ -25,6 +25,10 @@
 --     -Archivo "supabase\sql\208_test_las_cifras_cuentan_las_sedes.sql"
 --
 -- TERMINA EN ROLLBACK. Todos los datos de prueba se descartan limpiamente.
+--
+-- NOTA: `branches.slug` es NOT NULL sin default y unico por negocio. La
+-- primera version de este control lo omitio y fallo antes de probar nada.
+-- Si se anaden sedes de prueba, cada una necesita su slug.
 
 begin;
 
@@ -73,14 +77,14 @@ begin
     (tenant_id, plan_id, status, current_period_start, current_period_end)
   values (v_tenant, v_plan, 'active', now(), now() + interval '30 days');
 
-  insert into public.branches (tenant_id, name, is_primary, active)
-  values (v_tenant, 'C208 principal', true, true) returning id into v_sede_a;
+  insert into public.branches (tenant_id, name, slug, is_primary, active)
+  values (v_tenant, 'C208 principal', 'c208-principal', true, true) returning id into v_sede_a;
 
-  insert into public.branches (tenant_id, name, is_primary, active)
-  values (v_tenant, 'C208 segunda', false, true) returning id into v_sede_b;
+  insert into public.branches (tenant_id, name, slug, is_primary, active)
+  values (v_tenant, 'C208 segunda', 'c208-segunda', false, true) returning id into v_sede_b;
 
-  insert into public.branches (tenant_id, name, is_primary, active)
-  values (v_tenant, 'C208 cerrada', false, false) returning id into v_sede_off;
+  insert into public.branches (tenant_id, name, slug, is_primary, active)
+  values (v_tenant, 'C208 cerrada', 'c208-cerrada', false, false) returning id into v_sede_off;
 
   insert into public.branch_subscriptions
     (tenant_id, branch_id, status, price_cop, price_reason,
@@ -98,8 +102,8 @@ begin
   insert into public.tenant_subscriptions (tenant_id, plan_id, status, current_period_end)
   values (v_demo, v_plan, 'active', now() + interval '30 days');
 
-  insert into public.branches (tenant_id, name, is_primary, active)
-  values (v_demo, 'C208 demo', true, true) returning id into v_sede_demo;
+  insert into public.branches (tenant_id, name, slug, is_primary, active)
+  values (v_demo, 'C208 demo', 'c208-demo', true, true) returning id into v_sede_demo;
 
   insert into public.branch_subscriptions
     (tenant_id, branch_id, status, price_cop, price_reason, current_period_end)
