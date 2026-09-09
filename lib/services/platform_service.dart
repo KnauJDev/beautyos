@@ -137,6 +137,34 @@ class PlatformService {
     );
   }
 
+  /// Cambia el estado de pago de UNA sede (D-236, paso 9.36).
+  ///
+  /// La RPC existe desde D-190 y no la llamaba nadie: se podia escribir el
+  /// estado de una sede desde la base, pero no habia puerta en el Panel.
+  ///
+  /// Valida por dentro que quien llama sea dueno de plataforma, que el estado
+  /// sea uno de los siete validos, y que **un precio pactado traiga motivo**
+  /// (mismo criterio que D-136). Aqui no se repite ninguna de las tres: si se
+  /// duplicaran, acabarian diciendo cosas distintas.
+  Future<void> setBranchSubscription({
+    required String branchId,
+    required String status,
+    int? priceCop,
+    String? priceReason,
+    DateTime? periodEnd,
+  }) async {
+    await Supabase.instance.client.rpc(
+      'platform_set_branch_subscription',
+      params: {
+        'p_branch_id': branchId,
+        'p_status': status,
+        'p_price_cop': priceCop,
+        'p_price_reason': priceReason,
+        'p_period_end': periodEnd?.toUtc().toIso8601String(),
+      },
+    );
+  }
+
   /// El estado de pago de cada sede de un negocio (D-235, paso 9.35).
   ///
   /// Hermana de `get_branch_subscriptions()`, que hace lo mismo pero para el

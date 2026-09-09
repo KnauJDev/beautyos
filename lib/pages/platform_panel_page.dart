@@ -2000,7 +2000,7 @@ class _TenantDetailSheet extends StatefulWidget {
 
 class _TenantDetailSheetState extends State<_TenantDetailSheet> {
   late final Future<List<TenantSubscriptionHistoryEntry>> _historyFuture;
-  late final Future<List<BranchSubscription>> _branchesFuture;
+  late Future<List<BranchSubscription>> _branchesFuture;
 
   @override
   void initState() {
@@ -2013,6 +2013,178 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
     _branchesFuture = widget.platformService.getTenantBranches(
       widget.tenant.tenantId,
     );
+  }
+
+  void _recargarSedes() {
+    setState(() {
+      _branchesFuture = widget.platformService.getTenantBranches(
+        widget.tenant.tenantId,
+      );
+    });
+  }
+
+  /// Cambia el estado de pago de UNA sede (D-236, paso 9.36).
+  ///
+  /// La RPC existe desde D-190 y no la llamaba nadie. Sin esto, el precio de
+  /// una sede solo se podia tocar escribiendo SQL, y D-222 promete que "las
+  /// sedes adicionales van a tarifa vigente" -- imposible de cumplir para los
+  /// negocios cuyas sedes heredaron el precio del negocio en el sembrado de
+  /// D-190.
+  ///
+  /// El dialogo muestra el estado, el precio y el motivo REALES. No se
+  /// autorellena nada: en D-230 un prellenado generico casi borro un acuerdo
+  /// documentado de un cliente.
+  Future<void> _editarSede(BranchSubscription sede) async {
+    const estados = <String>[
+      'pending',
+      'trialing',
+      'active',
+      'past_due',
+      'grace',
+      'suspended',
+      'cancelled',
+    ];
+
+    var estado = estados.contains(sede.status) ? sede.status : estados.first;
+    final precioCtrl = TextEditingController(
+      text: sede.precioCop > 0 ? sede.precioCop.toString() : '',
+    );
+    // "Precio de lista" es el relleno que pone el servidor cuando NO hay precio
+    // pactado. Prellenarlo como si fuera un motivo escrito por alguien seria
+    // mentir en el unico campo que documenta el acuerdo.
+    final motivoCtrl = TextEditingController(
+      text: sede.motivoPrecio == 'Precio de lista' ? '' : sede.motivoPrecio,
+    );
+    final venceOriginal = sede.currentPeriodEnd;
+    var vence = sede.currentPeriodEnd;
+
+    final guardar = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => AlertDialog(
+          title: Text('Sede: ${sede.branchName}'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DropdownButtonFormField<String>(
+                  initialValue: estado,
+                  decoration: const InputDecoration(
+                    labelText: 'Estado de pago de la sede',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: [
+                    for (final e in estados)
+                      DropdownMenuItem(value: e, child: Text(e)),
+                  ],
+                  onChanged: (v) => setModalState(() => estado = v ?? estado),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: precioCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Precio mensual de ESTA sede, en COP',
+                    helperText:
+                        'Vacio = tarifa vigente del plan. No es el precio del negocio.',
+                    helperMaxLines: 2,
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: motivoCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Motivo del precio *',
+                    helperText:
+                        'Obligatorio si pones precio. Queda escrito con el acuerdo.',
+                    helperMaxLines: 2,
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Vence: ${_formatDate(vence)}',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        final elegida = await showDatePicker(
+                          context: context,
+                          initialDate: vence ?? DateTime.now(),
+                          firstDate: DateTime.now().subtract(
+                            const Duration(days: 365),
+                          ),
+                          lastDate: DateTime.now().add(
+                            const Duration(days: 365 * 3),
+                          ),
+                          helpText: 'Hasta cuando esta pagada esta sede',
+                        );
+                        if (elegida != null) {
+                          setModalState(() => vence = elegida);
+                        }
+                      },
+                      child: const Text('Cambiar fecha'),
+                    ),
+                  ],
+                ),
+                if (vence != venceOriginal)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Estas cambiando hasta cuando esta pagada la sede. Eso le regala o le quita dias de servicio a un cliente.',
+                      style: TextStyle(fontSize: 11, color: AppColors.danger),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Guardar'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (guardar != true || !mounted) return;
+
+    final precioTexto = precioCtrl.text.trim();
+    final precio = precioTexto.isEmpty ? null : int.tryParse(precioTexto);
+    final motivo = motivoCtrl.text.trim();
+
+    try {
+      await widget.platformService.setBranchSubscription(
+        branchId: sede.branchId,
+        status: estado,
+        priceCop: precio,
+        priceReason: motivo.isEmpty ? null : motivo,
+        periodEnd: vence,
+      );
+      if (mounted) _recargarSedes();
+    } on PostgrestException catch (error) {
+      // El mensaje viene del servidor, que es quien conoce la regla que se
+      // incumplio: por ejemplo, precio sin motivo (D-136).
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.message),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
+    }
   }
 
   /// El estado de pago de cada sede (D-235, paso 9.35).
@@ -2086,6 +2258,16 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
               ],
             ),
           ),
+          // Solo el dueno de plataforma: la RPC lo comprueba igual por
+          // dentro, pero ensenar un boton que va a rechazar es cruel.
+          if (widget.isOwner)
+            IconButton(
+              onPressed: () => _editarSede(sede),
+              icon: const Icon(Icons.edit_outlined, size: 15),
+              color: AppColors.brand,
+              visualDensity: VisualDensity.compact,
+              tooltip: 'Precio y estado de esta sede',
+            ),
         ],
       ),
     );
