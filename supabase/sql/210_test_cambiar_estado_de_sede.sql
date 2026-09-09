@@ -19,10 +19,10 @@
 --   4. Con motivo, el precio queda guardado y lo ve el lector del Panel.
 --   5. `activated_at` se sella la PRIMERA vez y no se mueve despues (D-190):
 --      sirve para saber si una sede nunca llego a pagarse o si se cayo luego.
---   6. `anon` no la alcanza.
---   7. **QUITAR el precio devuelve la sede a la tarifa vigente** (D-237). Esto
+--   6. **QUITAR el precio devuelve la sede a la tarifa vigente** (D-237). Esto
 --      es lo que fallaba: la funcion sabia poner y cambiar, nunca limpiar.
---   8. Limpiar y fijar a la vez se rechaza, en vez de adivinar cual gana.
+--   7. Limpiar y fijar a la vez se rechaza, en vez de adivinar cual gana.
+--   8. `anon` no la alcanza.
 --
 -- COMO SE EJECUTA
 --
@@ -153,7 +153,7 @@ begin
   end if;
   raise notice 'OK 5   activated_at se sella la primera vez y no se mueve';
 
-  -- 7. QUITAR el precio devuelve la sede a la tarifa vigente (D-237).
+  -- 6. QUITAR el precio devuelve la sede a la tarifa vigente (D-237).
   --
   -- Esto es lo que fallaba: `coalesce(p_price_cop, price_cop)` conservaba el
   -- valor al recibir null, asi que la funcion sabia poner y cambiar pero
@@ -164,17 +164,17 @@ begin
 
   select * into r from public.platform_get_tenant_branches(v_tenant) limit 1;
   if r.tiene_precio_pactado then
-    raise exception 'FALLO 7: se pidio limpiar el precio y sigue habiendo uno pactado';
+    raise exception 'FALLO 6: se pidio limpiar el precio y sigue habiendo uno pactado';
   end if;
   if r.precio_cop is distinct from (select price_cop from public.plans where id = v_plan) then
-    raise exception 'FALLO 7b: sin precio pactado deberia cobrar la tarifa de lista, y dice %', r.precio_cop;
+    raise exception 'FALLO 6b: sin precio pactado deberia cobrar la tarifa de lista, y dice %', r.precio_cop;
   end if;
   if r.motivo_precio is distinct from 'Precio de lista' then
-    raise exception 'FALLO 7c: se limpio el precio y quedo un motivo huerfano: %', r.motivo_precio;
+    raise exception 'FALLO 6c: se limpio el precio y quedo un motivo huerfano: %', r.motivo_precio;
   end if;
-  raise notice 'OK 7   quitar el precio devuelve la sede a la tarifa vigente';
+  raise notice 'OK 6   quitar el precio devuelve la sede a la tarifa vigente';
 
-  -- 8. Limpiar y fijar a la vez se rechaza en vez de adivinar
+  -- 7. Limpiar y fijar a la vez se rechaza en vez de adivinar
   v_capturo := false;
   begin
     perform public.platform_set_branch_subscription(
@@ -184,17 +184,19 @@ begin
     v_capturo := true;
   end;
   if not v_capturo then
-    raise exception 'FALLO 8: acepto limpiar el precio Y fijar uno en la misma operacion';
+    raise exception 'FALLO 7: acepto limpiar el precio Y fijar uno en la misma operacion';
   end if;
-  raise notice 'OK 8   limpiar y fijar a la vez se rechaza';
+  raise notice 'OK 7   limpiar y fijar a la vez se rechaza';
 
-  -- 6. anon no la alcanza
+  -- 8. anon no la alcanza. Firma de SEIS parametros: D-237 hizo DROP de la
+  -- de cinco, y `has_function_privilege` sobre una firma que ya no existe no
+  -- devuelve false, lanza excepcion. Costo una corrida.
   if has_function_privilege('anon',
-       'public.platform_set_branch_subscription(uuid, text, bigint, text, timestamptz)',
+       'public.platform_set_branch_subscription(uuid, text, bigint, text, timestamptz, boolean)',
        'execute') then
-    raise exception 'FALLO 6: anon puede cambiar el estado de pago de una sede';
+    raise exception 'FALLO 8: anon puede cambiar el estado de pago de una sede';
   end if;
-  raise notice 'OK 6   anon no alcanza la funcion';
+  raise notice 'OK 8   anon no alcanza la funcion';
 
   raise notice '---------------------------------------------';
   raise notice 'CONTROL 210 COMPLETO: 8 de 8 en verde.';
