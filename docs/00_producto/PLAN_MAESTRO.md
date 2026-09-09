@@ -399,12 +399,12 @@ sin cerrar el anterior.**
 
 | # | Qué | Quién | Estado |
 |---|---|---|---|
-| 9.6 | El **`deno check` en el CI** (era 8.38, hallazgo AB). Hoy `supabase/functions/` no lo mira nadie | 🤖 | ⬜ — **el guardián de documentación ya está dentro** (`scripts/verificar_documentos.py`, D-223); falta la mitad de `deno check` |
+| 9.6 | El **`deno check` en el CI** (era 8.38, hallazgo AB). Hoy `supabase/functions/` no lo mira nadie | 🤖 | ✅ **CERRADO 09-sep (D-234).** Trabajo aparte en el CI, en paralelo al de Flutter, comprobando **función por función con su propio `deno.json`** y sin detenerse en el primer fallo. ⚠️ **La primera corrida es la prueba:** `deno` no está en el equipo del propietario (regla 14) y puede salir roja — es la primera vez que este código pasa por un comprobador de tipos |
 | 9.7 | 🔴 **Cerrar 8.9 de verdad: verificar TL-01 contra una transacción real.** Sigue abierto desde el 01-sep. Es la última oportunidad de hacerlo con dinero propio y no de un cliente | 👤 | ⬜ |
 | 9.8 | **Probar el ciclo completo de cobro**: pago → webhook → activación. Nadie lo ha ejercitado entero nunca. Con la tarifa de prueba de 10.000 COP, cuesta diez mil pesos saberlo | 👤 | ⬜ |
 | 9.9 | **Pruebas sobre el Panel de Plataforma**: 4.230 líneas y cero pruebas. No cubrirlo entero — solo **precios y aprobaciones**, que es la caja registradora del SaaS | 🤖 | ⬜ |
 | 9.10 | **Cerrar el hallazgo W**: decidir si el fallback del cargo debe existir o si un fallo de la RPC debe fallar a la vista | 👤 | ✅ **CERRADO 08-sep (D-227): se retira el fallback entero.** 503 si la RPC falla, 409 si no hay cargo. Aparecieron **tres defectos más** al quitarlo, incluido que cobraba el monto del negocio por una sede. Y el mensaje del servidor **por fin llega limpio** al salón. 391 pruebas en verde |
-| 9.11 | **Sacar `activar_pago_naguara.sql` de los scripts de verificación.** Una intervención manual sobre un pago real no puede ser indistinguible de una prueba (`AGENTS.md`: trazabilidad del historial financiero) | 🤖 | ⬜ |
+| 9.11 | **Sacar `activar_pago_naguara.sql` de los scripts de verificación.** Una intervención manual sobre un pago real no puede ser indistinguible de una prueba (`AGENTS.md`: trazabilidad del historial financiero) | 🤖 | ✅ **CERRADO 09-sep (D-233).** Pasa a `supabase/sql/intervenciones/` con un `LEEME.md` que fija cuatro reglas. La carpeta de controles vuelve a tener solo cosas que se pueden correr sin miedo: **199 controles idempotentes** |
 
 #### Bloque C — El ensayo general
 

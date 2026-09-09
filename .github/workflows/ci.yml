@@ -1,9 +1,16 @@
 # Salón y Más — CI (D-197, cierra TL-07: "no existe .github/workflows").
 #
-# Corre `flutter analyze` y `flutter test` en cada push a main y en cada pull
-# request. No necesita secretos: la publishableKey de Supabase en main.dart
-# es pública por diseño (va protegida por RLS, TL-07 lo confirmó) y las
-# pruebas usan servicios falsos (Fake*Service), nunca la base real.
+# Dos trabajos en paralelo, y ninguno tapa al otro:
+#
+#   1. `flutter analyze` y `flutter test`, más el guardián de la documentación
+#      (D-223). No necesita secretos: la publishableKey de Supabase en main.dart
+#      es pública por diseño (va protegida por RLS, TL-07 lo confirmó) y las
+#      pruebas usan servicios falsos (Fake*Service), nunca la base real.
+#
+#   2. `deno check` sobre las Edge Functions (D-234, paso 9.6, hallazgo AB).
+#      Hasta el 09-sep **nadie miraba `supabase/functions/`**, y por ahí se colo
+#      a producción un `ReferenceError: calc is not defined` que tumbó el cobro
+#      (D-220, D-224). Cualquier comprobador de tipos lo caza en segundos.
 
 name: CI
 
@@ -38,3 +45,37 @@ jobs:
 
       - name: Test
         run: flutter test
+
+  edge-functions:
+    name: Comprobar las Edge Functions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      # Cada función tiene su propio `deno.json` con el mapa de importaciones,
+      # que es como las despliega Supabase. Así que se comprueba una a una con
+      # su config, y el bucle NO se detiene en el primer fallo: interesa ver
+      # todos los errores en una sola corrida, no ir descubriéndolos de uno en
+      # uno. `_shared/` no tiene `index.ts` y se comprueba al entrar en el
+      # grafo de quien lo importa.
+      - name: deno check
+        run: |
+          fallos=0
+          for entrada in supabase/functions/*/index.ts; do
+            carpeta=$(dirname "$entrada")
+            echo "::group::$carpeta"
+            if ! deno check --config "$carpeta/deno.json" "$entrada"; then
+              fallos=1
+            fi
+            echo "::endgroup::"
+          done
+          if [ "$fallos" -ne 0 ]; then
+            echo "::error::Al menos una Edge Function no pasa la comprobacion de tipos."
+            exit 1
+          fi
