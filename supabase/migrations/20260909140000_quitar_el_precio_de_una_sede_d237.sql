@@ -139,6 +139,13 @@ comment on function public.platform_set_branch_subscription(
 -- traduzca o le quite una tilde, la logica se rompe en silencio.
 -- ---------------------------------------------------------------------------
 
+-- DROP obligatorio: se le anade una columna a `returns table`, y Postgres no
+-- deja cambiar el tipo de retorno con un simple "create or replace". Es la
+-- misma regla que obliga al DROP de arriba por el parametro nuevo, y aqui se
+-- paso por alto en el primer intento: la migracion fallo entera y no aplico
+-- nada, que es exactamente para lo que va dentro de begin/commit.
+drop function if exists public.platform_get_tenant_branches(uuid);
+
 create or replace function public.platform_get_tenant_branches(
   p_tenant_id uuid
 )
