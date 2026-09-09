@@ -718,6 +718,15 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           key: ValueKey('settings-${branch.branchId}'),
           branchId: branch.branchId,
           isOwner: role == 'owner',
+          // Mismo refresco que usa el badge de prueba (D-238): la lista de
+          // sedes se arma aquí, en `_loadHomeContext`, y Configuración no
+          // tiene forma de tocarla. No se cambia de sede automáticamente: eso
+          // sacaría al propietario de la que está mirando.
+          onSedeCreada: () {
+            setState(() {
+              homeContextFuture = _loadHomeContext();
+            });
+          },
         ),
         allowedRoles: const <String>{'owner', 'admin'},
         // La unica excepcion al refresco al entrar (D-201): aqui se escribe

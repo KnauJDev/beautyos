@@ -47,10 +47,13 @@ void main() {
         branchId: branchId,
       ),
       const ResenasPage(key: ValueKey('reviews-branch-a2'), branchId: branchId),
-      const ConfiguracionPage(
-        key: ValueKey('settings-branch-a2'),
+      ConfiguracionPage(
+        key: const ValueKey('settings-branch-a2'),
         branchId: branchId,
         isOwner: true,
+        // Deja de ser `const` desde D-238: Configuracion tiene que poder
+        // avisar de que se creo una sede, y un callback no es constante.
+        onSedeCreada: () {},
       ),
     ];
 

@@ -38,10 +38,19 @@ class ConfiguracionPage extends StatefulWidget {
     super.key,
     required this.branchId,
     required this.isOwner,
+    required this.onSedeCreada,
   });
 
   final String branchId;
   final bool isOwner;
+
+  /// Qué hacer cuando el propietario acaba de crear una sede (D-238).
+  ///
+  /// Obligatorio a propósito: la lista de sedes NO vive en esta página, vive
+  /// en el contexto que arma `main.dart`. Crear una sede sin avisarle deja al
+  /// propietario delante de un selector que todavía no la conoce -- y con una
+  /// sola sede ese selector ni siquiera es un menú, es una etiqueta muerta.
+  final VoidCallback onSedeCreada;
 
   @override
   State<ConfiguracionPage> createState() => _ConfiguracionPageState();
@@ -219,7 +228,7 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
         if (widget.isOwner) ...[
           const SizedBox(height: 16),
           const SectionTitle('Sedes'),
-          const _SedesCard(),
+          _SedesCard(onSedeCreada: widget.onSedeCreada),
         ],
         // Los colores son del negocio, no de la sede (D-093c), y solo los
         // cambia el propietario, igual que el logo. Un admin no ve esta
@@ -1100,7 +1109,9 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
 /// Único punto de entrada a [CreateBranchDialog] tras retirarlo del header
 /// (D-161): la gestión de sedes vive ordenadamente dentro de Configuración.
 class _SedesCard extends StatelessWidget {
-  const _SedesCard();
+  const _SedesCard({required this.onSedeCreada});
+
+  final VoidCallback onSedeCreada;
 
   Future<void> _openCreateBranchDialog(BuildContext context) async {
     final created = await showDialog<bool>(
@@ -1110,15 +1121,22 @@ class _SedesCard extends StatelessWidget {
 
     if (created != true || !context.mounted) return;
 
+    // El mensajero se resuelve ANTES de recargar: `onSedeCreada` reconstruye
+    // el árbol desde la raíz y este `context` deja de estar montado. El aviso
+    // sí sobrevive, porque el `ScaffoldMessenger` está por encima.
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text(
-          'Sede creada. Ya puedes asignarle servicios y estilistas desde '
-          'sus propias pantallas.',
+          'Sede creada. Ya aparece en el selector de sedes, arriba: cámbiate '
+          'a ella para asignarle servicios y estilistas.',
         ),
         duration: Duration(seconds: 6),
       ),
     );
+
+    // D-238, regla 16-ter: el aviso de arriba solo es verdad DESPUÉS de esto.
+    // Sin recargar, la sede existe en la base y no existe en la pantalla.
+    onSedeCreada();
   }
 
   @override
