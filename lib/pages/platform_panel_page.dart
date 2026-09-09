@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
+import '../models/branch_subscription.dart';
 import '../models/platform_partner.dart';
 import '../models/platform_saas_metrics.dart';
 import '../models/platform_tenant_feature_override.dart';
@@ -1999,12 +2000,94 @@ class _TenantDetailSheet extends StatefulWidget {
 
 class _TenantDetailSheetState extends State<_TenantDetailSheet> {
   late final Future<List<TenantSubscriptionHistoryEntry>> _historyFuture;
+  late final Future<List<BranchSubscription>> _branchesFuture;
 
   @override
   void initState() {
     super.initState();
     _historyFuture = widget.platformService.getTenantSubscriptionHistory(
       widget.tenant.tenantId,
+    );
+    // En initState y no en el build: un FutureBuilder que crea su futuro al
+    // construirse lo relanza en cada repintado (D-211).
+    _branchesFuture = widget.platformService.getTenantBranches(
+      widget.tenant.tenantId,
+    );
+  }
+
+  /// El estado de pago de cada sede (D-235, paso 9.35).
+  ///
+  /// Antes el Panel solo decia cuantas sedes habia, asi que tras pagar una
+  /// sede secundaria se veia exactamente igual que antes.
+  ///
+  /// Se muestra "al dia" y no "activa" porque no son lo mismo: una sede puede
+  /// estar operando y en mora. Lo calcula el servidor con la misma regla que
+  /// ve el salon en su Configuracion (D-190), para que no signifiquen cosas
+  /// distintas a cada lado del telefono.
+  Widget _buildSedes() {
+    return FutureBuilder<List<BranchSubscription>>(
+      future: _branchesFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 6),
+            child: Text('Consultando el estado de las sedes...',
+                style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+          );
+        }
+        if (snapshot.hasError) {
+          // Sin nombrarle funciones de la base a nadie (D-208).
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 6),
+            child: Text('No pudimos consultar el estado de las sedes ahora mismo.',
+                style: TextStyle(fontSize: 11, color: AppColors.danger)),
+          );
+        }
+        final sedes = snapshot.data ?? const <BranchSubscription>[];
+        if (sedes.isEmpty) return const SizedBox.shrink();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: sedes.map(_buildSedeFila).toList(),
+        );
+      },
+    );
+  }
+
+  Widget _buildSedeFila(BranchSubscription sede) {
+    final etiqueta = sede.alDia
+        ? 'Al dia'
+        : (sede.status == 'pending' ? 'Sin pagar' : 'En mora');
+    final color = sede.alDia ? AppColors.success : AppColors.danger;
+    final detalle =
+        '$etiqueta · ${formatCOP(sede.precioCop)}/mes · vence ${_formatDate(sede.currentPeriodEnd)}';
+
+    return Padding(
+      padding: const EdgeInsets.only(left: 12, top: 3, bottom: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            sede.isPrimary ? Icons.home_outlined : Icons.storefront_outlined,
+            size: 14,
+            color: AppColors.textMuted,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${sede.branchName}${sede.isPrimary ? '  principal' : ''}${sede.branchActive ? '' : '  cerrada'}',
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+                Text(detalle,
+                    style: TextStyle(fontSize: 11, color: color)),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -2260,6 +2343,7 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                           'Sedes Activas:',
                           '${tenant.realBranchesCount} ${_pluralize(tenant.realBranchesCount, 'sede registrada', 'sedes registradas')}',
                         ),
+                        _buildSedes(),
                         _buildInfoRow(
                           'Equipo Activo:',
                           '${tenant.realTeamCount} ${_pluralize(tenant.realTeamCount, 'colaborador activo', 'colaboradores activos')}: '

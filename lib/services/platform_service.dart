@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/branch_subscription.dart';
 import '../models/platform_partner.dart';
 import '../models/platform_saas_metrics.dart';
 import '../models/platform_tenant_feature_override.dart';
@@ -134,6 +135,29 @@ class PlatformService {
       'platform_set_tenant_demo',
       params: {'p_tenant_id': tenantId, 'p_is_demo': isDemo},
     );
+  }
+
+  /// El estado de pago de cada sede de un negocio (D-235, paso 9.35).
+  ///
+  /// Hermana de `get_branch_subscriptions()`, que hace lo mismo pero para el
+  /// propio salon. Aquella saca el negocio de `get_my_tenant_id()`; esta lo
+  /// recibe, porque el dueno de plataforma mira negocios ajenos.
+  ///
+  /// Devuelve el mismo `BranchSubscription` a proposito: si el panel y la
+  /// pantalla del salon usaran modelos distintos, "al dia" acabaria
+  /// significando cosas distintas en cada lado.
+  Future<List<BranchSubscription>> getTenantBranches(String tenantId) async {
+    final response = await Supabase.instance.client.rpc(
+      'platform_get_tenant_branches',
+      params: {'p_tenant_id': tenantId},
+    );
+    return (response as List)
+        .map(
+          (item) => BranchSubscription.fromMap(
+            Map<String, dynamic>.from(item as Map),
+          ),
+        )
+        .toList();
   }
 
   Future<List<TenantSubscriptionHistoryEntry>> getTenantSubscriptionHistory(
