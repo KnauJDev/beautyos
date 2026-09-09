@@ -2046,14 +2046,17 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
     ];
 
     var estado = estados.contains(sede.status) ? sede.status : estados.first;
+    // Solo se prellena si hay un precio PACTADO. `precioCop` es el efectivo:
+    // sin acuerdo trae el de lista, y prellenarlo haria que guardar sin tocar
+    // nada congelara ese precio como si alguien lo hubiera negociado (D-237).
     final precioCtrl = TextEditingController(
-      text: sede.precioCop > 0 ? sede.precioCop.toString() : '',
+      text: sede.tienePrecioPactado ? sede.precioCop.toString() : '',
     );
     // "Precio de lista" es el relleno que pone el servidor cuando NO hay precio
     // pactado. Prellenarlo como si fuera un motivo escrito por alguien seria
     // mentir en el unico campo que documenta el acuerdo.
     final motivoCtrl = TextEditingController(
-      text: sede.motivoPrecio == 'Precio de lista' ? '' : sede.motivoPrecio,
+      text: sede.tienePrecioPactado ? sede.motivoPrecio : '',
     );
     final venceOriginal = sede.currentPeriodEnd;
     var vence = sede.currentPeriodEnd;
@@ -2171,6 +2174,10 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
         priceCop: precio,
         priceReason: motivo.isEmpty ? null : motivo,
         periodEnd: vence,
+        // Dejar el campo vacio significa "a tarifa vigente", y hace falta
+        // decirlo explicitamente: mandar el precio en null NO lo borra
+        // (D-237). Solo cuenta si ANTES habia un precio pactado.
+        limpiarPrecio: precio == null && sede.tienePrecioPactado,
       );
       if (mounted) _recargarSedes();
     } on PostgrestException catch (error) {

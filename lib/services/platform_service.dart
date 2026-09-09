@@ -152,6 +152,12 @@ class PlatformService {
     int? priceCop,
     String? priceReason,
     DateTime? periodEnd,
+    /// Devuelve la sede a la tarifa vigente del plan (D-237).
+    ///
+    /// Hace falta un parametro explicito porque mandar `priceCop: null` NO
+    /// borra el precio: la RPC lo conserva. Sin esto, D-222 prometia algo
+    /// que no se podia hacer.
+    bool limpiarPrecio = false,
   }) async {
     await Supabase.instance.client.rpc(
       'platform_set_branch_subscription',
@@ -161,6 +167,7 @@ class PlatformService {
         'p_price_cop': priceCop,
         'p_price_reason': priceReason,
         'p_period_end': periodEnd?.toUtc().toIso8601String(),
+        'p_limpiar_precio': limpiarPrecio,
       },
     );
   }

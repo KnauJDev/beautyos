@@ -14,6 +14,7 @@ class BranchSubscription {
     required this.alDia,
     required this.precioCop,
     required this.motivoPrecio,
+    this.tienePrecioPactado = false,
     this.currentPeriodEnd,
     this.activatedAt,
   });
@@ -34,6 +35,15 @@ class BranchSubscription {
 
   final int precioCop;
   final String motivoPrecio;
+
+  /// Si el precio de arriba es un **acuerdo** o simplemente el de lista.
+  ///
+  /// `precioCop` es el precio EFECTIVO: cuando no hay nada pactado, el
+  /// servidor devuelve el de lista. Sin esta bandera, la pantalla no podia
+  /// distinguir "pactado 150.000" de "sin pactar, lista 150.000", y la unica
+  /// pista era comparar el texto del motivo -- una cadena pensada para leerse,
+  /// decidiendo sobre dinero (D-237).
+  final bool tienePrecioPactado;
   final DateTime? currentPeriodEnd;
   final DateTime? activatedAt;
 
@@ -51,6 +61,7 @@ class BranchSubscription {
           ? precio
           : int.tryParse(precio?.toString() ?? '') ?? 0,
       motivoPrecio: map['motivo_precio']?.toString() ?? 'Precio de lista',
+      tienePrecioPactado: map['tiene_precio_pactado'] == true,
       currentPeriodEnd: DateTime.tryParse(
         map['current_period_end']?.toString() ?? '',
       ),
