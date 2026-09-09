@@ -25,6 +25,14 @@ import os
 import re
 import sys
 
+# La documentacion esta llena de emoji y la consola de Windows es cp1252 por
+# defecto: sin esto, el guardian revienta al IMPRIMIR el fallo que acaba de
+# encontrar, que es la peor forma posible de fallar.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
+
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 fallos: list[str] = []
 avisos: list[str] = []
@@ -92,6 +100,31 @@ for f in glob.glob(os.path.join(RAIZ, "docs", "**", "*.md"), recursive=True):
                     if c != comun:
                         avisos.append(f"{ruta(f)}:{ln} fila de tabla con {c} columnas; el resto tiene {comun}")
             bloque = []
+
+# --- 3-bis. Marcadores de estado que se contradicen -------------------------
+# El paso 9.2 arreglo filas de la Fase 8 que empezaban en "en curso" y
+# terminaban diciendo "CERRADO". El 09-sep se vio que el 9.29 tenia el mismo
+# defecto, metido el dia anterior: la contradiccion se cuela al anadir el
+# cierre al final de la celda sin tocar el marcador del principio.
+#
+# Nadie va a buscar lo que el marcador dice que no esta hecho (D-129).
+ABIERTOS = (chr(0x2B1C), chr(0x1F504))  # cuadro vacio, y flechas de "en curso"
+CERRADOS = ("CERRAD", "RESUELTA", "VERIFICADO")
+plan_md = os.path.join(RAIZ, "docs", "00_producto", "PLAN_MAESTRO.md")
+if os.path.exists(plan_md):
+    for n, l in enumerate(open(plan_md, encoding="utf-8").read().splitlines(), 1):
+        if not l.startswith("|"):
+            continue
+        celdas = [c.strip() for c in l.strip().strip("|").split("|")]
+        if len(celdas) < 2:
+            continue
+        estado = celdas[-1]
+        if estado.startswith(ABIERTOS) and any(k in estado for k in CERRADOS):
+            fallos.append(
+                ruta(plan_md) + ":" + str(n)
+                + " el marcador dice abierto y el texto dice cerrado: "
+                + estado[:70]
+            )
 
 # --- 4. Un solo HANDOFF vigente --------------------------------------------
 vig = glob.glob(os.path.join(RAIZ, "docs", "HANDOFF", "*.md"))
