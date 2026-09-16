@@ -38,6 +38,48 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
   String selectedFilter =
       'todos'; // 'todos', 'pendientes', 'activos', 'trialing', 'demo', 'suspendidos'
 
+  /// El negocio abierto en el panel de la derecha (D-239, paso 9.39).
+  ///
+  /// **Solo manda en pantalla ancha.** Por debajo de [_anchoParaDosColumnas] la
+  /// ficha se sigue abriendo como hoja emergente: dos columnas en 400 px no son
+  /// dos columnas, son dos columnas ilegibles.
+  ///
+  /// Guarda el negocio y no su identificador porque la lista se recarga tras
+  /// cada acción, y el objeto guardado envejece. Ver `_vigente`.
+  PlatformTenantSummary? _seleccionado;
+
+  /// Ancho a partir del cual caben las dos columnas.
+  ///
+  /// 400 de lista + 1 de separador + lo que quede para la ficha, que necesita
+  /// unos 600 para no romper sus filas de botones.
+  static const double _anchoParaDosColumnas = 1000;
+
+  /// Ancho fijo de la columna de la lista.
+  ///
+  /// Fijo y no proporcional: la lista siempre muestra lo mismo, así que
+  /// estirarla en un monitor grande solo deja aire dentro de cada tarjeta.
+  /// Lo que debe crecer es la ficha, que sí tiene más que enseñar.
+  static const double _anchoDeLaLista = 400;
+
+  /// El negocio seleccionado **tal y como está en la última carga**.
+  ///
+  /// Tras aprobar, suspender o cambiar un precio, `reload()` trae objetos
+  /// nuevos y el que guardamos queda viejo: seguiría diciendo "POR APROBAR"
+  /// después de aprobarlo. Se vuelve a buscar por identificador en cada
+  /// construcción.
+  ///
+  /// Se busca en la lista **sin filtrar** a propósito: si filtras por "Activos"
+  /// con un negocio en prueba abierto, la ficha se queda donde está en vez de
+  /// vaciarse sin avisar.
+  PlatformTenantSummary? _vigente(List<PlatformTenantSummary> todos) {
+    final id = _seleccionado?.tenantId;
+    if (id == null) return null;
+    for (final t in todos) {
+      if (t.tenantId == id) return t;
+    }
+    return null;
+  }
+
   bool get isOwner => widget.platformRole == 'platform_owner';
 
   @override
@@ -913,62 +955,93 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
     }
   }
 
+  /// La ficha del negocio, construida **una sola vez para sus dos casas**
+  /// (D-239): la hoja emergente de siempre y la columna derecha nueva.
+  ///
+  /// [cerrarAntes] es lo que hay que hacer justo antes de cada acción. Como
+  /// hoja emergente es cerrarla —si no, el diálogo de la acción sale detrás de
+  /// la hoja y no se ve—; empotrada **no hace nada**, porque no hay nada que
+  /// estorbe y cerrar sería perder de vista al negocio sobre el que actúas.
+  ///
+  /// La `ValueKey` no es decorativa: al pasar de un negocio a otro sin ella,
+  /// Flutter reaprovecha el estado anterior y `initState` no vuelve a correr,
+  /// así que verías **las sedes y el historial del negocio anterior** bajo el
+  /// nombre del nuevo. Es el mismo fallo que D-211.
+  Widget _fichaDeNegocio(
+    PlatformTenantSummary tenant, {
+    required bool embebido,
+    required VoidCallback cerrarAntes,
+    required VoidCallback onCerrar,
+  }) {
+    return _TenantDetailSheet(
+      key: ValueKey('ficha-${tenant.tenantId}'),
+      tenant: tenant,
+      isOwner: isOwner,
+      platformService: platformService,
+      embebido: embebido,
+      onCerrar: onCerrar,
+      onApprove: (t) {
+        cerrarAntes();
+        handleApprove(t);
+      },
+      onReject: (t) {
+        cerrarAntes();
+        handleReject(t);
+      },
+      onSuspend: (t) {
+        cerrarAntes();
+        handleSuspend(t);
+      },
+      onReactivate: (t) {
+        cerrarAntes();
+        handleReactivate(t);
+      },
+      onExtendTrial: (t) {
+        cerrarAntes();
+        handleExtendTrial(t);
+      },
+      onUpdatePricing: (t) {
+        cerrarAntes();
+        handleUpdatePricing(t);
+      },
+      onUpdateContact: (t) {
+        cerrarAntes();
+        handleUpdateContact(t);
+      },
+      onAssignPartner: (t) {
+        cerrarAntes();
+        handleAssignPartner(t);
+      },
+      onToggleDemo: (t) {
+        cerrarAntes();
+        handleToggleDemo(t);
+      },
+      onViewSupportData: (t) {
+        cerrarAntes();
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => PlatformTenantDetailPage(
+              tenantId: t.tenantId,
+              tenantName: t.tenantName,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Abre la ficha como hoja emergente. **Solo en pantalla estrecha** desde
+  /// D-239; en ancha la ficha vive fija en la columna derecha.
   void _openTenantDetail(PlatformTenantSummary tenant) {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _TenantDetailSheet(
-        tenant: tenant,
-        isOwner: isOwner,
-        platformService: platformService,
-        onApprove: (t) {
-          Navigator.of(context).pop();
-          handleApprove(t);
-        },
-        onReject: (t) {
-          Navigator.of(context).pop();
-          handleReject(t);
-        },
-        onSuspend: (t) {
-          Navigator.of(context).pop();
-          handleSuspend(t);
-        },
-        onReactivate: (t) {
-          Navigator.of(context).pop();
-          handleReactivate(t);
-        },
-        onExtendTrial: (t) {
-          Navigator.of(context).pop();
-          handleExtendTrial(t);
-        },
-        onUpdatePricing: (t) {
-          Navigator.of(context).pop();
-          handleUpdatePricing(t);
-        },
-        onUpdateContact: (t) {
-          Navigator.of(context).pop();
-          handleUpdateContact(t);
-        },
-        onAssignPartner: (t) {
-          Navigator.of(context).pop();
-          handleAssignPartner(t);
-        },
-        onToggleDemo: (t) {
-          Navigator.of(context).pop();
-          handleToggleDemo(t);
-        },
-        onViewSupportData: (t) {
-          Navigator.of(context).pop();
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => PlatformTenantDetailPage(
-                tenantId: t.tenantId,
-                tenantName: t.tenantName,
-              ),
-            ),
-          );
-        },
+      builder: (sheetContext) => _fichaDeNegocio(
+        tenant,
+        embebido: false,
+        cerrarAntes: () => Navigator.of(sheetContext).pop(),
+        onCerrar: () => Navigator.of(sheetContext).pop(),
       ),
     );
   }
@@ -1191,30 +1264,44 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
           return true;
         }).toList();
 
-        return Column(
-          children: [
-            // 1. Buscador y Filtros
-            _buildSearchAndFilters(pendingCount, activeCount, trialCount),
-            // 2. Listado de Tarjetas
-            Expanded(
-              child: filtered.isEmpty
-                  ? Center(
-                      child: Text(
-                        selectedFilter == 'pendientes'
-                            ? 'No hay solicitudes pendientes de aprobación.'
-                            : 'No hay negocios que coincidan con la búsqueda.',
-                        style: const TextStyle(color: AppColors.textSecondary),
-                      ),
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                      itemCount: filtered.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(height: AppSpacing.sm),
-                      itemBuilder: (context, index) => _TenantCard(
-                        tenant: filtered[index],
+        // D-239: en pantalla ancha, maestro-detalle. En estrecha, exactamente
+        // lo de antes. El ancho lo mide `LayoutBuilder` y no `MediaQuery`
+        // porque lo que importa es **el espacio de esta pestaña**, no el de la
+        // ventana: el Panel vive dentro de un `TabBarView` con su propio ancho.
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final dosColumnas = constraints.maxWidth >= _anchoParaDosColumnas;
+            final vigente = dosColumnas ? _vigente(allTenants) : null;
+
+            final lista = filtered.isEmpty
+                ? Center(
+                    child: Text(
+                      selectedFilter == 'pendientes'
+                          ? 'No hay solicitudes pendientes de aprobación.'
+                          : 'No hay negocios que coincidan con la búsqueda.',
+                      style: const TextStyle(color: AppColors.textSecondary),
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    itemCount: filtered.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: AppSpacing.sm),
+                    itemBuilder: (context, index) {
+                      final negocio = filtered[index];
+                      return _TenantCard(
+                        tenant: negocio,
                         isOwner: isOwner,
-                        onTap: () => _openTenantDetail(filtered[index]),
+                        compacto: dosColumnas,
+                        seleccionado:
+                            negocio.tenantId == vigente?.tenantId,
+                        onTap: () {
+                          if (dosColumnas) {
+                            setState(() => _seleccionado = negocio);
+                          } else {
+                            _openTenantDetail(negocio);
+                          }
+                        },
                         onApprove: handleApprove,
                         onReject: handleReject,
                         onUpdatePricing: handleUpdatePricing,
@@ -1228,12 +1315,92 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                             ),
                           );
                         },
-                      ),
-                    ),
-            ),
-          ],
+                      );
+                    },
+                  );
+
+            return Column(
+              children: [
+                // 1. Buscador y Filtros. Se quedan arriba de las dos columnas
+                // a propósito: filtran la lista, no la ficha.
+                _buildSearchAndFilters(pendingCount, activeCount, trialCount),
+                Expanded(
+                  child: dosColumnas
+                      ? Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            SizedBox(
+                              width: _anchoDeLaLista,
+                              child: lista,
+                            ),
+                            const VerticalDivider(
+                              width: 1,
+                              thickness: 1,
+                              color: AppColors.border,
+                            ),
+                            Expanded(
+                              child: vigente == null
+                                  ? _sinNegocioElegido()
+                                  : _fichaDeNegocio(
+                                      vigente,
+                                      embebido: true,
+                                      // Empotrada no se cierra nada antes de
+                                      // actuar: perder de vista al negocio
+                                      // sobre el que actúas es justo lo que
+                                      // esta pantalla viene a evitar.
+                                      cerrarAntes: () {},
+                                      onCerrar: () => setState(
+                                        () => _seleccionado = null,
+                                      ),
+                                    ),
+                            ),
+                          ],
+                        )
+                      : lista,
+                ),
+              ],
+            );
+          },
         );
       },
+    );
+  }
+
+  /// Lo que ocupa la columna derecha mientras no has elegido a nadie.
+  ///
+  /// Un hueco en blanco parecería una pantalla rota o a medio cargar. Esto
+  /// dice qué hacer, en una línea.
+  Widget _sinNegocioElegido() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.touch_app_outlined,
+              size: 44,
+              color: AppColors.textMuted,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            const Text(
+              'Elige un negocio de la izquierda',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            const Text(
+              'Aquí verás sus sedes con el estado de pago de cada una, '
+              'su plan y su historial.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1515,11 +1682,25 @@ class _TenantCard extends StatelessWidget {
     required this.onReject,
     required this.onUpdatePricing,
     required this.onViewSupportData,
+    this.compacto = false,
+    this.seleccionado = false,
   });
 
   final PlatformTenantSummary tenant;
   final bool isOwner;
   final VoidCallback onTap;
+
+  /// La tarjeta vive en la columna izquierda del maestro-detalle (D-239).
+  ///
+  /// Esconde los botones de **gestión** —aprobar, rechazar, precio, ver
+  /// ficha— y deja solo los de **contacto**. No es por espacio, aunque
+  /// también: en una pantalla partida en dos, la lista sirve para ELEGIR y
+  /// la derecha para ACTUAR. Un botón que toca dinero desde una fila de
+  /// lista no te deja ver a quién se lo estás tocando.
+  final bool compacto;
+
+  /// Es el negocio abierto ahora mismo en el panel derecho.
+  final bool seleccionado;
   final ValueChanged<PlatformTenantSummary> onApprove;
   final ValueChanged<PlatformTenantSummary> onReject;
   final ValueChanged<PlatformTenantSummary> onUpdatePricing;
@@ -1593,18 +1774,25 @@ class _TenantCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isPending = tenant.isPending;
 
+    // El seleccionado manda sobre el pendiente en el borde: es el que estás
+    // mirando ahora, y sin esa señal la columna izquierda no dice cuál de sus
+    // filas produjo lo que hay a la derecha.
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.card),
         side: BorderSide(
-          color: isPending ? AppColors.statePending : AppColors.border,
-          width: isPending ? 1.5 : 1.0,
+          color: seleccionado
+              ? AppColors.brand
+              : (isPending ? AppColors.statePending : AppColors.border),
+          width: seleccionado ? 2.0 : (isPending ? 1.5 : 1.0),
         ),
       ),
-      color: isPending
-          ? AppColors.statePendingTint.withValues(alpha: 0.35)
-          : AppColors.surface,
+      color: seleccionado
+          ? AppColors.brandTint.withValues(alpha: 0.35)
+          : (isPending
+                ? AppColors.statePendingTint.withValues(alpha: 0.35)
+                : AppColors.surface),
       child: InkWell(
         borderRadius: BorderRadius.circular(AppRadius.card),
         onTap: onTap,
@@ -1896,7 +2084,12 @@ class _TenantCard extends StatelessWidget {
                     ),
                   ],
                   const Spacer(),
-                  if (isPending && isOwner) ...[
+                  // En la columna izquierda del maestro-detalle no hay botones
+                  // de gestion: esos viven a la derecha, junto a la ficha que
+                  // dice a quien le estas tocando el dinero (D-239).
+                  if (compacto)
+                    const SizedBox.shrink()
+                  else if (isPending && isOwner) ...[
                     FilledButton.icon(
                       onPressed: () => onApprove(tenant),
                       icon: const Icon(Icons.check_circle_outlined, size: 16),
@@ -1965,6 +2158,7 @@ class _TenantCard extends StatelessWidget {
 // ============================================================================
 class _TenantDetailSheet extends StatefulWidget {
   const _TenantDetailSheet({
+    super.key,
     required this.tenant,
     required this.isOwner,
     required this.platformService,
@@ -1978,7 +2172,24 @@ class _TenantDetailSheet extends StatefulWidget {
     required this.onViewSupportData,
     required this.onAssignPartner,
     required this.onToggleDemo,
+    required this.onCerrar,
+    this.embebido = false,
   });
+
+  /// Qué hacer al pulsar la X.
+  ///
+  /// Como hoja emergente es cerrarla; empotrada en el panel derecho es soltar
+  /// la selección. **Obligatorio y sin valor por defecto a propósito:** si
+  /// fuera opcional y cayera en `Navigator.pop()`, la versión empotrada
+  /// cerraría el Panel de Plataforma entero (D-239).
+  final VoidCallback onCerrar;
+
+  /// Se dibuja dentro de la columna derecha en vez de flotar sobre todo.
+  ///
+  /// Quita las esquinas redondeadas de arriba y el tope de altura del 92 %:
+  /// empotrada ocupa lo que le den, y una hoja que se queda al 92 % de su
+  /// columna deja una franja muerta abajo.
+  final bool embebido;
 
   final PlatformTenantSummary tenant;
   final bool isOwner;
@@ -2330,15 +2541,22 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
     final status = tenant.subscriptionStatus;
     final isPending = tenant.isPending;
 
+    final embebido = widget.embebido;
+
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: embebido
+            ? null
+            : const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
+        top: !embebido,
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.92,
+            maxHeight: embebido
+                ? double.infinity
+                : MediaQuery.of(context).size.height * 0.92,
           ),
           child: Column(
             children: [
@@ -2406,8 +2624,9 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                       ),
                     ),
                     IconButton(
+                      tooltip: embebido ? 'Soltar este negocio' : 'Cerrar',
                       icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: widget.onCerrar,
                     ),
                   ],
                 ),
@@ -2529,11 +2748,6 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                         ),
                         const SizedBox(height: 6),
                         _buildInfoRow(
-                          'Sedes Activas:',
-                          '${tenant.realBranchesCount} ${_pluralize(tenant.realBranchesCount, 'sede registrada', 'sedes registradas')}',
-                        ),
-                        _buildSedes(),
-                        _buildInfoRow(
                           'Equipo Activo:',
                           '${tenant.realTeamCount} ${_pluralize(tenant.realTeamCount, 'colaborador activo', 'colaboradores activos')}: '
                               '${tenant.teamBreakdown ?? 'Sin colaboradores activos'}',
@@ -2581,9 +2795,30 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
 
                     const SizedBox(height: AppSpacing.md),
 
-                    // TARJETA 2: PLAN Y TARIFA MENSUAL ACTUAL (SEGÚN BOSQUEJO)
+                    // TARJETA 2: LAS SEDES.
+                    //
+                    // Suben aquí desde dentro de la tarjeta 1, donde estaban
+                    // enterradas bajo "B. Capacidad Operativa Real" (D-239).
+                    // No es cosmética: desde que el cobro va por sede y no por
+                    // negocio, **este es el sitio donde vive el dinero**, y
+                    // estaba tres pantallazos por debajo del nombre.
                     _buildSectionCard(
-                      title: '2. Plan y Tarifa Mensual Fijada',
+                      title: '2. Sedes y su estado de pago',
+                      icon: Icons.storefront_outlined,
+                      children: [
+                        _buildInfoRow(
+                          'Sedes Activas:',
+                          '${tenant.realBranchesCount} ${_pluralize(tenant.realBranchesCount, 'sede registrada', 'sedes registradas')}',
+                        ),
+                        _buildSedes(),
+                      ],
+                    ),
+
+                    const SizedBox(height: AppSpacing.md),
+
+                    // TARJETA 3: PLAN Y TARIFA MENSUAL ACTUAL (SEGÚN BOSQUEJO)
+                    _buildSectionCard(
+                      title: '3. Plan y Tarifa Mensual Fijada del Negocio',
                       icon: Icons.sell_outlined,
                       children: [
                         Row(
@@ -2735,7 +2970,7 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
 
                     // TARJETA 3: BOTONERA DE GESTIÓN Y ACCIONES
                     _buildSectionCard(
-                      title: '3. Acciones de Gestión de Plataforma',
+                      title: '4. Acciones de Gestión de Plataforma',
                       icon: Icons.settings_suggest_outlined,
                       children: [
                         Wrap(
@@ -2837,7 +3072,7 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
 
                     // TARJETA 4: HISTORIAL COMPLETO DE TRANSACCIONES Y PERÍODOS
                     _buildSectionCard(
-                      title: '4. Historial de Periodos Registrados',
+                      title: '5. Historial de Periodos Registrados',
                       icon: Icons.history,
                       children: [
                         FutureBuilder<List<TenantSubscriptionHistoryEntry>>(
@@ -3323,7 +3558,7 @@ class _TenantOverridesCardState extends State<_TenantOverridesCard> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    '5. Límites y Excepciones del Salón (Overrides)',
+                    '6. Límites y Excepciones del Salón (Overrides)',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
