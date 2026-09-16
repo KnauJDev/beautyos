@@ -2213,6 +2213,12 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
   late final Future<List<TenantSubscriptionHistoryEntry>> _historyFuture;
   late Future<List<BranchSubscription>> _branchesFuture;
 
+  /// Que pestana de sede esta abierta (D-241). Se guarda el identificador y no
+  /// la sede: `_recargarSedes()` trae objetos nuevos tras cada cambio, y el
+  /// guardado seguiria ensenando el precio anterior. Mismo cuidado que la
+  /// seleccion de negocio en D-240.
+  String? _sedeElegida;
+
   @override
   void initState() {
     super.initState();
@@ -2405,15 +2411,19 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
     }
   }
 
-  /// El estado de pago de cada sede (D-235, paso 9.35).
+  /// Las sedes del negocio, en pestañas (D-235, D-241).
   ///
-  /// Antes el Panel solo decia cuantas sedes habia, asi que tras pagar una
-  /// sede secundaria se veia exactamente igual que antes.
+  /// **Por qué pestañas y no una lista.** Hasta D-241 esto era un renglón por
+  /// sede con un lápiz al lado: bastaba mientras lo único propio de una sede
+  /// fuera su precio. Ahora una sede tiene encargado, contacto y dirección
+  /// propios, y apilarlas obliga a bajar por pantallazos para comparar dos.
+  /// Con pestañas ves de golpe cuántas hay y **cuál está en mora**, por el
+  /// punto de color, sin abrir ninguna.
   ///
-  /// Se muestra "al dia" y no "activa" porque no son lo mismo: una sede puede
+  /// Se muestra "al día" y no "activa" porque no son lo mismo: una sede puede
   /// estar operando y en mora. Lo calcula el servidor con la misma regla que
-  /// ve el salon en su Configuracion (D-190), para que no signifiquen cosas
-  /// distintas a cada lado del telefono.
+  /// ve el salón en su Configuración (D-190), para que no signifiquen cosas
+  /// distintas a cada lado del teléfono.
   Widget _buildSedes() {
     return FutureBuilder<List<BranchSubscription>>(
       future: _branchesFuture,
@@ -2421,74 +2431,358 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 6),
-            child: Text('Consultando el estado de las sedes...',
-                style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+            child: Text(
+              'Consultando el estado de las sedes...',
+              style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+            ),
           );
         }
         if (snapshot.hasError) {
           // Sin nombrarle funciones de la base a nadie (D-208).
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 6),
-            child: Text('No pudimos consultar el estado de las sedes ahora mismo.',
-                style: TextStyle(fontSize: 11, color: AppColors.danger)),
+            child: Text(
+              'No pudimos consultar el estado de las sedes ahora mismo.',
+              style: TextStyle(fontSize: 11, color: AppColors.danger),
+            ),
           );
         }
+
         final sedes = snapshot.data ?? const <BranchSubscription>[];
         if (sedes.isEmpty) return const SizedBox.shrink();
+
+        // La elegida se busca por identificador en cada construcción, no se
+        // guarda el objeto: `_recargarSedes()` trae objetos nuevos tras cada
+        // cambio y el guardado seguiría enseñando el precio viejo. Es el mismo
+        // cuidado que la selección de negocio en D-240.
+        var elegida = sedes.first;
+        for (final s in sedes) {
+          if (s.branchId == _sedeElegida) {
+            elegida = s;
+            break;
+          }
+        }
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: sedes.map(_buildSedeFila).toList(),
+          children: [
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final sede in sedes)
+                  _buildPestanaDeSede(sede, sede.branchId == elegida.branchId),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _buildFichaDeSede(elegida),
+          ],
         );
       },
     );
   }
 
-  Widget _buildSedeFila(BranchSubscription sede) {
+  /// Una pestaña. Lleva el punto de color **antes** del nombre a propósito:
+  /// se lee primero el estado y después de quién es, que es el orden en que se
+  /// mira una lista de sedes cuando lo que buscas es quién no ha pagado.
+  Widget _buildPestanaDeSede(BranchSubscription sede, bool elegida) {
+    final color = sede.alDia ? AppColors.success : AppColors.danger;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+      onTap: () => setState(() => _sedeElegida = sede.branchId),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: elegida ? AppColors.brandTint : AppColors.surfaceAlt,
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(
+            color: elegida ? AppColors.brand : AppColors.border,
+            width: elegida ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 7),
+            Icon(
+              sede.isPrimary ? Icons.home_outlined : Icons.storefront_outlined,
+              size: 14,
+              color: elegida ? AppColors.brandDeep : AppColors.textSecondary,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              sede.branchName,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: elegida ? FontWeight.w800 : FontWeight.w600,
+                color: elegida ? AppColors.brandDeep : AppColors.textPrimary,
+              ),
+            ),
+            if (!sede.branchActive) ...[
+              const SizedBox(width: 5),
+              const Text(
+                'cerrada',
+                style: TextStyle(fontSize: 10, color: AppColors.textMuted),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// La sede elegida, entera. **Esto es lo que pidió el propietario**: no una
+  /// fila con un precio, sino la sede con su propia vida — porque en la
+  /// realidad tendrá otro encargado, otro teléfono y otra dirección que el
+  /// negocio que la contiene (D-241).
+  Widget _buildFichaDeSede(BranchSubscription sede) {
     final etiqueta = sede.alDia
-        ? 'Al dia'
+        ? 'Al día'
         : (sede.status == 'pending' ? 'Sin pagar' : 'En mora');
     final color = sede.alDia ? AppColors.success : AppColors.danger;
-    final detalle =
-        '$etiqueta · ${formatCOP(sede.precioCop)}/mes · vence ${_formatDate(sede.currentPeriodEnd)}';
 
-    return Padding(
-      padding: const EdgeInsets.only(left: 12, top: 3, bottom: 3),
-      child: Row(
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceAlt,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            sede.isPrimary ? Icons.home_outlined : Icons.storefront_outlined,
-            size: 14,
-            color: AppColors.textMuted,
-          ),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${sede.branchName}${sede.isPrimary ? '  principal' : ''}${sede.branchActive ? '' : '  cerrada'}',
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  sede.branchName +
+                      (sede.isPrimary ? '  ·  sede principal' : ''),
                   style: const TextStyle(
-                      fontSize: 12, fontWeight: FontWeight.w600),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
-                Text(detalle,
-                    style: TextStyle(fontSize: 11, color: color)),
+              ),
+              // Solo el dueño de plataforma. Las dos RPC lo comprueban igual
+              // por dentro, pero enseñar un botón que va a rechazar es cruel.
+              if (widget.isOwner) ...[
+                OutlinedButton.icon(
+                  onPressed: () => _editarDatosDeSede(sede),
+                  icon: const Icon(Icons.badge_outlined, size: 15),
+                  label: const Text('Datos'),
+                  style: OutlinedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    foregroundColor: AppColors.brand,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                OutlinedButton.icon(
+                  onPressed: () => _editarSede(sede),
+                  icon: const Icon(Icons.payments_outlined, size: 15),
+                  label: const Text('Pago'),
+                  style: OutlinedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    foregroundColor: AppColors.brand,
+                  ),
+                ),
               ],
+            ],
+          ),
+          const Divider(height: 18),
+
+          _buildSubsectionLabel('A. Estado de pago DE ESTA SEDE'),
+          const SizedBox(height: 6),
+          _buildInfoRow('Estado:', etiqueta),
+          _buildInfoRow('Cuota mensual:', _formatCop(sede.precioCop)),
+          _buildInfoRow(
+            'Ese precio es:',
+            // No se deduce comparando el texto del motivo: el servidor lo dice
+            // (D-237). Una cadena pensada para leerse no decide sobre dinero.
+            sede.tienePrecioPactado
+                ? 'Un acuerdo — ${sede.motivoPrecio}'
+                : 'La tarifa vigente del plan',
+          ),
+          _buildInfoRow('Pagada hasta:', _formatDate(sede.currentPeriodEnd)),
+          _buildInfoRow(
+            'Primera activación:',
+            sede.nuncaActivada
+                ? 'Nunca se ha activado'
+                : _formatDate(sede.activatedAt),
+          ),
+
+          const Divider(height: 18),
+          _buildSubsectionLabel('B. Quién la lleva y dónde está'),
+          const SizedBox(height: 6),
+          if (!sede.tieneDatosPropios)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 4),
+              child: Text(
+                'Esta sede todavía no tiene datos propios. Hasta ahora solo se '
+                'podían guardar los del negocio.',
+                style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+              ),
+            )
+          else ...[
+            _buildInfoRow('Encargado:', sede.managerName ?? 'Sin registrar'),
+            _buildInfoRow('Correo:', sede.contactEmail ?? 'Sin registrar'),
+            _buildInfoRow('Teléfono:', sede.contactPhone ?? 'Sin registrar'),
+            _buildInfoRow('WhatsApp:', sede.whatsapp ?? 'Sin registrar'),
+            _buildInfoRow('Dirección:', sede.address ?? 'Sin registrar'),
+            _buildInfoRow('Ciudad:', sede.city ?? 'Sin registrar'),
+            _buildInfoRow('Departamento:', sede.department ?? 'Sin registrar'),
+          ],
+
+          const SizedBox(height: 6),
+          Text(
+            sede.branchActive
+                ? 'La sede está abierta y operando.'
+                : 'La sede está cerrada. Ojo: cerrada y en mora no son lo mismo '
+                      '— esta puede estar pagada igual.',
+            style: TextStyle(
+              fontSize: 11,
+              color: sede.branchActive ? AppColors.textMuted : color,
             ),
           ),
-          // Solo el dueno de plataforma: la RPC lo comprueba igual por
-          // dentro, pero ensenar un boton que va a rechazar es cruel.
-          if (widget.isOwner)
-            IconButton(
-              onPressed: () => _editarSede(sede),
-              icon: const Icon(Icons.edit_outlined, size: 15),
-              color: AppColors.brand,
-              visualDensity: VisualDensity.compact,
-              tooltip: 'Precio y estado de esta sede',
-            ),
         ],
       ),
     );
+  }
+
+  /// Escribe los datos propios de una sede (D-241, paso 9.42).
+  ///
+  /// **Manda los siete campos siempre.** La RPC no conserva nada: vacío
+  /// significa vacío. Es lo contrario de lo que hacía la de precios antes de
+  /// D-237, y a propósito — allí `null` conservaba, y por eso se podía poner
+  /// un precio y cambiarlo pero nunca quitarlo.
+  ///
+  /// Por eso el formulario **se prellena con lo que hay de verdad**: si
+  /// enseñara menos campos de los que escribe, guardar borraría en silencio lo
+  /// que no se ve. En D-230 un prellenado genérico estuvo a un clic de borrar
+  /// el acuerdo documentado de un cliente.
+  Future<void> _editarDatosDeSede(BranchSubscription sede) async {
+    final encargado = TextEditingController(text: sede.managerName ?? '');
+    final correo = TextEditingController(text: sede.contactEmail ?? '');
+    final telefono = TextEditingController(text: sede.contactPhone ?? '');
+    final whatsapp = TextEditingController(text: sede.whatsapp ?? '');
+    final direccion = TextEditingController(text: sede.address ?? '');
+    final ciudad = TextEditingController(text: sede.city ?? '');
+    final departamento = TextEditingController(text: sede.department ?? '');
+
+    Widget campo(
+      TextEditingController c,
+      String etiqueta, {
+      String? ayuda,
+      TextInputType? teclado,
+    }) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: TextField(
+          controller: c,
+          keyboardType: teclado,
+          decoration: InputDecoration(
+            labelText: etiqueta,
+            helperText: ayuda,
+            helperMaxLines: 2,
+            border: const OutlineInputBorder(),
+          ),
+        ),
+      );
+    }
+
+    final guardar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Datos de ${sede.branchName}'),
+        content: SizedBox(
+          width: 420,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    'Son los datos de ESTA sede, no los del negocio. Déjalos '
+                    'vacíos si no aplican: lo que borres aquí se borra.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+                campo(
+                  encargado,
+                  'Encargado de la sede',
+                  ayuda: 'Quien la lleva. Puede no ser el dueño del negocio.',
+                ),
+                campo(
+                  correo,
+                  'Correo de la sede',
+                  teclado: TextInputType.emailAddress,
+                  ayuda: 'Si lo pones, tiene que llevar arroba.',
+                ),
+                campo(telefono, 'Teléfono', teclado: TextInputType.phone),
+                campo(whatsapp, 'WhatsApp', teclado: TextInputType.phone),
+                campo(direccion, 'Dirección'),
+                campo(ciudad, 'Ciudad'),
+                campo(departamento, 'Departamento'),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+
+    if (guardar != true || !mounted) return;
+
+    String? limpio(TextEditingController c) {
+      final t = c.text.trim();
+      return t.isEmpty ? null : t;
+    }
+
+    try {
+      await widget.platformService.updateBranchInfo(
+        branchId: sede.branchId,
+        managerName: limpio(encargado),
+        contactEmail: limpio(correo),
+        contactPhone: limpio(telefono),
+        whatsapp: limpio(whatsapp),
+        address: limpio(direccion),
+        city: limpio(ciudad),
+        department: limpio(departamento),
+      );
+      if (mounted) _recargarSedes();
+    } on PostgrestException catch (error) {
+      // El mensaje viene del servidor, que es quien conoce la regla que se
+      // incumplió: por ejemplo, un correo sin arroba.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.message),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
+    }
   }
 
   String _formatDate(DateTime? date) {

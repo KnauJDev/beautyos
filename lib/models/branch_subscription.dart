@@ -17,6 +17,13 @@ class BranchSubscription {
     this.tienePrecioPactado = false,
     this.currentPeriodEnd,
     this.activatedAt,
+    this.managerName,
+    this.contactEmail,
+    this.contactPhone,
+    this.whatsapp,
+    this.address,
+    this.city,
+    this.department,
   });
 
   final String branchId;
@@ -47,6 +54,41 @@ class BranchSubscription {
   final DateTime? currentPeriodEnd;
   final DateTime? activatedAt;
 
+  // --------------------------------------------------------------------------
+  // Los datos propios de la sede (D-241).
+  //
+  // Opcionales porque este mismo modelo lo llena tambien
+  // `get_branch_subscriptions()`, que es la que ve el SALON y no devuelve
+  // estos campos: al salon no le hace falta que se los cuenten, son suyos.
+  // Solo `platform_get_tenant_branches` los trae.
+  //
+  // Las columnas existen en `branches` desde el 20-jul y estuvieron dos meses
+  // sin que nadie las escribiera. El dato no faltaba: faltaba la puerta.
+  // --------------------------------------------------------------------------
+
+  /// Quien lleva ESTA sede. El dueno del negocio puede no ser el encargado de
+  /// ninguna (D-239), por eso es dato de la sede.
+  final String? managerName;
+  final String? contactEmail;
+  final String? contactPhone;
+  final String? whatsapp;
+  final String? address;
+  final String? city;
+  final String? department;
+
+  /// Si esta sede tiene algun dato propio escrito.
+  ///
+  /// Sirve para que la pantalla diga "sin datos propios todavia" en vez de
+  /// ensenar siete guiones, que parece un error de carga.
+  bool get tieneDatosPropios =>
+      (managerName ?? '').isNotEmpty ||
+      (contactEmail ?? '').isNotEmpty ||
+      (contactPhone ?? '').isNotEmpty ||
+      (whatsapp ?? '').isNotEmpty ||
+      (address ?? '').isNotEmpty ||
+      (city ?? '').isNotEmpty ||
+      (department ?? '').isNotEmpty;
+
   factory BranchSubscription.fromMap(Map<String, dynamic> map) {
     final precio = map['precio_cop'];
 
@@ -66,7 +108,21 @@ class BranchSubscription {
         map['current_period_end']?.toString() ?? '',
       ),
       activatedAt: DateTime.tryParse(map['activated_at']?.toString() ?? ''),
+      managerName: _texto(map['manager_name']),
+      contactEmail: _texto(map['contact_email']),
+      contactPhone: _texto(map['contact_phone']),
+      whatsapp: _texto(map['whatsapp']),
+      address: _texto(map['address']),
+      city: _texto(map['city']),
+      department: _texto(map['department']),
     );
+  }
+
+  /// Texto que puede no venir --el lector del salon no manda estos campos-- y
+  /// que si viene vacio vale lo mismo que no venir.
+  static String? _texto(Object? valor) {
+    final s = valor?.toString().trim() ?? '';
+    return s.isEmpty ? null : s;
   }
 
   /// Nunca se ha pagado. Es distinto de "se cayó": una sede que se dio de alta

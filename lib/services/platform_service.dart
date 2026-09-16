@@ -172,6 +172,45 @@ class PlatformService {
     );
   }
 
+  /// Escribe los datos propios de UNA sede (D-241, paso 9.42).
+  ///
+  /// **Todos los parametros son obligatorios y se escriben siempre.** No hay
+  /// "manda solo lo que cambia": la RPC no conserva nada, escribe los siete
+  /// campos tal cual lleguen, y vacio significa vacio.
+  ///
+  /// Es a proposito y viene de D-237, donde `coalesce(p_price_cop, price_cop)`
+  /// hacia que `null` conservara: la funcion sabia poner y cambiar pero nunca
+  /// quitar, y nadie lo noto hasta que el propietario intento borrar un precio.
+  /// Al no haber valores por defecto **tampoco se puede llamar a medias y
+  /// borrar sin querer los campos que no se mencionaron**.
+  ///
+  /// Quien la llame debe mandar el formulario entero, que es justo lo que hace
+  /// el dialogo del Panel.
+  Future<void> updateBranchInfo({
+    required String branchId,
+    required String? managerName,
+    required String? contactEmail,
+    required String? contactPhone,
+    required String? whatsapp,
+    required String? address,
+    required String? city,
+    required String? department,
+  }) async {
+    await Supabase.instance.client.rpc(
+      'platform_update_branch_info',
+      params: {
+        'p_branch_id': branchId,
+        'p_manager_name': managerName,
+        'p_contact_email': contactEmail,
+        'p_contact_phone': contactPhone,
+        'p_whatsapp': whatsapp,
+        'p_address': address,
+        'p_city': city,
+        'p_department': department,
+      },
+    );
+  }
+
   /// El estado de pago de cada sede de un negocio (D-235, paso 9.35).
   ///
   /// Hermana de `get_branch_subscriptions()`, que hace lo mismo pero para el
