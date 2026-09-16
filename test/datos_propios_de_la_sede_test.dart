@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:salonymas/models/branch_info.dart';
 import 'package:salonymas/models/branch_subscription.dart';
 
 /// Los datos propios de una sede (D-241, paso 9.42).
@@ -117,6 +118,71 @@ void main() {
             'comparación o búsqueda posterior sin que nadie vea por qué.',
       );
       expect(sede.tieneDatosPropios, isTrue);
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // BranchInfo: lo mismo, pero visto desde el propio salón (D-242).
+  //
+  // Es un modelo aparte a propósito. `BranchSubscription` responde "¿cuánto
+  // paga esta sede?" y lo mira el dueño de plataforma; este responde "¿quién
+  // la lleva y dónde está?" y lo mira el salón. Juntarlos obligaría a que la
+  // Configuración de cada salón arrastrara campos de dinero que no le tocan.
+  // --------------------------------------------------------------------------
+  group('la sede vista desde su propio salón', () {
+    test('llegan los datos y se sabe que los tiene', () {
+      final sede = BranchInfo.fromMap(<String, dynamic>{
+        'branch_id': 'sede-2',
+        'branch_name': 'Uñas Naguara',
+        'is_primary': false,
+        'manager_name': 'Marta Encargada',
+        'address': 'Calle de las peluquerías No. 14-70',
+        'city': 'Bogotá',
+      });
+
+      expect(sede.branchName, 'Uñas Naguara');
+      expect(sede.isPrimary, isFalse);
+      expect(sede.managerName, 'Marta Encargada');
+      expect(sede.address, 'Calle de las peluquerías No. 14-70');
+      expect(sede.contactEmail, isNull);
+      expect(sede.tieneDatos, isTrue);
+    });
+
+    test('una sede recién creada no tiene datos propios', () {
+      final sede = BranchInfo.fromMap(<String, dynamic>{
+        'branch_id': 'sede-3',
+        'branch_name': 'Sede nueva',
+        'is_primary': false,
+      });
+
+      expect(
+        sede.tieneDatos,
+        isFalse,
+        reason:
+            'Sin datos propios la pantalla explica para qué sirven, en vez de '
+            'enseñar siete casillas vacías sin decir por qué están ahí.',
+      );
+    });
+
+    test('lo borrado se queda borrado, no cuenta como dato', () {
+      final sede = BranchInfo.fromMap(<String, dynamic>{
+        'branch_id': 'sede-4',
+        'branch_name': 'Sede vaciada',
+        'is_primary': true,
+        'manager_name': '',
+        'address': '   ',
+      });
+
+      expect(sede.managerName, isNull);
+      expect(sede.address, isNull);
+      expect(
+        sede.tieneDatos,
+        isFalse,
+        reason:
+            'Vaciar los campos deja cadenas vacías, no claves ausentes. Si '
+            'contaran, la tarjeta diría que la sede tiene datos y enseñaría '
+            'siete renglones en blanco.',
+      );
     });
   });
 }

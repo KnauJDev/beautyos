@@ -60,7 +60,6 @@ class BusinessSettingsService {
     String? whatsapp,
     String? instagram,
     String? facebook,
-    String? address,
   }) async {
     await Supabase.instance.client.rpc(
       'update_tenant_contact_info',
@@ -71,7 +70,6 @@ class BusinessSettingsService {
         'p_whatsapp': whatsapp,
         'p_instagram': instagram,
         'p_facebook': facebook,
-        'p_address': address,
       },
     );
   }

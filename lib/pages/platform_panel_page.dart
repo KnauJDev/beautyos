@@ -59,7 +59,7 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
   /// Fijo y no proporcional: la lista siempre muestra lo mismo, así que
   /// estirarla en un monitor grande solo deja aire dentro de cada tarjeta.
   /// Lo que debe crecer es la ficha, que sí tiene más que enseñar.
-  static const double _anchoDeLaLista = 400;
+  static const double _anchoDeLaLista = 470;
 
   /// El negocio seleccionado **tal y como está en la última carga**.
   ///
@@ -1801,7 +1801,13 @@ class _TenantCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Fila 1: Nombre del negocio y Badges
+              // Fila 1: **la persona**, y debajo su negocio (D-243).
+              //
+              // Antes mandaba el nombre del negocio. Pero esta columna es la
+              // lista de CLIENTES, y un cliente es una persona: Yelimar
+              // Rodriguez, no "Naguara de Unas". El negocio baja a segunda
+              // linea y se repite en la tarjeta de cada sede, que es donde
+              // importa saber de quien es el local que estas mirando.
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1810,13 +1816,24 @@ class _TenantCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          tenant.tenantName,
+                          tenant.contactName ?? tenant.tenantName,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                             color: AppColors.textPrimary,
                           ),
                         ),
+                        if (tenant.contactName != null) ...[
+                          const SizedBox(height: 1),
+                          Text(
+                            tenant.tenantName,
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.brandDeep,
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 2),
                         Text(
                           '${tenant.contactEmail} ${tenant.city != null ? "· 📍 ${tenant.city}" : ""}',
@@ -1894,7 +1911,15 @@ class _TenantCard extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.sm),
 
-              // Fila 2: Plan, Tarifa y Vigencia
+              // Fila 2: Plan, Tarifa y Vigencia.
+              //
+              // **Fuera de la columna estrecha** (D-243). Desde D-239 el
+              // precio se pacta POR SEDE, asi que una tarifa a nombre del
+              // negocio en la lista de clientes dice algo que ya no decide
+              // nada -- y era justo lo que hacia que Naguara pareciera costar
+              // $10.000 mientras su propia sede decia $80.000. Cada sede lleva
+              // el suyo en su ficha.
+              if (!compacto)
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
@@ -2561,14 +2586,29 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  sede.branchName +
-                      (sede.isPrimary ? '  ·  sede principal' : ''),
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      sede.branchName +
+                          (sede.isPrimary ? '  ·  sede principal' : ''),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    // De que negocio es. Se repite en cada sede a proposito
+                    // (D-243): la columna izquierda ya no lo dice, porque alli
+                    // manda el nombre de la persona.
+                    Text(
+                      widget.tenant.tenantName,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               // Solo el dueño de plataforma. Las dos RPC lo comprueban igual

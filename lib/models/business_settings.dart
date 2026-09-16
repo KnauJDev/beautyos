@@ -28,7 +28,6 @@
   /// Dirección física de la sede principal (D-166). `tenants` no tiene
   /// dirección propia, solo cada sede -- mismo criterio que la página
   /// pública (D-164).
-  final String? address;
 
   const BusinessSettings({
     required this.id,
@@ -45,7 +44,6 @@
     this.themeKey,
     this.brandColor,
     this.slug,
-    this.address,
   });
 
   factory BusinessSettings.fromMap(Map<String, dynamic> map) {
@@ -64,7 +62,6 @@
       themeKey: map['theme_key']?.toString(),
       brandColor: map['brand_color']?.toString(),
       slug: map['slug']?.toString(),
-      address: map['address']?.toString(),
     );
   }
 }

@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_theme.dart';
 
 import '../models/appointment_policy.dart';
+import '../models/branch_info.dart';
 import '../models/business_hour.dart';
 import '../models/business_settings.dart';
 import '../models/commission_policy.dart';
@@ -18,6 +19,7 @@ import '../models/stylist_management_item.dart';
 import '../models/tenant_subscription_status.dart';
 import '../services/appointment_policy_service.dart';
 import '../services/branch_sale_numbering_service.dart';
+import '../services/branches_service.dart';
 import '../services/business_hours_service.dart';
 import '../services/business_settings_service.dart';
 import '../services/commission_policy_service.dart';
@@ -225,6 +227,13 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
             );
           },
         ),
+        // Los datos de la sede en la que estas, no los del negocio (D-242).
+        // Fuera del `isOwner`: un admin lleva una sede y tiene que poder
+        // corregir su telefono o su direccion. Quien manda de verdad es la
+        // RPC, que comprueba el permiso **por sede**.
+        const SizedBox(height: 16),
+        const SectionTitle('Datos de esta sede'),
+        _DatosDeEstaSedeCard(branchId: widget.branchId),
         if (widget.isOwner) ...[
           const SizedBox(height: 16),
           const SectionTitle('Sedes'),
@@ -947,7 +956,6 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
   late final TextEditingController _businessTypeController;
   late final TextEditingController _phoneController;
   late final TextEditingController _whatsappController;
-  late final TextEditingController _addressController;
   late final TextEditingController _instagramController;
   late final TextEditingController _facebookController;
   bool _isSaving = false;
@@ -964,9 +972,6 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
     );
     _whatsappController = TextEditingController(
       text: _editableOrEmpty(widget.settings.whatsapp, 'Sin WhatsApp'),
-    );
-    _addressController = TextEditingController(
-      text: widget.settings.address ?? '',
     );
     _instagramController = TextEditingController(
       text: _editableOrEmpty(widget.settings.instagram, 'Sin Instagram'),
@@ -989,7 +994,6 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
     _businessTypeController.dispose();
     _phoneController.dispose();
     _whatsappController.dispose();
-    _addressController.dispose();
     _instagramController.dispose();
     _facebookController.dispose();
     super.dispose();
@@ -1005,7 +1009,6 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
         whatsapp: _whatsappController.text.trim(),
         instagram: _instagramController.text.trim(),
         facebook: _facebookController.text.trim(),
-        address: _addressController.text.trim(),
       );
       if (!mounted) return;
       widget.onChanged();
@@ -1062,15 +1065,6 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
         ),
         const SizedBox(height: 10),
         TextField(
-          controller: _addressController,
-          decoration: const InputDecoration(
-            labelText: 'Dirección física',
-            hintText: 'Calle 100 #10-20, local 5',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 10),
-        TextField(
           controller: _instagramController,
           decoration: const InputDecoration(
             labelText: 'Instagram',
@@ -1102,6 +1096,293 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Los datos de la sede en la que estás parado (D-242, paso 9.43).
+///
+/// POR QUÉ EXISTE, Y POR QUÉ LA DIRECCIÓN YA NO ESTÁ ARRIBA
+///
+/// Hasta hoy, «Datos del negocio» traía una casilla de *Dirección física* que
+/// leía y escribía **siempre la sede principal**, mirases la sede que mirases:
+///
+///     get_business_settings():      left join branches ... is_primary = true
+///     update_tenant_contact_info(): update branches ... is_primary = true
+///
+/// Con un solo local no se nota. Con dos, estando dentro de la segunda, la
+/// pantalla te enseñaba la dirección de la primera — y si la corregías,
+/// **sobrescribías la de la primera sin aviso**. El propietario lo destapó con
+/// dos capturas que decían direcciones distintas para la misma sede.
+///
+/// Por eso la dirección se mudó aquí en vez de duplicarse: mientras dos
+/// casillas escriban `branches.address`, una pisa a la otra.
+///
+/// Esta tarjeta se rehace sola al cambiar de sede, porque [ConfiguracionPage]
+/// lleva `ValueKey('settings-<sede>')` y se remonta entera (D-201).
+class _DatosDeEstaSedeCard extends StatefulWidget {
+  const _DatosDeEstaSedeCard({required this.branchId});
+
+  final String branchId;
+
+  @override
+  State<_DatosDeEstaSedeCard> createState() => _DatosDeEstaSedeCardState();
+}
+
+class _DatosDeEstaSedeCardState extends State<_DatosDeEstaSedeCard> {
+  final BranchesService _branchesService = const BranchesService();
+  late Future<BranchInfo?> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    // En initState y no en el build: un FutureBuilder que crea su futuro al
+    // construirse lo relanza en cada repintado (D-211).
+    _future = _branchesService.getBranchInfo(widget.branchId);
+  }
+
+  void _recargar() {
+    setState(() {
+      _future = _branchesService.getBranchInfo(widget.branchId);
+    });
+  }
+
+  Future<void> _editar(BranchInfo sede) async {
+    final encargado = TextEditingController(text: sede.managerName ?? '');
+    final correo = TextEditingController(text: sede.contactEmail ?? '');
+    final telefono = TextEditingController(text: sede.contactPhone ?? '');
+    final whatsapp = TextEditingController(text: sede.whatsapp ?? '');
+    final direccion = TextEditingController(text: sede.address ?? '');
+    final ciudad = TextEditingController(text: sede.city ?? '');
+    final departamento = TextEditingController(text: sede.department ?? '');
+
+    Widget campo(
+      TextEditingController c,
+      String etiqueta, {
+      String? ayuda,
+      TextInputType? teclado,
+    }) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: TextField(
+          controller: c,
+          keyboardType: teclado,
+          decoration: InputDecoration(
+            labelText: etiqueta,
+            helperText: ayuda,
+            helperMaxLines: 2,
+            border: const OutlineInputBorder(),
+          ),
+        ),
+      );
+    }
+
+    final guardar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Datos de ${sede.branchName}'),
+        content: SizedBox(
+          width: 420,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    'Son los datos de ESTA sede. Si tienes más de una, cada '
+                    'una lleva los suyos. Lo que borres aquí se borra.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+                campo(
+                  encargado,
+                  'Encargado de la sede',
+                  ayuda: 'Quien la lleva. Puede no ser el dueño del negocio.',
+                ),
+                campo(
+                  correo,
+                  'Correo de la sede',
+                  teclado: TextInputType.emailAddress,
+                  ayuda: 'Si lo pones, tiene que llevar arroba.',
+                ),
+                campo(telefono, 'Teléfono', teclado: TextInputType.phone),
+                campo(whatsapp, 'WhatsApp', teclado: TextInputType.phone),
+                campo(direccion, 'Dirección'),
+                campo(ciudad, 'Ciudad'),
+                campo(departamento, 'Departamento'),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+
+    if (guardar != true || !mounted) return;
+
+    String? limpio(TextEditingController c) {
+      final t = c.text.trim();
+      return t.isEmpty ? null : t;
+    }
+
+    try {
+      await _branchesService.updateBranchInfo(
+        branchId: widget.branchId,
+        managerName: limpio(encargado),
+        contactEmail: limpio(correo),
+        contactPhone: limpio(telefono),
+        whatsapp: limpio(whatsapp),
+        address: limpio(direccion),
+        city: limpio(ciudad),
+        department: limpio(departamento),
+      );
+      if (mounted) _recargar();
+    } on PostgrestException catch (error) {
+      // El mensaje viene del servidor, que es quien sabe qué regla se
+      // incumplió: por ejemplo, un correo sin arroba.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.message),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _fila(String etiqueta, String? valor) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              etiqueta,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              (valor ?? '').isEmpty ? 'Sin registrar' : valor!,
+              style: TextStyle(
+                fontSize: 13,
+                color: (valor ?? '').isEmpty
+                    ? AppColors.textMuted
+                    : AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<BranchInfo?>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const LoadingCard(mensaje: 'Cargando los datos de la sede...');
+        }
+        if (snapshot.hasError || snapshot.data == null) {
+          // Sin nombrarle funciones de la base a nadie (D-208).
+          return const Card(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'No pudimos cargar los datos de esta sede ahora mismo.',
+                style: TextStyle(fontSize: 13, color: AppColors.danger),
+              ),
+            ),
+          );
+        }
+
+        final sede = snapshot.data!;
+
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      sede.isPrimary
+                          ? Icons.home_outlined
+                          : Icons.storefront_outlined,
+                      color: AppColors.brand,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        sede.branchName +
+                            (sede.isPrimary ? '  ·  sede principal' : ''),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => _editar(sede),
+                      icon: const Icon(Icons.edit_outlined, size: 15),
+                      label: const Text('Editar'),
+                      style: OutlinedButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        foregroundColor: AppColors.brand,
+                      ),
+                    ),
+                  ],
+                ),
+                const Divider(height: 18),
+                if (!sede.tieneDatos)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      'Esta sede todavía no tiene datos propios. Sirven para '
+                      'que quien llame o escriba llegue a la sede correcta, y '
+                      'para que la dirección de cada local sea la suya.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                _fila('Encargado:', sede.managerName),
+                _fila('Correo:', sede.contactEmail),
+                _fila('Teléfono:', sede.contactPhone),
+                _fila('WhatsApp:', sede.whatsapp),
+                _fila('Dirección:', sede.address),
+                _fila('Ciudad:', sede.city),
+                _fila('Departamento:', sede.department),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
