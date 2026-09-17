@@ -38,7 +38,7 @@ ve por separado.
 | **Propietaria** | Alicia Propietaria | `elboga008@gmail.com` |
 | **Negocio** | Peluquería Éxito Prueba | — |
 | **Sede 1** | *(la que se crea sola al registrarse)* | `elboga009@gmail.com` |
-| **Administrador de sede** | Alvaro Enrique Administrador | `elboga023@gmail.com` |
+| **Administradora de sede** | Segunda Alicia Administradora | `elboga012@gmail.com` |
 | **Asistente** | Carolina Asistente | `elboga024@gmail.com` |
 | **Estilista** | Erick Santiago Estilista | `elboga025@gmail.com` |
 | **Clienta del salón** | David Alonso Cliente 1 | WhatsApp `3506815629` |
@@ -117,16 +117,16 @@ En su ficha, pestaña de la sede. Debe salir **lo mismo que escribió ella**.
 
 ### 6. Invita al administrador
 
-Como propietario → **Usuarios → invitar** a `elboga023@gmail.com`, rol
+Como propietaria → **Usuarios → invitar** a `elboga012@gmail.com`, rol
 **administrador**.
 
 - **Debe pasar:** se crea la invitación **y llega el correo**.
 - **Avisar si:** la invitación aparece en la lista pero **el correo no llega**.
   Ese es el eslabón que más sospecho de todo el recorrido.
 
-### 7. Alvaro acepta
+### 7. La administradora acepta
 
-Abre `elboga023@gmail.com`, pulsa el enlace y crea su cuenta.
+Abre `elboga012@gmail.com`, pulsa el enlace y crea su cuenta.
 
 - **Debe pasar:** entra y ve la sede. **No debe ver el Panel de Plataforma.**
 
@@ -220,8 +220,8 @@ Vuelve a registrarte con `elboga008@gmail.com`.
 | 3 | Aprobación desde el Panel | | |
 | 4 | **Alicia** carga los datos de su sede | | ✅ |
 | 5 | Tú los ves desde el Panel | | |
-| 6 | Invitación al administrador | | |
-| 7 | Alvaro acepta | | |
+| 6 | Invitación al administrador | | ✅ correo en 1 min |
+| 7 | La administradora acepta | | ✅ |
 | 8 | Invitación a la asistente | | |
 | 10 | Invitación al estilista | | |
 | 12 | Cita y cobro | | |
