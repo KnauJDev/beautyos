@@ -952,6 +952,117 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
     }
   }
 
+  /// Borra un negocio de PRUEBA y todo lo suyo (D-246, paso 9.47).
+  ///
+  /// **Hay que escribir el nombre del negocio para que el boton se active.**
+  /// No es teatro: un "Estas seguro? Si/No" se contesta con el raton en piloto
+  /// automatico, y esto no tiene deshacer. Escribir el nombre obliga a mirar
+  /// cual es la fila antes de destruirla.
+  ///
+  /// El seguro de verdad vive en el servidor --la RPC se niega si el negocio
+  /// no es demo--. Esto es la segunda puerta, no la unica.
+  Future<void> handleDeleteDemo(PlatformTenantSummary tenant) async {
+    final escrito = TextEditingController();
+    final coincide = ValueNotifier<bool>(false);
+    escrito.addListener(
+      () => coincide.value = escrito.text.trim() == tenant.tenantName,
+    );
+
+    final confirmado = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Borrar este negocio de prueba'),
+        content: SizedBox(
+          width: 440,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Se borra "${tenant.tenantName}" y TODO lo suyo: sus sedes, su '
+                'equipo, sus clientas, sus tickets, sus pagos y sus fotos.',
+                style: const TextStyle(fontSize: 13),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Esto no se puede deshacer.',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.danger,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Queda un resumen de lo borrado --cuantas filas y cuanto '
+                'dinero-- porque estos negocios llevan pagos reales. Las '
+                'cuentas de correo y los archivos de fotos NO se borran.',
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Escribe el nombre exacto para confirmar:',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 6),
+              TextField(
+                controller: escrito,
+                autofocus: true,
+                decoration: InputDecoration(
+                  hintText: tenant.tenantName,
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ValueListenableBuilder<bool>(
+            valueListenable: coincide,
+            builder: (context, puede, _) => FilledButton(
+              onPressed: puede ? () => Navigator.of(context).pop(true) : null,
+              style: FilledButton.styleFrom(backgroundColor: AppColors.danger),
+              child: const Text('Borrar definitivamente'),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmado != true || !mounted) return;
+
+    try {
+      final borrado = await platformService.deleteDemoTenant(tenant.tenantId);
+      if (!mounted) return;
+
+      final total = borrado.values.fold<int>(0, (a, b) => a + b);
+      setState(() => _seleccionado = null);
+      reload();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Borrado "${tenant.tenantName}": $total '
+            '${total == 1 ? "fila" : "filas"} en ${borrado.length} '
+            '${borrado.length == 1 ? "tabla" : "tablas"}.',
+          ),
+          duration: const Duration(seconds: 6),
+        ),
+      );
+    } on PostgrestException catch (error) {
+      // El mensaje viene del servidor, que es quien conoce el seguro: por
+      // ejemplo, que el negocio no esta marcado como de prueba.
+      if (mounted) _showError(error.message);
+    }
+  }
+
   /// La ficha del negocio, construida **una sola vez para sus dos casas**
   /// (D-239): la hoja emergente de siempre y la columna derecha nueva.
   ///
@@ -1012,6 +1123,10 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
       onToggleDemo: (t) {
         cerrarAntes();
         handleToggleDemo(t);
+      },
+      onDeleteDemo: (t) {
+        cerrarAntes();
+        handleDeleteDemo(t);
       },
       onViewSupportData: (t) {
         cerrarAntes();
@@ -2240,6 +2355,7 @@ class _TenantDetailSheet extends StatefulWidget {
     required this.onViewSupportData,
     required this.onAssignPartner,
     required this.onToggleDemo,
+    required this.onDeleteDemo,
     required this.onCerrar,
     this.embebido = false,
   });
@@ -2272,6 +2388,10 @@ class _TenantDetailSheet extends StatefulWidget {
   final ValueChanged<PlatformTenantSummary> onViewSupportData;
   final ValueChanged<PlatformTenantSummary> onAssignPartner;
   final ValueChanged<PlatformTenantSummary> onToggleDemo;
+
+  /// Borra el negocio y todo lo suyo (D-246). Solo se ensenya en los que
+  /// estan marcados como prueba.
+  final ValueChanged<PlatformTenantSummary> onDeleteDemo;
 
   @override
   State<_TenantDetailSheet> createState() => _TenantDetailSheetState();
@@ -2950,6 +3070,7 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
     final onViewSupportData = widget.onViewSupportData;
     final onAssignPartner = widget.onAssignPartner;
     final onToggleDemo = widget.onToggleDemo;
+    final onDeleteDemo = widget.onDeleteDemo;
 
     final status = tenant.subscriptionStatus;
     final isPending = tenant.isPending;
@@ -3480,6 +3601,64 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                             ],
                           ],
                         ),
+
+                        // Zona aparte, y solo para los negocios de prueba
+                        // (D-246). Separada del resto a proposito: las demas
+                        // acciones se deshacen --suspender, reactivar, cambiar
+                        // un precio--; esta no. No deberia estar a un dedo de
+                        // distancia de ellas.
+                        if (isOwner && tenant.isDemo) ...[
+                          const Divider(height: 28),
+                          Container(
+                            padding: const EdgeInsets.all(AppSpacing.md),
+                            decoration: BoxDecoration(
+                              color: AppColors.danger.withValues(alpha: 0.06),
+                              borderRadius: BorderRadius.circular(
+                                AppRadius.card,
+                              ),
+                              border: Border.all(
+                                color: AppColors.danger.withValues(alpha: 0.35),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Negocio de prueba',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.danger,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'Puedes borrarlo con todo lo suyo. No se '
+                                  'puede deshacer, y solo funciona mientras '
+                                  'siga marcado como prueba.',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                OutlinedButton.icon(
+                                  onPressed: () => onDeleteDemo(tenant),
+                                  icon: const Icon(
+                                    Icons.delete_forever_outlined,
+                                    size: 18,
+                                  ),
+                                  label: const Text('Borrar negocio de prueba'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.danger,
+                                    side: BorderSide(color: AppColors.danger),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ),
 

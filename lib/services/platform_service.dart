@@ -172,6 +172,38 @@ class PlatformService {
     );
   }
 
+  /// Borra un negocio de PRUEBA y todo lo suyo (D-246, paso 9.47).
+  ///
+  /// **La unica llamada del proyecto que destruye datos y no se deshace.**
+  /// Las demas escriben, cambian o marcan; esta borra.
+  ///
+  /// El seguro no esta aqui sino en el servidor: la RPC **se niega si el
+  /// negocio no tiene `is_demo = true`**. Se hace alli a proposito -- una
+  /// comprobacion en la pantalla la salta cualquiera que llame a la RPC por su
+  /// cuenta, y lo que separa "limpio mis pruebas" de "borre a un cliente" no
+  /// puede depender de un `if` en Dart.
+  ///
+  /// Devuelve cuantas filas cayeron en cada tabla, para poder ensenyar lo que
+  /// se llevo por delante en vez de un "listo" a secas.
+  Future<Map<String, int>> deleteDemoTenant(String tenantId) async {
+    final respuesta = await Supabase.instance.client.rpc(
+      'platform_delete_demo_tenant',
+      params: {'p_tenant_id': tenantId},
+    );
+
+    final borrado = <String, int>{};
+    if (respuesta is List) {
+      for (final fila in respuesta) {
+        final mapa = Map<String, dynamic>.from(fila as Map);
+        final tabla = mapa['tabla']?.toString() ?? '';
+        final filas =
+            int.tryParse(mapa['filas_borradas']?.toString() ?? '') ?? 0;
+        if (tabla.isNotEmpty) borrado[tabla] = filas;
+      }
+    }
+    return borrado;
+  }
+
   /// Escribe los datos propios de UNA sede (D-241, paso 9.42).
   ///
   /// **Todos los parametros son obligatorios y se escriben siempre.** No hay
