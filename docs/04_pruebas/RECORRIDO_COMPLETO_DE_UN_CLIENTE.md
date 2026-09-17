@@ -35,9 +35,9 @@ ve por separado.
 
 | Papel | Nombre | Correo / teléfono |
 |---|---|---|
-| **Propietario** | *(el titular del negocio)* | `elboga021@gmail.com` |
+| **Propietaria** | Alicia Propietaria | `elboga008@gmail.com` |
 | **Negocio** | Peluquería Éxito Prueba | — |
-| **Sede 1** | *(la que se crea sola al registrarse)* | `elboga022@gmail.com` |
+| **Sede 1** | *(la que se crea sola al registrarse)* | `elboga009@gmail.com` |
 | **Administrador de sede** | Alvaro Enrique Administrador | `elboga023@gmail.com` |
 | **Asistente** | Carolina Asistente | `elboga024@gmail.com` |
 | **Estilista** | Erick Santiago Estilista | `elboga025@gmail.com` |
@@ -65,7 +65,7 @@ En cada paso: **lo que haces**, **lo que debe pasar** y **qué avisar si no**.
 
 ### 1. El propietario se registra
 
-Entra a `salonymas.com` con `elboga021@gmail.com` y regístrate como negocio
+Entra a `salonymas.com` **en ventana de incógnito** con `elboga008@gmail.com` y regístrate como negocio
 nuevo: **Peluquería Éxito Prueba**.
 
 - **Debe pasar:** llega el correo de confirmación, y tras pulsarlo aparece el
@@ -89,22 +89,31 @@ Panel de Plataforma → filtro **Por Aprobar** → *Aprobar Negocio*.
 - **Debe pasar:** pasa a **EN PRUEBA** con sus 21 días, y en su tarjeta de la
   lista aparece `1 sede · 1 en prueba` (D-244).
 
-### 4. Pones los datos de la sede desde tu Panel
+### 4. **Alicia** pone los datos de su sede, desde su propia Configuración
 
-En su ficha, pestaña de la sede → botón **Datos**. Pon el correo de la sede:
-`elboga022@gmail.com`, y una dirección cualquiera.
+> **Este orden importa y se corrigió el 17-sep.** Antes este paso decía que
+> los cargaba el dueño de plataforma desde su Panel, y eso enseña lo
+> contrario de lo que debe pasar: **el salón carga sus propios datos**. La
+> puerta del Panel (D-241) es la **puerta de servicio**, para cuando el
+> cliente llame y no pueda. La puerta principal es la del salón (D-242).
 
-- **Debe pasar:** se guarda y se ve en la ficha (D-241).
-- **Prueba a propósito:** escribe un correo **sin arroba** y guarda. Debe
-  rechazarlo diciéndolo, y el mensaje debe llegar a la pantalla.
+Entra como `elboga008@gmail.com` → **Configuración → Datos de esta sede** →
+**Editar**. Correo de la sede `elboga009@gmail.com` y una dirección.
 
-### 5. El propietario ve sus datos desde su propia Configuración
-
-Entra como `elboga021` → **Configuración → Datos de esta sede**.
-
-- **Debe pasar:** ve lo mismo que pusiste tú, y puede cambiarlo (D-242).
+- **Debe pasar:** se guarda y se ve en la tarjeta.
 - **Y fíjate en que** *"Datos del negocio"* **ya no tiene dirección**: se mudó
   a la sede, porque antes escribía siempre en la sede principal (hallazgo AF).
+- **Prueba a propósito:** un correo **sin arroba**. Debe rechazarlo, y el
+  mensaje del servidor debe llegar a la pantalla.
+
+### 5. Y tú lo ves desde tu Panel — la puerta de servicio
+
+En su ficha, pestaña de la sede. Debe salir **lo mismo que escribió ella**.
+
+- **Debe pasar:** dos puertas, un solo dato (D-241 y D-242 escriben las mismas
+  siete columnas).
+- Prueba también el botón **Datos** desde tu lado: es lo que harás el día que
+  un cliente te llame porque no encuentra dónde cambiar su dirección.
 
 ### 6. Invita al administrador
 
@@ -196,7 +205,7 @@ porque el negocio **no** está marcado como prueba.
 
 ### 18. Repite el paso 1 con el mismo correo
 
-Vuelve a registrarte con `elboga021@gmail.com`.
+Vuelve a registrarte con `elboga008@gmail.com`.
 
 - **Debe pasar:** **funciona**. Es la prueba de que el borrado dejó la cuenta
   utilizable, que es lo que permite volver a ensayar sin quemar correos.
@@ -209,8 +218,8 @@ Vuelve a registrarte con `elboga021@gmail.com`.
 |---|---|---|---|
 | 1 | El propietario se registra | | |
 | 3 | Aprobación desde el Panel | | |
-| 4 | Datos de la sede desde el Panel | | |
-| 5 | El salón ve y edita su sede | | |
+| 4 | **Alicia** carga los datos de su sede | | ✅ |
+| 5 | Tú los ves desde el Panel | | |
 | 6 | Invitación al administrador | | |
 | 7 | Alvaro acepta | | |
 | 8 | Invitación a la asistente | | |
