@@ -19,6 +19,7 @@ class PlatformTenantSummary {
     this.realBranchesCount = 0,
     this.realTeamCount = 0,
     this.teamBreakdown,
+    this.branchesBreakdown,
     required this.tenantActive,
     required this.isDemo,
     required this.planCode,
@@ -70,6 +71,17 @@ class PlatformTenantSummary {
   /// Desglose por rol ya formateado por la RPC, ej. "1 dueño, 2 admins, 3
   /// estilistas". Null solo si la RPC vieja todavía no lo envía.
   final String? teamBreakdown;
+
+  /// En que estado de pago estan sus sedes: "1 al dia · 1 en prueba" (D-244).
+  ///
+  /// Lo arma el servidor, igual que [teamBreakdown] (D-162). **No son numeros
+  /// sueltos a proposito:** si la pantalla los recompusiera, el dia que aparezca
+  /// un estado nuevo seguiria contando los de siempre y no se enteraria nadie.
+  ///
+  /// Hace falta desde D-239, que mudo el cobro del negocio a la sede: hasta
+  /// entonces un cliente con dos sedes y una en mora se veia exactamente igual
+  /// que uno con las dos al dia -- un "2" identico.
+  final String? branchesBreakdown;
 
   final bool tenantActive;
 
@@ -218,6 +230,7 @@ class PlatformTenantSummary {
       realBranchesCount: _parseInt(map['real_branches_count']) ?? 0,
       realTeamCount: _parseInt(map['real_team_count']) ?? 0,
       teamBreakdown: map['team_breakdown']?.toString(),
+      branchesBreakdown: map['branches_breakdown']?.toString(),
       tenantActive: map['tenant_active'] == true,
       isDemo: map['is_demo'] == true,
       planCode: map['plan_code']?.toString(),

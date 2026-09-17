@@ -205,9 +205,7 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                     items: const [
                       DropdownMenuItem(
                         value: 'pro',
-                        child: Text(
-                          'Todo Incluido — \$150.000/mes por sede',
-                        ),
+                        child: Text('Todo Incluido — \$150.000/mes por sede'),
                       ),
                     ],
                     onChanged: (val) {
@@ -450,9 +448,7 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                     items: const [
                       DropdownMenuItem(
                         value: 'pro',
-                        child: Text(
-                          'Todo Incluido — \$150.000/mes por sede',
-                        ),
+                        child: Text('Todo Incluido — \$150.000/mes por sede'),
                       ),
                     ],
                     onChanged: (val) {
@@ -477,7 +473,8 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                         if (isFounder) {
                           customPricing = false;
                           priceController.clear();
-                          reasonController.text = 'Socio de diseno, tarifa pactada';
+                          reasonController.text =
+                              'Socio de diseno, tarifa pactada';
                         }
                       });
                     },
@@ -1293,8 +1290,7 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                         tenant: negocio,
                         isOwner: isOwner,
                         compacto: dosColumnas,
-                        seleccionado:
-                            negocio.tenantId == vigente?.tenantId,
+                        seleccionado: negocio.tenantId == vigente?.tenantId,
                         onTap: () {
                           if (dosColumnas) {
                             setState(() => _seleccionado = negocio);
@@ -1329,10 +1325,7 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                       ? Row(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            SizedBox(
-                              width: _anchoDeLaLista,
-                              child: lista,
-                            ),
+                            SizedBox(width: _anchoDeLaLista, child: lista),
                             const VerticalDivider(
                               width: 1,
                               thickness: 1,
@@ -1349,9 +1342,8 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                                       // sobre el que actúas es justo lo que
                                       // esta pantalla viene a evitar.
                                       cerrarAntes: () {},
-                                      onCerrar: () => setState(
-                                        () => _seleccionado = null,
-                                      ),
+                                      onCerrar: () =>
+                                          setState(() => _seleccionado = null),
                                     ),
                             ),
                           ],
@@ -1823,7 +1815,11 @@ class _TenantCard extends StatelessWidget {
                             color: AppColors.textPrimary,
                           ),
                         ),
-                        if (tenant.contactName != null) ...[
+                        // El nombre del negocio NO sale en la columna
+                        // estrecha (D-244): vive en la ficha de cada sede.
+                        // "La informacion debajo del nombre de mi cliente son
+                        // los datos de una SEDE, no del propietario."
+                        if (!compacto && tenant.contactName != null) ...[
                           const SizedBox(height: 1),
                           Text(
                             tenant.tenantName,
@@ -1836,12 +1832,31 @@ class _TenantCard extends StatelessWidget {
                         ],
                         const SizedBox(height: 2),
                         Text(
-                          '${tenant.contactEmail} ${tenant.city != null ? "· 📍 ${tenant.city}" : ""}',
+                          compacto
+                              ? tenant.contactEmail
+                              : '${tenant.contactEmail} ${tenant.city != null ? "· 📍 ${tenant.city}" : ""}',
                           style: const TextStyle(
                             fontSize: 13,
                             color: AppColors.textSecondary,
                           ),
                         ),
+                        // Los dos telefonos de la PERSONA, que es con lo que
+                        // de verdad se la localiza (D-244).
+                        if (compacto &&
+                            (tenant.contactPhone != null ||
+                                tenant.whatsapp != null))
+                          Text(
+                            [
+                              if (tenant.contactPhone != null)
+                                'Cel. ${tenant.contactPhone}',
+                              if (tenant.whatsapp != null)
+                                'WhatsApp ${tenant.whatsapp}',
+                            ].join('  ·  '),
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -1920,42 +1935,46 @@ class _TenantCard extends StatelessWidget {
               // $10.000 mientras su propia sede decia $80.000. Cada sede lleva
               // el suyo en su ficha.
               if (!compacto)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceAlt,
-                  borderRadius: BorderRadius.circular(AppRadius.control),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.sell_outlined, size: 15, color: AppColors.brand),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Plan ${tenant.planNameFormatted} (${tenant.formattedEffectivePrice})',
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceAlt,
+                    borderRadius: BorderRadius.circular(AppRadius.control),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.sell_outlined,
+                        size: 15,
+                        color: AppColors.brand,
                       ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      tenant.subscriptionStatus == 'pending'
-                          ? 'Solicitado: ${_formatDate(tenant.createdAt)}'
-                          : tenant.subscriptionStatus == 'trialing'
-                          ? 'Prueba: ${_formatDate(tenant.createdAt)} al ${_formatDate(tenant.trialEndsAt)}'
-                          : 'Vence: ${_formatDate(tenant.currentPeriodEnd)}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
+                      const SizedBox(width: 6),
+                      Text(
+                        'Plan ${tenant.planNameFormatted} (${tenant.formattedEffectivePrice})',
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
-                    ),
-                  ],
+                      const Spacer(),
+                      Text(
+                        tenant.subscriptionStatus == 'pending'
+                            ? 'Solicitado: ${_formatDate(tenant.createdAt)}'
+                            : tenant.subscriptionStatus == 'trialing'
+                            ? 'Prueba: ${_formatDate(tenant.createdAt)} al ${_formatDate(tenant.trialEndsAt)}'
+                            : 'Vence: ${_formatDate(tenant.currentPeriodEnd)}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
               const SizedBox(height: AppSpacing.sm),
 
@@ -1965,13 +1984,37 @@ class _TenantCard extends StatelessWidget {
                 runSpacing: 6,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
-                  Text(
-                    '${tenant.ageLabel} · ${tenant.paidPeriodsCount} ${_pluralizeMeses(tenant.paidPeriodsCount)} pagados · ${tenant.formattedTotalPaid} LTV',
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      color: AppColors.textSecondary,
+                  // En la columna estrecha, donde iba el dinero van las
+                  // SEDES (D-244). El dinero se pacta por sede desde D-239, asi
+                  // que un LTV a nombre del negocio ya no decide nada -- y un
+                  // "2 sedes" a secas ensenyaba igual a quien tiene las dos al
+                  // dia que a quien tiene una en mora.
+                  if (compacto) ...[
+                    Text(
+                      '${tenant.realBranchesCount} '
+                      '${tenant.realBranchesCount == 1 ? "sede" : "sedes"}'
+                      '${tenant.branchesBreakdown != null ? "  ·  ${tenant.branchesBreakdown}" : ""}',
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
-                  ),
+                    Text(
+                      'Registrado el ${_formatDate(tenant.createdAt)}',
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ] else
+                    Text(
+                      '${tenant.ageLabel} · ${tenant.paidPeriodsCount} ${_pluralizeMeses(tenant.paidPeriodsCount)} pagados · ${tenant.formattedTotalPaid} LTV',
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
                   if (tenant.activeOverridesCount > 0)
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -2475,34 +2518,70 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
 
         final sedes = snapshot.data ?? const <BranchSubscription>[];
         if (sedes.isEmpty) return const SizedBox.shrink();
+        return _buildFichaDeSede(_sedeVigente(sedes));
+      },
+    );
+  }
 
-        // La elegida se busca por identificador en cada construcción, no se
-        // guarda el objeto: `_recargarSedes()` trae objetos nuevos tras cada
-        // cambio y el guardado seguiría enseñando el precio viejo. Es el mismo
-        // cuidado que la selección de negocio en D-240.
-        var elegida = sedes.first;
-        for (final s in sedes) {
-          if (s.branchId == _sedeElegida) {
-            elegida = s;
-            break;
-          }
-        }
+  /// La sede elegida **buscada por identificador en cada construcción**.
+  ///
+  /// No se guarda el objeto: `_recargarSedes()` trae objetos nuevos tras cada
+  /// cambio y el guardado seguiría enseñando el precio viejo. Es el mismo
+  /// cuidado que la selección de negocio en D-240.
+  BranchSubscription _sedeVigente(List<BranchSubscription> sedes) {
+    for (final sede in sedes) {
+      if (sede.branchId == _sedeElegida) return sede;
+    }
+    return sedes.first;
+  }
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final sede in sedes)
-                  _buildPestanaDeSede(sede, sede.branchId == elegida.branchId),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _buildFichaDeSede(elegida),
-          ],
+  /// Las pestañas de sede, **en la cabecera** (D-244).
+  ///
+  /// Estaban dentro de una tarjeta, a media ficha. El propietario pidió lo
+  /// contrario: *"quisiera tener una lista con las sedes, o botón por sede,
+  /// para que debajo me muestre los datos informativos y de pago de la SEDE
+  /// seleccionada"*. Arriba y fijas, todo lo de abajo pasa a ser de la sede que
+  /// elijas; dentro de una tarjeta eran una sección más entre seis.
+  ///
+  /// Comparten el mismo `Future` que la ficha, así que no se consulta dos veces.
+  Widget _buildPestanasDeSedes() {
+    return FutureBuilder<List<BranchSubscription>>(
+      future: _branchesFuture,
+      builder: (context, snapshot) {
+        final sedes = snapshot.data ?? const <BranchSubscription>[];
+        if (sedes.isEmpty) return const SizedBox.shrink();
+        final elegida = _sedeVigente(sedes);
+
+        return Padding(
+          padding: const EdgeInsets.only(top: AppSpacing.sm),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                sedes.length == 1 ? 'SEDE' : 'SEDES',
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textMuted,
+                  letterSpacing: 0.8,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final sede in sedes)
+                      _buildPestanaDeSede(
+                        sede,
+                        sede.branchId == elegida.branchId,
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -2905,63 +2984,72 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                     bottom: BorderSide(color: AppColors.border, width: 1),
                   ),
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Flexible(
-                                child: Text(
-                                  tenant.tenantName,
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w800,
-                                    color: AppColors.textPrimary,
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      tenant.tenantName,
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
                                   ),
+                                  const SizedBox(width: AppSpacing.xs),
+                                  if (tenant.isFounder)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 3,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.brandTint,
+                                        borderRadius: BorderRadius.circular(
+                                          AppRadius.pill,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        '★ PIONERO',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w800,
+                                          color: AppColors.brandDeep,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              Text(
+                                'Estado: ${status?.toUpperCase() ?? "SIN ESTADO"} · Creado el ${_formatDate(tenant.createdAt)}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
-                              const SizedBox(width: AppSpacing.xs),
-                              if (tenant.isFounder)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 3,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.brandTint,
-                                    borderRadius: BorderRadius.circular(
-                                      AppRadius.pill,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    '★ PIONERO',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w800,
-                                      color: AppColors.brandDeep,
-                                    ),
-                                  ),
-                                ),
                             ],
                           ),
-                          Text(
-                            'Estado: ${status?.toUpperCase() ?? "SIN ESTADO"} · Creado el ${_formatDate(tenant.createdAt)}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                        IconButton(
+                          tooltip: embebido ? 'Soltar este negocio' : 'Cerrar',
+                          icon: const Icon(Icons.close),
+                          onPressed: widget.onCerrar,
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      tooltip: embebido ? 'Soltar este negocio' : 'Cerrar',
-                      icon: const Icon(Icons.close),
-                      onPressed: widget.onCerrar,
-                    ),
+                    // D-244: elegir sede aqui arriba manda sobre todo lo de
+                    // abajo. Es lo que pidio el propietario tras verlas
+                    // enterradas en una tarjeta a media ficha.
+                    _buildPestanasDeSedes(),
                   ],
                 ),
               ),
@@ -2971,9 +3059,23 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                 child: ListView(
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   children: [
-                    // TARJETA 1: DATOS DEL NEGOCIO (IDENTIFICACIÓN Y CONTACTO)
+                    // TARJETA 1: LA SEDE ELEGIDA ARRIBA.
+                    //
+                    // Manda sobre la ficha entera (D-244). Antes era la tarjeta
+                    // 2 y sus pestanyas vivian dentro; ahora las pestanyas estan
+                    // en la cabecera y esto es lo primero que se lee, porque
+                    // desde D-239 **es donde vive el dinero**.
                     _buildSectionCard(
-                      title: '1. Datos de Identificación y Contacto',
+                      title: '1. Esta sede',
+                      icon: Icons.storefront_outlined,
+                      children: [_buildSedes()],
+                    ),
+
+                    const SizedBox(height: AppSpacing.md),
+
+                    // TARJETA 2: DATOS DEL NEGOCIO (IDENTIFICACIÓN Y CONTACTO)
+                    _buildSectionCard(
+                      title: '2. Datos del negocio: identificación y contacto',
                       icon: Icons.badge_outlined,
                       children: [
                         _buildSubsectionLabel('A. Contacto Administrativo'),
@@ -3124,27 +3226,6 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                             'Código Usado al Registrarse:',
                             tenant.referralCodeUsed!,
                           ),
-                      ],
-                    ),
-
-                    const SizedBox(height: AppSpacing.md),
-
-                    // TARJETA 2: LAS SEDES.
-                    //
-                    // Suben aquí desde dentro de la tarjeta 1, donde estaban
-                    // enterradas bajo "B. Capacidad Operativa Real" (D-239).
-                    // No es cosmética: desde que el cobro va por sede y no por
-                    // negocio, **este es el sitio donde vive el dinero**, y
-                    // estaba tres pantallazos por debajo del nombre.
-                    _buildSectionCard(
-                      title: '2. Sedes y su estado de pago',
-                      icon: Icons.storefront_outlined,
-                      children: [
-                        _buildInfoRow(
-                          'Sedes Activas:',
-                          '${tenant.realBranchesCount} ${_pluralize(tenant.realBranchesCount, 'sede registrada', 'sedes registradas')}',
-                        ),
-                        _buildSedes(),
                       ],
                     ),
 
