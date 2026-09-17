@@ -1,8 +1,8 @@
-# HANDOFF Salón y Más — 16 de septiembre de 2026 ("El cobro se muda a la sede, y la sede empieza a existir", D-238 a D-243)
+# HANDOFF Salón y Más — 16 de septiembre de 2026 ("El cobro se muda a la sede, y la sede empieza a existir", D-238 a D-244)
 
-**Bloque documentado:** decisiones **D-238** a **D-243** · Fase **9**, pasos **9.38**, **9.39**, **9.42**, **9.43** y **9.44**.
+**Bloque documentado:** decisiones **D-238** a **D-244** · Fase **9**, pasos **9.38**, **9.39**, **9.42**, **9.43**, **9.44** y **9.45**.
 
-**Estado:** ✅ Todo aplicado, publicado y verificado contra la base real. Controles **211** y **212** en verde a la primera.
+**Estado:** ✅ Todo aplicado, publicado y verificado contra la base real. Controles **211**, **212** y **213** en verde a la primera.
 
 > El bloque anterior está en `docs/_archivo/handoffs/HANDOFF_SalonyMas_2026-09-09_D237.md`.
 
@@ -53,12 +53,26 @@ Y las cuatro veces lo descubrió el propietario usando la app, no una prueba.
 | **9.42** (D-241) | La sede gana encargado, contacto y dirección propios. Puerta del **Panel** |
 | **9.43** (D-242) | Puerta del **salón**, protegida por sede. Y la dirección **sale** de los datos del negocio |
 | **9.44** (D-243) | La lista encabeza con la persona; el negocio y el precio se van con la sede |
+| **9.45** (D-244) | La lista dice **cuántas sedes y en qué estado**; las pestañas de sede suben a la cabecera y la sede pasa a ser la tarjeta 1 |
 
 **Las dos puertas escriben las mismas siete columnas, con la misma semántica:** siempre los siete campos, sin valores por defecto, vacío significa vacío. Dos puertas, una sola verdad.
 
 Esa semántica viene de D-237, donde `coalesce(p_price_cop, price_cop)` hacía que `null` conservara y la función sabía poner y cambiar pero **nunca quitar**. Los controles 211 y 212 la vigilan explícitamente: si alguien mete un `coalesce` "para no perder datos", saltan.
 
 ---
+
+## 4-bis. Tres rondas sobre la misma pantalla, y por qué está bien
+
+El Panel se rehizo tres veces en un día (D-240, D-243, D-244). **Las tres salieron de que el propietario miró y dijo "no es eso"**, con capturas:
+
+1. *"a la derecha solo una sede... lo que deseo separar"* → la sede gana vida propia.
+2. *"el nombre del negocio debe ir en la tarjeta de la sede"* → cada dato a su altura.
+3. *"aún salen las dos sedes dentro de la misma tarjeta"* → las pestañas suben a la cabecera.
+
+**Ninguna de las tres se podía deducir leyendo código.** Y en la tercera ronda se le preguntó explícitamente qué datos quería en la tarjeta, en vez de adivinar por cuarta vez — la respuesta trajo un requisito que nadie tenía escrito: el **desglose por estado de las sedes**.
+
+> Una pantalla que se rehace tres veces con el dueño delante cuesta menos que una que se rehace
+> una sola vez, seis meses después, con clientes encima.
 
 ## 5. Lo que sigue
 
@@ -92,7 +106,7 @@ Esa semántica viene de D-237, donde `coalesce(p_price_cop, price_cop)` hacía q
 ## 7. Prompt para retomar
 
 ```
-Lee el HANDOFF más reciente en docs/HANDOFF/ (D-238 a D-243).
+Lee el HANDOFF más reciente en docs/HANDOFF/ (D-238 a D-244).
 
 Antes de tocar documentación: python scripts/verificar_documentos.py
 
@@ -103,6 +117,6 @@ la del Panel (D-241) y la del salón (D-242), con la misma semántica.
 Siguiente trabajo: 9.40 (historial desglosado por sede, con control propio)
 y luego 9.41 (módulos por sede, servidor primero).
 
-Todo aplicado y publicado. Controles 211 y 212 en verde.
+Todo aplicado y publicado. Controles 211, 212 y 213 en verde.
 El rediseño de D-219 sigue bloqueado por el 9.24.
 ```
