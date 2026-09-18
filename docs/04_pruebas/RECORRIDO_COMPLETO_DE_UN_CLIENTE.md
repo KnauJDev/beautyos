@@ -132,7 +132,7 @@ Abre `elboga012@gmail.com`, pulsa el enlace y crea su cuenta.
 
 ### 8. Invita a la asistente
 
-Igual, con `elboga024@gmail.com` y rol **asistente**.
+Igual, con `elboga011@gmail.com` y rol **asistente**.
 
 - **Debe pasar:** lo mismo que en 6 y 7.
 - **Y comprueba:** Carolina **no** debe poder invitar a nadie ni ver
@@ -222,7 +222,7 @@ Vuelve a registrarte con `elboga008@gmail.com`.
 | 5 | Tú los ves desde el Panel | | |
 | 6 | Invitación al administrador | | ✅ correo en 1 min |
 | 7 | La administradora acepta | | ✅ |
-| 8 | Invitación a la asistente | | |
+| 8 | Invitación a la asistente | | ✅ su menú son 3 entradas, no 15 |
 | 10 | Invitación al estilista | | |
 | 12 | Cita y cobro | | |
 | 15 | **Sin marca, sin botón de borrar** | | |
