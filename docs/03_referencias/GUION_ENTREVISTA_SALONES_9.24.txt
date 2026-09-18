@@ -1,0 +1,429 @@
+===============================================================================
+  GUION DE ENTREVISTA A SALONES REALES
+  Paso 9.24 del Plan Maestro - Salon y Mas
+  Version 1 - 18 de septiembre de 2026
+===============================================================================
+
+PARA QUE SIRVE ESTO
+-------------------
+El paso 9.25 quiere reagrupar la aplicacion de 15 modulos a 5 lugares
+(HOY, CLIENTAS, MI DINERO, MI VITRINA, AJUSTES) y separar las pantallas
+segun quien las use. Esa estructura HOY ES UNA HIPOTESIS: se penso desde
+fuera, sin haber visto trabajar a un salon.
+
+Estas preguntas existen para convertirla en un hecho o para tumbarla.
+No hay ninguna pregunta de relleno: cada bloque decide algo concreto.
+
+
+LAS SEIS REGLAS DE LA ENTREVISTA
+--------------------------------
+1. NO ENSENYAR LA APLICACION. Ni al principio, ni al final si se puede
+   evitar. En cuanto la ven, dejan de contar lo suyo y opinan sobre la
+   nuestra. Si preguntan, se dice: "prefiero escucharte primero".
+
+2. PREGUNTAR POR LA ULTIMA VEZ, NO POR LA COSTUMBRE. "Cuentame que paso
+   con la ultima clienta que llego sin cita" vale diez veces mas que
+   "que hacen cuando llega alguien sin cita". Lo primero es un hecho;
+   lo segundo es lo que a la gente le gustaria que pasara.
+
+3. PEDIR VER, NO SOLO OIR. "Me lo ensenyas?" es la pregunta mas util del
+   guion. El cuaderno, el Excel, el grupo de WhatsApp, la libreta de la
+   caja. Una foto de eso vale mas que media entrevista.
+
+4. NO CORREGIR NI SUGERIR. Si cuentan algo que la aplicacion ya resuelve,
+   no decirlo. Anotarlo y seguir.
+
+5. DEJAR EL SILENCIO. Despues de que contesten, esperar tres segundos sin
+   hablar. Casi siempre anyaden lo importante en esa pausa.
+
+6. ANOTAR LAS PALABRAS EXACTAS. Como llaman ellos a las cosas: "cita",
+   "turno", "reserva", "servicio", "comanda", "cuadre", "corte de caja".
+   Los nombres de los 5 modulos deben salir de su boca, no de la nuestra.
+
+Las preguntas marcadas con [*] son las imprescindibles. Si solo hay 20
+minutos, se hacen esas y nada mas.
+
+
+DATOS DE LA ENTREVISTA
+----------------------
+Salon: ______________________________  Ciudad: __________________________
+
+Persona y cargo: ____________________________________________________
+
+Fecha: _______________  Duracion: _________  Permite volver? SI / NO
+
+Tamanyo:  __ sillas/puestos   __ personas trabajando   __ sedes
+
+
+===============================================================================
+BLOQUE 1 - COMO ENTRA EL TRABAJO          (decide el modulo "HOY")
+===============================================================================
+
+1.1 [*] Cuentame como fue el dia de AYER, desde que abriste hasta que
+    cerraste. Sin resumir.
+
+    ______________________________________________________________________
+
+    ______________________________________________________________________
+
+    ______________________________________________________________________
+
+1.2 [*] Por donde te llegan las citas? Ponme un numero aproximado de
+    AYER para cada via:
+
+    WhatsApp ____   Llamada ____   Instagram ____   Llegan sin avisar ____
+
+    Otra: _______________________________________________________________
+
+1.3 [*] Cuando entra un WhatsApp pidiendo cita, que pasa exactamente
+    desde ese mensaje hasta que la cita queda apuntada? Quien lo hace y
+    cuanto tarda?
+
+    ______________________________________________________________________
+
+    ______________________________________________________________________
+
+1.4 [*] Donde queda apuntada esa cita? ME LO ENSENYAS?
+    (cuaderno / agenda de papel / Excel / Google Calendar / app / cabeza)
+
+    ______________________________________________________________________
+
+1.5 Cuantas veces al dia mirais eso que me acabas de ensenyar?
+
+    ______________________________________________________________________
+
+1.6 [*] Que paso con la ULTIMA persona que llego sin cita? Cuentamelo.
+
+    ______________________________________________________________________
+
+    ______________________________________________________________________
+
+1.7 Cuando alguien no aparece a su cita, que haceis? Se apunta en algun
+    sitio? Se le cobra algo?
+
+    ______________________________________________________________________
+
+1.8 Confirmais las citas del dia siguiente? Quien, cuando y por donde?
+
+    ______________________________________________________________________
+
+1.9 Cual fue el ultimo lio de agenda que tuvisteis - dos clientas a la
+    misma hora, una que se cambio, alguien que no aviso. Que paso?
+
+    ______________________________________________________________________
+
+    ______________________________________________________________________
+
+
+===============================================================================
+BLOQUE 2 - LO PRIMERO QUE MIRAS           (decide que va dentro de "HOY")
+===============================================================================
+
+2.1 [*] Cuando llegas por la manyana y abres, cual es la PRIMERA cosa que
+    miras o haces? Y la segunda?
+
+    1a: __________________________________________________________________
+
+    2a: __________________________________________________________________
+
+2.2 [*] Si te dieran UNA sola pantalla para todo el dia, que tendria que
+    tener? Nombrame las tres cosas por orden.
+
+    1: ___________________________________________________________________
+
+    2: ___________________________________________________________________
+
+    3: ___________________________________________________________________
+
+2.3 A lo largo del dia, cada cuanto vuelves a mirar la agenda?
+
+    ______________________________________________________________________
+
+2.4 Que cosa tienes que mirar varias veces al dia y te da pereza buscar?
+
+    ______________________________________________________________________
+
+
+===============================================================================
+BLOQUE 3 - LA CLIENTA                     (decide el modulo "CLIENTAS")
+===============================================================================
+
+3.1 [*] Guardais datos de las clientas? Cuales? ME LO ENSENYAS?
+
+    ______________________________________________________________________
+
+3.2 [*] Cuando llega una clienta que ya vino antes, como sabeis lo que le
+    hicisteis la vez pasada? (memoria / ficha / se le pregunta)
+
+    ______________________________________________________________________
+
+3.3 [*] Os ha pasado tener a la misma clienta apuntada dos veces? Como os
+    disteis cuenta? Que hicisteis?
+
+    ______________________________________________________________________
+
+    ______________________________________________________________________
+
+3.4 Como buscais a una clienta: por nombre, por telefono, por otra cosa?
+
+    ______________________________________________________________________
+
+3.5 Hay clientas a las que cuidais distinto porque vienen mucho o gastan
+    mas? Como sabeis quienes son?
+
+    ______________________________________________________________________
+
+3.6 Alguna clienta os ha pedido que borreis sus datos o sus fotos? Que
+    hicisteis?
+
+    ______________________________________________________________________
+
+
+===============================================================================
+BLOQUE 4 - EL DINERO                      (decide el modulo "MI DINERO")
+===============================================================================
+
+4.1 [*] Cuentame el cobro de la ULTIMA clienta de ayer, paso a paso:
+    quien cobro, como pago, donde se apunto.
+
+    ______________________________________________________________________
+
+    ______________________________________________________________________
+
+4.2 [*] Como se paga aqui? Reparte los 100% de ayer:
+
+    Efectivo ___%   Transferencia (Nequi/Daviplata) ___%   Tarjeta ___%
+
+4.3 [*] Al cerrar, como cuadrais la caja? ME LO ENSENYAS?
+
+    ______________________________________________________________________
+
+    ______________________________________________________________________
+
+4.4 Cuanto se tarda en ese cuadre? Cuando fue la ultima vez que NO cuadro,
+    y que hicisteis?
+
+    ______________________________________________________________________
+
+4.5 [*] Como se les paga a las profesionales: sueldo, comision, alquiler
+    de silla, mezcla?
+
+    ______________________________________________________________________
+
+4.6 [*] Si hay comision: QUE PORCENTAJE, y es igual para todas y para
+    todos los servicios? Quien decidio ese numero?
+
+    ______________________________________________________________________
+
+    ______________________________________________________________________
+
+4.7 [*] Quien calcula lo que le toca a cada una, con que, y cada cuanto?
+    ME LO ENSENYAS?
+
+    ______________________________________________________________________
+
+4.8 [*] La profesional sabe cuanto lleva ganado antes de que le paguen?
+    Como lo sabe? Alguna vez ha reclamado porque no le cuadraba?
+
+    ______________________________________________________________________
+
+    ______________________________________________________________________
+
+4.9 Quien da por terminado un servicio para que cuente: la profesional,
+    recepcion, el duenyo? Como se sabe que ya se puede cobrar?
+
+    ______________________________________________________________________
+
+4.10 Vendeis productos, no solo servicios? Como se apunta eso?
+
+    ______________________________________________________________________
+
+4.11 Que numero del negocio te gustaria saber y hoy no sabes?
+
+    ______________________________________________________________________
+
+
+===============================================================================
+BLOQUE 5 - FOTOS Y REPUTACION             (decide el modulo "MI VITRINA")
+===============================================================================
+
+5.1 [*] Le haceis fotos a los trabajos? Quien, con que telefono, y en que
+    momento?
+
+    ______________________________________________________________________
+
+5.2 [*] Donde acaban esas fotos hoy? ME LAS ENSENYAS?
+
+    ______________________________________________________________________
+
+5.3 [*] Le pedis permiso a la clienta para publicarlas? COMO se lo pedis,
+    con esas palabras? Queda algo escrito?
+
+    ______________________________________________________________________
+
+    ______________________________________________________________________
+
+5.4 Alguna clienta os ha dicho que no, o se ha molestado despues?
+
+    ______________________________________________________________________
+
+5.5 Quien publica en Instagram o donde sea, y cada cuanto?
+
+    ______________________________________________________________________
+
+5.6 Pedis resenyas o valoraciones? Como? Que haceis con una mala?
+
+    ______________________________________________________________________
+
+5.7 De donde viene una clienta nueva, normalmente? Como la conocisteis?
+
+    ______________________________________________________________________
+
+
+===============================================================================
+BLOQUE 6 - QUIEN HACE QUE                 (decide separar las apps por rol)
+===============================================================================
+
+6.1 [*] Enumerame a las personas del salon y que hace cada una.
+
+    ______________________________________________________________________
+
+    ______________________________________________________________________
+
+6.2 [*] Quien puede ver cuanto factura el salon? Y quien NO deberia verlo?
+
+    ______________________________________________________________________
+
+6.3 [*] Si la duenya no esta, quien manda y que NO puede hacer esa persona?
+
+    ______________________________________________________________________
+
+6.4 [*] Una profesional, que necesitaria ver en su telefono? Y que no
+    querrias que viera?
+
+    Necesita: ____________________________________________________________
+
+    No debe ver: _________________________________________________________
+
+6.5 La duenya trabaja atendiendo tambien, o solo dirige?
+
+    ______________________________________________________________________
+
+6.6 Cuando entra alguien nuevo a trabajar, quien le ensenya y cuanto tarda
+    en manejarse solo?
+
+    ______________________________________________________________________
+
+6.7 Hay alguien que solo abre y cierra, o que solo cobra?
+
+    ______________________________________________________________________
+
+
+===============================================================================
+BLOQUE 7 - LO QUE USAN Y LO QUE DUELE
+===============================================================================
+
+7.1 [*] Que herramientas usais hoy? (papel, Excel, WhatsApp, alguna app)
+    ME LAS ENSENYAS?
+
+    ______________________________________________________________________
+
+7.2 [*] Habeis probado alguna aplicacion de salones antes? Cual y por que
+    la dejasteis?
+
+    ______________________________________________________________________
+
+    ______________________________________________________________________
+
+7.3 [*] Que es lo mas pesado de tu trabajo que NO es atender clientas?
+
+    ______________________________________________________________________
+
+7.4 Si pudieras quitarte una tarea de encima manyana, cual seria?
+
+    ______________________________________________________________________
+
+7.5 Que telefono usas para el trabajo? Es tuyo o del salon? Trabajas mas
+    desde el telefono o desde un computador?
+
+    ______________________________________________________________________
+
+7.6 Pagais hoy por alguna herramienta? Cuanto al mes?
+
+    ______________________________________________________________________
+
+
+===============================================================================
+BLOQUE 8 - CIERRE
+===============================================================================
+
+8.1 [*] Que te he preguntado que no me hayas contado del todo?
+
+    ______________________________________________________________________
+
+8.2 [*] Que deberia haberte preguntado y no se me ocurrio?
+
+    ______________________________________________________________________
+
+8.3 Conoces a alguien mas que valga la pena que escuche?
+
+    ______________________________________________________________________
+
+8.4 Te puedo escribir si me surge alguna duda?   SI / NO
+
+    Contacto: ____________________________________________________________
+
+
+===============================================================================
+SI TE DEJAN QUEDARTE UN RATO - QUE MIRAR SIN PREGUNTAR
+===============================================================================
+Esto vale mas que todo lo de arriba. Si dejan estar una hora en el salon,
+no hablar: contar. Marcar con palitos.
+
+[ ] WhatsApp que entran pidiendo cita .................... | | | | |
+
+[ ] Llamadas .............................................. | | | | |
+
+[ ] Personas que llegan sin cita ........................... | | | | |
+
+[ ] Veces que alguien abre el cuaderno/agenda .............. | | | | |
+
+[ ] Veces que alguien pregunta en voz alta "de quien es
+    esta clienta?" o "quien atiende ahora?" ................ | | | | |
+
+[ ] Cobros, y con que se apuntan ........................... | | | | |
+
+[ ] Fotos que alguien hace a un trabajo .................... | | | | |
+
+[ ] Veces que alguien busca algo y no lo encuentra ......... | | | | |
+
+Anotar tambien:
+- A que hora hay pico y a que hora hay calma.
+- Cuantas personas tocan el mismo papel o el mismo telefono.
+- Que hay pegado en la pared o en el espejo (suele ser lo importante).
+
+    ______________________________________________________________________
+
+    ______________________________________________________________________
+
+    ______________________________________________________________________
+
+
+===============================================================================
+COMO DEVOLVER ESTO
+===============================================================================
+Sirve cualquiera de las tres:
+
+  - Escrito a mano y fotografiado (una foto por hoja, que se lea).
+  - Dictado por voz contando lo que salio, bloque por bloque.
+  - Escrito directamente en el chat.
+
+No hace falta ordenarlo ni pasarlo a limpio. Las palabras textuales de la
+persona valen mas que un resumen: si dijo "es que eso lo llevo en la
+cabeza", eso es el dato.
+
+Con DOS entrevistas completas ya se puede decidir si la estructura de 5
+modulos se sostiene. Con CUATRO se puede decidir ademas como separar las
+pantallas por rol.
+
+===============================================================================
