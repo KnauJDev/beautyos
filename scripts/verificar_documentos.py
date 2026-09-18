@@ -21,6 +21,7 @@ COMO SE USA
 Devuelve 0 si todo esta bien, 1 si algo falla. Sirve igual en el CI.
 """
 import glob
+import unicodedata
 import os
 import re
 import sys
@@ -54,7 +55,22 @@ def ruta(p: str) -> str:
     return os.path.relpath(p, RAIZ).replace("\\", "/")
 
 
-# --- 1. Caracteres de control invisibles ------------------------------------
+# --- 1. Caracteres de control invisibles y letras disfrazadas ---------------
+#
+# HOMOGLIFOS (anadido el 18-sep, D-247). El 18-sep se colo una `\u0440` CIRILICA
+# dentro de "Peluqueria" al escribir el HANDOFF, y el guardian la dio por
+# buena: solo miraba caracteres de control. Se vio de casualidad al releer.
+#
+# Es el MISMO fallo para el que nacio este guion (D-223): un caracter que no
+# se ve y que rompe lo que toca. Una `\u0440` cirilica no la encuentra ningun
+# `grep "Peluqueria"`, ni un buscador del navegador, ni una persona leyendo.
+#
+# La regla es simple porque este proyecto escribe en espanyol y nada mas: si
+# aparece una letra cirilica o griega, esta disfrazada de latina. Comprobado
+# el 18-sep que hoy no hay ninguna legitima en `docs/` ni en las migraciones,
+# asi que cualquiera que salga es un accidente.
+LETRAS_DISFRAZADAS = ("CYRILLIC", "GREEK")
+
 for f in glob.glob(os.path.join(RAIZ, "docs", "**", "*.md"), recursive=True) + glob.glob(
     os.path.join(RAIZ, "supabase", "migrations", "*.sql")
 ):
@@ -64,6 +80,19 @@ for f in glob.glob(os.path.join(RAIZ, "docs", "**", "*.md"), recursive=True) + g
         if malos:
             fallos.append(f"{ruta(f)}:{n} tiene un caracter de control {hex(ord(malos[0]))}")
             break
+    for n, linea in enumerate(texto.split("\n"), 1):
+        for c in linea:
+            if ord(c) < 128:
+                continue
+            nombre = unicodedata.name(c, "")
+            if any(alfabeto in nombre for alfabeto in LETRAS_DISFRAZADAS):
+                fallos.append(
+                    f"{ruta(f)}:{n} tiene {hex(ord(c))} ({nombre}) disfrazado de letra latina"
+                )
+                break
+        else:
+            continue
+        break
     if texto.startswith("\ufeff"):
         fallos.append(f"{ruta(f)} empieza con BOM")
 

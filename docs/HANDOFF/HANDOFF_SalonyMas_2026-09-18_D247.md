@@ -132,6 +132,24 @@ El 17-sep se aprendió que *una prueba que lee código comprueba la intención; 
 
 ---
 
+## 6-bis. El guardián ya caza letras disfrazadas
+
+Escribiendo este mismo HANDOFF se coló una **`U+0440` cirílica** dentro de
+«Peluquería», y `verificar_documentos.py` la dio por buena: solo miraba
+caracteres de control. Se vio de casualidad al releer.
+
+**Es el mismo fallo para el que nació el guardián** (D-223): un carácter que
+no se ve y que rompe lo que toca. Una `U+0440` cirílica no la encuentra ningún
+`grep`, ni el buscador del navegador, ni una persona leyendo.
+
+Añadido el mismo día: **cualquier letra cirílica o griega en `docs/` o en las
+migraciones es un fallo**, porque aquí se escribe en español y nada más
+(comprobado que hoy no hay ninguna legítima). **Y se probó ejecutándolo**, no
+leyéndolo: se metió una `U+0440` a propósito, el guardián la señaló con su nombre
+—`0x440 (CYRILLIC SMALL LETTER ER)`— y devolvió 1.
+
+---
+
 ## 7. Prompt para retomar
 
 ```
