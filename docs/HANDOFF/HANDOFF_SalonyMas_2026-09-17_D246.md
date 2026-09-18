@@ -1,6 +1,6 @@
 # HANDOFF Salón y Más — 17 de septiembre de 2026 ("Nadie podía registrarse, y lo descubrió un desconocido", D-245 y D-246)
 
-**Bloque documentado:** decisiones **D-245** y **D-246** · Fase **9**, pasos **9.46** y **9.47** · hallazgos **AG** a **AJ**.
+**Bloque documentado:** decisiones **D-245** y **D-246** · Fase **9**, pasos **9.46** y **9.47** · hallazgos **AG** a **AL**, e idea **I-17**.
 
 **Estado:** ✅ Todo aplicado y verificado. Controles **214** y **215** en verde.
 ⏳ **Hay un recorrido de prueba a medias**: ver apartado 5.
@@ -47,7 +47,7 @@ Borra a pasadas, **verifica al final que no quede una sola fila** —si sobra al
 
 ---
 
-## 4. Cuatro hallazgos nuevos, y dos son de dinero
+## 4. Seis hallazgos nuevos, y tres son de dinero
 
 | | Qué | Estado |
 |---|---|---|
@@ -55,8 +55,12 @@ Borra a pasadas, **verifica al final que no quede una sola fila** —si sobra al
 | **AH** 🔴 | El enlace de confirmación por correo caduca antes de que la gente lo pulse | Abierto — **ajuste de Supabase, del propietario** |
 | **AI** 🟡 | **El repositorio no contiene el esquema completo.** Las tablas grandes no están en ninguna migración | Abierto |
 | **AJ** 🔴 | **El salón nace con comisión del 40% que nadie le pide confirmar**, y ese valor vive en un default de tabla que el repositorio no tiene | Abierto |
+| **AK** 🔴 | **Los diálogos validan DESPUÉS de cerrarse: un dato rechazado borra todo lo escrito.** El patrón es el mismo en los cuatro que escriben datos (D-236, D-237, D-241, D-242) | Abierto |
+| **AL** 🟡 | **Al empleado invitado le llega el correo del dueño**, prometiéndole *"tu prueba gratuita de 21 días"*. Ni tiene prueba ni son 21 | Abierto |
 
 **AG con evidencia del propietario:** aprobó un negocio con 97% de descuento y su Configuración enseña **«Plan Todo Incluido — $4.500/mes»** y diez centímetros más abajo **«Peluquería Éxito Prueba · $150.000 al mes»** con un botón *Activar esta sede*. **Dos precios para lo mismo, dos botones que cobran distinto.**
+
+**AK lo dijo el propietario con la voz de un cliente:** *"me salió error abajo casi imperceptible y al parecer me sacó sin guardar... para mí me daría jartera y no volvería a usarlo"*. Tuvo que reescribir siete campos por una arroba. **No rompe nada y aun así pierde clientes.**
 
 **AJ es el más silencioso:** un horario mal puesto se nota el primer día; **una comisión mal puesta se nota al pagar nóminas.**
 
@@ -64,21 +68,44 @@ Borra a pasadas, **verifica al final que no quede una sola fila** —si sobra al
 
 ## 5. ⏳ DÓNDE QUEDÓ EL RECORRIDO DE PRUEBA
 
-**El guion está en `docs/04_pruebas/RECORRIDO_COMPLETO_DE_UN_CLIENTE.md`.** Tiene el reparto y 18 pasos con casillas.
+**El guion está en `docs/04_pruebas/RECORRIDO_COMPLETO_DE_UN_CLIENTE.md`**, con el reparto real, 18 pasos y una tabla de resultados.
 
-**Hecho: pasos 1, 2 y 3.** Existe ahora mismo en producción:
+### Hechos y en verde: pasos 1 a 8
+
+| # | Qué se probó | Resultado |
+|---|---|---|
+| 1-3 | Registro, primera sede automática, aprobación | ✅ **D-245 verificado por el camino de una persona**, no solo por el control |
+| 4 | Alicia carga los datos de su sede desde **su** Configuración | ✅ a la segunda — la primera la tumbó **AK** |
+| 5 | Lo mismo visto desde el Panel | ✅ **dos puertas, un solo dato** |
+| 6-7 | Invitación a la administradora | ✅ **correo enviado 18:36, en bandeja 18:37**, en *Primary* |
+| 8 | Invitación a la asistente | ✅ su menú son **3 entradas**, no 15 |
+| 16 | Marcar como ensayo → aparece el botón rojo de borrar | ✅ **adelantado** |
+
+**Dos comprobaciones de permisos, las dos bien:**
+
+- Desde el lado de la administradora, la dueña sale **«Protegido»**, no «Gestionar». **No hay agujero.**
+- La asistente ve **Agenda, Tickets & Caja y Clientes**. Nada más. El rol está bien delimitado.
+
+### Lo que existe ahora mismo en producción
 
 | | |
 |---|---|
-| Negocio | **Peluquería Éxito Prueba** — `TRIALING`, 7 días, vence 24-sep |
-| Propietaria | Alicia Propietaria · `elboga008@gmail.com` |
-| Precio del negocio | **$4.500/mes** (150.000 con 97% de descuento) |
-| Precio de su sede | **$150.000/mes** ← el de AG |
-| Marcado como demo | **NO** — hay que marcarlo antes de poder borrarlo |
+| Negocio | **Peluquería Éxito Prueba** — `TRIALING`, 7 días, vence **24-sep** |
+| Marcado como demo | **SÍ** — el botón de borrar está disponible |
+| Precio del negocio | **$4.500/mes** (150.000 con 97 % de descuento) |
+| Precio de su sede | **$150.000/mes** ← esto es **AG** |
+| Equipo | 3 cuentas: dueña, administradora, asistente |
+| Partner vinculado | Julio Cesar Rodriguez Giraldo · código `MANITO` · 50 % recurrente |
 
-**Siguiente: paso 4** — Alicia carga los datos de su sede desde **su propia** Configuración.
+> El partner **no estaba en el guion**: lo añadió el propietario por su cuenta y funcionó, incluida la línea `partner_assigned` en el historial. Y corrigió algo que se había afirmado mal: el código de referido **sí** se puede asignar a mano desde la ficha; lo que no existe es que el salón lo escriba al registrarse.
 
-> **El 17-sep se corrigió el orden de los pasos 4 y 5.** Antes decían que el dueño de plataforma cargaba los datos del cliente desde su Panel. Lo señaló el propietario: *"no soy yo el que debo ingresar los datos de las sedes de los clientes"*. **Tenía razón.** La puerta del Panel (D-241) es la de **servicio**; la principal es la del salón (D-242).
+### Siguiente: **paso 9**
+
+**Crear a Erick Santiago Estilista en el catálogo (menú Estilistas) ANTES de invitarlo.** Es el único punto del recorrido donde el orden no es opcional: la regla *"un estilista, una cuenta"* exige enlazar la invitación a un estilista que ya exista.
+
+**Y al crearlo, mirar qué pide el formulario.** Si le asigna una comisión por omisión sin pedir confirmación, es **AJ otra vez pero por persona**.
+
+Después: paso 10 (invitarlo, con `elboga025`), y de ahí hasta el 18.
 
 ---
 
@@ -95,20 +122,31 @@ Borra a pasadas, **verifica al final que no quede una sola fila** —si sobra al
 ## 7. Prompt para retomar
 
 ```
-Lee el HANDOFF más reciente en docs/HANDOFF/ (D-245 y D-246).
+Lee el HANDOFF más reciente en docs/HANDOFF/ (D-245 y D-246), y con él
+docs/04_pruebas/RECORRIDO_COMPLETO_DE_UN_CLIENTE.md.
 
 Antes de tocar documentación: python scripts/verificar_documentos.py
 
-Estamos a mitad del recorrido de prueba de
-docs/04_pruebas/RECORRIDO_COMPLETO_DE_UN_CLIENTE.md: hechos los pasos 1 a 3,
-toca el 4. El propietario va paso a paso y confirma cada uno antes del
-siguiente; es no técnico, así que hay que decirle qué hace, cómo y dónde.
+DÓNDE ESTAMOS
+Recorriendo con el propietario, paso a paso y con personas reales, el alta
+completa de un salón. Hechos los pasos 1 a 8 (y el 16, adelantado). Toca el
+paso 9: crear a Erick Santiago Estilista en el catálogo ANTES de invitarlo.
 
-NO pagar nada: la sede de prueba dice $150.000 y el modo real está activo.
+CÓMO SE TRABAJA CON ÉL
+Va paso a paso y confirma cada uno antes del siguiente. No es técnico: hay
+que decirle QUÉ hace, CÓMO y POR DÓNDE, con los nombres exactos de los
+botones. Los comandos se le dan en bloques ```bash de una sola línea, y los
+ejecuta él. Encuentra fallos reales mirando pantallas: cuando dice "esto no
+es", casi siempre tiene razón — verificarlo antes de defender el código.
 
-Al acabar el recorrido, atacar AG (el precio del negocio no llega a la sede)
-y AJ (la comisión del 40% que nadie confirma). Los dos son de dinero.
+NO PAGAR NADA. La sede de prueba dice $150.000 y EPAYCO_TEST_MODE es false.
 
-Todo lo demás aplicado y publicado. Controles 214 y 215 en verde,
-404 pruebas, analyze 0/0.
+AL ACABAR EL RECORRIDO, por orden de valor:
+  AG - el precio del negocio no llega a la sede (dinero)
+  AJ - la comisión del 40% que nadie confirma (dinero)
+  AK - los diálogos pierden lo escrito al rechazar un dato
+  AH - el enlace del correo caduca (lo ajusta él en Supabase)
+
+Todo aplicado y publicado. Controles 214 y 215 en verde, 404 pruebas,
+flutter analyze 0/0, 246 decisiones, guardián de documentación en verde.
 ```

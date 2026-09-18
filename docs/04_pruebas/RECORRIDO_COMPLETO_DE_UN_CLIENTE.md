@@ -33,15 +33,20 @@ ve por separado.
 
 ## El reparto
 
-| Papel | Nombre | Correo / teléfono |
-|---|---|---|
-| **Propietaria** | Alicia Propietaria | `elboga008@gmail.com` |
-| **Negocio** | Peluquería Éxito Prueba | — |
-| **Sede 1** | *(la que se crea sola al registrarse)* | `elboga009@gmail.com` |
-| **Administradora de sede** | Segunda Alicia Administradora | `elboga012@gmail.com` |
-| **Asistente** | Carolina Asistente | `elboga024@gmail.com` |
-| **Estilista** | Erick Santiago Estilista | `elboga025@gmail.com` |
-| **Clienta del salón** | David Alonso Cliente 1 | WhatsApp `3506815629` |
+| Papel | Nombre | Correo / teléfono | Estado |
+|---|---|---|---|
+| **Propietaria** | Alicia Propietaria | `elboga008@gmail.com` | ✅ cuenta creada y dentro |
+| **Negocio** | Peluquería Éxito Prueba | — | ✅ `TRIALING`, vence 24-sep |
+| **Sede 1** | *(se crea sola al registrarse)* | `elboga009@gmail.com` | ✅ con sus datos cargados |
+| **Administradora** | Segunda Alicia Administradora | `elboga012@gmail.com` | ✅ aceptó y entró |
+| **Asistente** | Carolina Asistente | `elboga011@gmail.com` | ✅ aceptó y entró |
+| **Estilista** | Erick Santiago Estilista | `elboga025@gmail.com` | ⏳ **pendiente** |
+| **Clienta del salón** | David Alonso Cliente 1 | WhatsApp `3506815629` | ⏳ **pendiente** |
+
+> **El correo del reparto cambió sobre la marcha** y aquí queda el real, no el
+> planeado. `elboga021` a `elboga024` **no se usaron**; se usaron 008, 009, 011
+> y 012. Un guion que dice otros correos que los de la base no sirve para
+> retomar nada.
 
 > Los tres roles que acepta una invitación son exactamente **`admin`**,
 > **`assistant`** y **`stylist`**. No hay más.
@@ -132,7 +137,7 @@ Abre `elboga012@gmail.com`, pulsa el enlace y crea su cuenta.
 
 ### 8. Invita a la asistente
 
-Igual, con `elboga011@gmail.com` y rol **asistente**.
+Igual, con `elboga011@gmail.com` y rol **asistente**. *(El guion decía `024`; se usó `011`.)*
 
 - **Debe pasar:** lo mismo que en 6 y 7.
 - **Y comprueba:** Carolina **no** debe poder invitar a nadie ni ver
