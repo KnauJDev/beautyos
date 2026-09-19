@@ -264,16 +264,22 @@ begin
       using errcode = '23505';
   end if;
 
+  -- Se envuelve en un CTE a proposito: `return query insert ... returning`
+  -- es ambiguo segun la version, y esta migracion ya se cayo una vez por una
+  -- forma dudosa. Con el CTE lo que devuelve es un select y no hay duda.
   return query
-  insert into public.clients (tenant_id, name, phone, email, notes)
-  values (
-    v_tenant_id,
-    trim(p_name),
-    v_phone,
-    nullif(trim(coalesce(p_email, '')), ''),
-    nullif(trim(coalesce(p_notes, '')), '')
+  with nueva as (
+    insert into public.clients (tenant_id, name, phone, email, notes)
+    values (
+      v_tenant_id,
+      trim(p_name),
+      v_phone,
+      nullif(trim(coalesce(p_email, '')), ''),
+      nullif(trim(coalesce(p_notes, '')), '')
+    )
+    returning *
   )
-  returning *;
+  select * from nueva;
 end;
 $fn$;
 
@@ -312,6 +318,8 @@ set search_path = public
 as $$
 declare
   v_tenant_id uuid;
+  v_phone     text;
+  v_duena     text;
 begin
   v_tenant_id := public.get_my_tenant_id();
 
@@ -354,35 +362,32 @@ begin
     raise exception 'El estado del cliente es obligatorio.';
   end if;
 
-  return query
   -- Mismo cuidado que al crear: el choque se explica ANTES de que lo explique
   -- el indice, porque "duplicate key value violates unique constraint" no le
   -- dice nada a quien esta editando una ficha.
-  declare
-    v_phone text := private.beautyos_celular_valido(p_phone);
-    v_duena text;
-  begin
-    if v_phone is not null then
-      select c2.name into v_duena
-      from public.clients c2
-      where c2.tenant_id = v_tenant_id
-        and c2.active
-        and c2.phone = v_phone
-        and c2.id <> p_client_id
-      limit 1;
+  v_phone := private.beautyos_celular_valido(p_phone);
 
-      if v_duena is not null then
-        raise exception
-          'Ese celular ya es de %. Un celular es de una sola persona: es con lo que entra a ver sus citas y sus fotos.',
-          v_duena
-          using errcode = '23505';
-      end if;
+  if v_phone is not null then
+    select c2.name into v_duena
+    from public.clients c2
+    where c2.tenant_id = v_tenant_id
+      and c2.active
+      and c2.phone = v_phone
+      and c2.id <> p_client_id
+    limit 1;
+
+    if v_duena is not null then
+      raise exception
+        'Ese celular ya es de %. Un celular es de una sola persona: es con lo que entra a ver sus citas y sus fotos.',
+        v_duena
+        using errcode = '23505';
     end if;
-  end;
+  end if;
 
+  return query
   update public.clients c
      set name = trim(p_name),
-         phone = private.beautyos_celular_valido(p_phone),
+         phone = v_phone,
          email = nullif(trim(coalesce(p_email, '')), ''),
          notes = nullif(trim(coalesce(p_notes, '')), ''),
          active = p_active

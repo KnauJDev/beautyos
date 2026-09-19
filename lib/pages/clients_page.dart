@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
+import '../models/celular_colombiano.dart';
 import '../models/client_summary.dart';
 import '../services/clients_service.dart';
 import '../widgets/app_widgets.dart';
@@ -86,90 +87,42 @@ class _ClientesPageState extends State<ClientesPage> {
     }).toList();
   }
 
+  /// Abre el dialogo y **no vuelve a llamar al servidor**: el dialogo ya
+  /// guarda por su cuenta (AK, D-249). Antes esta pantalla recibia los datos
+  /// y hacia la llamada, y por eso un rechazo aparecia con el formulario ya
+  /// cerrado y lo escrito perdido.
   Future<void> _openCreateClientDialog() async {
-    final formData = await showDialog<_ClientFormData>(
+    final creado = await showDialog<ClientSummary>(
       context: context,
       builder: (context) => const _CreateClientDialog(),
     );
 
-    if (formData == null) return;
+    if (creado == null || !mounted) return;
 
-    try {
-      final createdClient = await clientsService.createClient(
-        name: formData.name,
-        phone: formData.phone,
-        email: formData.email,
-        notes: formData.notes,
-      );
-
-      if (!mounted) return;
-
-      if (createdClient == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'No se pudo crear el cliente. Verifica tus permisos.',
-            ),
-          ),
-        );
-        return;
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Cliente creado: ${createdClient.name}')),
-      );
-      _refreshClients();
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error creando cliente: $error')));
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Cliente creado: ${creado.name}')),
+    );
+    _refreshClients();
   }
 
   Future<void> _openEditClientDialog(ClientSummary client) async {
-    final formData = await showDialog<_ClientFormData>(
+    final actualizado = await showDialog<ClientSummary>(
       context: context,
       builder: (context) => _EditClientDialog(client: client),
     );
 
-    if (formData == null) return;
+    if (actualizado == null || !mounted) return;
 
-    try {
-      final updatedClient = await clientsService.updateClient(
-        clientId: client.id,
-        name: formData.name,
-        phone: formData.phone,
-        email: formData.email,
-        notes: formData.notes,
-        active: formData.active,
-      );
-
-      if (!mounted) return;
-
-      if (updatedClient == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se pudo actualizar el cliente.')),
-        );
-        return;
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            updatedClient.active
-                ? 'Cliente actualizado: ${updatedClient.name}'
-                : 'Cliente desactivado: ${updatedClient.name}',
-          ),
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          actualizado.active
+              ? 'Cliente actualizado: ${actualizado.name}'
+              : 'Cliente desactivado: ${actualizado.name}',
         ),
-      );
-      _refreshClients();
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error actualizando cliente: $error')),
-      );
-    }
+      ),
+    );
+    _refreshClients();
   }
 
   Future<void> _openClientDetailSheet(ClientSummary client) async {
@@ -1222,22 +1175,52 @@ class _CreateClientDialogState extends State<_CreateClientDialog> {
     super.dispose();
   }
 
-  void _submit() {
+  bool guardando = false;
+  String? errorDelServidor;
+
+  /// **Guarda desde aqui dentro, y si el servidor rechaza NO cierra** (AK).
+  ///
+  /// Antes este dialogo devolvia los datos y se cerraba, y la pantalla de
+  /// atras llamaba al servidor: un rechazo llegaba como un aviso al pie con
+  /// el formulario ya desaparecido y todo lo escrito perdido. Con D-249 eso
+  /// dejo de ser teorico: *"ese celular ya es de Ana"* es un rechazo que va a
+  /// pasar de verdad, y pasarle eso a alguien que acaba de escribir cinco
+  /// campos es como se pierden los clientes.
+  Future<void> _submit() async {
     if (!formKey.currentState!.validate()) return;
 
-    Navigator.of(context).pop(
-      _ClientFormData(
+    setState(() {
+      guardando = true;
+      errorDelServidor = null;
+    });
+
+    try {
+      final creado = await const ClientsService().createClient(
         name: nameController.text.trim(),
-        phone: phoneController.text.trim(),
+        phone: CelularColombiano.normalizar(phoneController.text),
         email: emailController.text.trim().isEmpty
             ? null
             : emailController.text.trim(),
         notes: notesController.text.trim().isEmpty
             ? null
             : notesController.text.trim(),
-        active: true,
-      ),
-    );
+      );
+
+      if (!mounted) return;
+
+      if (creado == null) {
+        setState(() => errorDelServidor = 'No se pudo crear el cliente.');
+        return;
+      }
+
+      Navigator.of(context).pop(creado);
+    } on PostgrestException catch (error) {
+      setState(() => errorDelServidor = error.message);
+    } catch (error) {
+      setState(() => errorDelServidor = 'Ocurrio un error inesperado: $error');
+    } finally {
+      if (mounted) setState(() => guardando = false);
+    }
   }
 
   @override
@@ -1251,6 +1234,8 @@ class _CreateClientDialogState extends State<_CreateClientDialog> {
       notesController: notesController,
       onSubmit: _submit,
       submitLabel: 'Guardar cliente',
+      guardando: guardando,
+      errorDelServidor: errorDelServidor,
     );
   }
 }
@@ -1291,13 +1276,24 @@ class _EditClientDialogState extends State<_EditClientDialog> {
     super.dispose();
   }
 
-  void _submit() {
+  bool guardando = false;
+  String? errorDelServidor;
+
+  /// Mismo criterio que al crear (AK): el rechazo se queda dentro del
+  /// dialogo, con lo escrito intacto.
+  Future<void> _submit() async {
     if (!formKey.currentState!.validate()) return;
 
-    Navigator.of(context).pop(
-      _ClientFormData(
+    setState(() {
+      guardando = true;
+      errorDelServidor = null;
+    });
+
+    try {
+      final actualizado = await const ClientsService().updateClient(
+        clientId: widget.client.id,
         name: nameController.text.trim(),
-        phone: phoneController.text.trim(),
+        phone: CelularColombiano.normalizar(phoneController.text),
         email: emailController.text.trim().isEmpty
             ? null
             : emailController.text.trim(),
@@ -1305,8 +1301,23 @@ class _EditClientDialogState extends State<_EditClientDialog> {
             ? null
             : notesController.text.trim(),
         active: active,
-      ),
-    );
+      );
+
+      if (!mounted) return;
+
+      if (actualizado == null) {
+        setState(() => errorDelServidor = 'No se pudo guardar el cliente.');
+        return;
+      }
+
+      Navigator.of(context).pop(actualizado);
+    } on PostgrestException catch (error) {
+      setState(() => errorDelServidor = error.message);
+    } catch (error) {
+      setState(() => errorDelServidor = 'Ocurrio un error inesperado: $error');
+    } finally {
+      if (mounted) setState(() => guardando = false);
+    }
   }
 
   @override
@@ -1320,6 +1331,8 @@ class _EditClientDialogState extends State<_EditClientDialog> {
       notesController: notesController,
       onSubmit: _submit,
       submitLabel: 'Guardar cambios',
+      guardando: guardando,
+      errorDelServidor: errorDelServidor,
       active: active,
       onActiveChanged: (value) => setState(() => active = value),
     );
@@ -1336,6 +1349,8 @@ class _ClientDialogForm extends StatelessWidget {
     required this.notesController,
     required this.onSubmit,
     required this.submitLabel,
+    this.guardando = false,
+    this.errorDelServidor,
     this.active,
     this.onActiveChanged,
   });
@@ -1348,6 +1363,12 @@ class _ClientDialogForm extends StatelessWidget {
   final TextEditingController notesController;
   final VoidCallback onSubmit;
   final String submitLabel;
+  final bool guardando;
+
+  /// Lo que dijo el servidor cuando se nego. **Se ensenya AQUI DENTRO**, con
+  /// el formulario en pie y lo escrito intacto (AK).
+  final String? errorDelServidor;
+
   final bool? active;
   final ValueChanged<bool>? onActiveChanged;
 
@@ -1376,17 +1397,29 @@ class _ClientDialogForm extends StatelessWidget {
                       : null,
                 ),
                 const SizedBox(height: 12),
+                // El celular es la LLAVE de la clienta (D-249): con el y un
+                // PIN entra a ver sus citas y sus fotos. Por eso aqui no se
+                // admite cualquier cosa: diez digitos, y el indicativo lo
+                // pone el sistema.
+                //
+                // El `+57` va como adorno del campo y no como texto editable
+                // a proposito: si se pudiera escribir, volveria a haber dos
+                // formas de guardar el mismo numero, que es justo lo que
+                // costo AW.
                 TextFormField(
                   controller: phoneController,
-                  decoration: const InputDecoration(
-                    labelText: 'Teléfono / WhatsApp',
-                    prefixIcon: Icon(Icons.phone_outlined),
+                  decoration: InputDecoration(
+                    labelText: 'Celular / WhatsApp',
+                    prefixIcon: const Icon(Icons.phone_outlined),
+                    prefixText: '${CelularColombiano.indicativo} ',
+                    hintText: CelularColombiano.ejemplo,
+                    counterText: '',
                   ),
-                  keyboardType: TextInputType.phone,
+                  keyboardType: TextInputType.number,
                   textInputAction: TextInputAction.next,
-                  validator: (value) => value == null || value.trim().isEmpty
-                      ? 'Escribe el teléfono del cliente'
-                      : null,
+                  maxLength: CelularColombiano.digitos,
+                  inputFormatters: CelularColombiano.formatos,
+                  validator: CelularColombiano.validar,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -1425,6 +1458,39 @@ class _ClientDialogForm extends StatelessWidget {
                     ),
                   ),
                 ],
+                if (errorDelServidor != null) ...[
+                  const SizedBox(height: 14),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.danger.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: AppColors.danger.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.error_outline,
+                            size: 18, color: AppColors.danger),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            errorDelServidor!,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              height: 1.35,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1432,31 +1498,22 @@ class _ClientDialogForm extends StatelessWidget {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: guardando ? null : () => Navigator.of(context).pop(),
           child: const Text('Cancelar'),
         ),
         FilledButton.icon(
-          onPressed: onSubmit,
-          icon: const Icon(Icons.save_outlined),
-          label: Text(submitLabel),
+          onPressed: guardando ? null : onSubmit,
+          icon: guardando
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.save_outlined),
+          label: Text(guardando ? 'Guardando...' : submitLabel),
         ),
       ],
     );
   }
 }
 
-class _ClientFormData {
-  const _ClientFormData({
-    required this.name,
-    required this.phone,
-    this.email,
-    this.notes,
-    required this.active,
-  });
-
-  final String name;
-  final String phone;
-  final String? email;
-  final String? notes;
-  final bool active;
-}
