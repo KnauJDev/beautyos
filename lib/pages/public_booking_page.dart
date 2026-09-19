@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
 
+import '../models/celular_colombiano.dart';
 import '../models/available_appointment_slot.dart';
 import '../models/public_booking_result.dart';
 import '../models/public_branch_info.dart';
@@ -288,9 +289,13 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
       return;
     }
 
-    if (phone.isEmpty) {
+    // Se comprueba AQUI y no solo en el servidor: a la clienta le cuesta
+    // menos corregir antes de enviar que recibir un rechazo despues. La
+    // regla es la misma de la base, escrita en un solo sitio (D-249).
+    final avisoDelCelular = CelularColombiano.validar(phone);
+    if (avisoDelCelular != null) {
       setState(() {
-        submitError = 'Escribe tu numero de celular.';
+        submitError = avisoDelCelular;
       });
       return;
     }
@@ -307,7 +312,7 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
         stylistId: slotOption.stylistId,
         scheduledAt: slotOption.slot.startsAt,
         clientName: name,
-        clientPhone: phone,
+        clientPhone: CelularColombiano.normalizar(phone),
         clientEmail: emailController.text.trim().isEmpty
             ? null
             : emailController.text.trim(),
@@ -583,11 +588,20 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
                 ),
               ),
               const SizedBox(height: 12),
+              // Mismo campo que en Clientes (D-249): el celular es la llave
+              // de la clienta y aqui es donde lo escribe ella misma. El
+              // 19-sep esta pantalla admitia `342jjdsak` y trece digitos, y
+              // solo se enteraba al enviar.
               TextField(
                 controller: phoneController,
-                keyboardType: TextInputType.phone,
+                keyboardType: TextInputType.number,
+                maxLength: CelularColombiano.digitos,
+                inputFormatters: CelularColombiano.formatos,
                 decoration: const InputDecoration(
                   labelText: 'Celular (WhatsApp)',
+                  prefixText: '${CelularColombiano.indicativo} ',
+                  hintText: CelularColombiano.ejemplo,
+                  counterText: '',
                   border: OutlineInputBorder(),
                 ),
               ),
