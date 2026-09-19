@@ -30,7 +30,7 @@ hoy desde algún lugar de la aplicación:
 
 | Plantilla | ¿Se usa hoy en Salón y Más? |
 |---|---|
-| **Confirm signup** | ✅ **Sí.** `register_page.dart` llama a `auth.signUp(...)` y este es el correo que confirma la cuenta nueva. **Reescrita el 18-sep (D-248): ya no lleva enlace, lleva un código de 6 números.** |
+| **Confirm signup** | ✅ **Sí.** `register_page.dart` llama a `auth.signUp(...)` y este es el correo que confirma la cuenta nueva. **Reescrita el 18-sep (D-248): ya no lleva enlace, lleva un código.** *(Decía «de 6 números» hasta el 19-sep: la longitud la decide Supabase, y la de este proyecto es de **ocho** — hallazgo AY.)* |
 | **Reset Password** | ⬜ No. No existe todavía un enlace de "olvidé mi contraseña" en `LoginPage` ni ninguna llamada a `resetPasswordForEmail`. |
 | **Magic Link** | ⬜ No. Ninguna pantalla llama a `signInWithOtp`. |
 | **Invite user** | ⬜ No. Las invitaciones de equipo de este proyecto usan un flujo propio (`create_team_invitation` + Edge Function `send-invitation-email` por Resend, D-062/D-065) — **no** el invite nativo de Supabase Auth (`admin.inviteUserByEmail`). Esta plantilla queda lista por si alguna vez se usa ese camino nativo, pero hoy no lo dispara nada. |
@@ -77,8 +77,11 @@ Solo las nativas de Supabase Auth, ninguna inventada:
 > arreglaba **subiendo el plazo en Authentication -> Email**. **Las dos cosas
 > eran falsas** y el arreglo no habria cambiado nada (D-247).
 >
-> **Un codigo de seis numeros no se puede gastar visitandolo: no hay nada que
-> visitar.** Y de regalo funciona aunque el correo se abra en otro navegador o
+> **Un codigo no se puede gastar visitandolo: no hay nada que visitar.**
+>
+> **Cuantos digitos trae lo decide Supabase** (Authentication -> Sign In /
+> Providers -> Email), no esta plantilla ni la aplicacion. El de este
+> proyecto trae **ocho**. Escribir esa cifra en el codigo fue el hallazgo AY. Y de regalo funciona aunque el correo se abra en otro navegador o
 > en otro telefono, cosa que el enlace con PKCE no hacia.
 >
 > **Ya no se promete la prueba de 21 dias** (hallazgo **AL**): esta misma

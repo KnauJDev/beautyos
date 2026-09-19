@@ -58,11 +58,19 @@ declare
   v_capturo     boolean;
   v_error       text;
   v_i           integer;
+  -- CUATRO formas de escribir EL MISMO numero. Los cuatro dan los mismos
+  -- diez digitos: es lo que hace que el tope tenga que contarlos juntos.
+  --
+  -- **Aqui NO va '+57 3506815629' a proposito.** En digitos eso es
+  -- `573506815629` -- doce, no diez --, asi que hoy es otro numero para la
+  -- base. El primer intento de este control lo metio en la lista y por eso
+  -- dio un FALLO 5 que no era de la funcion sino del control. El indicativo
+  -- del pais es un caso aparte y tiene su propia comprobacion abajo.
   v_formatos    text[] := array[
     '3506815629',
     '350 681 56 29',
-    '+57 3506815629',
-    '350-681-5629'
+    '350-681-5629',
+    '350.681.5629'
   ];
 begin
   -- 1. Existe y esta blindada
@@ -203,7 +211,7 @@ begin
   v_capturo := false;
   begin
     perform public.public_create_booking(
-      v_branch, v_service, v_stylist, v_slot, 'C216 David', '350.681.5629', null, 'control 216'
+      v_branch, v_service, v_stylist, v_slot, 'C216 David', '(350) 681 5629', null, 'control 216'
     );
   exception when others then
     v_capturo := true;
