@@ -112,7 +112,7 @@ El 17-sep se aprendió que *una prueba que lee código comprueba la intención; 
 - 🔴 **NO invitar a los diez socios** hasta cerrar **AH + AM**. Si el enlace llega gastado y nadie avisa, **se caen en la puerta y solo se ve que no entraron**.
 - 🔴 **NO abrir la reserva pública** a nadie hasta cerrar **AW**. Cada clienta que escriba su teléfono con espacios estrena ficha.
 - **NO borrar la Peluquería Éxito Prueba.** Es el banco de pruebas y su montaje costó una tarde entera.
-- **NO limpiar las cuatro fichas de David.** Son la evidencia de AO y AW.
+- ~~NO limpiar las cuatro fichas de David.~~ **Ya se limpiaron el 19-sep**, y está bien: la evidencia de **AO** y **AW** vive en el Plan Maestro con sus números, no hacía falta tenerla viva en la base. Cada David tiene ahora su propio número y **no queda ni un duplicado** — comprobado con una consulta que devolvió cero filas. Eso ahorró la herramienta de fundir fichas del paso **9.52**.
 - **NO subirle el plazo de caducidad al enlace en Supabase.** Es el arreglo que D-247 descartó.
 
 ---

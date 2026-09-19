@@ -382,7 +382,7 @@ Vuelve a registrarte con `elboga008@gmail.com`.
 | 9 | Crear al estilista en el catálogo | ✅ | **No pide comisión: hereda el 40% (AJ)**. El diálogo NO pierde lo escrito |
 | 10 | Invitación al estilista | ✅ | Correo en 1 min. **Pero: enlace gastado (AH), sin aviso (AM), y dos nombres (AN)** |
 | 10b | El estilista acepta y entra | ✅ | Su menú son **4 entradas**. Un correo cayó en **Promotions** |
-| 11 | La clienta | ✅ | Se crea bien. **Pero admite duplicado exacto y no se puede borrar (AO)** |
+| 11 | La clienta | ✅ | Se crea bien. **Pero admitía duplicado exacto (AO)**. Las fichas se separaron el 19-sep: ya no hay duplicados |
 | 11b | Un servicio, y vincularlo a Erick | ✅ | 2 servicios creados y asignados a Erick |
 | 12 | Cita y cobro | ✅ | **El camino entero funciona.** Y salió caro en hallazgos: **AP**, **AQ**, y **AJ probado con dinero** |
 | 13 | Informes | ✅ | Venta $18.000, **Ganancia Neta $10.800 = 18.000 − 7.200**. Sin interruptor consolidado, correcto |
