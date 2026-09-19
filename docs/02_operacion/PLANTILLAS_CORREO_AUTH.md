@@ -88,7 +88,7 @@ Solo las nativas de Supabase Auth, ninguna inventada:
 **Subject heading:**
 
 ```
-Tu codigo para activar tu cuenta en Salon y Mas
+Tu código para activar tu cuenta en Salón y Más
 ```
 
 **Message body:**
@@ -113,25 +113,31 @@ Tu codigo para activar tu cuenta en Salon y Mas
 </head>
 <body>
   <div class="container">
-    <div class="header"><h1>Salon y Mas</h1></div>
+    <div class="header"><h1>Salón y Más</h1></div>
     <div class="content">
-      <p>Hola!</p>
-      <p>Para activar tu cuenta, escribe este codigo en la pantalla donde te
+      <p>¡Hola!</p>
+      <p>Para activar tu cuenta, escribe este código en la pantalla donde te
       lo estamos pidiendo:</p>
       <div class="codigo"><span>{{ .Token }}</span></div>
-      <p class="muted">El codigo sirve una sola vez y caduca en una hora. Si se
+      <p class="muted">El código sirve una sola vez y caduca en una hora. Si se
       te pasa, pide otro desde la misma pantalla.</p>
-      <p style="color:#6B7280;">Si tu no creaste esta cuenta, puedes ignorar
-      este correo con tranquilidad: no se activara nada.</p>
+      <p style="color:#6B7280;">Si tú no creaste esta cuenta, puedes ignorar
+      este correo con tranquilidad: no se activará nada.</p>
     </div>
     <div class="footer">
-      Salon y Mas &mdash; Plataforma de gestion para centros de estetica, barberias y spas<br>
+      Salón y Más &mdash; Plataforma de gestión para centros de estética, barberías y spas<br>
       <a href="{{ .SiteURL }}">{{ .SiteURL }}</a> &middot; hola@salonymas.com
     </div>
   </div>
 </body>
 </html>
 ```
+
+> **Las tildes son parte de la plantilla, no un adorno.** La primera versión
+> de esta reescritura (18-sep) se entregó **sin una sola tilde** y el
+> propietario la pegó así antes de que se viera. Es el hallazgo **AV**
+> repetido — texto de cara al cliente sin acentuar — pero en **el primer
+> correo que recibe alguien que se registra. Corregido el 19-sep.**
 
 > **Al pegarla, no dejes ningun `{{ .ConfirmationURL }}` en el cuerpo.** Si
 > queda uno, aunque sea en un enlace de respaldo, el escaner del buzon lo
