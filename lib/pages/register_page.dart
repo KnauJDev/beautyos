@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/codigo_de_confirmacion.dart';
 import '../theme/app_theme.dart';
 import 'public_plans_page.dart';
 import 'terms_and_privacy_page.dart';
@@ -81,11 +82,13 @@ class _RegisterPageState extends State<RegisterPage> {
   /// lección del hallazgo AK, donde cuatro diálogos validaban después de
   /// cerrarse y tiraban el trabajo de la persona.
   Future<void> confirmarCodigo() async {
-    final codigo = codeController.text.trim();
+    // La longitud del código la decide Supabase, no esta pantalla: aquí solo
+    // se limpia y se comprueba que sea plausible (ver `CodigoDeConfirmacion`).
+    final codigo = CodigoDeConfirmacion.normalizar(codeController.text);
     final correo = correoPendienteDeConfirmar;
 
-    if (codigo.length != 6 || int.tryParse(codigo) == null) {
-      setState(() => errorMessage = 'El código son 6 números.');
+    if (codigo == null) {
+      setState(() => errorMessage = CodigoDeConfirmacion.avisoDeFormato);
       return;
     }
 
@@ -296,7 +299,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     const SizedBox(height: 24),
                     if (correoPendienteDeConfirmar != null) ...[
                       Text(
-                        'Te enviamos un código de 6 números a\n'
+                        'Te enviamos un código a\n'
                         '$correoPendienteDeConfirmar',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
@@ -320,7 +323,9 @@ class _RegisterPageState extends State<RegisterPage> {
                         controller: codeController,
                         keyboardType: TextInputType.number,
                         textAlign: TextAlign.center,
-                        maxLength: 6,
+                        // Sin `maxLength` a propósito: el 19-sep llegó un
+                        // código de **ocho** dígitos y un tope de 6 le
+                        // cortaba dos. La longitud vive en Supabase.
                         autofocus: true,
                         style: const TextStyle(
                           fontSize: 28,
@@ -329,7 +334,16 @@ class _RegisterPageState extends State<RegisterPage> {
                         ),
                         decoration: const InputDecoration(
                           counterText: '',
-                          hintText: '––––––',
+                          hintText: 'Código del correo',
+                          // El campo escribe grande y muy espaciado para que
+                          // el código se lea de un vistazo; la pista no, o
+                          // saldría desparramada y sin caber.
+                          hintStyle: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w400,
+                            letterSpacing: 0,
+                            color: AppColors.textSecondary,
+                          ),
                           border: OutlineInputBorder(),
                         ),
                         onSubmitted: (_) => confirmarCodigo(),
