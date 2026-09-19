@@ -29,10 +29,20 @@
 --     su propio numero a cada ficha repetida antes de esto, asi que **no hizo
 --     falta construir ninguna herramienta para fundir fichas**.
 --   * Largos de los celulares guardados: **45 de diez digitos y UNO de nueve**
---     (`323456789`). Ese no se toca: adivinarle un digito seria inventar el
---     dato de una persona. Se queda vivo -- es unico, no estorba al indice --
---     y la regla lo obligara a corregirse el dia que alguien edite esa ficha,
---     que es el momento correcto para preguntar.
+--     (`323456789`). Se dijo que no se tocaba, porque adivinarle un digito es
+--     inventar el dato de una persona.
+--
+--     **El propietario lo corrigio a mano antes de aplicar esto, y estuvo
+--     bien, pero por una razon concreta:** esa ficha era de *Naguara de Unyas*
+--     -- correo `jhsxwf@cpodce.com`, notas `savcjewfdhewkmgdisjfv` --, o sea
+--     de los datos que sembro el asistente (D-112), donde *"no hay una sola
+--     persona real ahi dentro"*. Ahi completar un digito no le cambia el
+--     numero a nadie.
+--
+--     **Con una clienta de verdad la regla sigue siendo preguntar, no
+--     adivinar**, y por eso esta migracion nunca toca un celular corto: solo
+--     lo ensenya y deja que la pantalla lo pida el dia que alguien edite esa
+--     ficha.
 --
 -- DONDE VIVE EL "10", Y POR QUE IMPORTA
 --
