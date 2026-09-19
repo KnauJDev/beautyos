@@ -30,7 +30,7 @@ hoy desde algún lugar de la aplicación:
 
 | Plantilla | ¿Se usa hoy en Salón y Más? |
 |---|---|
-| **Confirm signup** | ✅ **Sí.** `register_page.dart` llama a `auth.signUp(...)` y este es el correo que confirma la cuenta nueva. |
+| **Confirm signup** | ✅ **Sí.** `register_page.dart` llama a `auth.signUp(...)` y este es el correo que confirma la cuenta nueva. **Reescrita el 18-sep (D-248): ya no lleva enlace, lleva un código de 6 números.** |
 | **Reset Password** | ⬜ No. No existe todavía un enlace de "olvidé mi contraseña" en `LoginPage` ni ninguna llamada a `resetPasswordForEmail`. |
 | **Magic Link** | ⬜ No. Ninguna pantalla llama a `signInWithOtp`. |
 | **Invite user** | ⬜ No. Las invitaciones de equipo de este proyecto usan un flujo propio (`create_team_invitation` + Edge Function `send-invitation-email` por Resend, D-062/D-065) — **no** el invite nativo de Supabase Auth (`admin.inviteUserByEmail`). Esta plantilla queda lista por si alguna vez se usa ese camino nativo, pero hoy no lo dispara nada. |
@@ -50,23 +50,49 @@ mismo hallazgo W con un nombre distinto.
 Solo las nativas de Supabase Auth, ninguna inventada:
 
 - `{{ .ConfirmationURL }}` — el enlace de acción (confirmar, resetear, entrar).
-- `{{ .Token }}` — el código numérico de un solo uso (solo en Reautenticación).
+- `{{ .Token }}` — el código numérico de un solo uso. *(Hasta el 18-sep aquí ponía «solo en Reautenticación». **Es falso:** también existe en Confirm signup, y desde D-248 es justo lo que usa esa plantilla.)*
 - `{{ .Email }}` — el correo actual de la cuenta.
 - `{{ .NewEmail }}` — el correo nuevo solicitado (solo en Cambio de correo).
 - `{{ .SiteURL }}` — la URL configurada como Site URL del proyecto.
 
 ---
 
-## 4. Confirm signup (Confirmación de registro)
+## 4. Confirm signup (Confirmacion de registro)
 
-**Estado:** ✅ activa hoy.
+**Estado:** activa hoy. **Reescrita el 18-sep (D-248).**
+
+> ### Por que esta plantilla ya no lleva enlace
+>
+> Hasta el 18-sep mandaba un boton **Confirmar mi correo** con
+> `{{ .ConfirmationURL }}`. Ese enlace es **de un solo uso**, y los escaneres
+> antifraude del buzon lo visitan antes que la persona: cuando el destinatario
+> pulsaba, **ya estaba gastado**.
+>
+> **Verificado, no supuesto:** correo enviado 12:38, pulsado 12:40,
+> `error_code=otp_expired`, y **la cuenta quedo confirmada igual** — el
+> estilista entro con su contrasenya acto seguido, cosa que exige el correo ya
+> verificado.
+>
+> El hallazgo **AH** decia al principio que el enlace *caducaba* y que se
+> arreglaba **subiendo el plazo en Authentication -> Email**. **Las dos cosas
+> eran falsas** y el arreglo no habria cambiado nada (D-247).
+>
+> **Un codigo de seis numeros no se puede gastar visitandolo: no hay nada que
+> visitar.** Y de regalo funciona aunque el correo se abra en otro navegador o
+> en otro telefono, cosa que el enlace con PKCE no hacia.
+>
+> **Ya no se promete la prueba de 21 dias** (hallazgo **AL**): esta misma
+> plantilla la recibe tambien el empleado invitado, que no tiene prueba ni es
+> un negocio. Supabase manda una sola plantilla para todo el que crea cuenta.
 
 **Subject heading:**
+
 ```
-Confirma tu correo para activar tu cuenta en Salón y Más
+Tu codigo para activar tu cuenta en Salon y Mas
 ```
 
 **Message body:**
+
 ```html
 <!DOCTYPE html>
 <html lang="es">
@@ -78,38 +104,39 @@ Confirma tu correo para activar tu cuenta en Salón y Más
   .header { background:#7C3AED; padding:28px 24px; text-align:center; }
   .header h1 { color:#FFFFFF; margin:0; font-size:20px; font-weight:700; }
   .content { padding:32px 24px; line-height:1.6; font-size:14px; }
-  .btn-container { text-align:center; margin:28px 0; }
-  .btn { display:inline-block; background-color:#7C3AED; color:#FFFFFF !important; text-decoration:none; padding:14px 28px; font-weight:700; font-size:15px; border-radius:8px; }
-  .muted { font-size:12px; color:#6B7280; word-break:break-all; }
+  .codigo { text-align:center; margin:28px 0; }
+  .codigo span { display:inline-block; background:#F8F5FF; border:2px solid #7C3AED; border-radius:10px; padding:16px 28px; font-size:34px; font-weight:800; letter-spacing:10px; color:#4C1D95; }
+  .muted { font-size:12px; color:#6B7280; }
   .footer { background:#F8FAFC; border-top:1px solid #E5E7EB; padding:16px; text-align:center; font-size:12px; color:#94A3B8; }
   .footer a { color:#7C3AED; text-decoration:none; }
 </style>
 </head>
 <body>
   <div class="container">
-    <div class="header"><h1>Salón y Más</h1></div>
+    <div class="header"><h1>Salon y Mas</h1></div>
     <div class="content">
-      <p>¡Hola!</p>
-      <p>Gracias por crear tu cuenta en <strong>Salón y Más</strong>. Para activarla
-      y empezar tu prueba gratuita de 21 días, confirma tu correo electrónico:</p>
-      <div class="btn-container">
-        <a href="{{ .ConfirmationURL }}" class="btn">Confirmar mi correo</a>
-      </div>
-      <p>Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
-      <p class="muted">{{ .ConfirmationURL }}</p>
-      <p style="color:#6B7280;">Si tú no creaste esta cuenta, puedes ignorar este
-      correo con tranquilidad: no se activará nada sin confirmar.</p>
+      <p>Hola!</p>
+      <p>Para activar tu cuenta, escribe este codigo en la pantalla donde te
+      lo estamos pidiendo:</p>
+      <div class="codigo"><span>{{ .Token }}</span></div>
+      <p class="muted">El codigo sirve una sola vez y caduca en una hora. Si se
+      te pasa, pide otro desde la misma pantalla.</p>
+      <p style="color:#6B7280;">Si tu no creaste esta cuenta, puedes ignorar
+      este correo con tranquilidad: no se activara nada.</p>
     </div>
     <div class="footer">
-      Salón y Más — Plataforma de gestión para centros de estética, barberías y spas<br>
-      <a href="{{ .SiteURL }}">{{ .SiteURL }}</a> · hola@salonymas.com
+      Salon y Mas &mdash; Plataforma de gestion para centros de estetica, barberias y spas<br>
+      <a href="{{ .SiteURL }}">{{ .SiteURL }}</a> &middot; hola@salonymas.com
     </div>
   </div>
 </body>
 </html>
 ```
 
----
+> **Al pegarla, no dejes ningun `{{ .ConfirmationURL }}` en el cuerpo.** Si
+> queda uno, aunque sea en un enlace de respaldo, el escaner del buzon lo
+> visitara y volvera a gastar el token: el problema seguiria ahi, solo que mas
+> dificil de ver.
 
 ## 5. Reset Password (Recuperación de contraseña)
 

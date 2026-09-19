@@ -37,7 +37,28 @@ class _RegisterPageState extends State<RegisterPage> {
   bool isLoading = false;
   bool acceptedTerms = false;
   String? errorMessage;
-  String? confirmationMessage;
+
+  // --- Confirmación por código de 6 dígitos (hallazgo AH, 18-sep) ----------
+  //
+  // **Por qué ya no hay enlace.** El correo de confirmación traía un enlace de
+  // un solo uso, y los escáneres antifraude del buzón lo visitan antes que la
+  // persona: cuando ella pulsaba, el enlace ya estaba gastado. Verificado el
+  // 18-sep — enviado 12:38, pulsado 12:40, `otp_expired`, y la cuenta
+  // confirmada igual. **Subir el plazo de caducidad no arreglaba nada**, que
+  // era lo que decía el enunciado viejo de AH.
+  //
+  // Un código de seis dígitos no se puede gastar visitándolo: no hay nada que
+  // visitar. Y de paso funciona aunque el correo se abra en otro navegador o
+  // en otro teléfono, cosa que el enlace con PKCE no hacía.
+  final codeController = TextEditingController();
+
+  /// El correo con el que se creó la cuenta. `verifyOTP` lo necesita junto al
+  /// código, y no se puede confiar en que el campo siga intacto.
+  String? correoPendienteDeConfirmar;
+
+  bool confirmandoCodigo = false;
+  bool reenviandoCodigo = false;
+  String? mensajeDelCodigo;
 
   late final _termsTapRecognizer = TapGestureRecognizer()
     ..onTap = () => _openLegal(context, 0);
@@ -48,9 +69,90 @@ class _RegisterPageState extends State<RegisterPage> {
   void dispose() {
     emailController.dispose();
     passwordController.dispose();
+    codeController.dispose();
     _termsTapRecognizer.dispose();
     _privacyTapRecognizer.dispose();
     super.dispose();
+  }
+
+  /// Confirma la cuenta con el código de seis dígitos que llegó por correo.
+  ///
+  /// **Todo error se queda en esta pantalla** y no borra lo escrito: es la
+  /// lección del hallazgo AK, donde cuatro diálogos validaban después de
+  /// cerrarse y tiraban el trabajo de la persona.
+  Future<void> confirmarCodigo() async {
+    final codigo = codeController.text.trim();
+    final correo = correoPendienteDeConfirmar;
+
+    if (codigo.length != 6 || int.tryParse(codigo) == null) {
+      setState(() => errorMessage = 'El código son 6 números.');
+      return;
+    }
+
+    if (correo == null) {
+      setState(() => errorMessage = 'Vuelve a empezar el registro.');
+      return;
+    }
+
+    setState(() {
+      confirmandoCodigo = true;
+      errorMessage = null;
+      mensajeDelCodigo = null;
+    });
+
+    try {
+      final respuesta = await Supabase.instance.client.auth.verifyOTP(
+        email: correo,
+        token: codigo,
+        type: OtpType.signup,
+      );
+
+      if (respuesta.session == null) {
+        setState(() => errorMessage = 'Ese código no sirvió. Pide otro.');
+        return;
+      }
+
+      if (!mounted) return;
+      widget.onRegisterSuccess();
+    } on AuthException catch (error) {
+      setState(() => errorMessage = error.message);
+    } catch (_) {
+      setState(() => errorMessage = 'No se pudo confirmar el código.');
+    } finally {
+      if (mounted) {
+        setState(() => confirmandoCodigo = false);
+      }
+    }
+  }
+
+  /// Vuelve a enviar el código. Existe porque un código caduca y un correo se
+  /// pierde, y sin esto la única salida sería registrarse otra vez.
+  Future<void> reenviarCodigo() async {
+    final correo = correoPendienteDeConfirmar;
+    if (correo == null) return;
+
+    setState(() {
+      reenviandoCodigo = true;
+      errorMessage = null;
+      mensajeDelCodigo = null;
+    });
+
+    try {
+      await Supabase.instance.client.auth.resend(
+        email: correo,
+        type: OtpType.signup,
+      );
+
+      setState(() => mensajeDelCodigo = 'Te enviamos un código nuevo.');
+    } on AuthException catch (error) {
+      setState(() => errorMessage = error.message);
+    } catch (_) {
+      setState(() => errorMessage = 'No se pudo reenviar el código.');
+    } finally {
+      if (mounted) {
+        setState(() => reenviandoCodigo = false);
+      }
+    }
   }
 
   Future<void> register() async {
@@ -83,7 +185,7 @@ class _RegisterPageState extends State<RegisterPage> {
     setState(() {
       isLoading = true;
       errorMessage = null;
-      confirmationMessage = null;
+      mensajeDelCodigo = null;
     });
 
     try {
@@ -93,10 +195,12 @@ class _RegisterPageState extends State<RegisterPage> {
       );
 
       if (signUpResponse.session == null) {
+        // La cuenta existe pero falta confirmar el correo. En vez de mandar a
+        // la persona fuera de la aplicación a buscar un enlace —que llegaba
+        // gastado, hallazgo AH—, se le pide aquí mismo el código.
         setState(() {
-          confirmationMessage =
-              'Te enviamos un correo de confirmación a $email. '
-              'Confírmalo e inicia sesión para terminar de crear tu negocio.';
+          correoPendienteDeConfirmar = email;
+          codeController.clear();
         });
         return;
       }
@@ -190,19 +294,97 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    if (confirmationMessage != null) ...[
+                    if (correoPendienteDeConfirmar != null) ...[
                       Text(
-                        confirmationMessage!,
+                        'Te enviamos un código de 6 números a\n'
+                        '$correoPendienteDeConfirmar',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                          color: AppColors.success,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          height: 1.4,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Escríbelo aquí abajo. Si no lo ves, mira en Promociones '
+                        'o en el correo no deseado.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 20),
-                      OutlinedButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Volver a iniciar sesión'),
+                      TextField(
+                        controller: codeController,
+                        keyboardType: TextInputType.number,
+                        textAlign: TextAlign.center,
+                        maxLength: 6,
+                        autofocus: true,
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 8,
+                        ),
+                        decoration: const InputDecoration(
+                          counterText: '',
+                          hintText: '––––––',
+                          border: OutlineInputBorder(),
+                        ),
+                        onSubmitted: (_) => confirmarCodigo(),
+                      ),
+                      if (errorMessage != null) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          errorMessage!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                      if (mensajeDelCodigo != null) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          mensajeDelCodigo!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: AppColors.success,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        height: 50,
+                        child: FilledButton.icon(
+                          onPressed: confirmandoCodigo ? null : confirmarCodigo,
+                          icon: confirmandoCodigo
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.check_circle_outline),
+                          label: Text(
+                            confirmandoCodigo
+                                ? 'Confirmando...'
+                                : 'Confirmar mi correo',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextButton(
+                        onPressed: reenviandoCodigo ? null : reenviarCodigo,
+                        child: Text(
+                          reenviandoCodigo
+                              ? 'Enviando...'
+                              : 'No me llegó — enviar otro código',
+                        ),
                       ),
                     ] else ...[
                       // Mismo criterio que en el login (D-094): los dos campos

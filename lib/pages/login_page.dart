@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/aviso_de_enlace_de_correo.dart';
 import '../theme/app_theme.dart';
 
 import 'public_plans_page.dart';
@@ -26,6 +27,17 @@ class _LoginPageState extends State<LoginPage> {
 
   bool isLoading = false;
   String? errorMessage;
+
+  /// Hallazgo AM: si Supabase devolvió a esta persona con un error en la
+  /// dirección, **se le dice**. Antes viajaba ahí sin que nadie lo leyera y
+  /// la pantalla de acceso parecía normal.
+  ///
+  /// Se lee una sola vez al montar y no en `build`, porque el aviso se
+  /// descarta al pulsar la X y un `build` posterior lo resucitaría.
+  late final AvisoDeEnlaceDeCorreo? avisoDelEnlace =
+      AvisoDeEnlaceDeCorreo.desdeLaDireccion(Uri.base);
+
+  bool avisoDescartado = false;
 
   @override
   void dispose() {
@@ -142,6 +154,14 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                     const SizedBox(height: 28),
+                    if (avisoDelEnlace != null && !avisoDescartado) ...[
+                      _AvisoDelEnlace(
+                        aviso: avisoDelEnlace!,
+                        onCerrar: () =>
+                            setState(() => avisoDescartado = true),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
                     // Los dos campos van juntos en un AutofillGroup y declaran
                     // que son (D-094). Sin esto el navegador ve una contrasena
                     // suelta, sin saber cual es el usuario, y ofrece guardarla
@@ -384,6 +404,68 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// El aviso de AM: qué pasó con el enlace del correo y **qué hacer ahora**.
+///
+/// Va en ámbar y no en rojo a propósito: casi siempre la cuenta sí quedó
+/// confirmada y lo único que hace falta es iniciar sesión. Pintarlo de rojo
+/// haría creer a alguien que ya está dentro que algo se rompió.
+class _AvisoDelEnlace extends StatelessWidget {
+  const _AvisoDelEnlace({required this.aviso, required this.onCerrar});
+
+  final AvisoDeEnlaceDeCorreo aviso;
+  final VoidCallback onCerrar;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.45)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.link_off_outlined, size: 20,
+              color: AppColors.warning),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  aviso.titulo,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  aviso.queHacer,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    height: 1.4,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Cerrar aviso',
+            onPressed: onCerrar,
+            icon: const Icon(Icons.close, size: 18),
+            color: AppColors.textSecondary,
+          ),
+        ],
       ),
     );
   }
