@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/aviso_de_enlace_de_correo.dart';
+import '../models/codigo_de_confirmacion.dart';
 import '../theme/app_theme.dart';
 
 import 'public_plans_page.dart';
@@ -39,11 +40,125 @@ class _LoginPageState extends State<LoginPage> {
 
   bool avisoDescartado = false;
 
+  // --- Confirmar con el código desde aquí (hallazgo AZ, 19-sep) -----------
+  //
+  // **El agujero que cierra.** Con D-248 el código se teclea en la pantalla
+  // de registro. Si esa pestaña se cierra — y el propietario la cerró a los
+  // diez minutos de estrenarla — la cuenta queda creada y sin confirmar, y
+  // **no había ningún sitio donde escribir el código**. La salida existía
+  // (registrarse otra vez con el mismo correo reenvía) pero no se le ocurre
+  // a nadie.
+  //
+  // Se ofrece **en el momento exacto en que hace falta**: quien cerró la
+  // pestaña va a intentar entrar, y Supabase responde `email_not_confirmed`.
+  // Ahí mismo se cambia la pantalla y se le manda un código nuevo.
+  //
+  // Y de regalo hace cierto lo que D-248 prometía: `verifyOTP` con correo y
+  // código **no depende del navegador**, así que ahora sí se puede empezar
+  // en el computador y terminar en el teléfono.
+  final codeController = TextEditingController();
+
+  bool pidiendoCodigo = false;
+  bool confirmandoCodigo = false;
+  bool reenviandoCodigo = false;
+  String? mensajeDelCodigo;
+
   @override
   void dispose() {
     emailController.dispose();
     passwordController.dispose();
+    codeController.dispose();
     super.dispose();
+  }
+
+  /// Cambia la pantalla al modo "escribe tu código" y manda uno nuevo.
+  ///
+  /// El código viejo puede seguir vivo, pero pedir otro cuesta nada y evita
+  /// que alguien pelee con uno caducado sin saberlo.
+  Future<void> pasarAConfirmarPorCodigo({required bool avisar}) async {
+    setState(() {
+      pidiendoCodigo = true;
+      errorMessage = null;
+      mensajeDelCodigo = avisar
+          ? 'Tu correo todavía no está confirmado. Te enviamos un código.'
+          : null;
+      codeController.clear();
+    });
+    if (avisar) await reenviarCodigo(silencioso: true);
+  }
+
+  Future<void> confirmarCodigo() async {
+    final correo = emailController.text.trim();
+    final codigo = CodigoDeConfirmacion.normalizar(codeController.text);
+
+    if (correo.isEmpty) {
+      setState(() => errorMessage = 'Escribe el correo con el que te registraste.');
+      return;
+    }
+    if (codigo == null) {
+      setState(() => errorMessage = CodigoDeConfirmacion.avisoDeFormato);
+      return;
+    }
+
+    setState(() {
+      confirmandoCodigo = true;
+      errorMessage = null;
+      mensajeDelCodigo = null;
+    });
+
+    try {
+      final respuesta = await Supabase.instance.client.auth.verifyOTP(
+        email: correo,
+        token: codigo,
+        type: OtpType.signup,
+      );
+
+      if (respuesta.session == null) {
+        setState(() => errorMessage = 'Ese código no sirvió. Pide otro.');
+        return;
+      }
+
+      if (!mounted) return;
+      widget.onLoginSuccess();
+    } on AuthException catch (error) {
+      setState(() => errorMessage = error.message);
+    } catch (_) {
+      setState(() => errorMessage = 'No se pudo confirmar el código.');
+    } finally {
+      if (mounted) setState(() => confirmandoCodigo = false);
+    }
+  }
+
+  Future<void> reenviarCodigo({bool silencioso = false}) async {
+    final correo = emailController.text.trim();
+    if (correo.isEmpty) {
+      setState(() => errorMessage = 'Escribe primero tu correo.');
+      return;
+    }
+
+    setState(() {
+      reenviandoCodigo = true;
+      if (!silencioso) {
+        errorMessage = null;
+        mensajeDelCodigo = null;
+      }
+    });
+
+    try {
+      await Supabase.instance.client.auth.resend(
+        email: correo,
+        type: OtpType.signup,
+      );
+      if (!silencioso) {
+        setState(() => mensajeDelCodigo = 'Te enviamos un código nuevo.');
+      }
+    } on AuthException catch (error) {
+      setState(() => errorMessage = error.message);
+    } catch (_) {
+      setState(() => errorMessage = 'No se pudo enviar el código.');
+    } finally {
+      if (mounted) setState(() => reenviandoCodigo = false);
+    }
   }
 
   Future<void> signIn() async {
@@ -86,6 +201,13 @@ class _LoginPageState extends State<LoginPage> {
 
       widget.onLoginSuccess();
     } on AuthException catch (error) {
+      // Hallazgo AZ: este es el caso de quien cerró la pestaña del registro.
+      // En vez de dejarle un mensaje que no puede resolver, se le da aquí
+      // mismo el sitio donde escribir el código.
+      if (error.code == 'email_not_confirmed') {
+        await pasarAConfirmarPorCodigo(avisar: true);
+        return;
+      }
       setState(() {
         errorMessage = error.message;
       });
@@ -183,19 +305,43 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          TextField(
-                            controller: passwordController,
-                            obscureText: true,
-                            autofillHints: const <String>[
-                              AutofillHints.password,
-                            ],
-                            decoration: const InputDecoration(
-                              labelText: 'Contraseña',
-                              prefixIcon: Icon(Icons.lock_outline),
-                              border: OutlineInputBorder(),
+                          if (!pidiendoCodigo)
+                            TextField(
+                              controller: passwordController,
+                              obscureText: true,
+                              autofillHints: const <String>[
+                                AutofillHints.password,
+                              ],
+                              decoration: const InputDecoration(
+                                labelText: 'Contraseña',
+                                prefixIcon: Icon(Icons.lock_outline),
+                                border: OutlineInputBorder(),
+                              ),
+                              onSubmitted: (_) => signIn(),
                             ),
-                            onSubmitted: (_) => signIn(),
-                          ),
+                          if (pidiendoCodigo)
+                            TextField(
+                              controller: codeController,
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                              autofocus: true,
+                              style: const TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 6,
+                              ),
+                              decoration: const InputDecoration(
+                                hintText: 'Código del correo',
+                                hintStyle: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w400,
+                                  letterSpacing: 0,
+                                  color: AppColors.textSecondary,
+                                ),
+                                border: OutlineInputBorder(),
+                              ),
+                              onSubmitted: (_) => confirmarCodigo(),
+                            ),
                         ],
                       ),
                     ),
@@ -210,13 +356,26 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ],
+                    if (mensajeDelCodigo != null) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        mensajeDelCodigo!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: AppColors.success,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
                       height: 50,
                       child: FilledButton.icon(
-                        onPressed: isLoading ? null : signIn,
-                        icon: isLoading
+                        onPressed: pidiendoCodigo
+                            ? (confirmandoCodigo ? null : confirmarCodigo)
+                            : (isLoading ? null : signIn),
+                        icon: (isLoading || confirmandoCodigo)
                             ? const SizedBox(
                                 width: 18,
                                 height: 18,
@@ -224,12 +383,48 @@ class _LoginPageState extends State<LoginPage> {
                                   strokeWidth: 2,
                                 ),
                               )
-                            : const Icon(Icons.login_outlined),
+                            : Icon(
+                                pidiendoCodigo
+                                    ? Icons.check_circle_outline
+                                    : Icons.login_outlined,
+                              ),
                         label: Text(
-                          isLoading ? 'Ingresando...' : 'Ingresar',
+                          pidiendoCodigo
+                              ? (confirmandoCodigo
+                                  ? 'Confirmando...'
+                                  : 'Confirmar mi correo')
+                              : (isLoading ? 'Ingresando...' : 'Ingresar'),
                         ),
                       ),
                     ),
+                    if (pidiendoCodigo) ...[
+                      TextButton(
+                        onPressed: reenviandoCodigo
+                            ? null
+                            : () => reenviarCodigo(),
+                        child: Text(
+                          reenviandoCodigo
+                              ? 'Enviando...'
+                              : 'No me llegó — enviar otro código',
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => setState(() {
+                          pidiendoCodigo = false;
+                          errorMessage = null;
+                          mensajeDelCodigo = null;
+                        }),
+                        child: const Text('Volver a entrar con contraseña'),
+                      ),
+                    ] else
+                      TextButton(
+                        onPressed: () =>
+                            pasarAConfirmarPorCodigo(avisar: false),
+                        child: const Text(
+                          '¿Tienes un código sin usar? Confirma tu correo aquí',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                     const SizedBox(height: 18),
                     Container(
                       width: double.infinity,
