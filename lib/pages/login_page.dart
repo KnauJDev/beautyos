@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/aviso_de_enlace_de_correo.dart';
 import '../models/codigo_de_confirmacion.dart';
+import '../models/mensaje_de_auth.dart';
 import '../theme/app_theme.dart';
 
 import 'public_plans_page.dart';
@@ -121,7 +122,7 @@ class _LoginPageState extends State<LoginPage> {
       if (!mounted) return;
       widget.onLoginSuccess();
     } on AuthException catch (error) {
-      setState(() => errorMessage = error.message);
+      setState(() => errorMessage = MensajeDeAuth.enEspanol(error));
     } catch (_) {
       setState(() => errorMessage = 'No se pudo confirmar el código.');
     } finally {
@@ -153,7 +154,7 @@ class _LoginPageState extends State<LoginPage> {
         setState(() => mensajeDelCodigo = 'Te enviamos un código nuevo.');
       }
     } on AuthException catch (error) {
-      setState(() => errorMessage = error.message);
+      setState(() => errorMessage = MensajeDeAuth.enEspanol(error));
     } catch (_) {
       setState(() => errorMessage = 'No se pudo enviar el código.');
     } finally {
@@ -209,7 +210,7 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
       setState(() {
-        errorMessage = error.message;
+        errorMessage = MensajeDeAuth.enEspanol(error);
       });
     } catch (_) {
       setState(() {

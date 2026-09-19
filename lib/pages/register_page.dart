@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/codigo_de_confirmacion.dart';
+import '../models/mensaje_de_auth.dart';
 import '../theme/app_theme.dart';
 import 'public_plans_page.dart';
 import 'terms_and_privacy_page.dart';
@@ -39,7 +40,7 @@ class _RegisterPageState extends State<RegisterPage> {
   bool acceptedTerms = false;
   String? errorMessage;
 
-  // --- Confirmación por código de 6 dígitos (hallazgo AH, 18-sep) ----------
+  // --- Confirmación por código (hallazgo AH, 18-sep) -----------------------
   //
   // **Por qué ya no hay enlace.** El correo de confirmación traía un enlace de
   // un solo uso, y los escáneres antifraude del buzón lo visitan antes que la
@@ -48,9 +49,13 @@ class _RegisterPageState extends State<RegisterPage> {
   // confirmada igual. **Subir el plazo de caducidad no arreglaba nada**, que
   // era lo que decía el enunciado viejo de AH.
   //
-  // Un código de seis dígitos no se puede gastar visitándolo: no hay nada que
-  // visitar. Y de paso funciona aunque el correo se abra en otro navegador o
-  // en otro teléfono, cosa que el enlace con PKCE no hacía.
+  // Un código no se puede gastar visitándolo: no hay nada que visitar. Y de
+  // paso funciona aunque el correo se abra en otro navegador o en otro
+  // teléfono, cosa que el enlace con PKCE no hacía — comprobado el 19-sep,
+  // registrando en el computador y confirmando desde el móvil.
+  //
+  // **Cuántos dígitos tiene, no se sabe aquí** y es a propósito: lo decide
+  // Supabase (ver `CodigoDeConfirmacion` y el hallazgo AY).
   final codeController = TextEditingController();
 
   /// El correo con el que se creó la cuenta. `verifyOTP` lo necesita junto al
@@ -76,7 +81,7 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  /// Confirma la cuenta con el código de seis dígitos que llegó por correo.
+  /// Confirma la cuenta con el código que llegó por correo.
   ///
   /// **Todo error se queda en esta pantalla** y no borra lo escrito: es la
   /// lección del hallazgo AK, donde cuatro diálogos validaban después de
@@ -118,7 +123,7 @@ class _RegisterPageState extends State<RegisterPage> {
       if (!mounted) return;
       widget.onRegisterSuccess();
     } on AuthException catch (error) {
-      setState(() => errorMessage = error.message);
+      setState(() => errorMessage = MensajeDeAuth.enEspanol(error));
     } catch (_) {
       setState(() => errorMessage = 'No se pudo confirmar el código.');
     } finally {
@@ -148,7 +153,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
       setState(() => mensajeDelCodigo = 'Te enviamos un código nuevo.');
     } on AuthException catch (error) {
-      setState(() => errorMessage = error.message);
+      setState(() => errorMessage = MensajeDeAuth.enEspanol(error));
     } catch (_) {
       setState(() => errorMessage = 'No se pudo reenviar el código.');
     } finally {
@@ -215,7 +220,7 @@ class _RegisterPageState extends State<RegisterPage> {
       widget.onRegisterSuccess();
     } on AuthException catch (error) {
       setState(() {
-        errorMessage = error.message;
+        errorMessage = MensajeDeAuth.enEspanol(error);
       });
     } catch (_) {
       setState(() {
