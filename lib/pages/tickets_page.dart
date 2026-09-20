@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
 
+import '../models/celular_colombiano.dart';
 import '../models/client_summary.dart';
 import '../models/available_appointment_slot.dart';
 import '../models/ticket_service_option.dart';
@@ -1718,7 +1719,7 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
     try {
       final createdClient = await widget.clientsService.createClient(
         name: formData.name,
-        phone: formData.phone,
+        phone: CelularColombiano.normalizar(formData.phone),
         email: formData.email,
         notes: formData.notes,
       );
@@ -2423,7 +2424,7 @@ class _CreateTicketDialogState extends State<_CreateTicketDialog> {
     try {
       final createdClient = await widget.clientsService.createClient(
         name: formData.name,
-        phone: formData.phone,
+        phone: CelularColombiano.normalizar(formData.phone),
         email: formData.email,
         notes: formData.notes,
       );
@@ -2715,17 +2716,24 @@ class _QuickCreateClientDialogState extends State<_QuickCreateClientDialog> {
                       : null,
                 ),
                 const SizedBox(height: 12),
+                // Tercer sitio donde nace una clienta, y por eso lleva la
+                // MISMA regla que Clientes y que la reserva publica (D-249).
+                // Se descubrio el 19-sep buscando en el JavaScript publicado
+                // un texto viejo que no deberia seguir ahi.
                 TextFormField(
                   controller: phoneController,
-                  decoration: const InputDecoration(
-                    labelText: 'Teléfono',
-                    prefixIcon: Icon(Icons.phone_outlined),
+                  decoration: InputDecoration(
+                    labelText: 'Celular / WhatsApp',
+                    prefixIcon: const Icon(Icons.phone_outlined),
+                    prefixText: '${CelularColombiano.indicativo} ',
+                    hintText: CelularColombiano.ejemplo,
+                    counterText: '',
                   ),
-                  keyboardType: TextInputType.phone,
+                  keyboardType: TextInputType.number,
                   textInputAction: TextInputAction.next,
-                  validator: (value) => value == null || value.trim().isEmpty
-                      ? 'Escribe el teléfono del cliente'
-                      : null,
+                  maxLength: CelularColombiano.digitos,
+                  inputFormatters: CelularColombiano.formatos,
+                  validator: CelularColombiano.validar,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
