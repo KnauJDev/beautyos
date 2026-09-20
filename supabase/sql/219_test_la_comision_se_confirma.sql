@@ -141,8 +141,15 @@ begin
   ) values (v_tenant, v_branch, v_bstylist, v_bservice, true);
 
   -- El estilista con cuenta, para la comprobacion 6.
-  insert into public.tenant_memberships (tenant_id, user_id, role, active)
-  values (v_tenant, v_elestilista, 'stylist', true) returning id into v_memb;
+  --
+  -- `stylist_id` es OBLIGATORIO aqui: `tenant_memberships_stylist_role_check`
+  -- exige que una membresia de rol `stylist` apunte a su ficha del catalogo.
+  -- **La primera pasada de este control se cayo justo ahi, y el candado tenia
+  -- razon**: una membresia de estilista sin estilista no significa nada.
+  -- El control 218 no lo toco porque su estilista era, a proposito, uno SIN
+  -- cuenta.
+  insert into public.tenant_memberships (tenant_id, user_id, role, stylist_id, active)
+  values (v_tenant, v_elestilista, 'stylist', v_stylist, true) returning id into v_memb;
   insert into public.branch_memberships (
     tenant_id, branch_id, tenant_membership_id, active, starts_at, created_by
   ) values (v_tenant, v_branch, v_memb, true, now() - interval '1 day', v_dueno);
