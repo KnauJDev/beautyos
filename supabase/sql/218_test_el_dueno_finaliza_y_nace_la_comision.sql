@@ -30,6 +30,20 @@
 --   6. El ticket queda `cerrado`.
 --   7. La recepcion (`assistant`) tambien puede: no es accion de duenyo.
 --   8. El lector que alimenta la ventana ensenya el estado de cada servicio.
+--   9. **El orden normal tambien paga:** atender primero y cobrar despues.
+--
+-- LOS DOS ORDENES, Y POR QUE HACEN FALTA LOS DOS
+--
+-- El ticket de las comprobaciones 1-6 se paga **antes** de terminar el
+-- servicio: es el anticipo que D-163 vino a permitir. El de la 7-9 se paga
+-- **despues**, que es como trabaja un salon la mayoria de los dias.
+--
+-- Los dos tienen que acabar con la misma fila de comision, y no la tenian:
+-- la comision solo se calculaba al entrar un pago, asi que en el primer
+-- orden ese momento ya habia pasado cuando el servicio termino. La
+-- comprobacion 5 es la que caza eso. **Fallo la primera vez que se corrio, y
+-- tenia razon** -- el arreglo es la migracion
+-- `20260920120000_terminar_el_servicio_tambien_mira_la_caja_ap.sql`.
 --
 -- COMO SE EJECUTA
 --
@@ -268,8 +282,32 @@ begin
   end if;
   raise notice 'OK 8   el lector devuelve el estado real de cada servicio';
 
+  -- 9. El orden normal: atender primero, cobrar despues
+  perform 1 from public.register_ticket_payment_v2(
+    v_branch, v_ticket, v_precio, 'efectivo', null, 'control 218 pago al final');
+
+  select count(*), coalesce(max(sc.commission_amount), 0)
+    into v_comisiones, v_valor
+  from public.stylist_commissions sc where sc.ticket_id = v_ticket;
+
+  if v_comisiones <> 1 then
+    raise exception
+      'FALLO 9: cobrando despues de atender hay % comisiones, y deberia haber 1.',
+      v_comisiones;
+  end if;
+  if v_valor <> round(v_precio * 40 / 100) then
+    raise exception 'FALLO 9b: la comision quedo en % y deberia ser %.',
+      v_valor, round(v_precio * 40 / 100);
+  end if;
+
+  select t.status into v_estado from public.tickets t where t.id = v_ticket;
+  if v_estado <> 'cerrado' then
+    raise exception 'FALLO 9c: cobrado del todo, el ticket quedo en "%" y no en "cerrado".', v_estado;
+  end if;
+  raise notice 'OK 9   el orden normal --atender y luego cobrar-- tambien paga comision';
+
   raise notice ' ';
-  raise notice 'CONTROL 218: 8 de 8 en verde';
+  raise notice 'CONTROL 218: 9 de 9 en verde';
 end
 $ctrl$;
 
