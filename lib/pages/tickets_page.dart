@@ -546,6 +546,28 @@ class _TicketsPageState extends State<TicketsPage> {
     }
   }
 
+  /// Hallazgo AP: dar por iniciado y por terminado un servicio desde
+  /// Tickets & Caja, sin depender de que el estilista tenga cuenta.
+  ///
+  /// El dialogo llama al servidor **el mismo** y se queda abierto: es el
+  /// patron de D-249 (hallazgo AK). Aqui pesa el doble, porque atender varios
+  /// servicios son varias llamadas seguidas y cerrar la ventana en cada una
+  /// obligaria a volver a abrir la ficha.
+  Future<void> _openAttendServicesDialog(TicketSummary ticket) async {
+    final huboCambios = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => _AttendServicesDialog(
+        ticket: ticket,
+        ticketsService: ticketsService,
+      ),
+    );
+
+    if (huboCambios == true) {
+      _refreshTickets();
+    }
+  }
+
   Future<void> _openCorrectCompletionDialog(TicketSummary ticket) async {
     try {
       final options = await ticketsService.getTicketServicesForCorrection(
@@ -709,6 +731,13 @@ class _TicketsPageState extends State<TicketsPage> {
         ticket.status,
         esDuenoOAdmin: widget.isOwnerOrAdmin,
       );
+
+  /// Hallazgo AP. No se filtra por rol **a proposito**: esta pantalla solo la
+  /// abren `owner`, `admin` y `assistant` (`allowedRoles` en `main.dart`), que
+  /// son exactamente los tres que `change_ticket_service_status_v2` autoriza
+  /// sin restringir a los servicios propios.
+  bool _canAttendServices(TicketSummary ticket) =>
+      AccionesDeTicket.puedeAtenderServicios(ticket.status);
 
   bool _canManagePayments(TicketSummary ticket) =>
       AccionesDeTicket.puedeGestionarPagos(ticket.status);
@@ -928,6 +957,12 @@ class _TicketsPageState extends State<TicketsPage> {
             ? () {
                 Navigator.of(context).pop();
                 _openChangeTicketStatusDialog(ticket);
+              }
+            : null,
+        onAttendServices: _canAttendServices(ticket)
+            ? () {
+                Navigator.of(context).pop();
+                _openAttendServicesDialog(ticket);
               }
             : null,
         onCorrectCompletion: _canCorrectCompletion(ticket)
@@ -3727,6 +3762,288 @@ class _TicketStatusFormData {
   final String? reason;
 }
 
+/// Hallazgo AP: atender los servicios del ticket desde Tickets & Caja.
+///
+/// **El problema que cierra.** Hasta hoy el unico sitio de toda la aplicacion
+/// que movia un servicio a `finalizado` era **Mi agenda**, la pantalla privada
+/// del estilista. Un salon que crea estilistas en el catalogo sin invitarlos
+/// --lo normal: no todo el mundo quiere dar cuentas a todos-- se quedaba sin
+/// nadie que pudiera pulsar ese boton, y el ticket no llegaba nunca a *Por
+/// cobrar*. Se le podia cobrar igual (D-163), pero **no nacia la comision**.
+///
+/// **Se queda abierto y llama al servidor el mismo** (patron de AK, D-249).
+/// Atender tres servicios son tres llamadas seguidas: cerrar la ventana en
+/// cada una obligaria a reabrir la ficha tres veces. Devuelve `true` si algo
+/// cambio, para recargar la lista de tickets una sola vez al final.
+class _AttendServicesDialog extends StatefulWidget {
+  const _AttendServicesDialog({
+    required this.ticket,
+    required this.ticketsService,
+  });
+
+  final TicketSummary ticket;
+  final TicketsService ticketsService;
+
+  @override
+  State<_AttendServicesDialog> createState() => _AttendServicesDialogState();
+}
+
+class _AttendServicesDialogState extends State<_AttendServicesDialog> {
+  List<TicketServiceManagementItem>? servicios;
+  String? errorAlCargar;
+
+  /// Cual fila esta esperando al servidor. Se guarda el id y no un `bool`
+  /// para poder ensenyar el reloj en la fila que toca.
+  String? enEspera;
+
+  bool huboCambios = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargar();
+  }
+
+  Future<void> _cargar() async {
+    try {
+      final lista = await widget.ticketsService.getTicketServicesForManagement(
+        widget.ticket.id,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        servicios = lista;
+        errorAlCargar = null;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => errorAlCargar = _friendlyError(error));
+    }
+  }
+
+  Future<void> _avanzar(TicketServiceManagementItem servicio) async {
+    final siguiente = AccionesDeTicket.siguienteEstadoDelServicio(
+      servicio.serviceStatus,
+    );
+    if (siguiente == null) return;
+
+    // Finalizar es lo que hace nacer la comision, asi que se pregunta.
+    // Iniciar no: no mueve dinero y se corrige solo con seguir adelante.
+    if (siguiente == 'finalizado') {
+      final confirmado = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Finalizar servicio'),
+          content: Text(
+            'Se dará por terminado ${servicio.serviceName} de '
+            '${widget.ticket.clientName}.\n\n'
+            'Cuando todos los servicios del ticket estén terminados, el '
+            'ticket pasa a Por cobrar y se genera la comisión.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Volver'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Sí, finalizar'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmado != true) return;
+    }
+
+    setState(() => enEspera = servicio.ticketServiceId);
+
+    try {
+      final cambio = await widget.ticketsService.changeTicketServiceStatus(
+        ticketServiceId: servicio.ticketServiceId,
+        newStatus: siguiente,
+      );
+
+      if (!mounted) return;
+      setState(() => enEspera = null);
+
+      if (!cambio) {
+        _avisar('No se pudo actualizar el servicio.');
+        return;
+      }
+
+      huboCambios = true;
+      await _cargar();
+
+      if (!mounted) return;
+      _avisar(
+        siguiente == 'en_proceso'
+            ? '${servicio.serviceName}: iniciado.'
+            : '${servicio.serviceName}: terminado.',
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => enEspera = null);
+      // La ventana NO se cierra: lo ya atendido se conserva a la vista.
+      _avisar('No se pudo actualizar el servicio: ${_friendlyError(error)}');
+    }
+  }
+
+  void _avisar(String mensaje) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(mensaje)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Atender servicios'),
+      content: SizedBox(width: 520, child: _contenido()),
+      actions: [
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(huboCambios),
+          child: const Text('Listo'),
+        ),
+      ],
+    );
+  }
+
+  Widget _contenido() {
+    final error = errorAlCargar;
+    if (error != null) {
+      return Text('No se pudieron cargar los servicios: $error');
+    }
+
+    final lista = servicios;
+    if (lista == null) {
+      return const Padding(
+        padding: EdgeInsets.all(24),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (lista.isEmpty) {
+      return const Text('Este ticket no tiene servicios que atender.');
+    }
+
+    final pendientes = lista
+        .where(
+          (s) =>
+              AccionesDeTicket.siguienteEstadoDelServicio(s.serviceStatus) !=
+              null,
+        )
+        .length;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: pendientes == 0
+                ? AppColors.successTint
+                : AppColors.infoTint,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Text(
+            pendientes == 0
+                ? 'Todos los servicios están terminados. El ticket ya está '
+                      'listo para cobrar.'
+                : 'Marca cada servicio a medida que se atiende. Cuando el '
+                      'último quede terminado, el ticket pasa a Por cobrar.',
+            style: TextStyle(
+              color: pendientes == 0 ? AppColors.success : AppColors.info,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Flexible(
+          child: ListView.separated(
+            shrinkWrap: true,
+            itemCount: lista.length,
+            separatorBuilder: (_, _) => const Divider(height: 20),
+            itemBuilder: (context, i) => _fila(lista[i]),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _fila(TicketServiceManagementItem servicio) {
+    final etiqueta = AccionesDeTicket.etiquetaDelSiguientePaso(
+      servicio.serviceStatus,
+    );
+    final esperando = enEspera == servicio.ticketServiceId;
+
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                servicio.serviceName,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${servicio.stylistName ?? 'Sin estilista'} · '
+                '${_nombreDelEstado(servicio.serviceStatus)}',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        if (esperando)
+          const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        else if (etiqueta == null)
+          const Icon(Icons.check_circle, color: AppColors.success, size: 22)
+        else
+          FilledButton.tonalIcon(
+            // Mientras una fila espera respuesta se bloquean todas: dos
+            // llamadas a la vez dejarian la pantalla ensenyando un estado
+            // que ya no es el del servidor.
+            onPressed: enEspera != null ? null : () => _avanzar(servicio),
+            icon: Icon(
+              etiqueta == 'Iniciar'
+                  ? Icons.play_arrow_outlined
+                  : Icons.task_alt_outlined,
+              size: 18,
+            ),
+            label: Text(etiqueta),
+          ),
+      ],
+    );
+  }
+
+  static String _nombreDelEstado(String estado) {
+    switch (estado) {
+      case 'pendiente':
+        return 'Sin empezar';
+      case 'en_proceso':
+        return 'En proceso';
+      case 'finalizado':
+        return 'Terminado';
+      default:
+        return estado;
+    }
+  }
+}
+
 class _CorrectCompletionDialog extends StatefulWidget {
   const _CorrectCompletionDialog({required this.options});
 
@@ -4629,6 +4946,7 @@ class _TicketDetailSheet extends StatelessWidget {
     required this.onManageServices,
     required this.onReschedule,
     required this.onChangeStatus,
+    required this.onAttendServices,
     required this.onCorrectCompletion,
     required this.onManagePayments,
     required this.onCopyReviewLink,
@@ -4643,6 +4961,7 @@ class _TicketDetailSheet extends StatelessWidget {
   final VoidCallback? onManageServices;
   final VoidCallback? onReschedule;
   final VoidCallback? onChangeStatus;
+  final VoidCallback? onAttendServices;
   final VoidCallback? onCorrectCompletion;
   final VoidCallback? onManagePayments;
   final VoidCallback? onCopyReviewLink;
@@ -5018,6 +5337,16 @@ class _TicketDetailSheet extends StatelessWidget {
                     spacing: 10,
                     runSpacing: 10,
                     children: [
+                      // Hallazgo AP: va primero y en el boton fuerte porque
+                      // es el paso que hace nacer la comision. Sin el, el
+                      // ticket no llega a "Por cobrar" ni aunque la clienta
+                      // ya haya pagado.
+                      if (onAttendServices != null)
+                        FilledButton.icon(
+                          onPressed: onAttendServices,
+                          icon: const Icon(Icons.play_circle_outline),
+                          label: const Text('Atender servicios'),
+                        ),
                       if (onChangeStatus != null)
                         FilledButton.tonalIcon(
                           onPressed: onChangeStatus,

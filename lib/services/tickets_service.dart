@@ -262,6 +262,29 @@ class TicketsService {
         .toList();
   }
 
+  /// Mueve un servicio del ticket a su siguiente estado (hallazgo AP).
+  ///
+  /// Es **la misma RPC** que usa Mi agenda desde
+  /// `MyStylistAgendaService.changeTicketServiceStatus`: el servidor ya
+  /// autorizaba a duenyo, admin y recepcion, y al estilista solo lo suyo.
+  /// Lo que faltaba era llamarla desde Tickets & Caja, que es la unica
+  /// pantalla que ven los salones cuyos estilistas no tienen cuenta.
+  Future<bool> changeTicketServiceStatus({
+    required String ticketServiceId,
+    required String newStatus,
+  }) async {
+    final response = await Supabase.instance.client.rpc(
+      'change_ticket_service_status_v2',
+      params: {
+        'p_branch_id': branchId,
+        'p_ticket_service_id': ticketServiceId,
+        'p_new_status': newStatus,
+      },
+    );
+
+    return (response as List<dynamic>).isNotEmpty;
+  }
+
   Future<bool> updateTicketServiceAssignment({
     required String ticketServiceId,
     required String serviceId,

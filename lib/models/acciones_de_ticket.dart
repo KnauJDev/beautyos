@@ -104,4 +104,69 @@ class AccionesDeTicket {
         return [];
     }
   }
+
+  // ---------------------------------------------------------------------
+  // Atender los servicios del ticket (hallazgo AP)
+  // ---------------------------------------------------------------------
+
+  /// Estados del **ticket** en los que se le puede mover el estado a sus
+  /// servicios.
+  ///
+  /// Es la lista que `public.change_ticket_service_status` exige: iniciar
+  /// pide el ticket en `confirmado`, `en_espera` o `en_proceso`, y finalizar
+  /// lo pide en `en_proceso` -- al que se llega solo iniciando. Ofrecerlo
+  /// antes seria ensenyar un boton que el servidor rechaza.
+  static const _seAtiende = {'confirmado', 'en_espera', 'en_proceso'};
+
+  /// **Por que existe esta accion (hallazgo AP).** Un salon crea estilistas
+  /// en el catalogo sin invitarlos, porque no todo el mundo quiere dar
+  /// cuentas a todos. Para esos, el unico sitio de toda la aplicacion que
+  /// finalizaba un servicio era **Mi agenda**, la pantalla privada del
+  /// estilista -- que no existe si no tiene cuenta. El ticket se quedaba en
+  /// *En proceso* para siempre: se le podia cobrar (D-163), pero **nunca
+  /// cerraba y nunca pagaba comision**, porque
+  /// `beautyos_close_ticket_if_fully_paid` se sale de vacio si el ticket no
+  /// esta `finalizado`.
+  ///
+  /// **No faltaba permiso, faltaba el boton:**
+  /// `change_ticket_service_status_v2` ya autoriza a `tenant_owner`, `admin`
+  /// y `assistant` -- los tres unicos roles que abren Tickets & Caja.
+  static bool puedeAtenderServicios(String estadoDelTicket) {
+    return _seAtiende.contains(estadoDelTicket);
+  }
+
+  /// A que estado pasa un **servicio** desde el suyo. `null` cuando ya no
+  /// tiene siguiente paso.
+  ///
+  /// **Espejo de `public.change_ticket_service_status`, que es quien decide
+  /// de verdad.** Vive aqui una sola vez porque esta misma transicion estaba
+  /// escrita a mano dentro de `my_stylist_agenda_page.dart`, y copiarla a
+  /// Tickets & Caja habria hecho tres sitios con la misma regla: la trampa
+  /// que costo D-245 y el hallazgo AY.
+  ///
+  /// Un servicio `cancelado` no revive por aqui, y uno `finalizado` se
+  /// deshace por su via controlada (`reopen_finished_ticket_service_v2`),
+  /// que ademas pide motivo y es de duenyo y admin.
+  static String? siguienteEstadoDelServicio(String estadoDelServicio) {
+    switch (estadoDelServicio) {
+      case 'pendiente':
+        return 'en_proceso';
+      case 'en_proceso':
+        return 'finalizado';
+      default:
+        return null;
+    }
+  }
+
+  /// Como se llama ese paso en un boton. `null` cuando no hay paso.
+  static String? etiquetaDelSiguientePaso(String estadoDelServicio) {
+    switch (siguienteEstadoDelServicio(estadoDelServicio)) {
+      case 'en_proceso':
+        return 'Iniciar';
+      case 'finalizado':
+        return 'Finalizar';
+      default:
+        return null;
+    }
+  }
 }

@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../theme/app_theme.dart';
 
+import '../models/acciones_de_ticket.dart';
 import '../models/my_stylist_agenda_item.dart';
 import '../models/stylist_time_off.dart';
 import '../models/ticket_board.dart' show formatCOP;
@@ -761,22 +762,32 @@ class _ServiceActionButton extends StatelessWidget {
       'finalizado',
     }.contains(item.serviceStatus);
 
-    Widget statusAction;
-    switch (item.serviceStatus) {
-      case 'pendiente':
-        statusAction = FilledButton.icon(
-          onPressed: () => onUpdateServiceStatus(item, 'en_proceso'),
-          icon: const Icon(Icons.play_arrow_outlined),
-          label: const Text('Iniciar'),
-        );
-      case 'en_proceso':
-        statusAction = OutlinedButton.icon(
-          onPressed: () => onUpdateServiceStatus(item, 'finalizado'),
-          icon: const Icon(Icons.task_alt_outlined),
-          label: const Text('Finalizar'),
-        );
-      default:
-        statusAction = const Text('Sin acción');
+    // La transicion del servicio vive en `AccionesDeTicket` desde el hallazgo
+    // AP: aqui estaba escrita a mano, y al exponer la misma accion en
+    // Tickets & Caja habria pasado a estar en dos pantallas. Es la trampa que
+    // costo D-245 y el hallazgo AY, aplicada a una tabla de estados.
+    final siguiente = AccionesDeTicket.siguienteEstadoDelServicio(
+      item.serviceStatus,
+    );
+    final etiqueta = AccionesDeTicket.etiquetaDelSiguientePaso(
+      item.serviceStatus,
+    );
+
+    final Widget statusAction;
+    if (siguiente == null || etiqueta == null) {
+      statusAction = const Text('Sin acción');
+    } else if (siguiente == 'en_proceso') {
+      statusAction = FilledButton.icon(
+        onPressed: () => onUpdateServiceStatus(item, siguiente),
+        icon: const Icon(Icons.play_arrow_outlined),
+        label: Text(etiqueta),
+      );
+    } else {
+      statusAction = OutlinedButton.icon(
+        onPressed: () => onUpdateServiceStatus(item, siguiente),
+        icon: const Icon(Icons.task_alt_outlined),
+        label: Text(etiqueta),
+      );
     }
 
     if (!canAddPhoto) {
