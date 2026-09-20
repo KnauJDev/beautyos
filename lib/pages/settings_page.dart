@@ -2179,6 +2179,27 @@ class CommissionPolicyCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // Hallazgo AJ. Este aviso es el sitio donde el dueño se entera de
+            // que la cifra con la que se le está pagando a su equipo no la
+            // eligió él. Va arriba del todo, antes que los datos, porque
+            // debajo de ellos parecería una nota al pie.
+            if (!policy.confirmada) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.warningTint,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Text(
+                  'Esta comisión viene de fábrica: nadie la ha confirmado. '
+                  'Con ella ya se está calculando lo que gana cada persona de '
+                  'tu equipo. Ábrela y guárdala, aunque la dejes igual.',
+                  style: TextStyle(color: AppColors.warning),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             _SettingsLine(label: 'Tipo', value: policy.commissionTypeText),
             _SettingsLine(label: 'Comisión', value: policy.commissionValueText),
             _SettingsLine(label: 'Descuentos', value: policy.discountText),
@@ -2189,7 +2210,9 @@ class CommissionPolicyCard extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: onEdit,
                 icon: const Icon(Icons.edit_outlined, size: 18),
-                label: const Text('Editar comisión'),
+                label: Text(
+                  policy.confirmada ? 'Editar comisión' : 'Revisar y confirmar',
+                ),
               ),
             ),
           ],

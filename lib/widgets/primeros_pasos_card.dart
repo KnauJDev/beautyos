@@ -63,9 +63,13 @@ class PrimerosPasosCard extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
+                      // Desde AJ ya no todos llevan a cobrar: el quinto lleva
+                      // a pagarle al equipo. Decir "para cobrar tu primera
+                      // cita" con la comisión pendiente sería mentir sobre
+                      // para qué sirve el paso que falta.
                       restantes == 1
-                          ? 'Te falta uno para poder cobrar tu primera cita.'
-                          : 'Te faltan $restantes para poder cobrar tu primera cita.',
+                          ? 'Te falta uno para dejar tu salón listo.'
+                          : 'Te faltan $restantes para dejar tu salón listo.',
                       style: const TextStyle(color: AppColors.textSecondary),
                     ),
                   ],
@@ -122,6 +126,18 @@ class PrimerosPasosCard extends StatelessWidget {
             ayuda: 'Puede ser de prueba: así ves el recorrido completo.',
             hecho: progreso.tienePrimeraCita,
             onIr: onIrAAgenda,
+          ),
+          // Hallazgo AJ. Va el último a propósito: los cuatro de arriba llevan
+          // a cobrar, y este a pagar, que es lo que viene después. Tu salón
+          // nace con un 40% que no eligió nadie.
+          _PasoInteractivo(
+            icono: Icons.percent_outlined,
+            titulo: 'Confirma cuánto gana tu equipo',
+            ayuda:
+                'Tu salón empieza con 40% por servicio. Míralo aunque lo dejes '
+                'igual: esa cifra decide lo que cobra cada persona.',
+            hecho: progreso.tieneComision,
+            onIr: onIrAConfiguracion,
             esUltimo: true,
           ),
 

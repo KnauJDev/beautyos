@@ -26,10 +26,16 @@ class _MyCommissionSummaryPageState extends State<MyCommissionSummaryPage> {
 
   bool showMoney = false;
 
+  /// Hallazgo **AJ**. Empieza en `true` para que el aviso **nunca aparezca
+  /// solo por tardar la respuesta**: decirle a alguien que su sueldo no lo
+  /// aprobó nadie y que resulte falso es peor que no decírselo.
+  bool policyConfirmed = true;
+
   @override
   void initState() {
     super.initState();
     summaryService = MyCommissionSummaryService(branchId: widget.branchId);
+    _checkPolicy();
 
     final today = DateUtils.dateOnly(DateTime.now());
     startDate = DateTime(today.year, today.month, 1);
@@ -39,6 +45,12 @@ class _MyCommissionSummaryPageState extends State<MyCommissionSummaryPage> {
 
   Future<List<MyCommissionSummaryItem>> _load() {
     return summaryService.getMySummary(startDate: startDate, endDate: endDate);
+  }
+
+  Future<void> _checkPolicy() async {
+    final confirmada = await summaryService.policyIsConfirmed();
+    if (!mounted || confirmada == policyConfirmed) return;
+    setState(() => policyConfirmed = confirmada);
   }
 
   void _refresh() {
@@ -74,6 +86,21 @@ class _MyCommissionSummaryPageState extends State<MyCommissionSummaryPage> {
       title: 'Mi panel financiero',
       subtitle: 'Lo que te ha generado cada servicio que has prestado.',
       children: [
+        // Hallazgo AJ. El estilista es quien tiene el dinero en juego y era el
+        // único que veía la cifra -- el dueño ni siquiera tiene esta pantalla.
+        // No se le dice cuánto es ni se le invita a discutirlo: se le dice que
+        // lo pregunte, que es lo que le corresponde.
+        if (!policyConfirmed) ...[
+          const InfoPanel(
+            icon: Icons.info_outline,
+            title: 'Tu salón todavía no ha confirmado la comisión',
+            description:
+                'Estas cifras salen del porcentaje que trae la aplicación de '
+                'fábrica, no de uno que tu salón haya revisado. Pregúntale a '
+                'quien administra para que lo confirme.',
+          ),
+          const SizedBox(height: 18),
+        ],
         _RangeSelector(
           startDate: startDate,
           endDate: endDate,

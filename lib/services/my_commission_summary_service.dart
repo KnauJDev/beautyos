@@ -31,6 +31,25 @@ class MyCommissionSummaryService {
         .toList();
   }
 
+  /// Si la comisión del salón la aprobó alguien, o sigue siendo la que vino
+  /// de fábrica (hallazgo **AJ**).
+  ///
+  /// **Nunca lanza, y ante la duda dice que sí.** Mismo criterio que
+  /// `OnboardingService.getProgress` y que los candados de plan (D-184): si
+  /// no se pudo preguntar, no se acusa al salón de nada. Un aviso falso sobre
+  /// el sueldo de alguien hace más daño que su ausencia.
+  Future<bool> policyIsConfirmed() async {
+    try {
+      final response = await Supabase.instance.client.rpc(
+        'my_commission_policy_is_confirmed',
+      );
+
+      return response is bool ? response : true;
+    } catch (_) {
+      return true;
+    }
+  }
+
   String _formatDate(DateTime date) {
     final year = date.year.toString().padLeft(4, '0');
     final month = date.month.toString().padLeft(2, '0');
