@@ -106,10 +106,28 @@ class PlatformTenantSummary {
   /// LTV: total histórico cobrado a este salón, en COP (D-172).
   final int totalPaidCop;
 
-  /// Precio mensual pactado real, calculado con
-  /// `private.beautyos_precio_efectivo` en el servidor (D-172). A
-  /// diferencia de [effectivePriceCop], que es una aproximación cliente,
-  /// este valor ya viene resuelto por la base de datos.
+  /// Precio mensual del negocio, calculado con
+  /// `private.beautyos_precio_efectivo` en el servidor (D-172).
+  ///
+  /// **Es el único que vale, y desde el hallazgo AG es el único que hay.**
+  /// Hasta el 22-sep convivía con un `effectivePriceCop` que recalculaba el
+  /// precio aquí, y el comentario de esta misma línea ya lo confesaba —
+  /// decía que aquel era *"una aproximación cliente"* — mientras la pantalla
+  /// pintaba la aproximación y no esto.
+  ///
+  /// Lo que aquella cuenta tenía dentro: los precios de `basico`, `business`
+  /// y `profesional`, **tres planes que D-188 jubiló** y que la base marca
+  /// `retired`; y un `isFounder → × 0.5` que es **el 50% del pionero que
+  /// D-221 borró del servidor**, y para el que existe el control 207. Se
+  /// quitó de la base y se quedó aquí.
+  ///
+  /// Además el servidor **acumula** precio pactado y descuento (control 207,
+  /// comprobación 6), y aquella cuenta devolvía el pactado saltándose el
+  /// descuento: el panel podía enseñar más de lo que se cobraba.
+  ///
+  /// Es la misma corrección de **D-193**, palabra por palabra: *"no fue
+  /// actualizar las cifras: fue quitarlas del cliente, porque esa cuenta vive
+  /// en el servidor"*.
   final int effectiveMonthlyPrice;
 
   /// 'al_dia', 'en_prueba' o 'en_mora' (D-172).
@@ -179,23 +197,18 @@ class PlatformTenantSummary {
 
   String get formattedDebtAmount => '${formatCOP(debtAmountCop)} COP';
 
-  int get effectivePriceCop {
-    if (priceCop != null && priceCop! > 0) {
-      return priceCop!;
-    }
-    int basePrice = 150000;
-    if (planCode == 'basico') basePrice = 160000;
-    if (planCode == 'business') basePrice = 200000;
-    if (planCode == 'profesional') basePrice = 240000;
+  /// Lo que el servidor dice que vale este negocio al mes. **Aquí no se
+  /// calcula nada** (AG): ver [effectiveMonthlyPrice].
+  int get effectivePriceCop => effectiveMonthlyPrice;
 
-    if (isFounder) {
-      return (basePrice * 0.5).round();
-    }
-    if (discountPercent != null && discountPercent! > 0) {
-      return (basePrice * (1.0 - (discountPercent! / 100.0))).round();
-    }
-    return basePrice;
-  }
+  /// Si ese precio es **un acuerdo** o simplemente la tarifa del plan.
+  ///
+  /// Mismo criterio que `BranchSubscription.tienePrecioPactado` (D-237): no se
+  /// deduce comparando el texto del motivo, porque una cadena pensada para
+  /// leerse no decide sobre dinero.
+  bool get tieneAcuerdo =>
+      (priceCop != null && priceCop! > 0) ||
+      (discountPercent != null && discountPercent! > 0);
 
   String get formattedEffectivePrice {
     final price = effectivePriceCop;

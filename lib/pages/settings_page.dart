@@ -23,7 +23,6 @@ import '../services/branches_service.dart';
 import '../services/business_hours_service.dart';
 import '../services/business_settings_service.dart';
 import '../services/commission_policy_service.dart';
-import '../services/epayco_checkout_service.dart';
 import '../services/stylists_service.dart';
 import '../services/tenant_cover_upload_service.dart';
 import '../services/tenant_logo_upload_service.dart';
@@ -511,7 +510,8 @@ class _SubscriptionSettingsCard extends StatefulWidget {
 
 class _SubscriptionSettingsCardState extends State<_SubscriptionSettingsCard> {
   final _service = const TenantSubscriptionService();
-  final _epayco = const EpaycoCheckoutService();
+  // El checkout salió de aquí con AG: esta tarjeta ya no cobra nada. Quien
+  // cobra es `SedesSuscripcionCard`, que tiene el suyo.
   late Future<TenantSubscriptionStatus?> _subscriptionFuture;
 
   @override
@@ -550,7 +550,6 @@ class _SubscriptionSettingsCardState extends State<_SubscriptionSettingsCard> {
         }
 
         final planName = sub.planName ?? 'Profesional';
-        final priceText = sub.formattedPrice;
         final isFounder = sub.isFounder;
 
         return Card(
@@ -630,12 +629,17 @@ class _SubscriptionSettingsCardState extends State<_SubscriptionSettingsCard> {
                             ],
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            priceText,
+                          // Hallazgo AG: aquí había un precio del negocio que
+                          // competía con el de cada sede, diez centímetros más
+                          // abajo y con otro botón. Los dos eran correctos y
+                          // ninguno decía cuál cobraba. **Lo que se paga es
+                          // cada sede**, así que el precio vive una sola vez,
+                          // junto al botón que lo cobra.
+                          const Text(
+                            'Lo que pagas es cada sede, abajo.',
                             style: TextStyle(
-                              fontSize: 15,
-                              color: AppColors.brandDeep,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: AppColors.textSecondary,
                             ),
                           ),
                         ],
@@ -660,8 +664,14 @@ class _SubscriptionSettingsCardState extends State<_SubscriptionSettingsCard> {
                         Icon(Icons.star_rounded, color: AppColors.warning, size: 20),
                         SizedBox(width: 8),
                         Expanded(
+                          // D-221: **el pionero es una etiqueta, no un 50%.**
+                          // Aquí seguía prometiéndose por escrito un descuento
+                          // que el servidor dejó de aplicar el 07-sep, y para
+                          // el que existe el control 207. Un número que no se
+                          // cumple es peor que ninguno, y este se le prometía
+                          // al cliente, no a nosotros. Encontrado con AG.
                           child: Text(
-                            '★ Salón Pionero: Tienes 50% de descuento de por vida en tu plan.',
+                            '★ Salón Pionero: tienes una tarifa acordada para tus sedes.',
                             style: TextStyle(
                               color: AppColors.warning,
                               fontWeight: FontWeight.bold,
@@ -705,37 +715,25 @@ class _SubscriptionSettingsCardState extends State<_SubscriptionSettingsCard> {
                   ),
                   const SizedBox(height: 12),
                 ],
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.brand,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    onPressed: () => _epayco.iniciarPago(
-                      context,
-                      sub,
-                      onPaymentLaunched: _reload,
-                    ),
-                    icon: const Icon(Icons.credit_card_outlined, size: 20),
-                    label: Text(
-                      sub.isActive
-                          ? 'Renovar suscripción con ePayco'
-                          : 'Pagar y Activar Plan con ePayco (PSE, Nequi, Tarjetas)',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
+                // Hallazgo AG: aquí había un botón **"Pagar y Activar Plan con
+                // ePayco"** que cobraba el negocio entero, justo encima de los
+                // botones que cobran cada sede. Dos botones que cobraban
+                // distinto en la misma pantalla.
+                //
+                // **No cubría ningún caso que el de abajo no cubra:**
+                // `get_branch_subscriptions` devuelve TODAS las sedes,
+                // incluida la principal. Lo único que hacía era ofrecer pagar
+                // por un camino que **no activa ninguna sede** — se pagaba y
+                // no pasaba nada.
+                //
+                // La puerta de ese cobro quedó cerrada en el servidor el
+                // 22-sep; quitar el botón es la otra mitad.
 
                 // Las sedes con su estado de pago (D-193). Va aquí dentro y no
                 // como tarjeta aparte para reutilizar la suscripción que esta
                 // pantalla ya cargó, en vez de pedirla dos veces -- y porque es
                 // donde el dueño ya está mirando el dinero.
-                const SizedBox(height: 20),
+                const SizedBox(height: 4),
                 SedesSuscripcionCard(subscription: sub),
               ],
             ),

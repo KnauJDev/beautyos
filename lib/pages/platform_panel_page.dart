@@ -3397,8 +3397,13 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
+                                  // Hallazgo AG. Decía "Precio Mensual
+                                  // Fijado", y desde D-239 no fija nada:
+                                  // quien cobra es cada sede. El número se
+                                  // queda porque sirve para negociar, pero
+                                  // rotulado con lo que es.
                                   const Text(
-                                    'Precio Mensual Fijado:',
+                                    'Acuerdo del negocio:',
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: AppColors.textSecondary,
@@ -3406,16 +3411,52 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                                   ),
                                   Text(
                                     tenant.formattedEffectivePrice,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w800,
-                                      color: AppColors.brandDeep,
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                  const Text(
+                                    'no se cobra',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontStyle: FontStyle.italic,
+                                      color: AppColors.textMuted,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
                           ],
+                        ),
+                        const SizedBox(height: 10),
+                        // Hallazgo AG: el aviso que dice dónde vive el dinero
+                        // de verdad. Va aquí, pegado al número, y no al pie de
+                        // la tarjeta: debajo de los datos parecería una nota.
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.infoTint,
+                            borderRadius: BorderRadius.circular(
+                              AppRadius.control,
+                            ),
+                          ),
+                          child: Text(
+                            tenant.tieneAcuerdo
+                                ? 'Este acuerdo es histórico: desde D-239 lo que '
+                                      'se cobra es cada sede, con su propio precio. '
+                                      'Míralo en la tarjeta de sedes.'
+                                : 'Este negocio no tiene acuerdo: sus sedes van a '
+                                      'la tarifa vigente del plan. Lo que se cobra '
+                                      'es cada sede.',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              height: 1.35,
+                              color: AppColors.info,
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 10),
                         if (isOwner)
