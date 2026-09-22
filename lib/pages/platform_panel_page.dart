@@ -425,7 +425,7 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => AlertDialog(
-          title: Text('Modificar Precio o Plan: ${tenant.tenantName}'),
+          title: Text('Plan y etiqueta: ${tenant.tenantName}'),
           content: SingleChildScrollView(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 460),
@@ -434,7 +434,8 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Ajusta el plan asignado o fija una tarifa especial en COP (ej. \$30.000, \$50.000, \$70.000).',
+                    'Ajusta el plan asignado y la etiqueta de pionero. '
+                    'El precio se pacta en cada sede.',
                     style: TextStyle(
                       fontSize: 13,
                       color: AppColors.textSecondary,
@@ -3294,7 +3295,7 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
 
                     // TARJETA 3: PLAN Y TARIFA MENSUAL ACTUAL (SEGÚN BOSQUEJO)
                     _buildSectionCard(
-                      title: '3. Plan y Tarifa Mensual Fijada del Negocio',
+                      title: '3. Plan del negocio',
                       icon: Icons.sell_outlined,
                       children: [
                         Row(
@@ -3405,7 +3406,7 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                             child: OutlinedButton.icon(
                               onPressed: () => onUpdatePricing(tenant),
                               icon: const Icon(Icons.edit_outlined, size: 15),
-                              label: const Text('Modificar Precio o Plan'),
+                              label: const Text('Cambiar plan o etiqueta'),
                               style: OutlinedButton.styleFrom(
                                 visualDensity: VisualDensity.compact,
                                 foregroundColor: AppColors.brand,
