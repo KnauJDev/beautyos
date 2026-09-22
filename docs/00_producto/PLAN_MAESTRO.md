@@ -628,7 +628,11 @@ toque, o se descarta con su motivo.
 
 ### Qué se puede tocar y qué no
 
-12. **Pedir permiso antes de tocar Cloudflare o hacer `push`.**
+12. **El `push` va incluido cuando el propietario aprueba el bloque** (D-253). Aprobar un bloque —*"dale"*, *"sigamos con X"*, *"cierra el
+    bloque"*— autoriza publicar sus commits. **Cada `push` publica en
+    producción**, porque Cloudflare compila solo, así que se avisa al hacerlo
+    y se dice qué sale. **Tocar Cloudflare por su panel sigue necesitando
+    permiso**, y lo que no se aprobó no se publica.
 13. **Publicar Edge Functions no necesita permiso** desde el 11-ago (D-131): el
     propietario autorizó la CLI justamente para eso. Se avisa, no se pregunta.
     **Todo lo demás de Supabase sigue necesitando permiso.**
