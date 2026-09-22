@@ -29,13 +29,22 @@ class PlatformService {
         .toList();
   }
 
+  /// Aprueba un negocio y, si se negocia un precio, **lo pacta en su sede
+  /// principal** (hallazgo AG): desde D-239 quien cobra es la sede.
+  ///
+  /// **El descuento porcentual ya no se manda.** No es que sobre: el servidor
+  /// lo rechaza. El precio de una sede se pacta en pesos, y convertir un
+  /// porcentaje perdería su significado — un descuento sigue a la tarifa
+  /// cuando la tarifa cambia, un precio pactado no.
+  ///
+  /// El plan por defecto era `'profesional'`, **jubilado por D-188**, y la
+  /// RPC exige un plan activo: cualquier llamada que no pasara uno explícito
+  /// habría fallado.
   Future<void> approveTenant({
     required String tenantId,
-    String planCode = 'profesional',
+    String planCode = 'pro',
     bool isFounder = false,
     int? priceCop,
-    double? discountPercent,
-    DateTime? discountEndsAt,
     String? priceReason,
     int trialDays = 21,
   }) async {
@@ -46,8 +55,6 @@ class PlatformService {
         'p_plan_code': planCode,
         'p_is_founder': isFounder,
         'p_price_cop': priceCop,
-        'p_discount_percent': discountPercent,
-        'p_discount_ends_at': discountEndsAt?.toUtc().toIso8601String(),
         'p_price_reason': priceReason,
         'p_trial_days': trialDays,
       },
@@ -99,13 +106,17 @@ class PlatformService {
     );
   }
 
+  /// Cambia **el plan y la etiqueta de pionero** de un negocio.
+  ///
+  /// **Ya no cambia el precio** (hallazgo AG). El precio vive en cada sede y
+  /// se pacta con [setBranchSubscription]. Los parámetros de precio y
+  /// descuento salieron de aquí a propósito: dejarlos habría permitido mandar
+  /// algo que el servidor rechaza, y la pantalla no debe ofrecer lo que la
+  /// base niega (D-012, D-095).
   Future<void> updateTenantPricing({
     required String tenantId,
     required String planCode,
     required bool isFounder,
-    int? priceCop,
-    double? discountPercent,
-    String? priceReason,
   }) async {
     await Supabase.instance.client.rpc(
       'platform_update_tenant_pricing',
@@ -113,9 +124,6 @@ class PlatformService {
         'p_tenant_id': tenantId,
         'p_plan_code': planCode,
         'p_is_founder': isFounder,
-        'p_price_cop': priceCop,
-        'p_discount_percent': discountPercent,
-        'p_price_reason': priceReason,
       },
     );
   }

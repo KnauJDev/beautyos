@@ -149,18 +149,16 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
     }
     bool isFounder = tenant.isFounder;
     int trialDays = 21;
+    // AG: este precio ya no es el del negocio, es el que se va a pactar en su
+    // sede principal. Se prellena con el del negocio por comodidad cuando lo
+    // hubiera, pero no se vuelve a guardar ahí.
     final priceController = TextEditingController(
       text: tenant.priceCop != null ? tenant.priceCop.toString() : '',
     );
-    final discountController = TextEditingController(
-      text: tenant.discountPercent != null
-          ? tenant.discountPercent.toString()
-          : '',
-    );
     final reasonController = TextEditingController();
-    // D-230: el descuento cuenta como tarifa especial aunque sea pionero.
-    bool customPricing =
-        tenant.priceCop != null || tenant.discountPercent != null;
+    // AG: el descuento porcentual desapareció de esta ventana, así que ya no
+    // cuenta como tarifa especial. La marca un precio, y un pionero la exige.
+    bool customPricing = tenant.priceCop != null || tenant.isFounder;
 
     final approved = await showDialog<bool>(
       context: context,
@@ -219,6 +217,10 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                       'Marcar como pionero (solo etiqueta)',
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
+                    // Este subtítulo decía la verdad de D-221 desde el 07-sep,
+                    // y tres líneas más abajo el código hacía
+                    // `discountPercent = 50.0`. El texto se actualizó y el
+                    // código no. Corregido con AG.
                     subtitle: const Text(
                       'NO aplica ningun descuento (D-221). Es solo una marca para reconocer '
                       'despues a los primeros. La tarifa se pacta abajo, una a una.',
@@ -227,56 +229,58 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                     onChanged: (val) {
                       setModalState(() {
                         isFounder = val;
-                        if (isFounder) customPricing = false;
+                        // AG: marcar pionero ya NO esconde el precio. Antes lo
+                        // ocultaba y el código le metía un 50% en silencio; el
+                        // servidor ahora exige que se diga cuánto paga.
+                        if (isFounder) customPricing = true;
                       });
                     },
                   ),
-                  if (!isFounder) ...[
-                    CheckboxListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Tarifa especial personalizada'),
-                      value: customPricing,
-                      onChanged: (val) =>
-                          setModalState(() => customPricing = val ?? false),
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Tarifa especial personalizada'),
+                    subtitle: isFounder
+                        ? const Text(
+                            'Obligatoria para un pionero: no hay tarifa de '
+                            'pionero por defecto, se negocia una a una.',
+                          )
+                        : null,
+                    value: customPricing,
+                    onChanged: isFounder
+                        ? null
+                        : (val) =>
+                              setModalState(() => customPricing = val ?? false),
+                  ),
+                  if (customPricing) ...[
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: priceController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        // AG: este precio ya no es del negocio. Va a su sede
+                        // principal, que es quien cobra desde D-239.
+                        labelText: 'Precio mensual de su sede, en COP',
+                        hintText: 'Ej. 75000',
+                        helperText:
+                            'Es lo que pagará su sede principal cada mes. Si '
+                            'abre más sedes, cada una se pacta por separado.',
+                        helperMaxLines: 3,
+                        border: OutlineInputBorder(),
+                      ),
                     ),
-                    if (customPricing) ...[
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: priceController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText:
-                              'Precio especial en COP (ej. 30000 o 60000)',
-                          hintText: 'Ej. 30000',
-                          border: OutlineInputBorder(),
-                        ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: reasonController,
+                      decoration: const InputDecoration(
+                        labelText: 'Motivo del precio especial *',
+                        helperText:
+                            'Queda escrito junto al precio de la sede, para '
+                            'saber después de dónde salió esa cifra.',
+                        helperMaxLines: 2,
+                        hintText: 'Ej. Tarifa acordada en WhatsApp / Amigo',
+                        border: OutlineInputBorder(),
                       ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: discountController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Descuento en % — se SUMA al precio',
-                          hintText: 'Ej. 30',
-                          helperText:
-                              'Si pones precio Y descuento se multiplican: 10.000 con 50% cobra 5.000 (D-222).',
-                          helperMaxLines: 3,
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: reasonController,
-                        decoration: const InputDecoration(
-                          labelText: 'Motivo del precio especial *',
-                          helperText:
-                              'Reemplaza el motivo actual. Escribelo aunque no cambies la cifra.',
-                          helperMaxLines: 2,
-                          hintText: 'Ej. Tarifa acordada en WhatsApp / Amigo',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                    ],
+                    ),
                   ],
                   const SizedBox(height: 16),
                   const Text(
@@ -318,12 +322,26 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
             ),
             FilledButton.icon(
               onPressed: () {
-                if (customPricing && !isFounder) {
+                if (customPricing) {
                   final price = priceController.text.trim();
-                  final discount = discountController.text.trim();
                   final reason = reasonController.text.trim();
-                  if ((price.isNotEmpty || discount.isNotEmpty) &&
-                      reason.isEmpty) {
+
+                  // AG: un pionero sin precio ya no se puede aprobar. El
+                  // servidor lo niega, y decírselo aquí evita mandarlo a
+                  // estrellarse contra un error que no eligió.
+                  if (isFounder && price.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Un pionero necesita su precio pactado: no hay '
+                          'tarifa de pionero por defecto.',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (price.isNotEmpty && reason.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text(
@@ -348,15 +366,15 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
 
     try {
       int? priceCop;
-      double? discountPercent;
       String? priceReason;
 
-      if (isFounder) {
-        discountPercent = 50.0;
-        priceReason = 'Socio de diseno, tarifa pactada';
-      } else if (customPricing) {
+      // AG: aquí estaba `if (isFounder) discountPercent = 50.0;`, **el mismo
+      // 50% que D-221 quitó del servidor el 07-sep** y que el interruptor de
+      // arriba ya prometía no aplicar. Ahora el precio se escribe, no se
+      // deduce, y **el descuento porcentual no se manda**: el precio de una
+      // sede se pacta en pesos.
+      if (customPricing) {
         priceCop = int.tryParse(priceController.text.trim());
-        discountPercent = double.tryParse(discountController.text.trim());
         priceReason = reasonController.text.trim();
       }
 
@@ -365,7 +383,6 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
         planCode: selectedPlan,
         isFounder: isFounder,
         priceCop: priceCop,
-        discountPercent: discountPercent,
         priceReason: priceReason,
         trialDays: trialDays,
       );
@@ -393,27 +410,16 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
       selectedPlan = 'pro';
     }
     bool isFounder = tenant.isFounder;
-    final priceController = TextEditingController(
-      text: tenant.priceCop != null ? tenant.priceCop.toString() : '',
-    );
-    final discountController = TextEditingController(
-      // D-230: se muestra el descuento REAL. Antes se ocultaba cuando el
-      // negocio era pionero, porque el 50% se daba por implicito (D-212).
-      // Desde D-221 no hay 50% implicito, y esconder un descuento guardado
-      // hacia que al guardar se borrara sin que nadie lo viera.
-      text: tenant.discountPercent != null
-          ? tenant.discountPercent.toString()
-          : '',
-    );
-    // D-230: NO se autorellena. El modelo no trae `priceReason`, asi que
-    // prellenar un texto generico y guardar sobrescribia el motivo pactado:
-    // Exportadora tenia escrito "Pionero fundador: 80.000 por sede" y se
-    // habria perdido con un clic. Vacio obliga a escribir el motivo nuevo,
-    // que es lo correcto si se esta cambiando el precio.
-    final reasonController = TextEditingController();
-    // D-230: el descuento cuenta como tarifa especial aunque sea pionero.
-    bool customPricing =
-        tenant.priceCop != null || tenant.discountPercent != null;
+
+    // AG: esta ventana ya no lleva precio, descuento ni motivo. Tenía tres
+    // campos y los tres escribían en el negocio, que desde D-239 no cobra.
+    //
+    // Se va con ellos una precaución de D-230 que conviene no perder de
+    // vista: el motivo NO se autorellenaba, porque prellenar un texto
+    // genérico y guardar sobrescribía el pactado — a *Exportadora* le habría
+    // borrado su «Pionero fundador: 80.000 por sede» con un clic. **Esa misma
+    // precaución vive ahora en el diálogo de precio de la sede**, que es
+    // donde se escribe el motivo.
 
     final updated = await showDialog<bool>(
       context: context,
@@ -467,71 +473,34 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                       'despues a los primeros. La tarifa se pacta abajo, una a una.',
                     ),
                     value: isFounder,
-                    onChanged: (val) {
-                      setModalState(() {
-                        isFounder = val;
-                        if (isFounder) {
-                          customPricing = false;
-                          priceController.clear();
-                          reasonController.text =
-                              'Socio de diseno, tarifa pactada';
-                        }
-                      });
-                    },
+                    onChanged: (val) => setModalState(() => isFounder = val),
                   ),
-                  if (!isFounder) ...[
-                    CheckboxListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text(
-                        'Fijar Tarifa Especial Personalizada en COP',
-                      ),
-                      subtitle: const Text(
-                        'Para cobrarle un valor pactado (ej. \$30.000, \$50.000, \$70.000).',
-                      ),
-                      value: customPricing,
-                      onChanged: (val) =>
-                          setModalState(() => customPricing = val ?? false),
+                  const SizedBox(height: 16),
+                  // Hallazgo AG: aquí había un precio y un descuento **del
+                  // negocio**. Desde D-239 quien cobra es la sede, así que ese
+                  // precio no cobraba nada — y el servidor ya lo rechaza.
+                  // En su lugar se dice dónde se pacta de verdad.
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.infoTint,
+                      borderRadius: BorderRadius.circular(AppRadius.control),
                     ),
-                    if (customPricing) ...[
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: priceController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Precio mensual exacto en COP (ej. 30000)',
-                          hintText: 'Ej. 30000',
-                          border: OutlineInputBorder(),
-                        ),
+                    child: const Text(
+                      'El precio se pacta en cada sede, no aquí: es la sede '
+                      'quien cobra. Cierra esta ventana y usa el botón Pago '
+                      'de la sede que quieras cambiar.\n\n'
+                      'Un negocio con varias sedes puede tener un precio '
+                      'distinto en cada una, que es como se negocia en la '
+                      'realidad.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        height: 1.4,
+                        color: AppColors.info,
                       ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: discountController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText:
-                              'Descuento en % — se SUMA al precio de arriba',
-                          hintText: 'Ej. 30',
-                          helperText:
-                              'Si pones precio Y descuento se multiplican: 10.000 con 50% cobra 5.000 (D-222).',
-                          helperMaxLines: 3,
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: reasonController,
-                        decoration: const InputDecoration(
-                          labelText: 'Motivo del precio especial *',
-                          helperText:
-                              'Reemplaza el motivo actual. Escribelo aunque no cambies la cifra.',
-                          helperMaxLines: 2,
-                          hintText:
-                              'Ej. Convenio especial amigo / Acuerdo comercial',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                    ],
-                  ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -542,27 +511,9 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
               child: const Text('Cancelar'),
             ),
             FilledButton.icon(
-              onPressed: () {
-                if (customPricing && !isFounder) {
-                  final price = priceController.text.trim();
-                  final discount = discountController.text.trim();
-                  final reason = reasonController.text.trim();
-                  if ((price.isNotEmpty || discount.isNotEmpty) &&
-                      reason.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Debes ingresar un motivo para el precio especial.',
-                        ),
-                      ),
-                    );
-                    return;
-                  }
-                }
-                Navigator.of(context).pop(true);
-              },
+              onPressed: () => Navigator.of(context).pop(true),
               icon: const Icon(Icons.save_outlined),
-              label: const Text('Guardar Tarifa'),
+              label: const Text('Guardar plan y etiqueta'),
             ),
           ],
         ),
@@ -572,26 +523,15 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
     if (updated != true || !mounted) return;
 
     try {
-      int? priceCop;
-      double? discountPercent;
-      String? priceReason;
-
-      if (isFounder) {
-        discountPercent = 50.0;
-        priceReason = 'Socio de diseno, tarifa pactada';
-      } else if (customPricing) {
-        priceCop = int.tryParse(priceController.text.trim());
-        discountPercent = double.tryParse(discountController.text.trim());
-        priceReason = reasonController.text.trim();
-      }
-
+      // AG: el segundo escondite del 50%. Aquí estaba
+      // `if (isFounder) discountPercent = 50.0;`, igual que en el diálogo de
+      // aprobar y con el mismo interruptor prometiendo justo lo contrario.
+      // Esta ventana ya no manda ningún precio: el servidor los rechaza
+      // porque el precio vive en la sede.
       await platformService.updateTenantPricing(
         tenantId: tenant.tenantId,
         planCode: selectedPlan,
         isFounder: isFounder,
-        priceCop: priceCop,
-        discountPercent: discountPercent,
-        priceReason: priceReason,
       );
 
       reload();
