@@ -1,6 +1,6 @@
 # PLAN MAESTRO — Salón y Más
 
-**Creado:** 9 de agosto de 2026 · **Última revisión:** 23 de septiembre de 2026 (revisión integral, D-254)
+**Creado:** 9 de agosto de 2026 · **Última revisión:** 23 de septiembre de 2026 (revisión integral, D-254; hallazgos cerrados por la tarde, D-255 a D-259)
 **Estado:** vigente · **Manda sobre:** todo lo demás en materia de qué falta y en qué orden
 
 > **Este documento reemplaza y jubila a siete:** `PLAN_DE_LANZAMIENTO_2026-08-06`,
