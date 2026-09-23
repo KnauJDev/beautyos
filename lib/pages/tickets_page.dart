@@ -1487,7 +1487,6 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
   DateTime? selectedDate;
   DateTime? scheduledAt;
   List<_ExpressSlotOption>? _availableSlots;
-  bool isCreatingClient = false;
   bool isLoadingSlots = false;
   bool isSaving = false;
   String? bookingError;
@@ -1736,62 +1735,26 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
       _stylistById(_bookingStylistId)?.stylistName;
 
   Future<void> _openQuickCreateClientDialog() async {
-    final formData = await showDialog<_QuickClientFormData>(
+    // El diálogo crea la clienta él mismo y solo vuelve cuando la creó
+    // (hallazgo AK): un rechazo se queda dentro, con lo escrito.
+    final createdClient = await showDialog<ClientSummary>(
       context: context,
-      builder: (context) => const _QuickCreateClientDialog(),
+      builder: (context) =>
+          _QuickCreateClientDialog(clientsService: widget.clientsService),
     );
 
-    if (formData == null || !mounted) {
+    if (createdClient == null || !mounted) {
       return;
     }
 
     setState(() {
-      isCreatingClient = true;
+      clients.add(createdClient);
+      clients.sort(
+        (first, second) =>
+            first.name.toLowerCase().compareTo(second.name.toLowerCase()),
+      );
+      selectedClientId = createdClient.id;
     });
-
-    try {
-      final createdClient = await widget.clientsService.createClient(
-        name: formData.name,
-        phone: CelularColombiano.normalizar(formData.phone),
-        email: formData.email,
-        notes: formData.notes,
-      );
-
-      if (!mounted) {
-        return;
-      }
-
-      if (createdClient == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se pudo crear el cliente.')),
-        );
-        return;
-      }
-
-      setState(() {
-        clients.add(createdClient);
-        clients.sort(
-          (first, second) =>
-              first.name.toLowerCase().compareTo(second.name.toLowerCase()),
-        );
-        selectedClientId = createdClient.id;
-      });
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error creando cliente: ${_friendlyError(error)}'),
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          isCreatingClient = false;
-        });
-      }
-    }
   }
 
   Future<void> _submit() async {
@@ -2178,22 +2141,12 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
                 ),
                 Align(
                   alignment: Alignment.centerLeft,
+                  // El "guardando" vive ahora dentro del diálogo, que es
+                  // quien llama al servidor (hallazgo AK).
                   child: TextButton.icon(
-                    onPressed: isCreatingClient
-                        ? null
-                        : _openQuickCreateClientDialog,
-                    icon: isCreatingClient
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.person_add_alt_1_outlined),
-                    label: Text(
-                      isCreatingClient
-                          ? 'Guardando cliente...'
-                          : 'Crear cliente rápido',
-                    ),
+                    onPressed: _openQuickCreateClientDialog,
+                    icon: const Icon(Icons.person_add_alt_1_outlined),
+                    label: const Text('Crear cliente rápido'),
                   ),
                 ),
                 TextFormField(
@@ -2373,7 +2326,6 @@ class _CreateTicketDialogState extends State<_CreateTicketDialog> {
   String? selectedClientId;
   DateTime? scheduledAt;
   String channel = 'manual';
-  bool isCreatingClient = false;
 
   @override
   void initState() {
@@ -2443,73 +2395,32 @@ class _CreateTicketDialogState extends State<_CreateTicketDialog> {
   }
 
   Future<void> _openQuickCreateClientDialog() async {
-    final formData = await showDialog<_QuickClientFormData>(
+    // El diálogo crea la clienta él mismo y solo vuelve cuando la creó
+    // (hallazgo AK): un rechazo se queda dentro, con lo escrito.
+    final createdClient = await showDialog<ClientSummary>(
       context: context,
-      builder: (context) => const _QuickCreateClientDialog(),
+      builder: (context) =>
+          _QuickCreateClientDialog(clientsService: widget.clientsService),
     );
 
-    if (formData == null || !mounted) {
+    if (createdClient == null || !mounted) {
       return;
     }
 
     setState(() {
-      isCreatingClient = true;
+      clients.add(createdClient);
+      clients.sort(
+        (first, second) =>
+            first.name.toLowerCase().compareTo(second.name.toLowerCase()),
+      );
+      selectedClientId = createdClient.id;
     });
 
-    try {
-      final createdClient = await widget.clientsService.createClient(
-        name: formData.name,
-        phone: CelularColombiano.normalizar(formData.phone),
-        email: formData.email,
-        notes: formData.notes,
-      );
-
-      if (!mounted) {
-        return;
-      }
-
-      if (createdClient == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'No se pudo crear el cliente. Verifica tus permisos.',
-            ),
-          ),
-        );
-        return;
-      }
-
-      setState(() {
-        clients.add(createdClient);
-        clients.sort(
-          (first, second) =>
-              first.name.toLowerCase().compareTo(second.name.toLowerCase()),
-        );
-        selectedClientId = createdClient.id;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cliente creado y seleccionado correctamente.'),
-        ),
-      );
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error creando cliente: ${_friendlyError(error)}'),
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          isCreatingClient = false;
-        });
-      }
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Cliente creado y seleccionado correctamente.'),
+      ),
+    );
   }
 
   void _submit() {
@@ -2576,22 +2487,12 @@ class _CreateTicketDialogState extends State<_CreateTicketDialog> {
                 const SizedBox(height: 8),
                 Align(
                   alignment: Alignment.centerLeft,
+                  // El "guardando" vive ahora dentro del diálogo, que es
+                  // quien llama al servidor (hallazgo AK).
                   child: TextButton.icon(
-                    onPressed: isCreatingClient
-                        ? null
-                        : _openQuickCreateClientDialog,
-                    icon: isCreatingClient
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.person_add_alt_1_outlined),
-                    label: Text(
-                      isCreatingClient
-                          ? 'Guardando cliente...'
-                          : 'Crear cliente rápido',
-                    ),
+                    onPressed: _openQuickCreateClientDialog,
+                    icon: const Icon(Icons.person_add_alt_1_outlined),
+                    label: const Text('Crear cliente rápido'),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -2683,8 +2584,17 @@ class _TicketFormData {
   final String? notes;
 }
 
+/// Crea la clienta **desde dentro** y devuelve la creada (hallazgo AK).
+///
+/// Antes devolvía los datos escritos y quien lo abría llamaba al servidor con
+/// el diálogo ya cerrado. Desde D-249 el servidor rechaza de verdad —*"ese
+/// celular ya es de Ana"*—, y con el patrón viejo ese rechazo llegaba en una
+/// barra abajo con el nombre y el celular perdidos, **en mitad de agendar una
+/// cita con la clienta delante**. Es el mismo arreglo que Clientes (D-249).
 class _QuickCreateClientDialog extends StatefulWidget {
-  const _QuickCreateClientDialog();
+  const _QuickCreateClientDialog({required this.clientsService});
+
+  final ClientsService clientsService;
 
   @override
   State<_QuickCreateClientDialog> createState() =>
@@ -2707,23 +2617,48 @@ class _QuickCreateClientDialogState extends State<_QuickCreateClientDialog> {
     super.dispose();
   }
 
-  void _submit() {
+  String? _errorDelServidor;
+  bool _guardando = false;
+
+  Future<void> _submit() async {
     if (!formKey.currentState!.validate()) {
       return;
     }
 
-    Navigator.of(context).pop(
-      _QuickClientFormData(
+    setState(() {
+      _guardando = true;
+      _errorDelServidor = null;
+    });
+
+    try {
+      final creada = await widget.clientsService.createClient(
         name: nameController.text.trim(),
-        phone: phoneController.text.trim(),
+        phone: CelularColombiano.normalizar(phoneController.text.trim()),
         email: emailController.text.trim().isEmpty
             ? null
             : emailController.text.trim(),
         notes: notesController.text.trim().isEmpty
             ? null
             : notesController.text.trim(),
-      ),
-    );
+      );
+      if (!mounted) return;
+      if (creada == null) {
+        setState(() {
+          _guardando = false;
+          _errorDelServidor =
+              'No se pudo crear el cliente. Verifica tus permisos.';
+        });
+        return;
+      }
+      Navigator.of(context).pop(creada);
+    } catch (error) {
+      if (!mounted) return;
+      // Se queda abierto, con todo lo escrito, y el motivo aquí mismo.
+      setState(() {
+        _guardando = false;
+        _errorDelServidor = _friendlyError(error);
+      });
+    }
   }
 
   @override
@@ -2790,6 +2725,24 @@ class _QuickCreateClientDialogState extends State<_QuickCreateClientDialog> {
                   minLines: 2,
                   maxLines: 4,
                 ),
+                if (_errorDelServidor != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.dangerTint,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      _errorDelServidor!,
+                      style: const TextStyle(
+                        color: AppColors.danger,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -2797,31 +2750,17 @@ class _QuickCreateClientDialogState extends State<_QuickCreateClientDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: _guardando ? null : () => Navigator.of(context).pop(),
           child: const Text('Cancelar'),
         ),
         FilledButton.icon(
-          onPressed: _submit,
+          onPressed: _guardando ? null : _submit,
           icon: const Icon(Icons.save_outlined),
-          label: const Text('Guardar cliente'),
+          label: Text(_guardando ? 'Guardando…' : 'Guardar cliente'),
         ),
       ],
     );
   }
-}
-
-class _QuickClientFormData {
-  const _QuickClientFormData({
-    required this.name,
-    required this.phone,
-    this.email,
-    this.notes,
-  });
-
-  final String name;
-  final String phone;
-  final String? email;
-  final String? notes;
 }
 
 class _AddTicketServiceDialog extends StatefulWidget {

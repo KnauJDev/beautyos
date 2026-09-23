@@ -12,6 +12,7 @@ import '../models/platform_tenant_summary.dart';
 import '../models/tenant_subscription_history_entry.dart';
 import '../models/ticket_board.dart' show formatCOP;
 import '../services/platform_service.dart';
+import '../widgets/dialogo_datos_de_sede.dart';
 import '../widgets/security_settings_dialog.dart';
 import '../widgets/update_banner.dart';
 import 'agenda_page.dart' show buildWhatsAppUri;
@@ -2397,7 +2398,14 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
     final venceOriginal = sede.currentPeriodEnd;
     var vence = sede.currentPeriodEnd;
 
-    final guardar = await showDialog<bool>(
+    // Hallazgo AK: el diálogo guarda DESDE DENTRO y, si el servidor rechaza,
+    // se queda abierto con lo escrito y el motivo debajo. Antes se cerraba,
+    // llamaba al servidor y el rechazo —precio sin motivo, D-136— llegaba en
+    // una barra abajo con el formulario ya perdido. Patrón de D-249.
+    String? errorDelServidor;
+    var guardando = false;
+
+    final guardado = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => AlertDialog(
@@ -2480,54 +2488,84 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                       style: TextStyle(fontSize: 11, color: AppColors.danger),
                     ),
                   ),
+                if (errorDelServidor != null)
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(top: AppSpacing.md),
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    decoration: BoxDecoration(
+                      color: AppColors.dangerTint,
+                      borderRadius: BorderRadius.circular(AppRadius.control),
+                    ),
+                    child: Text(
+                      errorDelServidor!,
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        color: AppColors.danger,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
+              onPressed: guardando
+                  ? null
+                  : () => Navigator.of(context).pop(false),
               child: const Text('Cancelar'),
             ),
             FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Guardar'),
+              onPressed: guardando
+                  ? null
+                  : () async {
+                      setModalState(() {
+                        guardando = true;
+                        errorDelServidor = null;
+                      });
+
+                      final precioTexto = precioCtrl.text.trim();
+                      final precio = precioTexto.isEmpty
+                          ? null
+                          : int.tryParse(precioTexto);
+                      final motivo = motivoCtrl.text.trim();
+
+                      try {
+                        await widget.platformService.setBranchSubscription(
+                          branchId: sede.branchId,
+                          status: estado,
+                          priceCop: precio,
+                          priceReason: motivo.isEmpty ? null : motivo,
+                          periodEnd: vence,
+                          // Dejar el campo vacio significa "a tarifa vigente",
+                          // y hace falta decirlo explicitamente: mandar el
+                          // precio en null NO lo borra (D-237). Solo cuenta si
+                          // ANTES habia un precio pactado.
+                          limpiarPrecio:
+                              precio == null && sede.tienePrecioPactado,
+                        );
+                        if (!context.mounted) return;
+                        Navigator.of(context).pop(true);
+                      } on PostgrestException catch (error) {
+                        // El mensaje viene del servidor, que es quien conoce
+                        // la regla que se incumplio: por ejemplo, precio sin
+                        // motivo (D-136). Se ensenya aqui, con lo escrito.
+                        if (!context.mounted) return;
+                        setModalState(() {
+                          guardando = false;
+                          errorDelServidor = error.message;
+                        });
+                      }
+                    },
+              child: Text(guardando ? 'Guardando…' : 'Guardar'),
             ),
           ],
         ),
       ),
     );
 
-    if (guardar != true || !mounted) return;
-
-    final precioTexto = precioCtrl.text.trim();
-    final precio = precioTexto.isEmpty ? null : int.tryParse(precioTexto);
-    final motivo = motivoCtrl.text.trim();
-
-    try {
-      await widget.platformService.setBranchSubscription(
-        branchId: sede.branchId,
-        status: estado,
-        priceCop: precio,
-        priceReason: motivo.isEmpty ? null : motivo,
-        periodEnd: vence,
-        // Dejar el campo vacio significa "a tarifa vigente", y hace falta
-        // decirlo explicitamente: mandar el precio en null NO lo borra
-        // (D-237). Solo cuenta si ANTES habia un precio pactado.
-        limpiarPrecio: precio == null && sede.tienePrecioPactado,
-      );
-      if (mounted) _recargarSedes();
-    } on PostgrestException catch (error) {
-      // El mensaje viene del servidor, que es quien conoce la regla que se
-      // incumplio: por ejemplo, precio sin motivo (D-136).
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(error.message),
-            backgroundColor: AppColors.danger,
-          ),
-        );
-      }
-    }
+    if (guardado == true && mounted) _recargarSedes();
   }
 
   /// Las sedes del negocio, en pestañas (D-235, D-241).
@@ -2844,121 +2882,37 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
   /// que no se ve. En D-230 un prellenado genérico estuvo a un clic de borrar
   /// el acuerdo documentado de un cliente.
   Future<void> _editarDatosDeSede(BranchSubscription sede) async {
-    final encargado = TextEditingController(text: sede.managerName ?? '');
-    final correo = TextEditingController(text: sede.contactEmail ?? '');
-    final telefono = TextEditingController(text: sede.contactPhone ?? '');
-    final whatsapp = TextEditingController(text: sede.whatsapp ?? '');
-    final direccion = TextEditingController(text: sede.address ?? '');
-    final ciudad = TextEditingController(text: sede.city ?? '');
-    final departamento = TextEditingController(text: sede.department ?? '');
-
-    Widget campo(
-      TextEditingController c,
-      String etiqueta, {
-      String? ayuda,
-      TextInputType? teclado,
-    }) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: TextField(
-          controller: c,
-          keyboardType: teclado,
-          decoration: InputDecoration(
-            labelText: etiqueta,
-            helperText: ayuda,
-            helperMaxLines: 2,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-      );
-    }
-
-    final guardar = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Datos de ${sede.branchName}'),
-        content: SizedBox(
-          width: 420,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 12),
-                  child: Text(
-                    'Son los datos de ESTA sede, no los del negocio. Déjalos '
-                    'vacíos si no aplican: lo que borres aquí se borra.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-                campo(
-                  encargado,
-                  'Encargado de la sede',
-                  ayuda: 'Quien la lleva. Puede no ser el dueño del negocio.',
-                ),
-                campo(
-                  correo,
-                  'Correo de la sede',
-                  teclado: TextInputType.emailAddress,
-                  ayuda: 'Si lo pones, tiene que llevar arroba.',
-                ),
-                campo(telefono, 'Teléfono', teclado: TextInputType.phone),
-                campo(whatsapp, 'WhatsApp', teclado: TextInputType.phone),
-                campo(direccion, 'Dirección'),
-                campo(ciudad, 'Ciudad'),
-                campo(departamento, 'Departamento'),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Guardar'),
-          ),
-        ],
+    // Hallazgo AK: el formulario vive en `dialogo_datos_de_sede.dart`, el
+    // mismo que usa la Configuración del salón. Guarda desde dentro y, si el
+    // servidor rechaza, se queda abierto con lo escrito.
+    final guardado = await mostrarDialogoDatosDeSede(
+      context,
+      nombreSede: sede.branchName,
+      aviso:
+          'Son los datos de ESTA sede, no los del negocio. Déjalos vacíos si '
+          'no aplican: lo que borres aquí se borra.',
+      actuales: DatosDeSede(
+        managerName: sede.managerName,
+        contactEmail: sede.contactEmail,
+        contactPhone: sede.contactPhone,
+        whatsapp: sede.whatsapp,
+        address: sede.address,
+        city: sede.city,
+        department: sede.department,
+      ),
+      guardar: (d) => widget.platformService.updateBranchInfo(
+        branchId: sede.branchId,
+        managerName: d.managerName,
+        contactEmail: d.contactEmail,
+        contactPhone: d.contactPhone,
+        whatsapp: d.whatsapp,
+        address: d.address,
+        city: d.city,
+        department: d.department,
       ),
     );
 
-    if (guardar != true || !mounted) return;
-
-    String? limpio(TextEditingController c) {
-      final t = c.text.trim();
-      return t.isEmpty ? null : t;
-    }
-
-    try {
-      await widget.platformService.updateBranchInfo(
-        branchId: sede.branchId,
-        managerName: limpio(encargado),
-        contactEmail: limpio(correo),
-        contactPhone: limpio(telefono),
-        whatsapp: limpio(whatsapp),
-        address: limpio(direccion),
-        city: limpio(ciudad),
-        department: limpio(departamento),
-      );
-      if (mounted) _recargarSedes();
-    } on PostgrestException catch (error) {
-      // El mensaje viene del servidor, que es quien conoce la regla que se
-      // incumplió: por ejemplo, un correo sin arroba.
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(error.message),
-            backgroundColor: AppColors.danger,
-          ),
-        );
-      }
-    }
+    if (guardado && mounted) _recargarSedes();
   }
 
   String _formatDate(DateTime? date) {

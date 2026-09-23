@@ -27,6 +27,7 @@ import '../services/stylists_service.dart';
 import '../services/tenant_cover_upload_service.dart';
 import '../services/tenant_logo_upload_service.dart';
 import '../services/tenant_subscription_service.dart';
+import '../widgets/dialogo_datos_de_sede.dart';
 import '../widgets/sedes_suscripcion_card.dart';
 import '../services/app_version_service.dart';
 import '../widgets/app_widgets.dart';
@@ -1163,121 +1164,39 @@ class _DatosDeEstaSedeCardState extends State<_DatosDeEstaSedeCard> {
   }
 
   Future<void> _editar(BranchInfo sede) async {
-    final encargado = TextEditingController(text: sede.managerName ?? '');
-    final correo = TextEditingController(text: sede.contactEmail ?? '');
-    final telefono = TextEditingController(text: sede.contactPhone ?? '');
-    final whatsapp = TextEditingController(text: sede.whatsapp ?? '');
-    final direccion = TextEditingController(text: sede.address ?? '');
-    final ciudad = TextEditingController(text: sede.city ?? '');
-    final departamento = TextEditingController(text: sede.department ?? '');
-
-    Widget campo(
-      TextEditingController c,
-      String etiqueta, {
-      String? ayuda,
-      TextInputType? teclado,
-    }) {
-      return Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: TextField(
-          controller: c,
-          keyboardType: teclado,
-          decoration: InputDecoration(
-            labelText: etiqueta,
-            helperText: ayuda,
-            helperMaxLines: 2,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-      );
-    }
-
-    final guardar = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Datos de ${sede.branchName}'),
-        content: SizedBox(
-          width: 420,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 12),
-                  child: Text(
-                    'Son los datos de ESTA sede. Si tienes más de una, cada '
-                    'una lleva los suyos. Lo que borres aquí se borra.',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ),
-                campo(
-                  encargado,
-                  'Encargado de la sede',
-                  ayuda: 'Quien la lleva. Puede no ser el dueño del negocio.',
-                ),
-                campo(
-                  correo,
-                  'Correo de la sede',
-                  teclado: TextInputType.emailAddress,
-                  ayuda: 'Si lo pones, tiene que llevar arroba.',
-                ),
-                campo(telefono, 'Teléfono', teclado: TextInputType.phone),
-                campo(whatsapp, 'WhatsApp', teclado: TextInputType.phone),
-                campo(direccion, 'Dirección'),
-                campo(ciudad, 'Ciudad'),
-                campo(departamento, 'Departamento'),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Guardar'),
-          ),
-        ],
+    // Hallazgo AK: guarda desde dentro y, si el servidor rechaza —un correo
+    // sin arroba—, se queda abierto con los siete campos escritos. Es el
+    // mismo formulario que usa el Panel de plataforma: estaba copiado dos
+    // veces, con el mismo fallo en las dos.
+    final guardado = await mostrarDialogoDatosDeSede(
+      context,
+      nombreSede: sede.branchName,
+      aviso:
+          'Son los datos de ESTA sede. Si tienes más de una, cada una lleva '
+          'los suyos. Lo que borres aquí se borra.',
+      actuales: DatosDeSede(
+        managerName: sede.managerName,
+        contactEmail: sede.contactEmail,
+        contactPhone: sede.contactPhone,
+        whatsapp: sede.whatsapp,
+        address: sede.address,
+        city: sede.city,
+        department: sede.department,
+      ),
+      // `widget.branchId`, no la principal: D-242.
+      guardar: (d) => _branchesService.updateBranchInfo(
+        branchId: widget.branchId,
+        managerName: d.managerName,
+        contactEmail: d.contactEmail,
+        contactPhone: d.contactPhone,
+        whatsapp: d.whatsapp,
+        address: d.address,
+        city: d.city,
+        department: d.department,
       ),
     );
 
-    if (guardar != true || !mounted) return;
-
-    String? limpio(TextEditingController c) {
-      final t = c.text.trim();
-      return t.isEmpty ? null : t;
-    }
-
-    try {
-      await _branchesService.updateBranchInfo(
-        branchId: widget.branchId,
-        managerName: limpio(encargado),
-        contactEmail: limpio(correo),
-        contactPhone: limpio(telefono),
-        whatsapp: limpio(whatsapp),
-        address: limpio(direccion),
-        city: limpio(ciudad),
-        department: limpio(departamento),
-      );
-      if (mounted) _recargar();
-    } on PostgrestException catch (error) {
-      // El mensaje viene del servidor, que es quien sabe qué regla se
-      // incumplió: por ejemplo, un correo sin arroba.
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(error.message),
-            backgroundColor: AppColors.danger,
-          ),
-        );
-      }
-    }
+    if (guardado && mounted) _recargar();
   }
 
   Widget _fila(String etiqueta, String? valor) {
