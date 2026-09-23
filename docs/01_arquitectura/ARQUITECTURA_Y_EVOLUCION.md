@@ -178,17 +178,22 @@ Configuración → "Activar esta sede"
    → la sede queda al día; si es la principal, el negocio también
 ```
 
-- **Ciclos de 30 días anclados al primer pago** (D-160). Renovar antes acumula;
-  pagar tarde en gracia prorratea.
+- **Ciclos de 30 días anclados al primer pago** (D-160). Renovar antes acumula.
+  *(Hasta el 23-sep, pagar tarde en la gracia prorrateaba: los días de gracia
+  salían gratis. **Desde D-265/D-266 se cobra el mes completo** y la fecha de
+  corte no se corre. Hallazgo BN.)*
+- **El cobro mínimo de una sede es $10.000** (D-265): lo exige la activación
+  desde D-159, y desde el 23-sep un disparador en `branch_subscriptions` impide
+  pactar por debajo **por cualquier puerta** (hallazgo BO).
 - **Gracia de 5 días** y luego suspensión, gradual y reversible, **sin borrar
   datos** (D-014, D-141). ⚠️ **Hoy solo funciona si ePayco rechaza un pago.** Si
   el salón simplemente no paga, nada lo pasa a mora: pierde las citas nuevas al
   día siguiente sin gracia, y **una sede secundaria que no paga nunca se corta**
   (hallazgo **BI**, 23-sep). **Corregido el mismo 23-sep (D-258):** una tarea
   diaria a las 07:50 pasa a mora **por fecha** —negocio y sede— con sus 5 días,
-  y suspende las sedes con la gracia vencida. **Lo que queda:** que una sede
-  suspendida deje de agendar, que el propietario decidió ese día y está por
-  precisar, y el mensaje del candado.
+  y suspende las sedes con la gracia vencida. **Y D-261:** una sede suspendida
+  **no agenda citas nuevas** —las demás siguen—, y el candado dice el motivo
+  real en vez de *"prueba gratis"*. Hallazgo BI, cerrado.
 - **Avisos por correo** a 10, 5 y 3 días, y cada día de la gracia (D-143, D-196),
   disparados por `pg_cron` a las 8:00 de Colombia (D-145).
 - **El camino del negocio está cerrado** en la entrada (`public.beautyos_calcular_cargo_epayco`

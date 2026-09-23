@@ -18,6 +18,11 @@
 > - **Iniciar / finalizar servicio:** la matriz dice que recepción no puede; el
 >   servidor se lo permite desde julio y **D-250 (20-sep)** lo puso en pantalla
 >   para dueño, administrador y recepción.
+> - **El estilista NO crea citas** (*Crear reserva*: la matriz dice **S/P**). El
+>   servidor no se lo permite desde el 20-jul, y el 23-sep el propietario lo
+>   **confirmó como decisión** (D-266): *"hay peligro de que un estilista se
+>   lleve la base de datos de clientes del salón"*. Si trae a alguien, comparte
+>   el enlace del salón o la reserva pública. Hallazgo **BM**, cerrado.
 > - **La clienta y su celular:** el §5 ya decía que el celular normalizado es su
 >   identificador. **D-249 (19-sep) lo volvió llave única** —uno por persona en
 >   cada negocio— porque abre el portal de sus datos.
