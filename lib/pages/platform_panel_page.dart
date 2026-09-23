@@ -222,8 +222,8 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                     // `discountPercent = 50.0`. El texto se actualizó y el
                     // código no. Corregido con AG.
                     subtitle: const Text(
-                      'NO aplica ningun descuento (D-221). Es solo una marca para reconocer '
-                      'despues a los primeros. La tarifa se pacta abajo, una a una.',
+                      'NO aplica ningún descuento (D-221). Es solo una marca para reconocer '
+                      'después a los primeros. La tarifa se pacta abajo, una a una.',
                     ),
                     value: isFounder,
                     onChanged: (val) {
@@ -470,8 +470,11 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     subtitle: const Text(
-                      'NO aplica ningun descuento (D-221). Es solo una marca para reconocer '
-                      'despues a los primeros. La tarifa se pacta abajo, una a una.',
+                      // D-252 quitó el precio de esta ventana y el subtítulo siguió
+                      // diciendo "se pacta abajo": el quinto letrero rancio, visto en
+                      // la revisión del 23-sep (D-254). Regla 16-ter.
+                      'NO aplica ningún descuento (D-221). Es solo una marca para reconocer '
+                      'después a los primeros. La tarifa se pacta en cada sede, una a una.',
                     ),
                     value: isFounder,
                     onChanged: (val) => setModalState(() => isFounder = val),

@@ -4,6 +4,31 @@
 **Fecha:** 19 de julio de 2026  
 **Objetivo:** impedir privilegios ambiguos y separar plataforma, empresa, sede y cliente final.
 
+> ### Estado a 23-sep (revisión integral, D-254)
+>
+> **El texto de abajo es el diseño del 19-jul y no se reescribe.** Estas
+> decisiones posteriores lo cambiaron, y hay que leerlas antes de fiarse de él:
+>
+> - **D-076 (27-jul) — la plataforma SÍ ve la operación.** El propietario decidió
+>   que el dueño de plataforma ve clientes, tickets, finanzas, equipo, reseñas y
+>   fotos de cualquier negocio, **en solo lectura y sin rastro**, *"mientras la
+>   plataforma no tenga clientes reales"*. Contradice el §2 (`platform_operator`),
+>   el §6 y la prueba obligatoria del §8. **Esa condición caduca con el primer
+>   cliente real** (hallazgo **BC**).
+> - **Iniciar / finalizar servicio:** la matriz dice que recepción no puede; el
+>   servidor se lo permite desde julio y **D-250 (20-sep)** lo puso en pantalla
+>   para dueño, administrador y recepción.
+> - **La clienta y su celular:** el §5 ya decía que el celular normalizado es su
+>   identificador. **D-249 (19-sep) lo volvió llave única** —uno por persona en
+>   cada negocio— porque abre el portal de sus datos.
+> - **Fotos, reseñas y redes — *Customer: P/consentido*:** este diseño ya
+>   preveía que consintiera la clienta. **Hoy lo marca quien sube la foto**
+>   (hallazgo **AQ**); lo corrige el paso **9.48**.
+> - **Exportación y eliminación legal:** la matriz la da por existente y **no hay
+>   ningún camino** en la aplicación. Va con el paso **9.20** (Ley 1581).
+>
+> Lo que el sistema es hoy, en `ARQUITECTURA_Y_EVOLUCION.md` §3.
+
 ## 1. Principio rector
 
 BeautyOS no tendrá una “clave maestra” compartida. Toda acción se atribuye a una cuenta individual, un contexto y un permiso verificable. La interfaz puede ocultar botones, pero la autorización real siempre se valida en Supabase.

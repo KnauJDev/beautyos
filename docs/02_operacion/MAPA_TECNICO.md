@@ -1,6 +1,13 @@
 # Mapa técnico — dónde está cada cosa y cómo se opera
 
-**Creado:** 11 de agosto de 2026 (D-131) · **Se actualiza cuando cambia un hecho, no cada sesión**
+**Creado:** 11 de agosto de 2026 (D-131) · **Puesto al día:** 23 de septiembre de 2026 (revisión integral, D-254) · **Se actualiza cuando cambia un hecho, no cada sesión**
+
+> **El 23-sep se encontró congelado a mediados de agosto**: daba por abiertas
+> cosas cerradas hace un mes (el hallazgo U, el Q), contaba 2 Edge Functions
+> cuando hay 6, y decía *"pedir permiso"* para el `push` una hora después de
+> que D-253 cambiara esa regla. Es el documento que se lee **antes de actuar**:
+> atrasado, hace actuar mal. Para lo conceptual —qué es cada cosa y por qué—
+> está ahora `01_arquitectura/ARQUITECTURA_Y_EVOLUCION.md`.
 
 **Para qué sirve:** para **no volver a averiguar** lo que ya se averiguó. Todo
 lo de aquí se comprobó ejecutándolo o leyéndolo en el código, no de memoria.
@@ -28,7 +35,7 @@ se lee **cuando hay que hacer algo**, no para saber qué hacer.
 | PostgreSQL | 17.6 |
 | Servidor de base de datos | `db.eogppgbdnwxdtcbctaol.supabase.co` |
 | Creado | 24 de junio de 2026 |
-| Plan | Free — sube a Pro en el paso 3.4 |
+| Plan | **Free.** El paso a Pro se **aplazó hasta el primer cliente que pague** (D-226, paso 9.15). Riesgos del Free, escritos en D-088 y D-226: **pausa el proyecto tras 7 días sin actividad**, sin recuperación a un punto en el tiempo, y obliga a **respaldo semanal** y a vigilar el almacenamiento |
 
 **La aplicación se conecta** con la URL y la `publishableKey` escritas en
 [`lib/main.dart`](../../lib/main.dart) (líneas 47-50). Esa clave es **pública
@@ -36,8 +43,11 @@ por diseño**: va dentro del JavaScript que se sirve al navegador. Las claves
 antiguas `anon` y `service_role` están **desactivadas** desde el 09-ago
 (D-127); no las reactives sin una razón escrita.
 
-**No existe un segundo proyecto.** Comprobado el 11-ago con `projects list`:
-la lista devuelve uno solo. Eso es justamente lo que falta en el **paso 2.2**.
+**Un segundo proyecto, solo para ensayar restauraciones:** `salonymas-ensayo`,
+creado el 12-ago en el paso 2.2 (D-134). **No sirve la aplicación** y no es
+entorno de pruebas: existe para comprobar que un respaldo se puede restaurar.
+Puede estar pausado (el plan Free pausa por inactividad). *(Hasta el 12-ago
+este apartado decía que no había segundo proyecto: era cierto ese día.)*
 
 ---
 
@@ -87,6 +97,21 @@ para que nadie tenga que acordarse:
    o más. Se corrige con `set_ticket_numbering` (D-117, hallazgo P).
 5. **Los errores dejan de ser gratis.** Hoy un fallo lo sufre el propietario y
    lo reporta; entonces lo sufre alguien que paga y no vuelve.
+6. **Caduca el acceso de soporte de la plataforma.** D-076 (27-jul) dejó que el
+   dueño de plataforma vea clientes, tickets, finanzas, equipo, reseñas y fotos
+   de cualquier negocio, en solo lectura y **sin rastro**, *"mientras la
+   plataforma no tenga clientes reales"*. Ese día hay que decidir si sigue, y
+   con qué: el diseño de julio pedía solicitud, motivo, vencimiento y registro
+   (`ROLES_Y_PERMISOS` §6). Hallazgo **BC**. *(Añadido el 23-sep: esta condición
+   existía desde julio y no estaba en esta lista.)*
+7. **Entran datos personales de terceros sin recuperación a un punto en el
+   tiempo**, si todavía se está en el plan Free. D-226 aplazó Supabase Pro
+   **hasta que pague** el primer cliente; D-088 decía **hasta que cargue datos**.
+   Entre las dos fechas caben los 21 días de prueba. Decisión abierta del
+   propietario (revisión del 23-sep).
+8. **El primer cobro real por el camino de la sede** —el único que queda desde
+   D-252— **no puede ser el de un cliente**: debe haberse probado antes con
+   dinero propio (paso 9.8).
 
 ---
 
@@ -96,7 +121,7 @@ Son **tres caminos distintos** y confundirlos cuesta tiempo.
 
 | Qué | Cómo se publica | Quién |
 |---|---|---|
-| **La aplicación** (Flutter Web) | `git push` → Cloudflare Pages compila y publica sola. **Comprobar que salió** — ver abajo | Pedir permiso |
+| **La aplicación** (Flutter Web) | `git push` → Cloudflare Pages compila y publica sola. **Comprobar que salió** — ver abajo | Lo dice la **regla 12** del Plan Maestro (desde D-253: va incluido al aprobar el bloque). *No se copia aquí: el 23-sep esta celda seguía diciendo "pedir permiso" una hora después de cambiar la regla, que es exactamente D-131* |
 | **Las Edge Functions** | CLI de Supabase (abajo) | Sin permiso desde D-131 |
 | **Las migraciones** | `aplicar_sql.ps1`, a mano | **Solo el propietario** |
 
@@ -158,16 +183,22 @@ npx.cmd supabase@latest functions list --project-ref eogppgbdnwxdtcbctaol
 
 ### Las funciones que existen
 
-| Función | Estado | Qué manda |
-|---|---|---|
-| `send-invitation-email` | ✅ v6 desde el 10-ago | Invitación de equipo |
-| `send-low-stock-alert` | ✅ v6 desde el 11-ago | Alarma de stock bajo |
+*(Puesto al día el 23-sep. Hasta entonces esta tabla listaba dos funciones con
+`verify_jwt = false` y el hallazgo U abierto; U se cerró el 30-ago con D-177.)*
 
-**Las dos tienen `verify_jwt = false`** en `supabase/config.toml` y en el
-servidor. Significa que cualquiera puede hacerlas ejecutar sin cuenta. **Los
-datos siguen protegidos** — quien autoriza es la función de base de datos, no
-la puerta — pero la cuota es gastable por cualquiera. Anotado como **hallazgo
-U**; nadie lo decidió, lo generó Supabase por defecto el 27-jul.
+| Función | `verify_jwt` | Qué hace | Decisión |
+|---|---|---|---|
+| `create-epayco-session` | ✅ `true` | Registra la intención de pago y abre el checkout **de una sede** | D-182, D-191, D-252 |
+| `epayco-webhook` | `false` — la llama ePayco; se autentica con la firma SHA-256 | Liquida el pago: deriva a la función de sede o a la del negocio | D-141, D-182, D-224 |
+| `verify-epayco-transaction` | `false` | Confirma el pago al volver de la pasarela (camino de respaldo del webhook) | D-181, D-224 |
+| `send-subscription-expiry-alerts` | `false` — la llama `pg_cron` con `CRON_SECRET` | Avisos de vencimiento de negocio y de sedes | D-143, D-145, D-196 |
+| `send-invitation-email` | ✅ `true` | Correo de invitación de equipo | D-065, D-128 |
+| `send-low-stock-alert` | ✅ `true` | Alarma de stock bajo | D-086, D-131 |
+
+**Todas fijan `@supabase/supabase-js` a una versión exacta** en su `deno.json`
+(lección de D-128: nunca un rango). Las claves las resuelve
+`_shared/supabase_keys.ts`, salvo invitación y stock, que repiten la cascada a
+mano (hallazgo AA). **El CI pasa `deno check` por cada una** (D-234).
 
 ---
 
@@ -180,7 +211,14 @@ U**; nadie lo decidió, lo generó Supabase por defecto el 27-jul.
 | `aplicar_sql.ps1` | Ejecuta un archivo SQL contra la base. Hermano del de respaldo: codifica la contraseña igual, que es lo único que funciona con la de este proyecto |
 | `diagnostico_pg.ps1` | Solo mira y reporta: por qué esta ventana no encuentra `pg_dump` |
 | `instalar_herramientas_postgres.ps1` | Instala solo el cliente de PostgreSQL, sin el servidor |
-| `crear_respaldo_supabase.ps1` | **Obsoleto.** Lo reemplazaron los dos primeros (D-111). No usar |
+| `restaurar_ensayo.ps1` | Restaura un respaldo en el proyecto de ensayo (`salonymas-ensayo`) para comprobar que sirve (D-134) |
+| `verificar_documentos.py` | **El guardián de la documentación** (D-223): caracteres invisibles, letras disfrazadas, índice del registro, tablas, un solo HANDOFF. Corre también en el CI |
+| `crear_respaldo_supabase.ps1` | **Obsoleto.** Lo reemplazaron los dos primeros (D-111). No usar. *`RESPALDO_Y_RESTAURACION` todavía lo nombra más abajo como si sirviera: lo que manda es esta línea* |
+
+**Y una carpeta aparte:** `supabase/sql/intervenciones/` guarda lo que **toca o
+lee datos reales a mano** — extracciones de funciones vivas, mediciones,
+correcciones de un pago —, separado de los controles que se pueden correr sin
+miedo (D-233). Tiene su `LEEME.md` con las reglas.
 
 > ⚠️ **Una foto borrada no está en ningún respaldo.** El respaldo de la base
 > guarda la *lista* de archivos, no los archivos. Por eso existe
@@ -191,17 +229,23 @@ U**; nadie lo decidió, lo generó Supabase por defecto el 27-jul.
 
 ## 4. Dónde está cada cosa
 
-| Carpeta | Qué hay | Cuánto |
-|---|---|---|
-| `lib/pages/` | Una pantalla por módulo | 29 archivos |
-| `lib/services/` | Todo lo que llama a la base | 49 |
-| `lib/models/` | Cómo se leen los datos que llegan | 54 |
-| `lib/widgets/` | Piezas reutilizables | — |
-| `lib/theme/` | **El sistema de diseño.** `AppColors`, `AppSpacing`, `AppRadius`, `AppTheme`, `AppBrand` (D-102, D-109) | — |
-| `supabase/migrations/` | El historial de la base, en orden de fecha | 73 |
-| `supabase/sql/` | Guiones sueltos de verificación y diagnóstico | 155 |
-| `supabase/functions/` | Las dos Edge Functions | 2 |
-| `test/` | Las pruebas | 10 archivos |
+*(Los recuentos que había aquí se quitaron el 23-sep: tenían un mes y ninguno
+era cierto. Es la regla del paso 9.3 — un número copiado envejece — y este se
+había quedado. Para contar: `find lib/pages -name '*.dart' | wc -l`.)*
+
+| Carpeta | Qué hay |
+|---|---|
+| `lib/pages/` | Una pantalla por módulo. **Concentra casi dos tercios del código**, y con él la lógica de dinero (pasos 9.13 y 9.14) |
+| `lib/services/` | Todo lo que llama a la base. Delgados: casi todos son un envoltorio de una RPC |
+| `lib/models/` | Cómo se leen los datos que llegan, y **las reglas de pantalla que se pueden probar** (`AccionesDeTicket`, `CelularColombiano`, `CodigoDeConfirmacion`…) |
+| `lib/widgets/` | Piezas reutilizables |
+| `lib/theme/` | **El sistema de diseño.** `AppColors`, `AppSpacing`, `AppRadius`, `AppTheme`, `AppBrand` (D-102, D-109) |
+| `supabase/migrations/` | El historial de la base, en orden de fecha. **No contiene el esquema entero** (hallazgo AI) |
+| `supabase/sql/` | Los **controles** `NNN_test_*.sql`: se corren contra la base real y terminan en `rollback` |
+| `supabase/sql/intervenciones/` | Lo que lee o toca datos reales a mano (D-233) |
+| `supabase/functions/` | Las Edge Functions y su módulo compartido `_shared/` |
+| `test/` | Las pruebas de Flutter |
+| `.github/workflows/ci.yml` | El CI: `analyze`, pruebas, guardián de documentos y `deno check` en cada `push` (D-197, D-234) |
 
 **Los almacenes de archivos** (Storage), verificados en las migraciones:
 
@@ -224,13 +268,17 @@ U**; nadie lo decidió, lo generó Supabase por defecto el 27-jul.
   autorización va escrita dentro**, casi siempre empezando por
   `private.beautyos_resolve_branch_access(...)`.
 - **Nunca se borra un registro físicamente** (D-051, D-056): se marca inactivo
-  o eliminado. El historial se conserva.
+  o eliminado. El historial se conserva. **Una sola excepción, deliberada:**
+  `platform_delete_demo_tenant` borra un negocio **marcado de prueba**, se
+  niega con cualquier otro y deja rastro en `deleted_demo_tenants` (D-246).
 
 ---
 
 ## 6. Las pruebas — y lo que NO cubren
 
-**89 pruebas en 10 archivos.** `flutter analyze` limpio.
+*(Puesto al día el 23-sep: hasta entonces decía "89 pruebas en 10 archivos",
+que era el 11-ago. Hoy se cuentan con `flutter test` y **el CI las corre en
+cada `push`**, D-197.)* Las de abajo son las que más historia tienen:
 
 | Archivo | Qué vigila |
 |---|---|
@@ -246,9 +294,12 @@ U**; nadie lo decidió, lo generó Supabase por defecto el 27-jul.
 > ### Lo que ninguna prueba cubre, y hay que saberlo
 >
 > 1. **Las reglas de dinero viven en la base de datos, no en la aplicación.**
->    Se comprueban a mano con `supabase/sql/163_test_reglas_de_dinero.sql`, que
->    **no es una prueba automática**: alguien tiene que ejecutarlo. Lo
->    automático llega con el paso 2.2.
+>    Se comprueban con **controles** (`supabase/sql/NNN_test_*.sql`) que corre
+>    el propietario contra la base real y terminan en `rollback`. **No son
+>    automáticos**: nadie los corre si no se piden. **El método que funciona,
+>    aprendido en septiembre:** el control **ejecuta** el camino (crea un
+>    negocio de mentira, cobra, cierra) en vez de leer el texto de la función —
+>    leer comprueba intención, ejecutar comprueba el hecho (D-245, D-247).
 > 2. **Los permisos solo fallan usando la aplicación de verdad.** El guion SQL
 >    corre como dueño de la base, que **se salta las comprobaciones de permiso
 >    de ejecución** (D-122).
@@ -273,10 +324,20 @@ Cada una costó tiempo real. Están aquí para que cueste una sola vez.
 | **Un `numeric` puede llegar como texto** | Si se lee como número, revienta en producción y en ninguna prueba | D-121 |
 | **El contador de tickets está en 701** | Los 700 numerados incluyen los datos sembrados. Al borrar la semilla, el primero real sería el 0000701. Se corrige con `set_ticket_numbering` | D-117, D-118, D-120 |
 | **Un usuario con membresía no se puede borrar** desde Supabase | Las llaves tienen `RESTRICT`. La base se defiende sola. Verificado el 10-ago | HANDOFF 10-ago |
-| **Ningún módulo se recarga solo** | Entrar a un módulo no refresca sus datos: hay que pulsar Actualizar o F5 | Hallazgo Q |
+| ~~**Ningún módulo se recarga solo**~~ | ✅ **Resuelta el 03-sep:** cada entrada remonta el módulo y recarga | Hallazgo Q, D-201 |
 | **La prueba gratis del propietario vence** | Cuando llegue a cero, su propio negocio deja de aceptar citas y no podrá probar. Se extiende con `platform_extend_trial` | HANDOFF 10-ago |
 | **Una foto sin estilista rompía la galería entera** | Faltaban dos textos de respaldo (`coalesce`) al reescribir una función | D-123 |
 | **`LowStockAlertService` se traga los errores** a propósito | La app **nunca se queja** si el correo falla. La única prueba válida es que el correo llegue | D-131 |
+| **Un heredoc de PowerShell rompe una migración** | Escapa los `$$` y mete BOM: la migración se commiteó rota | D-214 |
+| **El proyecto no tenía ninguna clave secreta** | Las heredadas se apagaron el 10-ago y `SUPABASE_SECRET_KEYS` valía `{}`: el cobro estuvo 26 días roto sin que nada avisara | D-215 |
+| **`::regproc` falla si hay dos funciones con el mismo nombre** | Y eso es información: había **tres** versiones del cálculo de cobro. Volcar desde `pg_proc` sin nombrar la firma | D-252 |
+| **`pg_get_functiondef` revienta con funciones de agregado** | Filtrar `p.prokind = 'f'` antes de llamarla | D-252 |
+| **Nombres de tabla inventados** en un guion o un control | Se inventaron `subscription_payments` y `platform_admins`, que no existen. **Copiar el fixture de un control que ya funciona**, no escribirlo de memoria | D-252 |
+| **Una membresía de estilista exige su `stylist_id`** | El candado `tenant_memberships_stylist_role_check` tumba el fixture si falta | D-251 |
+| **`\echo` dentro de un guion SQL no va al archivo** | Va a la consola aunque haya un `\o` abierto. Para que quede escrito, `select 'texto'` | D-251 |
+| **Buscar con tildes en el JavaScript publicado da ceros falsos** | Buscar un trozo sin tildes del texto nuevo | D-249 |
+| **`python -c` o un heredoc largo en Bash se comen el texto** | Acentos graves y comillas se interpretan: el registro quedó con huecos y dos guiones se cortaron. Texto largo → guion escrito a disco con la herramienta de escribir | D-249, D-254 |
+| **La dirección del webhook está escrita a mano** en `create-epayco-session` | Si el proyecto se mueve, ePayco sigue avisando al viejo sin que nadie lo note | Paso 9.30 |
 
 ---
 

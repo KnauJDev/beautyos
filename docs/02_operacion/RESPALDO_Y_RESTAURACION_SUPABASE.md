@@ -163,6 +163,13 @@ postgresql://postgres.PROJECT-REF:[CONTRASEÑA]@HOST:5432/postgres
 
 ### Opción recomendada para BeautyOS
 
+> ⚠️ **Nota del 23-sep: este apartado describe un guion OBSOLETO.**
+> `crear_respaldo_supabase.ps1` lo reemplazó `respaldo_supabase.ps1` el 08-ago
+> (D-111), que es el que aparece en la tabla de arriba y el que ha hecho todos
+> los respaldos de las migraciones. El `MAPA_TECNICO` §3 ya lo decía; este
+> apartado se quedó sin nota y dos HANDOFF lo señalaron como contradicción.
+> **Usa el de arriba.** El texto de abajo se conserva como historia.
+
 El repositorio incluye `scripts/crear_respaldo_supabase.ps1`. El asistente:
 
 - solicita la conexión de forma oculta;

@@ -170,7 +170,51 @@ if os.path.exists(plan) and os.path.exists(reg):
     for d in sorted(citadas - cuerpo):
         fallos.append(f"el Plan Maestro cita D-{d:03d}, que no existe en el registro")
 
+# --- 6. El CODIGO no cita decisiones que no existen (anadido el 23-sep, D-254)
+# El README lo pide desde agosto: "cuando el codigo cita un codigo, no lo
+# inventes: buscalo". Es exactamente el fallo de D-102, que el codigo citaba y
+# el registro no tenia. En la revision del 23-sep se comprobo a mano que las 169
+# citas del codigo existian todas; ese chequeo cuesta un segundo, asi que deja
+# de depender de que alguien se acuerde de hacerlo.
+if os.path.exists(reg):
+    en_codigo: dict[int, str] = {}
+    for carpeta in ("lib", "test", "supabase", "scripts"):
+        for f in glob.glob(os.path.join(RAIZ, carpeta, "**", "*"), recursive=True):
+            if not os.path.isfile(f) or not f.endswith((".dart", ".sql", ".ts", ".py", ".ps1", ".toml")):
+                continue
+            try:
+                contenido = open(f, encoding="utf-8").read()
+            except UnicodeDecodeError:
+                contenido = open(f, encoding="utf-8", errors="replace").read()
+            for x in re.findall(r"\bD-(\d{3})\b", contenido):
+                en_codigo.setdefault(int(x), ruta(f))
+    for d in sorted(set(en_codigo) - cuerpo):
+        fallos.append(f"{en_codigo[d]} cita D-{d:03d}, que no existe en el registro (el fallo de D-102)")
+
+# --- 7. Recuento de hallazgos, contado por la maquina (anadido el 23-sep, D-254)
+# Hasta el 23-sep se contaba a mano con `[A-Z]`, que NO incluye la Ñ: el
+# hallazgo Ñ existia, estaba abierto y nunca se conto. Y cinco filas cerradas de
+# hecho seguian contando como abiertas. Los HANDOFF copiaban cifras falsas con
+# toda seguridad. Ahora la cifra la da este guion, y el HANDOFF la copia de aqui.
+recuento = ""
+if os.path.exists(plan):
+    texto_plan = open(plan, encoding="utf-8").read()
+    ini = texto_plan.find("### Anotados en el camino")
+    fin = texto_plan.find("## 8.", ini)
+    if ini != -1 and fin != -1:
+        filas = [l for l in texto_plan[ini:fin].split("\n")
+                 if re.match(r"^\| \*\*[A-ZÑ]{1,2}\*\* \|", l)]
+        letras = [re.match(r"^\| \*\*([A-ZÑ]{1,2})\*\*", l).group(1) for l in filas]
+        repetidas = sorted({x for x in letras if letras.count(x) > 1})
+        if repetidas:
+            fallos.append(f"hallazgos con la letra repetida en el Plan Maestro: {repetidas}")
+        abiertos = [x for x, l in zip(letras, filas) if chr(0x2705) not in l]
+        recuento = (f"hallazgos: {len(filas)} en total, {len(filas) - len(abiertos)} cerrados "
+                    f"o decididos, {len(abiertos)} abiertos ({' '.join(abiertos)})")
+
 # --- Resultado --------------------------------------------------------------
+if recuento:
+    print(f"  {recuento}")
 for a in avisos:
     print(f"  aviso  {a}")
 for f_ in fallos:

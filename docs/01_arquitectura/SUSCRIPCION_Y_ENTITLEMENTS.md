@@ -4,6 +4,28 @@
 **Fecha:** 19 de julio de 2026  
 **Alcance:** cobro recurrente de BeautyOS; no confundir con pagos de clientes al centro.
 
+> ### Estado a 23-sep (revisión integral, D-254)
+>
+> **El texto de abajo es el diseño del 19-jul y no se reescribe.** Lo que otras
+> decisiones cambiaron:
+>
+> - **§2, los tres planes:** desde **D-188 (01-sep)** hay **uno solo**, *Todo
+>   Incluido*, con todas las funciones, a $150.000 por sede (D-189).
+> - **§3, "una suscripción operativa por tenant":** desde **D-190** cada sede
+>   tiene la suya (`branch_subscriptions`) y desde **D-239 cobra la sede**. La del
+>   negocio sigue decidiendo **si el salón puede entrar**; pagar la sede principal
+>   la mueve también. **D-252 (22-sep)** dejó el precio pactado solo en la sede.
+> - **§4 y §7, la exportación:** se promete para `suspended` y `cancelled` y **no
+>   existe todavía**.
+>
+> **Lo que sigue vigente y conviene releer:** §1 (los dos dineros nunca se
+> mezclan), §4 (los estados), §5 (cómo se resuelve una función), §6 (las reglas
+> del cobro) — y la frase del §2 que más caro salió no releer: *"los límites
+> comerciales no se codifican como constantes en Flutter"*. El 50% de D-252, el
+> código de plan de D-245 y el 6 de **AY** la violaron.
+>
+> Cómo funciona el dinero hoy, en `ARQUITECTURA_Y_EVOLUCION.md` §5.
+
 ## 1. Separación de dineros
 
 BeautyOS manejará dos dominios financieros independientes:

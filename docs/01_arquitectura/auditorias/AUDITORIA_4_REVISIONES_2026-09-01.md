@@ -2,6 +2,10 @@
 
 **Abierto:** 1 de septiembre de 2026 · **Estado:** en curso (2 de 4 revisiones recibidas)
 
+> *Nota del 23-sep: el Plan Maestro da esta auditoría por **cerrada** con el paso
+> 8.14 (D-187, 01-sep); la cabecera de arriba no se actualizó. Sus hallazgos
+> entraron uno a uno como pasos 8.9 en adelante.*
+
 > **Este documento NO manda sobre el plan.** No dice qué falta ni en qué orden:
 > eso sigue siendo `PLAN_MAESTRO.md` (regla de D-126 / D-131). Aquí solo se
 > guarda **la evidencia**: qué afirmó cada revisión, qué se comprobó contra el

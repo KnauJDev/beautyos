@@ -18,6 +18,10 @@ documentos entiendes el proyecto entero.**
 | 2 | **`00_producto/PLAN_MAESTRO.md`** | **¿Qué es, qué falta y en qué orden?** El único que manda sobre el plan |
 | 3 | `00_producto/REGISTRO_DE_DECISIONES.md` | **¿Por qué está hecho así?** Empieza por el final |
 
+**Y para entender el sistema técnico entero sin leer 250 decisiones:**
+`01_arquitectura/ARQUITECTURA_Y_EVOLUCION.md` — fronteras, invariantes técnicos,
+cómo funciona el dinero hoy y cómo se llegó aquí. No opina sobre el plan.
+
 **No empieces por el código.** Este proyecto tiene más de doscientas decisiones registradas
 con su porqué; leer el código sin ellas es reconstruir a ciegas razonamientos
 que ya están escritos.
@@ -38,8 +42,10 @@ mensajes de commit y en los documentos. **Son sistemas distintos:**
 |---|---|---|
 | **D-001 en adelante** | **Decisiones.** El porqué de cada cosa, con lo que se descartó y por qué | `00_producto/REGISTRO_DE_DECISIONES.md` |
 | **H-01 … H-13** | **Hallazgos** de la auditoría integral del 6 de agosto | `01_arquitectura/auditorias/AUDITORIA_INTEGRAL_2026-08-06.md` |
-| **A … Z** | **Anotado en el camino** | `PLAN_MAESTRO`, sección 7 |
-| **I-01 … I-14** | **Buzón de ideas**: lo que aún no tiene fase | `PLAN_MAESTRO`, sección 6 |
+| **A … Z, AA … BF** | **Hallazgos anotados en el camino** (la Ñ incluida) | `PLAN_MAESTRO`, sección 7 |
+| **I-01 en adelante** | **Buzón de ideas**: lo que aún no tiene fase | `PLAN_MAESTRO`, sección 6 |
+| **Control NNN** | Un control SQL: `supabase/sql/NNN_test_*.sql`. **Se corre contra la base real y termina en `rollback`** | `supabase/sql/` |
+| **TL-xx, UX-xx, C-xx** | Hallazgos de la auditoría de 4 revisiones del 01-sep | `01_arquitectura/auditorias/AUDITORIA_4_REVISIONES_2026-09-01.md` |
 | **F3.7, 4.10…** | **Números de paso** del Plan Maestro | `PLAN_MAESTRO`, sección 5 |
 | **Tramo A, D3.5.2…** | Trabajo de arquitectura multisede de julio | `01_arquitectura/auditorias/` |
 
