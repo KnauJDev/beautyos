@@ -48,17 +48,25 @@ cabecera abrían el cobro *por negocio* que cerramos el 22-sep. Quien pulsaba
 Las aplicaste el 23-sep con respaldo previo (`Backup_2026-09-23_09-45-57`):
 **control 222 en 10/10** y **control 223 en 5/5**. BG y BH quedan cerrados.
 
-**Lo siguiente, solo lectura, no cambia nada:** para que una sede suspendida
-deje de agendar (tu decisión de D-260) hay que tocar las dos puertas por las que
-nace una cita, y la tabla `tickets` no está en el repositorio. Este comando trae
-su texto vivo, para no escribirlo de memoria (regla 25 d):
+**La lectura ya se hizo (D-261):** las dos puertas coincidían línea por línea
+con el repositorio, y el candado y el vigilante eran lo que suponía D-258.
+
+**Lo siguiente: la migración de la sede suspendida (D-261), SIN APLICAR.**
+Antes de aplicarla, el propietario aprueba los textos nuevos (regla 25 c): los
+mensajes al personal según el estado del negocio, el de la sede suspendida, y
+el de la clienta en la reserva en línea. Están en la migración. Después:
 
 ```bash
-powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\sql\intervenciones\extraer_candado_y_vencimiento_bi.sql"
+powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\migrations\20260923150000_la_sede_suspendida_no_agenda_bi.sql"
 ```
 
-Deja cinco archivos `_vivo_bi_*.sql` en la raíz del proyecto. No se suben
-(`.gitignore`): los leo, los comparo y se borran.
+```bash
+powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\sql\224_test_la_sede_suspendida_no_agenda.sql"
+```
+
+El control debe terminar en **9/9**. Su comprobación 9 dice además si hay
+mensajes con las tildes dañadas por la codificación (hallazgo **BL**): si
+sale un **AVISO 9**, se copia entero.
 
 ---
 
@@ -116,7 +124,7 @@ Pulsa **Actualizar** en el aviso de versión nueva primero.
 
 ## 8. Por dónde seguir
 
-1. **La extracción del §3** → la migración de la sede suspendida y el mensaje del candado, con su control.
+1. **Aprobar los textos y aplicar la migración del §3** (D-261), con su control 224. Después, que *Tus sedes* diga que una sede suspendida no agenda (16-ter).
 2. **Tus verificaciones en pantalla** (§4).
 3. **Tus decisiones** (§5), sobre todo **a** (el orden).
 4. Con BI cerrado, el turno A sigue: **9.8 + 9.7** con $4.500 propios → 9.40 → AD → 9.9.
@@ -142,9 +150,11 @@ permiso general, y lo que corre el propietario se copia de algo que ya
 funcionó.
 
 LO PRIMERO
-Preguntarle si corrió la extracción del HANDOFF §3 (deja _vivo_bi_*.sql en
-la raíz). Con eso, escribir la migración de la sede suspendida y del mensaje
-del candado, comparando línea por línea con el texto vivo.
+La migración de la sede suspendida (D-261) está escrita desde el texto vivo
+y SIN APLICAR. Preguntarle si aprobó los textos y si la aplicó; el control
+224 debe dar 9/9, y su comprobación 9 dice si hay tildes dañadas (BL).
+Con la migración aplicada: que Tus sedes diga que una sede suspendida no
+agenda citas nuevas (16-ter).
 
 CÓMO SE TRABAJA CON ÉL
 Va paso a paso y confirma cada uno. No es técnico: qué se hace, cómo y por
