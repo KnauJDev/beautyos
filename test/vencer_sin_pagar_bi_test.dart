@@ -169,6 +169,30 @@ void main() {
     });
   });
 
+  group('D-261 — pasada la gracia, la pantalla dice lo que la base ya hace', () {
+    test('la cabecera avisa del negocio suspendido o sin gracia', () {
+      final main = File('lib/main.dart').readAsStringSync();
+      final inicio = main.indexOf('class _TrialHeaderBadge');
+      final pildora = main.substring(
+        inicio,
+        main.indexOf('class _UserProfileMenu'),
+      );
+
+      expect(pildora, contains('status.isSuspended'));
+      expect(pildora, contains("'Suspendido por falta de pago · Pagar'"));
+      expect(pildora, contains('!status.isGracePeriodActive'));
+    });
+
+    test('Tus sedes explica qué no puede hacer una sede suspendida', () {
+      final tarjeta = File(
+        'lib/widgets/sedes_suscripcion_card.dart',
+      ).readAsStringSync();
+
+      expect(tarjeta, contains("sede.status == 'suspended'"));
+      expect(tarjeta, contains('no puede agendar citas'));
+    });
+  });
+
   group('BJ — el resumen de la cita no enseña una barra invertida', () {
     test('el salto de línea es un salto, no los caracteres \\n', () {
       final tickets = File('lib/pages/tickets_page.dart').readAsStringSync();

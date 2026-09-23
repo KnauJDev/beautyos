@@ -181,12 +181,14 @@ class _FilaSede extends StatelessWidget {
     // servidor todavía diga que sí. Rojo, no ámbar: ya no está en riesgo,
     // ya se pasó.
     final vencida = sede.alDia && sede.periodoVencido;
+    // Suspendida también es rojo: desde D-261 no puede agendar citas nuevas.
+    final enRojo = vencida || sede.status == 'suspended';
     final color = sede.estaAlDia
         ? AppColors.success
-        : (vencida ? AppColors.danger : AppColors.warning);
+        : (enRojo ? AppColors.danger : AppColors.warning);
     final fondo = sede.estaAlDia
         ? AppColors.successTint
-        : (vencida ? AppColors.dangerTint : AppColors.warningTint);
+        : (enRojo ? AppColors.dangerTint : AppColors.warningTint);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -303,12 +305,20 @@ class _FilaSede extends StatelessWidget {
       final f = sede.currentPeriodEnd!;
       final fecha = '${f.day}/${f.month}/${f.year}';
       if (sede.periodoVencido) {
-        // Sin prometer consecuencias: hoy el candado de citas mira solo la
-        // suscripción del negocio, y una sede secundaria vencida no se corta
-        // (BI). Decir aquí que 'no se pueden crear citas' sería falso para ella.
+        // Dura unas horas: la tarea de las 07:50 la pasa a mora con sus 5
+        // días de gracia (D-258). Sin prometer consecuencias aquí: durante la
+        // gracia la sede sigue agendando.
         return '$precio · venció el $fecha';
       }
       return '$precio · hasta el $fecha';
+    }
+
+    // D-261 (16-ter): desde que la base lo hace, la pantalla lo dice. Pasada
+    // la gracia, una sede suspendida no agenda citas nuevas; lo ya agendado se
+    // atiende y se cobra, y las demás sedes siguen normales (D-260).
+    if (sede.status == 'suspended') {
+      return '$precio · suspendida por falta de pago: no puede agendar citas '
+          'nuevas hasta ponerla al día. Lo ya agendado se atiende normalmente';
     }
 
     if (sede.nuncaActivada) {

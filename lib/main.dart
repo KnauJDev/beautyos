@@ -1489,6 +1489,22 @@ class _TrialHeaderBadge extends StatelessWidget {
       );
     }
 
+    // D-261: pasada la gracia, el negocio queda sin citas nuevas. Hasta hoy la
+    // cabecera no decía nada en ese caso —ni suspendido, ni en mora sin
+    // gracia—, justo cuando más falta hacía avisar. Ahora que la base suspende
+    // de verdad (D-258), la cabecera lo dice.
+    if (status.isSuspended ||
+        (status.isPastDue && !status.isGracePeriodActive)) {
+      return _pildora(
+        texto: status.isSuspended
+            ? 'Suspendido por falta de pago · Pagar'
+            : 'Terminó la gracia · Pagar',
+        color: AppColors.danger,
+        fondo: AppColors.dangerTint,
+        icono: Icons.block,
+      );
+    }
+
     if (status.isActive) {
       // Sin toque: estar al día no pide ninguna acción.
       return Padding(

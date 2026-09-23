@@ -51,22 +51,16 @@ Las aplicaste el 23-sep con respaldo previo (`Backup_2026-09-23_09-45-57`):
 **La lectura ya se hizo (D-261):** las dos puertas coincidían línea por línea
 con el repositorio, y el candado y el vigilante eran lo que suponía D-258.
 
-**Lo siguiente: la migración de la sede suspendida (D-261), SIN APLICAR.**
-Antes de aplicarla, el propietario aprueba los textos nuevos (regla 25 c): los
-mensajes al personal según el estado del negocio, el de la sede suspendida, y
-el de la clienta en la reserva en línea. Están en la migración. Después:
+**La migración de la sede suspendida (D-261): aplicada, control 224 en 9/9.**
+BI queda cerrado (D-262): la sede suspendida no agenda y la pantalla lo dice.
+
+**Lo siguiente, solo lectura:** la comprobación 9 encontró una función con
+tildes dañadas (hallazgo **BL**), `reopen_finished_ticket_service`, que no
+coincide con el repositorio. Antes de corregirla hay que leerla:
 
 ```bash
-powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\migrations\20260923150000_la_sede_suspendida_no_agenda_bi.sql"
+powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\sql\intervenciones\extraer_tildes_danadas_bl.sql"
 ```
-
-```bash
-powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\sql\224_test_la_sede_suspendida_no_agenda.sql"
-```
-
-El control debe terminar en **9/9**. Su comprobación 9 dice además si hay
-mensajes con las tildes dañadas por la codificación (hallazgo **BL**): si
-sale un **AVISO 9**, se copia entero.
 
 ---
 
@@ -126,7 +120,7 @@ Pulsa **Actualizar** en el aviso de versión nueva primero.
 
 ## 8. Por dónde seguir
 
-1. **Aprobar los textos y aplicar la migración del §3** (D-261), con su control 224. Después, que *Tus sedes* diga que una sede suspendida no agenda (16-ter).
+1. **La lectura de BL** (§3) → corregir la función con tildes dañadas, desde su texto vivo.
 2. **Tus verificaciones en pantalla** (§4).
 3. **Tus decisiones** (§5), sobre todo **a** (el orden).
 4. Con BI cerrado, el turno A sigue: **9.8 + 9.7** con $4.500 propios → 9.40 → AD → 9.9.
@@ -152,11 +146,12 @@ permiso general, y lo que corre el propietario se copia de algo que ya
 funcionó.
 
 LO PRIMERO
-La migración de la sede suspendida (D-261) está escrita desde el texto vivo
-y SIN APLICAR. Preguntarle si aprobó los textos y si la aplicó; el control
-224 debe dar 9/9, y su comprobación 9 dice si hay tildes dañadas (BL).
-Con la migración aplicada: que Tus sedes diga que una sede suspendida no
-agenda citas nuevas (16-ter).
+BI está cerrado (D-261 aplicada, control 224 en 9/9; D-262). Queda BL: una
+sola función con tildes dañadas, reopen_finished_ticket_service, que no
+coincide con el repositorio. Preguntarle si corrió la lectura del HANDOFF
+§3 (deja _vivo_bl_tildes_danadas.sql) y corregirla desde su texto vivo.
+Y sus decisiones i (¿el estilista agenda?) y j (¿gracia al terminar la
+prueba?).
 
 CÓMO SE TRABAJA CON ÉL
 Va paso a paso y confirma cada uno. No es técnico: qué se hace, cómo y por
