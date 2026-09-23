@@ -57,7 +57,19 @@ este apartado decía que no había segundo proyecto: era cierto ese día.)*
 > desechables.** No son ni una cosa ni la otra, y confundirse en cualquiera de
 > las dos direcciones sale caro.
 
-**Hoy, 12 de agosto de 2026:**
+**Hoy, 23 de septiembre de 2026** *(radiografía de la base, D-254)*:
+
+| | |
+|---|---|
+| Negocios | **Tres, los tres marcados `is_demo`**: Naguara de Uñas (titular *Yelimar Rodríguez*), Peluquería Éxito Prueba (*Alicia Propietaria*) y Prueba Barberia Elite (*Héctor Barbero*). Exportadora se borró el 18-sep (D-246) |
+| De quién son | **Del propio propietario**, con correos `elbogaNNN@gmail.com`. Ninguno es un cliente |
+| Tamaño | Base **22 MB** de los 500 del plan Free; archivos **12 objetos, 3,3 MB** |
+| Lo sembrado | Los 703 tickets de Naguara siguen siendo los de D-112 |
+
+*Lo de abajo es la foto del 12-ago, que se conserva: explica por qué los datos
+sembrados se etiquetaron en vez de borrarse.*
+
+**El 12 de agosto de 2026:**
 
 | | |
 |---|---|

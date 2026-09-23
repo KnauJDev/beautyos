@@ -82,6 +82,8 @@ del plan, con un orden propuesto en el `PLAN_MAESTRO` §5, Fase 9.
 | **R-12** | **La lógica de dinero sigue creciendo dentro de las pantallas.** Los tres archivos que el 9.13 y el 9.14 mandaban adelgazar **crecieron**: el panel de plataforma, 1.190 líneas más | 🟡 | Notas en 9.13 y 9.14 |
 | **R-13** | **Deriva entre regla y práctica en las reglas 5 y 9**, la misma forma que la regla 12 (D-253): *"esperar confirmación antes de construir"* y *"preguntar ¿algo más antes de seguir?"* no se cumplen de forma consistente | 🟢 | **Pregunta abierta al propietario** (regla 20: se señala, no se resuelve por iniciativa propia) |
 | **R-14** | **El asistente afirmó sin mirar tres veces el mismo día de la revisión**: que *Solo archivo interno* y *Visible al cliente* se contradecían (no: son el permiso y la visibilidad); que las reseñas no estaban en el portal (sí: *Calificar servicios pendientes*); y que el acceso de soporte a las fotos *"no lo decidió nadie"* (lo decidió el propietario, D-076). Las tres las destapó verificar después | 🟢 | Registrado en D-254. **La regla 1 existe; lo que falla es aplicarla antes de contestar, no después** |
+| **R-15** | **Vencer sin pagar no pasa a mora** (ver §5): sin gracia, con el aviso equivocado, y las sedes secundarias nunca se cortan | 🔴 | **BI**, primero del turno A |
+| **R-16** | **`register_tenant` tiene dos versiones y la vieja conserva el fallo de D-245** | 🟡 | **BG** |
 
 ---
 
@@ -181,8 +183,30 @@ durante.
 
 ## 5. La base de datos, vista desde el catálogo
 
-*Pendiente: se completa con la salida de
-`supabase/sql/intervenciones/radiografia_de_la_base.sql`.*
+Corrida por el propietario el 23-sep con `radiografia_de_la_base.sql` (solo lectura).
+
+| Qué | Resultado | Lectura |
+|---|---|---|
+| Tablas | 50 en `public`, 27 en `auth`, 8 en `storage` | Las migraciones crean 25: **la mitad del esquema no está en el repositorio** (AI) |
+| Tablas de `public` **sin RLS** | **Cero** | ✅ |
+| Tablas con RLS y cero políticas | 47 de 50 | ✅ Por diseño: solo se llega por RPC. Las otras tres (`services`, `tenants`, `user_profiles`) tienen políticas |
+| Funciones | 199 en `public`, 42 en `private` | — |
+| `security definer` **sin `search_path` fijo** | **Cero** | ✅ Lo que prometió D-087 sigue en pie |
+| Lo que puede ejecutar alguien **sin cuenta** | 16 de `public` —página pública, reserva, reseña, portal, planes, alta de partners— y 9 de `private` | Lo de `public` es lo esperado. Lo de `private` **no se alcanza desde internet**: es higiene (**BH**) |
+| **Funciones con dos versiones** | `beautyos_calcular_cargo_epayco` (conocida, D-252) y **`register_tenant`** | 🟡 **La vieja conserva el fallo de D-245** (**BG**) |
+| Almacenes | 6: `work-photos-private` privado; `work-photos`, logos, portadas, estilistas y blog, públicos | ✅ Como D-119 y D-171 |
+| Extensiones | `pg_cron`, `pg_net`, `pgcrypto`, Vault, `uuid-ossp` | ✅ |
+| Negocios | 3, **los 3 marcados de prueba** | ✅ Las métricas del panel están limpias |
+| **Tamaño** | Base **22 MB** de 500; archivos **12 objetos, 3,3 MB** de 1 GB | ✅ El plan Free sobra de lejos. **El motivo para subir a Pro no es el espacio: es la recuperación a un punto en el tiempo** |
+
+**Y el hallazgo más importante de toda la revisión salió de aquí, aunque la
+radiografía no lo buscaba** (**BI**, 🔴). Mirando por qué una sede vencida
+salía *"Al día"* en tu panel apareció que **vencer sin pagar no pasa a mora**:
+solo un pago *rechazado* lo hace, y aquí el pago es manual. Un salón que olvide
+pagar se queda sin crear citas al día siguiente, **sin los 5 días de gracia**, con
+su pantalla diciendo *ACTIVO* y un mensaje que le dice que *su prueba gratis
+venció*. Y una sede secundaria que no paga **no se corta nunca**. Nadie lo vio en
+dos meses porque **ninguna suscripción pagada ha llegado a vencerse todavía**.
 
 ---
 

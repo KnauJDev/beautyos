@@ -181,7 +181,10 @@ Configuración → "Activar esta sede"
 - **Ciclos de 30 días anclados al primer pago** (D-160). Renovar antes acumula;
   pagar tarde en gracia prorratea.
 - **Gracia de 5 días** y luego suspensión, gradual y reversible, **sin borrar
-  datos** (D-014, D-141).
+  datos** (D-014, D-141). ⚠️ **Hoy solo funciona si ePayco rechaza un pago.** Si
+  el salón simplemente no paga, nada lo pasa a mora: pierde las citas nuevas al
+  día siguiente sin gracia, y **una sede secundaria que no paga nunca se corta**
+  (hallazgo **BI**, 23-sep).
 - **Avisos por correo** a 10, 5 y 3 días, y cada día de la gracia (D-143, D-196),
   disparados por `pg_cron` a las 8:00 de Colombia (D-145).
 - **El camino del negocio está cerrado** en la entrada (`public.beautyos_calcular_cargo_epayco`
@@ -278,7 +281,9 @@ en la función que aprueba clientes y en un cartel que se lo prometía al salón
   base. **Antes de reescribir una función, se extrae su texto vivo** (guiones de
   ejemplo en `supabase/sql/intervenciones/`).
 - **Qué versiones de una función existen**: el 22-sep aparecieron tres del
-  cálculo de cobro que ninguna migración reciente menciona.
+  cálculo de cobro que ninguna migración reciente menciona, y el 23-sep **dos de
+  `register_tenant`**, la vieja con el fallo de D-245 dentro (hallazgo **BG**).
+  `CREATE OR REPLACE` con otra lista de parámetros **no reemplaza: añade**.
 - **Lo que depende de decisiones con fecha de caducidad.** Dos están escritas
   para *"mientras no haya clientes reales"*: los datos sembrados (D-135) y **el
   acceso de soporte de la plataforma a todos los datos, sin rastro (D-076)**. La

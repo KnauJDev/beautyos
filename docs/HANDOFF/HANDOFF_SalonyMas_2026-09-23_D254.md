@@ -1,10 +1,11 @@
 # HANDOFF Salón y Más — 23 de septiembre de 2026 ("La revisión integral", D-253 y D-254)
 
-**Bloque documentado:** decisiones **D-253** (el `push` va incluido al aprobar el bloque) y **D-254** (revisión integral) · hallazgos **BC** a **BF** nuevos, **BE** y **BF** cerrados · ADR-006 nuevo.
+**Bloque documentado:** decisiones **D-253** (el `push` va incluido al aprobar el bloque) y **D-254** (revisión integral, ampliada con la radiografía de la base) · hallazgos **BC** a **BI** nuevos, **BE** y **BF** cerrados · ADR-006 nuevo.
 
 **Estado:** ✅ Documentación puesta al día y publicada. Un solo cambio de código: un letrero.
 `flutter analyze` **0/0** · **453 pruebas** · Guardián en verde.
 
+> 🔴 **La radiografía de la base encontró un fallo de cobro serio (BI).** Ver §1.
 > ⚠️ **Quedan dos cosas por verificar tuyas.** Ver §6.
 > El bloque anterior está en `docs/_archivo/handoffs/HANDOFF_SalonyMas_2026-09-22_D252.md`.
 
@@ -23,6 +24,22 @@ Lo único de la revisión que puede costar dinero de un cliente:
 > cobros de la historia fueron por el camino del negocio, que D-252 cerró. La
 > sede de la Peluquería Éxito tiene pactados **$4.500**: es la prueba real más
 > barata posible (paso 9.8).
+
+**Y lo que encontró la radiografía de la base, ese mismo día, pesa más:**
+
+> 🔴 **BI — Vencer sin pagar no pasa a mora.** Aquí el pago es manual cada mes.
+> Solo un pago **rechazado** pone la suscripción en mora, y quien simplemente
+> **no paga** no produce ningún rechazo. Resultado, al día siguiente de vencer:
+>
+> - el panel sigue diciendo **ACTIVO**;
+> - pero ya **no deja crear citas nuevas**, con un mensaje que habla de
+>   *"la prueba gratis"* aunque el salón haya pagado meses;
+> - **sin los días de gracia** que D-192 prometió;
+> - y **una sede secundaria que no paga no se corta nunca**.
+>
+> Se ve hoy en Naguara: *ACTIVE · Válido hasta 22/09* y la sede *Al día ·
+> Pagada hasta 22/09*, el 23-sep. **Va primero en el turno A**: probar el cobro
+> sin saber qué pasa cuando no se cobra es probar la mitad.
 
 ---
 
@@ -93,10 +110,13 @@ Ninguna se resolvió por iniciativa propia (regla 20):
 
 ## 6. ⚠️ Lo que quedó a medias
 
-1. **La radiografía de la base no se ha corrido.** Es de solo lectura y completa el
-   §5 de la auditoría: tablas sin protección, funciones abiertas sin cuenta,
-   tamaño contra el límite del plan Free y funciones duplicadas.
-   `powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\sql\intervenciones\radiografia_de_la_base.sql"`
+1. ~~**La radiografía de la base no se ha corrido.**~~ ✅ **Corrida el 23-sep.**
+   Lo sano: ninguna tabla sin RLS, ninguna función `security definer` sin
+   `search_path`, 22 MB de 500. Lo que no: **BI**, **BG** y **BH**. Todo en la
+   auditoría §5 y en el `MAPA_TECNICO` §1-bis.
+   **Falta ver BI en pantalla:** entrar con la cuenta titular de **Naguara de Uñas**
+   (Yelimar, es de prueba) → **Nueva cita** para hoy. Se espera el aviso de
+   *"la prueba gratis… vencida"* mientras el panel de plataforma dice ACTIVO.
 2. **Los letreros de D-252 no se han visto en pantalla.** Eran cuatro y la
    revisión encontró **un quinto** (*"la tarifa se pacta abajo"*), ya corregido.
    Panel de plataforma → **🏪 Salones Clientes** → **Naguara de Uñas** → tarjeta
@@ -121,13 +141,13 @@ Ninguna se resolvió por iniciativa propia (regla 20):
 
 | Turno | Qué |
 |---|---|
-| **A** | **Que el primer cobro funcione**: 9.8 + 9.7 con $4.500 propios → 9.40 → AD → 9.9 |
+| **A** | **Que el primer cobro funcione**: **BI** (vencer sin pagar) → 9.8 + 9.7 con $4.500 propios → 9.40 → AD → 9.9 |
 | **B** | **Lo legal antes de datos de otra persona**: 9.20 (abogado) · 9.16 (contador) · **9.48** · BC · AS |
-| **C** | **Lo que ve el cliente, barato**: AV (incluida la página de precios) · BD · AR · AX · AN · AK · I-18 · 9.17 · 9.30 · AA |
+| **C** | **Lo que ve el cliente, barato**: **BG** · AV (incluida la página de precios) · BD · AR · AX · AN · AK · I-18 · 9.17 · 9.30 · AA · BH |
 | **D** | **El campo**: 9.33 · 9.24 · **9.26 (Meta) ya, en paralelo** |
 | **E** | **La estructura**: 9.25 → 9.13/9.14 → I-19 · 9.41 · AI |
 
-**Estado de los hallazgos:** lo dice el guardián — **48 en total, 27 cerrados o decididos, 21 abiertos** (N Ñ Z AA AC AD AE AI AK AL AN AQ AR AS AT AU AV AX BB BC BD). *Hasta el 22-sep se reportaban 43 y 24: no se contaba la Ñ y cinco cerrados seguían sin marcar (BF)*.
+**Estado de los hallazgos:** lo dice el guardián — **51 en total, 27 cerrados o decididos, 24 abiertos** (N Ñ Z AA AC AD AE AI AK AL AN AQ AR AS AT AU AV AX BB BC BD BG BH BI). *Antes de la radiografía eran 48 y 21.* *Hasta el 22-sep se reportaban 43 y 24: no se contaba la Ñ y cinco cerrados seguían sin marcar (BF)*.
 
 ---
 
@@ -147,10 +167,11 @@ PLAN_MAESTRO §8: eres el Senior Tech Lead del proyecto.
 
 LO PRIMERO
 Hay seis decisiones pendientes del propietario (HANDOFF §5) y dos
-verificaciones suyas (§6: la radiografía de la base y los letreros). La
-principal: aprobar el orden propuesto de la Fase 9, cuyo primer turno es un
-pago real de $4.500 para probar el único camino de cobro que queda, que nunca
-ha cobrado un peso.
+verificaciones suyas en pantalla (§6: BI y los letreros). La principal:
+aprobar el orden propuesto de la Fase 9. Su turno A empieza por BI -vencer
+sin pagar no pasa a mora, y una sede que no paga no se corta nunca- y sigue
+con un pago real de $4.500 para probar el único camino de cobro que queda,
+que nunca ha cobrado un peso.
 
 CÓMO SE TRABAJA CON ÉL
 Va paso a paso y confirma cada uno antes del siguiente. No es técnico: hay
