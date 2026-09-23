@@ -129,8 +129,39 @@ class BranchSubscription {
   /// y jamás se activó no ha tenido nunca un período.
   bool get nuncaActivada => activatedAt == null;
 
+  /// El período pagado ya terminó (hallazgo BI).
+  ///
+  /// `al_dia` lo calcula el servidor mirando **solo el estado**, y nada mueve
+  /// ese estado cuando la fecha pasa: una sede que no paga sigue *Al día* para
+  /// siempre. El 23-sep Naguara decía *Al día · Pagada hasta 22/09* — y como el
+  /// botón de pagar solo sale cuando la sede NO está al día, **no había forma
+  /// de renovarla desde la app**. Hasta que el servidor lo resuelva por fecha,
+  /// la fecha manda sobre la bandera.
+  bool get periodoVencido =>
+      currentPeriodEnd != null && currentPeriodEnd!.isBefore(DateTime.now());
+
+  /// Al día de verdad: lo dice el servidor **y** la fecha no ha pasado.
+  bool get estaAlDia => alDia && !periodoVencido;
+
+  /// Días que le quedan al período pagado, o null si no hay período.
+  int? get diasParaVencer {
+    if (currentPeriodEnd == null) return null;
+    final diff = currentPeriodEnd!.difference(DateTime.now());
+    if (diff.isNegative) return 0;
+    return (diff.inHours / 24).ceil();
+  }
+
+  /// Está al día pero vence pronto: es cuando conviene dejar pagar el mes
+  /// siguiente. El servidor ya sabe cobrarlo sin correr la fecha de corte
+  /// (`renovacion_anticipada`, D-191); lo que faltaba era el botón.
+  bool get puedeRenovarAntes =>
+      estaAlDia && (diasParaVencer ?? 99) <= diasDeAvisoAntesDeVencer;
+
+  static const int diasDeAvisoAntesDeVencer = 5;
+
   /// Lo que se le dice al dueño, en su idioma y no en el de la base de datos.
   String get etiquetaEstado {
+    if (alDia && periodoVencido) return 'Período vencido';
     if (alDia) return 'Al día';
     switch (status) {
       case 'pending':

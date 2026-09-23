@@ -1109,11 +1109,8 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                           (profile.role == 'owner' || profile.role == 'admin'))
                         _TrialHeaderBadge(
                           subscriptionStatus: subscriptionStatus,
-                          onRefresh: () {
-                            setState(() {
-                              homeContextFuture = _loadHomeContext();
-                            });
-                          },
+                          onIrAPagar: () =>
+                              _irAModulo(modules, 'Configuración'),
                         ),
 
                       // Avatar de Usuario & Menú de Perfil
@@ -1428,144 +1425,77 @@ class _BranchSelectorPill extends StatelessWidget {
 // ============================================================================
 // BADGE DE PRUEBA / GRACIA EN HEADER (MINIMALISTA)
 // ============================================================================
+//
+// **Al tocarla, lleva a Configuración; ya no abre un cobro** (hallazgo BI,
+// 23-sep). Hasta ese día las tres píldoras llamaban a `iniciarPago` sin sede,
+// que es el cobro del NEGOCIO entero, y esa puerta la cerró el servidor el
+// 22-sep (D-252): quien pulsaba *"Prueba vencida · Activar plan"* recibía un
+// error. Es el sexto letrero rancio de D-252. Ahora se paga cada sede, y eso
+// está en Configuración → *Tus sedes*.
 class _TrialHeaderBadge extends StatelessWidget {
   const _TrialHeaderBadge({
     required this.subscriptionStatus,
-    required this.onRefresh,
+    required this.onIrAPagar,
   });
 
   final TenantSubscriptionStatus? subscriptionStatus;
-  final VoidCallback onRefresh;
+  final VoidCallback onIrAPagar;
 
   @override
   Widget build(BuildContext context) {
     if (subscriptionStatus == null) return const SizedBox.shrink();
 
     final status = subscriptionStatus!;
-    final epayco = const EpaycoCheckoutService();
 
     if (status.isGrace) {
       final days = status.graceDaysRemaining ?? 5;
-      return Padding(
-        padding: const EdgeInsets.only(right: AppSpacing.sm),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () =>
-              epayco.iniciarPago(context, status, onPaymentLaunched: onRefresh),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: AppColors.warningTint,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.warning),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.warning_amber_rounded,
-                  size: 14,
-                  color: AppColors.warning,
-                ),
-                const SizedBox(width: 5),
-                Text(
-                  '$days ${days == 1 ? "día" : "días"} de gracia · Pagar',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.warning,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+      return _pildora(
+        texto: '$days ${days == 1 ? "día" : "días"} de gracia · Pagar',
+        color: AppColors.warning,
+        fondo: AppColors.warningTint,
+        icono: Icons.warning_amber_rounded,
       );
     }
 
     if (status.isTrialing) {
       final days = status.trialDaysRemaining;
       if (status.isTrialExpired || (days != null && days < 0)) {
-        return Padding(
-          padding: const EdgeInsets.only(right: AppSpacing.sm),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTap: () => epayco.iniciarPago(
-              context,
-              status,
-              onPaymentLaunched: onRefresh,
-            ),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: AppColors.dangerTint,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.danger),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.warning_amber_rounded,
-                    size: 14,
-                    color: AppColors.danger,
-                  ),
-                  SizedBox(width: 5),
-                  Text(
-                    'Prueba vencida · Activar plan',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.danger,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+        return _pildora(
+          texto: 'Prueba vencida · Activar plan',
+          color: AppColors.danger,
+          fondo: AppColors.dangerTint,
+          icono: Icons.warning_amber_rounded,
         );
       }
       if (days != null && days <= 10) {
-        return Padding(
-          padding: const EdgeInsets.only(right: AppSpacing.sm),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTap: () => epayco.iniciarPago(
-              context,
-              status,
-              onPaymentLaunched: onRefresh,
-            ),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: AppColors.brandTintSoft,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.schedule, size: 14, color: AppColors.brand),
-                  const SizedBox(width: 5),
-                  Text(
-                    days == 0
-                        ? 'Prueba termina hoy'
-                        : 'Prueba: $days d restantes',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.brandDeep,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+        return _pildora(
+          texto: days == 0 ? 'Prueba termina hoy' : 'Prueba: $days d restantes',
+          color: AppColors.brandDeep,
+          fondo: AppColors.brandTintSoft,
+          borde: AppColors.border,
+          icono: Icons.schedule,
+          colorIcono: AppColors.brand,
+          negrita: false,
         );
       }
     }
 
+    // Hallazgo BI: activo en la base pero con la fecha pasada. El 23-sep esta
+    // píldora decía en verde *Vence 22/09/2026* ese mismo 23, mientras el
+    // candado ya le negaba al salón las citas nuevas. Lo pidió el propietario:
+    // *"debería estar en rojo con venció el 22"*.
+    if (status.isPeriodExpired) {
+      return _pildora(
+        texto:
+            'Venció el ${_formatFechaCorta(status.currentPeriodEnd)} · Renovar',
+        color: AppColors.danger,
+        fondo: AppColors.dangerTint,
+        icono: Icons.warning_amber_rounded,
+      );
+    }
+
     if (status.isActive) {
+      // Sin toque: estar al día no pide ninguna acción.
       return Padding(
         padding: const EdgeInsets.only(right: AppSpacing.sm),
         child: Container(
@@ -1581,7 +1511,9 @@ class _TrialHeaderBadge extends StatelessWidget {
               const Text('🟢', style: TextStyle(fontSize: 11)),
               const SizedBox(width: 5),
               Text(
-                'Plan ${status.planName ?? "Profesional"} · Vence '
+                // Hallazgo BD: el respaldo decía "Profesional", un plan que
+                // D-188 jubiló. El único plan que existe es Todo Incluido.
+                'Plan ${status.planName ?? "Todo Incluido"} · Vence '
                 '${_formatFechaCorta(status.currentPeriodEnd)}',
                 style: const TextStyle(
                   fontSize: 12,
@@ -1596,6 +1528,50 @@ class _TrialHeaderBadge extends StatelessWidget {
     }
 
     return const SizedBox.shrink();
+  }
+
+  Widget _pildora({
+    required String texto,
+    required Color color,
+    required Color fondo,
+    required IconData icono,
+    Color? borde,
+    Color? colorIcono,
+    bool negrita = true,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(right: AppSpacing.sm),
+      child: Tooltip(
+        message: 'Ir a Configuración → Tus sedes para pagar',
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: onIrAPagar,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: fondo,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: borde ?? color),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icono, size: 14, color: colorIcono ?? color),
+                const SizedBox(width: 5),
+                Text(
+                  texto,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: negrita ? FontWeight.w700 : FontWeight.w600,
+                    color: color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   static String _formatFechaCorta(DateTime? date) {

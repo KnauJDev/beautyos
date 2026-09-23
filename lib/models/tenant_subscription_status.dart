@@ -42,6 +42,21 @@ class TenantSubscriptionStatus {
   bool get isTrialActive =>
       isTrialing && (trialEndsAt == null || trialEndsAt!.isAfter(DateTime.now()));
   bool get isActive => subscriptionStatus == 'active';
+
+  /// Activo en la base, pero con el período ya vencido (hallazgo BI).
+  ///
+  /// Solo un pago **rechazado** pasa una suscripción a mora, y aquí el pago es
+  /// manual: quien simplemente no paga se queda en `active`. El 23-sep la
+  /// cabecera decía en verde *Vence 22/09/2026* mientras el candado ya negaba
+  /// las citas nuevas. Hasta que el servidor mueva el estado por fecha, la
+  /// pantalla no puede fiarse solo del estado.
+  bool get isPeriodExpired =>
+      isActive &&
+      currentPeriodEnd != null &&
+      currentPeriodEnd!.isBefore(DateTime.now());
+
+  /// Activo y dentro de su período: lo único que merece verde.
+  bool get isActiveAndCurrent => isActive && !isPeriodExpired;
   bool get isRejected => subscriptionStatus == 'rejected';
   bool get isSuspended => subscriptionStatus == 'suspended';
   bool get isPastDue => subscriptionStatus == 'past_due';
@@ -91,6 +106,9 @@ class TenantSubscriptionStatus {
   String get statusLabel {
     if (isTrialExpired) {
       return 'Prueba Vencida';
+    }
+    if (isPeriodExpired) {
+      return 'Período vencido';
     }
     switch (subscriptionStatus) {
       case 'active':

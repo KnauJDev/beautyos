@@ -177,8 +177,16 @@ class _FilaSede extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = sede.alDia ? AppColors.success : AppColors.warning;
-    final fondo = sede.alDia ? AppColors.successTint : AppColors.warningTint;
+    // Hallazgo BI: una sede con la fecha vencida no está al día aunque el
+    // servidor todavía diga que sí. Rojo, no ámbar: ya no está en riesgo,
+    // ya se pasó.
+    final vencida = sede.alDia && sede.periodoVencido;
+    final color = sede.estaAlDia
+        ? AppColors.success
+        : (vencida ? AppColors.danger : AppColors.warning);
+    final fondo = sede.estaAlDia
+        ? AppColors.successTint
+        : (vencida ? AppColors.dangerTint : AppColors.warningTint);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -256,16 +264,29 @@ class _FilaSede extends StatelessWidget {
           ],
         ),
 
-        if (!sede.alDia && onPagar != null) ...[
+        // Hasta el 23-sep el botón solo salía con `!alDia`, y como nada pasa
+        // una sede vencida a mora, **una sede vencida no se podía renovar
+        // desde la app** (hallazgo BI). Ahora sale también cuando la fecha
+        // pasó, y unos días antes para pagar el mes siguiente sin cortarse.
+        if ((!sede.estaAlDia || sede.puedeRenovarAntes) && onPagar != null) ...[
           const SizedBox(height: AppSpacing.md),
           SizedBox(
             width: double.infinity,
             child: FilledButton.tonalIcon(
               onPressed: onPagar,
-              icon: const Icon(Icons.lock_outline, size: 16),
+              icon: Icon(
+                sede.puedeRenovarAntes
+                    ? Icons.event_repeat_outlined
+                    : Icons.lock_outline,
+                size: 16,
+              ),
               label: Text(
                 sede.nuncaActivada
                     ? 'Activar esta sede'
+                    : sede.puedeRenovarAntes
+                    ? 'Pagar el mes siguiente'
+                    : vencida
+                    ? 'Renovar esta sede'
                     : 'Ponerla al día',
               ),
             ),
@@ -280,7 +301,14 @@ class _FilaSede extends StatelessWidget {
 
     if (sede.alDia && sede.currentPeriodEnd != null) {
       final f = sede.currentPeriodEnd!;
-      return '$precio · hasta el ${f.day}/${f.month}/${f.year}';
+      final fecha = '${f.day}/${f.month}/${f.year}';
+      if (sede.periodoVencido) {
+        // Sin prometer consecuencias: hoy el candado de citas mira solo la
+        // suscripción del negocio, y una sede secundaria vencida no se corta
+        // (BI). Decir aquí que 'no se pueden crear citas' sería falso para ella.
+        return '$precio · venció el $fecha';
+      }
+      return '$precio · hasta el $fecha';
     }
 
     if (sede.nuncaActivada) {

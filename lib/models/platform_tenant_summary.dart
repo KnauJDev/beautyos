@@ -158,6 +158,55 @@ class PlatformTenantSummary {
   bool get isTrialActive =>
       isTrialing && (trialEndsAt == null || trialEndsAt!.isAfter(DateTime.now()));
   bool get isActive => subscriptionStatus == 'active';
+
+  /// Activo en la base, pero con el período ya vencido (hallazgo BI).
+  ///
+  /// Solo un pago **rechazado** pasa una suscripción a mora, y aquí el pago es
+  /// manual: quien simplemente no paga se queda en `active` para siempre. El
+  /// 23-sep el panel decía *ACTIVO · Válido hasta 22/09* mientras el candado
+  /// ya le negaba las citas a ese negocio. Hasta que el servidor mueva el
+  /// estado por fecha, la pantalla no puede fiarse solo del estado.
+  bool get isPeriodExpired =>
+      isActive &&
+      currentPeriodEnd != null &&
+      currentPeriodEnd!.isBefore(DateTime.now());
+
+  /// El estado en palabras, el mismo en la lista y en la ficha.
+  ///
+  /// Hasta el 23-sep la lista decía *ACTIVO* y la ficha *Estado: ACTIVE*, el
+  /// valor crudo de la base en inglés. Vivía como método privado de la
+  /// tarjeta de la lista, y la ficha no lo podía usar.
+  String get estadoLegible {
+    if (isTrialExpired) {
+      return 'PRUEBA VENCIDA';
+    }
+    // Hallazgo BI: 'active' con la fecha pasada. El servidor no lo mueve a
+    // mora si nadie paga, así que aquí se dice lo que de verdad pasa.
+    if (isPeriodExpired) {
+      return 'VENCIDO SIN PAGAR';
+    }
+    switch (subscriptionStatus) {
+      case 'pending':
+        return 'POR APROBAR';
+      case 'trialing':
+        return 'EN PRUEBA';
+      case 'active':
+        return 'ACTIVO';
+      case 'past_due':
+        return 'PAGO PENDIENTE';
+      case 'grace':
+        return 'EN GRACIA';
+      case 'suspended':
+        return 'SUSPENDIDO';
+      case 'rejected':
+        return 'RECHAZADO';
+      case 'cancelled':
+        return 'CANCELADO';
+      default:
+        return subscriptionStatus?.toUpperCase() ?? 'SIN ESTADO';
+    }
+  }
+
   bool get isRejected => subscriptionStatus == 'rejected';
   bool get isGrace => subscriptionStatus == 'grace';
   bool get isPastDue => subscriptionStatus == 'past_due';

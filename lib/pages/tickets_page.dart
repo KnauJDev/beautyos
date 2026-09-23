@@ -2281,8 +2281,10 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
                       color: AppColors.brandTintSoft,
                       borderRadius: BorderRadius.circular(14),
                     ),
+                    // Decía '\\n' (una barra escapada) y se veía escrito tal
+                    // cual: "con Luiscar\n23/09/2026" (23-sep, hallazgo BJ).
                     child: Text(
-                      '${service.serviceName} con $resolvedStylistName\\n'
+                      '${service.serviceName} con $resolvedStylistName\n'
                       '$scheduledAtText · ${service.formattedPrice} · '
                       '${service.durationMinutes} min',
                       style: TextStyle(

@@ -601,8 +601,10 @@ class _SubscriptionSettingsCardState extends State<_SubscriptionSettingsCard> {
                                   horizontal: 8,
                                   vertical: 3,
                                 ),
+                                // Verde solo si además está dentro de su
+                                // período (hallazgo BI).
                                 decoration: BoxDecoration(
-                                  color: sub.isActive
+                                  color: sub.isActiveAndCurrent
                                       ? AppColors.successTint
                                       : sub.isGrace
                                           ? AppColors.warningTint
@@ -614,7 +616,7 @@ class _SubscriptionSettingsCardState extends State<_SubscriptionSettingsCard> {
                                 child: Text(
                                   sub.statusLabel.toUpperCase(),
                                   style: TextStyle(
-                                    color: sub.isActive
+                                    color: sub.isActiveAndCurrent
                                         ? AppColors.success
                                         : sub.isGrace
                                             ? AppColors.warning
@@ -702,6 +704,20 @@ class _SubscriptionSettingsCardState extends State<_SubscriptionSettingsCard> {
                     style: TextStyle(
                       color: AppColors.textSecondary,
                       fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ] else if (sub.isPeriodExpired) ...[
+                  // Hallazgo BI: hasta el 23-sep aquí decía "Próxima fecha de
+                  // renovación" con una fecha que ya había pasado.
+                  Text(
+                    'Tu período venció el ${sub.currentPeriodEnd!.day}/${sub.currentPeriodEnd!.month}/${sub.currentPeriodEnd!.year}. '
+                    'Mientras no lo renueves no se pueden crear citas nuevas. '
+                    'Se renueva pagando la sede Principal, aquí abajo.',
+                    style: const TextStyle(
+                      color: AppColors.danger,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 12),

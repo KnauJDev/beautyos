@@ -1761,6 +1761,9 @@ class _TenantCard extends StatelessWidget {
     if (item.isTrialExpired) {
       return AppColors.warning;
     }
+    if (item.isPeriodExpired) {
+      return AppColors.danger;
+    }
     switch (item.subscriptionStatus) {
       case 'pending':
         return AppColors.statePending;
@@ -1781,31 +1784,7 @@ class _TenantCard extends StatelessWidget {
     }
   }
 
-  String _statusLabel(PlatformTenantSummary item) {
-    if (item.isTrialExpired) {
-      return 'PRUEBA VENCIDA';
-    }
-    switch (item.subscriptionStatus) {
-      case 'pending':
-        return 'POR APROBAR';
-      case 'trialing':
-        return 'EN PRUEBA';
-      case 'active':
-        return 'ACTIVO';
-      case 'past_due':
-        return 'PAGO PENDIENTE';
-      case 'grace':
-        return 'EN GRACIA';
-      case 'suspended':
-        return 'SUSPENDIDO';
-      case 'rejected':
-        return 'RECHAZADO';
-      case 'cancelled':
-        return 'CANCELADO';
-      default:
-        return item.subscriptionStatus?.toUpperCase() ?? 'SIN ESTADO';
-    }
-  }
+  String _statusLabel(PlatformTenantSummary item) => item.estadoLegible;
 
   String _formatDate(DateTime? date) {
     if (date == null) return '—';
@@ -2025,6 +2004,8 @@ class _TenantCard extends StatelessWidget {
                             ? 'Solicitado: ${_formatDate(tenant.createdAt)}'
                             : tenant.subscriptionStatus == 'trialing'
                             ? 'Prueba: ${_formatDate(tenant.createdAt)} al ${_formatDate(tenant.trialEndsAt)}'
+                            : tenant.isPeriodExpired
+                            ? 'Venció: ${_formatDate(tenant.currentPeriodEnd)}'
                             : 'Vence: ${_formatDate(tenant.currentPeriodEnd)}',
                         style: const TextStyle(
                           fontSize: 12,
@@ -2655,7 +2636,8 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
   /// se lee primero el estado y después de quién es, que es el orden en que se
   /// mira una lista de sedes cuando lo que buscas es quién no ha pagado.
   Widget _buildPestanaDeSede(BranchSubscription sede, bool elegida) {
-    final color = sede.alDia ? AppColors.success : AppColors.danger;
+    // `estaAlDia` y no `alDia`: la bandera del servidor no mira la fecha (BI).
+    final color = sede.estaAlDia ? AppColors.success : AppColors.danger;
 
     return InkWell(
       borderRadius: BorderRadius.circular(AppRadius.pill),
@@ -2711,10 +2693,15 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
   /// realidad tendrá otro encargado, otro teléfono y otra dirección que el
   /// negocio que la contiene (D-241).
   Widget _buildFichaDeSede(BranchSubscription sede) {
-    final etiqueta = sede.alDia
+    // Hallazgo BI: el 23-sep esta ficha decía *Al día · Pagada hasta 22/09*
+    // un día después de vencer. `al_dia` solo mira el estado, y nada lo mueve
+    // cuando la fecha pasa.
+    final etiqueta = sede.estaAlDia
         ? 'Al día'
+        : sede.periodoVencido && sede.alDia
+        ? 'Vencida sin pagar'
         : (sede.status == 'pending' ? 'Sin pagar' : 'En mora');
-    final color = sede.alDia ? AppColors.success : AppColors.danger;
+    final color = sede.estaAlDia ? AppColors.success : AppColors.danger;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -3095,7 +3082,7 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                                 ],
                               ),
                               Text(
-                                'Estado: ${status?.toUpperCase() ?? "SIN ESTADO"} · Creado el ${_formatDate(tenant.createdAt)}',
+                                'Estado: ${tenant.estadoLegible} · Creado el ${_formatDate(tenant.createdAt)}',
                                 style: const TextStyle(
                                   fontSize: 12,
                                   color: AppColors.textSecondary,
@@ -3424,7 +3411,9 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                         _buildInfoRow(
                           'Periodo Activo:',
                           tenant.currentPeriodEnd != null
-                              ? 'Válido hasta el ${_formatDate(tenant.currentPeriodEnd)}'
+                              ? (tenant.isPeriodExpired
+                                    ? 'Venció el ${_formatDate(tenant.currentPeriodEnd)} y no se ha renovado'
+                                    : 'Válido hasta el ${_formatDate(tenant.currentPeriodEnd)}')
                               : 'Pendiente de primer pago tras finalizar prueba',
                         ),
                         if (tenant.graceEndsAt != null)
