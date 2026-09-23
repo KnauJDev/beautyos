@@ -52,6 +52,8 @@ regla copiada en seis sitios no está reforzada: está a punto de divergir.
 
 **Si alguna vez este archivo vuelve a listar las reglas, está mal.**
 
+**Antes de nada, la regla 25** del mismo apartado: *lo que ya funciona no se toca, y lo que no se sabe se pregunta*. Nació el 23-sep de siete vueltas que el propietario tuvo que dar para corregir al asistente (D-260). Aquí solo se nombra; su texto vive allí.
+
 ---
 
 ## Al cerrar la sesión

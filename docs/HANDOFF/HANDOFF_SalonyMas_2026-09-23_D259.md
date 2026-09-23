@@ -1,8 +1,8 @@
 # HANDOFF Salón y Más — 23 de septiembre de 2026, tarde ("Cerrando hallazgos", D-255 a D-259)
 
-**Bloque documentado:** decisiones **D-255** a **D-259**, hechas mientras el propietario descansaba y con su autorización expresa: *"resolviendo y cerrando los hallazgos que más puedas, tienes todo mi consentimiento, a medida que vayas cerrando ve documentando"*.
+**Bloque documentado:** decisiones **D-255** a **D-259**, hechas mientras el propietario descansaba y con su autorización expresa: *"resolviendo y cerrando los hallazgos que más puedas, tienes todo mi consentimiento, a medida que vayas cerrando ve documentando"*. **Y D-260**, con sus respuestas al volver, y la **regla 25**.
 
-**Estado:** ✅ Cinco bloques publicados. **Dos migraciones escritas y SIN APLICAR** (§3).
+**Estado:** ✅ Cinco bloques publicados. ✅ **Las dos migraciones, aplicadas por el propietario** (controles 222: 10/10 y 223: 5/5).
 `flutter analyze` **0/0** · **483 pruebas** (eran 453) · Guardián en verde · CI en verde.
 
 > El bloque anterior (la revisión integral, D-253 y D-254) está en
@@ -20,7 +20,8 @@ diciendo *Vence 22/09*. Tiene dos mitades:
 | Mitad | Estado |
 |---|---|
 | **La pantalla** (D-255) | ✅ **Publicada.** Lo vencido se ve rojo, y **una sede vencida ya se puede renovar**: antes no tenía botón |
-| **El servidor** (D-258) | 📝 **Escrita, sin aplicar.** Es la que da los 5 días de gracia y corta las sedes. **La aplicas tú** (§3) |
+| **El servidor** (D-258) | ✅ **Aplicada el 23-sep.** Naguara y dos sedes pasaron a mora con sus 5 días de gracia; la tarea diaria corre a las 07:50 |
+| **La sede suspendida deja de agendar** (D-260) | 📝 **Decidido, sin construir.** Espera la extracción del §3 |
 
 **Y al arreglar la píldora apareció otro fallo peor (BK):** las píldoras de la
 cabecera abrían el cobro *por negocio* que cerramos el 22-sep. Quien pulsaba
@@ -42,41 +43,22 @@ cabecera abrían el cobro *por negocio* que cerramos el 22-sep. Quien pulsaba
 
 ---
 
-## 3. ⚠️ Lo que tienes que hacer tú: dos migraciones
+## 3. ✅ Las dos migraciones: aplicadas. Lo siguiente es una lectura
 
-**Nada de esto lo publica el `push`.** Las migraciones las aplicas tú (regla 16). En este orden, **un comando a la vez**, y me pegas lo que sale:
+Las aplicaste el 23-sep con respaldo previo (`Backup_2026-09-23_09-45-57`):
+**control 222 en 10/10** y **control 223 en 5/5**. BG y BH quedan cerrados.
 
-**1. Respaldo**
-
-```bash
-powershell -ExecutionPolicy Bypass -File scripts\respaldo_supabase.ps1
-```
-
-**2. BI — vencer sin pagar pasa a mora.** Al aplicarse corre una vez: Naguara pasará a *período de gracia* hasta el 27-sep y **volverá a poder agendar** esos días.
+**Lo siguiente, solo lectura, no cambia nada:** para que una sede suspendida
+deje de agendar (tu decisión de D-260) hay que tocar las dos puertas por las que
+nace una cita, y la tabla `tickets` no está en el repositorio. Este comando trae
+su texto vivo, para no escribirlo de memoria (regla 25 d):
 
 ```bash
-powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\migrations\20260923120000_vencer_sin_pagar_pasa_a_mora_bi.sql"
+powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\sql\intervenciones\extraer_candado_y_vencimiento_bi.sql"
 ```
 
-**3. Su control** — tiene que terminar en **10/10**:
-
-```bash
-powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\sql\222_test_vencer_sin_pagar_pasa_a_mora.sql"
-```
-
-**4. BG y BH — una sola `register_tenant` y permisos de `private`**
-
-```bash
-powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\migrations\20260923130000_una_sola_register_tenant_y_permisos_de_private_bg_bh.sql"
-```
-
-**5. Su control** — tiene que terminar en **5/5**:
-
-```bash
-powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\sql\223_test_una_sola_register_tenant.sql"
-```
-
-**Si algo sale con `FALLO` o `PARADA`, para ahí** y me lo pegas: las dos migraciones comprueban antes de tocar nada.
+Deja cinco archivos `_vivo_bi_*.sql` en la raíz del proyecto. No se suben
+(`.gitignore`): los leo, los comparo y se borran.
 
 ---
 
@@ -84,10 +66,11 @@ powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "sup
 
 Pulsa **Actualizar** en el aviso de versión nueva primero.
 
-1. **Naguara, arriba a la derecha:** píldora **roja** *Venció el 22/09/2026 · Renovar*. Al tocarla, te lleva a **Configuración**. *(Después de aplicar la migración de BI cambia a ámbar: "N días de gracia · Pagar".)*
-2. **Configuración → Tus sedes:** la sede dice **Período vencido** en rojo con el botón **Renovar esta sede**. **No lo pulses hasta el final: NO PAGAR.** Basta con ver que está.
+1. **Naguara, arriba a la derecha:** como ya aplicaste la migración, la píldora ya no es roja: es **ámbar**, *"N días de gracia · Pagar"*. Al tocarla, te lleva a **Configuración**.
+2. **Configuración → Tus sedes:** la sede dice **Pago vencido**, con un botón para pagarla (*Ponerla al día*, o *Activar esta sede* si nunca se registró un pago suyo). **No lo pulses: NO PAGAR.** Basta con ver que está.
+2-bis. **Nueva cita en Naguara:** ahora **debería dejarte crearla**, porque está en sus días de gracia (el control 222 lo comprobó con un negocio de prueba). Antes de la migración te la negaba.
 3. **Configuración → la tarjeta con el nombre de tu sede → Editar:** pon un correo **sin arroba** y pulsa Guardar. El formulario **no se cierra**, y el error sale **debajo del correo**, con los otros seis campos intactos.
-4. **Panel de plataforma:** la píldora **En Prueba** dice **(0)**, y Naguara dice **VENCIDO SIN PAGAR**.
+4. **Panel de plataforma:** la píldora **En Prueba** dice **(0)**, y Naguara dice **PAGO PENDIENTE** (ya no *VENCIDO SIN PAGAR*: la migración la movió de estado).
 5. **La página pública de precios** (`salonymas.com/?planes=1`): con tildes, y las preguntas empiezan por **¿**.
 6. **Nueva cita → Crear cliente rápido** con el celular de una clienta que ya existe: el diálogo **se queda abierto** con el aviso dentro.
 
@@ -95,7 +78,7 @@ Pulsa **Actualizar** en el aviso de versión nueva primero.
 
 ## 5. Las decisiones que siguen siendo tuyas
 
-Las seis de esta mañana, sin tocar (regla 20), **más una nueva**:
+**Dos quedaron contestadas el 23-sep (D-260):** la **f** —*"realiza todas las preguntas que necesites siempre"*: las reglas 5 y 9 siguen, reforzadas por la 25— y la **g** —una sede suspendida **deja de agendar citas nuevas**; hereda del negocio la gracia, la suspensión y la fecha de corte, no el precio ni los módulos—. Quedan cinco:
 
 | | Qué | Por qué importa |
 |---|---|---|
@@ -104,17 +87,18 @@ Las seis de esta mañana, sin tocar (regla 20), **más una nueva**:
 | **c** | **Cuándo pasar a Supabase Pro** | D-088 decía *cuando cargue datos*, D-226 *cuando pague* |
 | **d** | **I-13**: acceso de lectura a la base para el asistente | Hoy cada lectura son comandos tuyos con contraseña |
 | **e** | **El acceso de soporte a los datos de los salones** (BC) | D-076 caduca con el primer cliente real |
-| **f** | **Las reglas 5 y 9** | Se cumplen menos de lo que dicen |
-| **g — nueva** | **¿Una sede secundaria suspendida debe dejar de agendar?** | Hoy el acceso es del negocio (ADR-006): una sede que no paga queda *suspendida* en el Panel, pero **sigue agendando**. Es una decisión de producto, no un arreglo |
+| ~~f~~ | ~~Las reglas 5 y 9~~ | ✅ Contestada (D-260) |
+| ~~g~~ | ~~¿Una sede suspendida debe dejar de agendar?~~ | ✅ **Sí**: solo las citas nuevas de esa sede (D-260) |
+| **h — nueva** | **Las fotos: ¿qué hacemos con los tipos *Final* y *Portafolio*?** | Definiste el flujo (se toma con la clienta presente; publicarla lo autoriza solo ella desde su enlace), pero el hallazgo Ñ también decía que esos dos tipos sobran |
 
 ---
 
 ## 6. Lo que quedó a medias
 
-1. **Las dos migraciones del §3**, escritas y sin aplicar.
+1. **BI — la sede suspendida deja de agendar** (decidido en D-260). Espera la extracción del §3; después, una migración que toca las dos puertas por las que nace una cita, con su control.
 2. **BI — el mensaje del candado.** Sigue diciendo *"La prueba gratis… vencida"* a quien pagó meses y está suspendido. Cambiarlo es reescribir `create_scheduled_ticket_with_service_v2` y `public_create_booking`: primero hay que extraer su texto vivo con `supabase\sql\intervenciones\extraer_candado_y_vencimiento_bi.sql` (deja archivos `_vivo_*.sql` que ya no se suben: `.gitignore` los ignora desde D-258).
 3. **AK — quedan seis diálogos en `tickets_page.dart`** (agregar, cambiar y quitar servicio; reprogramar; cambiar estado; corregir). Van con el **9.13**, porque son flujos de caja.
-4. **AQ** — el texto ya es honesto; lo cierra que la clienta apruebe desde su portal (9.48).
+4. **AQ y Ñ** — el flujo ya lo definiste (D-260): **publicar la foto lo autoriza solo la clienta desde su enlace**. Hoy la casilla del salón todavía la habilita; construir esa aprobación es lo que cierra AQ (9.48).
 5. **AL** — la frase de pantalla ya no existe (se fue con D-248); queda la plantilla de correo, en Supabase.
 
 ---
@@ -132,9 +116,10 @@ Las seis de esta mañana, sin tocar (regla 20), **más una nueva**:
 
 ## 8. Por dónde seguir
 
-1. **Tus verificaciones** (§3 y §4), y lo que salga de ellas.
-2. **Tus decisiones** (§5), sobre todo **a** (el orden) y **g** (las sedes suspendidas).
-3. Con BI aplicado, el turno A sigue: **9.8 + 9.7** con $4.500 propios → 9.40 → AD → 9.9.
+1. **La extracción del §3** → la migración de la sede suspendida y el mensaje del candado, con su control.
+2. **Tus verificaciones en pantalla** (§4).
+3. **Tus decisiones** (§5), sobre todo **a** (el orden).
+4. Con BI cerrado, el turno A sigue: **9.8 + 9.7** con $4.500 propios → 9.40 → AD → 9.9.
 
 ---
 
@@ -146,17 +131,20 @@ Lee el HANDOFF más reciente en docs/HANDOFF/ (D-255 a D-259).
 Antes de tocar documentación: python scripts/verificar_documentos.py
 
 DÓNDE ESTAMOS
-El 23-sep por la tarde, con el propietario descansando y su autorización, se
-cerraron BJ, BK, AV, BD, AR y AX, y se avanzaron BI, AQ y AK. Todo publicado.
-Quedan DOS MIGRACIONES ESCRITAS Y SIN APLICAR (HANDOFF §3): la de BI (mora
-por fecha con 5 días de gracia, control 222) y la de BG+BH (una sola
-register_tenant y permisos de private, control 223). Las aplica él.
+El 23-sep se cerraron BJ, BK, AV, BD, AR, AX, BG y BH, y se avanzaron BI, AQ
+y AK. Las dos migraciones (D-258) están APLICADAS: controles 222 (10/10) y
+223 (5/5). El propietario decidió (D-260) que una sede suspendida por no
+pago deja de agendar citas nuevas, y definió el flujo de las fotos.
+
+LEE LA REGLA 25 DEL PLAN MAESTRO §8 ANTES DE NADA: afirmar exige prueba, lo
+aprobado no se cambia sin avisar, el producto se pregunta aunque haya
+permiso general, y lo que corre el propietario se copia de algo que ya
+funcionó.
 
 LO PRIMERO
-Preguntarle si aplicó las migraciones y cómo salieron los controles 222 y
-223, y si miró en pantalla lo del §4. Después, sus decisiones del §5: la
-principal es aprobar el orden de la Fase 9, y hay una nueva (g): si una sede
-secundaria suspendida debe dejar de agendar.
+Preguntarle si corrió la extracción del HANDOFF §3 (deja _vivo_bi_*.sql en
+la raíz). Con eso, escribir la migración de la sede suspendida y del mensaje
+del candado, comparando línea por línea con el texto vivo.
 
 CÓMO SE TRABAJA CON ÉL
 Va paso a paso y confirma cada uno. No es técnico: qué se hace, cómo y por

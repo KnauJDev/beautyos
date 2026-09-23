@@ -203,9 +203,19 @@ npx.cmd supabase@latest functions list --project-ref eogppgbdnwxdtcbctaol
 | `create-epayco-session` | ✅ `true` | Registra la intención de pago y abre el checkout **de una sede** | D-182, D-191, D-252 |
 | `epayco-webhook` | `false` — la llama ePayco; se autentica con la firma SHA-256 | Liquida el pago: deriva a la función de sede o a la del negocio | D-141, D-182, D-224 |
 | `verify-epayco-transaction` | `false` | Confirma el pago al volver de la pasarela (camino de respaldo del webhook) | D-181, D-224 |
-| `send-subscription-expiry-alerts` | `false` — la llama `pg_cron` con `CRON_SECRET` | Avisos de vencimiento de negocio y de sedes | D-143, D-145, D-196 |
+| `send-subscription-expiry-alerts` | `false` — la llama `pg_cron` con `CRON_SECRET` | Avisos de vencimiento de negocio y de sedes, **y suspende los negocios con la gracia vencida** | D-143, D-145, D-196 |
 | `send-invitation-email` | ✅ `true` | Correo de invitación de equipo | D-065, D-128 |
 | `send-low-stock-alert` | ✅ `true` | Alarma de stock bajo | D-086, D-131 |
+
+**Las tareas diarias de `pg_cron`** (desde el 23-sep son dos, en este orden):
+
+| Hora (Colombia) | Tarea | Qué hace | Decisión |
+|---|---|---|---|
+| 07:50 | `mora_por_fecha_diario` | SQL directo: `private.beautyos_pasar_a_mora_por_fecha()`. Negocio y sede activos con el período vencido → `past_due` con 5 días de gracia; sede con la gracia vencida → `suspended` | D-258 (hallazgo BI) |
+| 08:00 | `avisos_vencimiento_suscripcion_diario` | Llama a `send-subscription-expiry-alerts`, que suspende **negocios** con la gracia vencida y manda los avisos | D-143, D-145 |
+
+> ⚠️ **El orden importa**: la de las 07:50 pone la mora que la de las 08:00
+> convierte en suspensión y en aviso. Si se mueve una, se mueve la otra.
 
 **Todas fijan `@supabase/supabase-js` a una versión exacta** en su `deno.json`
 (lección de D-128: nunca un rango). Las claves las resuelve

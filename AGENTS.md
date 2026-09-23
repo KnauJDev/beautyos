@@ -31,5 +31,7 @@ BeautyOS es una SaaS multi-tenant y multi-sede para centros de estética, barber
 **Las reglas están en `docs/00_producto/PLAN_MAESTRO.md`, apartado 8.**
 
 Aquí no se copian: estaban en seis sitios y ya decían cosas distintas (D-131).
+
+**Antes de nada, la regla 25** del mismo apartado: *lo que ya funciona no se toca, y lo que no se sabe se pregunta*. Nació el 23-sep de siete vueltas que el propietario tuvo que dar para corregir al asistente (D-260). Aquí solo se nombra; su texto vive allí.
 Lo que queda arriba en este archivo son **invariantes de arquitectura y
 seguridad**, que es otra cosa y sí vive aquí.

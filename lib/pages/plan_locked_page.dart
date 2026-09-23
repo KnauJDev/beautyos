@@ -170,8 +170,10 @@ class PlanLockedPage extends StatelessWidget {
                         const SizedBox(width: AppSpacing.sm),
                         Expanded(
                           child: Text(
-                            'No viene activado en tu cuenta. Pídelo a '
-                            'Salón y Más y lo activamos.',
+                            // Sin "y lo activamos": hay módulos que el
+                            // propietario decide no habilitar (D-260).
+                            'No está activado en tu cuenta. Si lo necesitas, '
+                            'pídelo a Salón y Más.',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,

@@ -90,6 +90,8 @@ mensajes de commit y en los documentos. **Son sistemas distintos:**
 > contradecirse.** Es lo mismo que pasó con los siete planes (D-126).
 > Corregido en **D-131**.
 
+**Antes de nada, la regla 25** del mismo apartado: *lo que ya funciona no se toca, y lo que no se sabe se pregunta*. Nació el 23-sep de siete vueltas que el propietario tuvo que dar para corregir al asistente (D-260). Aquí solo se nombra; su texto vive allí.
+
 ---
 
 ## 5. Estructura de carpetas

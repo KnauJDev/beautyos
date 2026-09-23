@@ -62,9 +62,12 @@ Future<void> mostrarCandadoDePlan(
             ),
             child: Text(
               puedeMejorarElPlan
-                  // Al dueño se le dice qué hacer.
-                  ? 'No viene activado en tu cuenta. Pídelo a Salón y Más y lo '
-                        'activamos.'
+                  // Al dueño se le dice qué hacer. Sin prometer que se activa:
+                  // hay un solo plan con todo, pero hay módulos que un salón no
+                  // quiere y otros que el propietario decide no habilitar
+                  // (D-260). "Pídelo" es verdad en los dos casos.
+                  ? 'No está activado en tu cuenta. Si lo necesitas, pídelo a '
+                        'Salón y Más.'
                   // Al estilista no: no es su decisión, y mandarlo a una
                   // pantalla que no puede tocar solo lo frustra.
                   : 'No viene activado en la cuenta del salón. Coméntaselo a '

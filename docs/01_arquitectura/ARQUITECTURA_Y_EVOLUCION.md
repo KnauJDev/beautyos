@@ -184,7 +184,11 @@ Configuración → "Activar esta sede"
   datos** (D-014, D-141). ⚠️ **Hoy solo funciona si ePayco rechaza un pago.** Si
   el salón simplemente no paga, nada lo pasa a mora: pierde las citas nuevas al
   día siguiente sin gracia, y **una sede secundaria que no paga nunca se corta**
-  (hallazgo **BI**, 23-sep).
+  (hallazgo **BI**, 23-sep). **Corregido el mismo 23-sep (D-258):** una tarea
+  diaria a las 07:50 pasa a mora **por fecha** —negocio y sede— con sus 5 días,
+  y suspende las sedes con la gracia vencida. **Lo que queda:** que una sede
+  suspendida deje de agendar, que el propietario decidió ese día y está por
+  precisar, y el mensaje del candado.
 - **Avisos por correo** a 10, 5 y 3 días, y cada día de la gracia (D-143, D-196),
   disparados por `pg_cron` a las 8:00 de Colombia (D-145).
 - **El camino del negocio está cerrado** en la entrada (`public.beautyos_calcular_cargo_epayco`
