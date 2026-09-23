@@ -221,6 +221,23 @@ Deno.serve(async (req) => {
       if (!branchData) {
         return responder({ error: "La sede indicada no pertenece a tu negocio." }, 403);
       }
+
+      // D-273 (hallazgo BP): ser del negocio no basta. El dueno paga
+      // cualquier sede; cada administrador, solo las que tiene asignadas.
+      // Se pregunta con la sesion de QUIEN PAGA, no con la de servicio: la
+      // regla mira auth.uid(). Si la pregunta falla, se niega (FAIL-CLOSED).
+      paso = "comprobar que quien paga puede pagar esta sede";
+      const { data: puedePagar, error: permisoErr } = await crearSupabaseUsuario(autorizacion!)
+        .rpc("beautyos_puedo_pagar_sede", { p_branch_id: branchId });
+
+      if (permisoErr || puedePagar !== true) {
+        if (permisoErr) {
+          console.error(`No se pudo comprobar el permiso de pago de la sede ${branchId}: ${permisoErr.message}`);
+        }
+        return responder({
+          error: "Solo el dueño del negocio o el administrador de esta sede pueden pagarla.",
+        }, 403);
+      }
     }
 
     // -----------------------------------------------------------------------
