@@ -126,3 +126,8 @@ app.*.symbols
 
 # Supabase CLI local state (project link, tool versions and temporary files)
 supabase/.temp/
+
+# Extracciones y lecturas de la base que corre el propietario: se leen,
+# se comparan y se borran. Nunca se suben (D-258).
+/_vivo_*.sql
+/_radiografia*.txt
