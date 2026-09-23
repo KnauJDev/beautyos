@@ -54,13 +54,20 @@ con el repositorio, y el candado y el vigilante eran lo que suponía D-258.
 **La migración de la sede suspendida (D-261): aplicada, control 224 en 9/9.**
 BI queda cerrado (D-262): la sede suspendida no agenda y la pantalla lo dice.
 
-**Lo siguiente, solo lectura:** la comprobación 9 encontró una función con
-tildes dañadas (hallazgo **BL**), `reopen_finished_ticket_service`, que no
-coincide con el repositorio. Antes de corregirla hay que leerla:
+**BL: la lectura ya se hizo, y la corrección está escrita, SIN APLICAR (D-263).**
+Eran cinco textos dañados en *Corregir un servicio finalizado*, uno de ellos la
+frase que se guarda en el historial del ticket.
 
 ```bash
-powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\sql\intervenciones\extraer_tildes_danadas_bl.sql"
+powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\migrations\20260923170000_las_tildes_de_corregir_servicio_bl.sql"
 ```
+
+```bash
+powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\sql\225_test_las_tildes_de_corregir_servicio.sql"
+```
+
+El control debe decir **4/4**, y su línea **INFO 5** cuenta cuántas filas del
+historial ya se guardaron dañadas. Esas no se tocan sin tu decisión.
 
 ---
 
@@ -92,8 +99,10 @@ Pulsa **Actualizar** en el aviso de versión nueva primero.
 | ~~f~~ | ~~Las reglas 5 y 9~~ | ✅ Contestada (D-260) |
 | ~~g~~ | ~~¿Una sede suspendida debe dejar de agendar?~~ | ✅ **Sí**: solo las citas nuevas de esa sede (D-260) |
 | **h — nueva** | **Las fotos: ¿qué hacemos con los tipos *Final* y *Portafolio*?** | Definiste el flujo (se toma con la clienta presente; publicarla lo autoriza solo ella desde su enlace), pero el hallazgo Ñ también decía que esos dos tipos sobran |
-| **i — nueva** | **¿El estilista puede agendar citas?** (hallazgo **BM**) | El diseño de julio dice que sí; el servidor, desde el 20-jul, que no. Nadie lo decidió. Opciones: solo para sí mismo, para cualquiera de su sede, o no (y *Mi agenda* lo explica) |
-| **j — nueva** | **¿Termina la prueba gratis y hay 5 días de gracia?** | Hoy **no**: la gracia de 5 días (D-141) es solo al vencer un mes **pagado**. Al terminar la prueba sin pagar, las citas nuevas se bloquean ese mismo día. El 23-sep el propietario habló de *"5 días de gracia a partir de vencidos los días de la prueba"*: hay que confirmar si eso es lo que quiere |
+| ~~i~~ | ~~¿El estilista puede agendar citas?~~ | ✅ **Sí, para sí mismo** (D-263). Faltan dos detalles: si da de alta a la clienta nueva, y si la cita nace por confirmar o confirmada |
+| ~~j~~ | ~~¿Gracia al terminar la prueba?~~ | ✅ **No**: la gracia es solo de los meses pagados (D-263) |
+| **k — nueva** | **¿Se cobra el mes completo aunque se pague en la gracia?** (hallazgo **BN**) | Hoy **no**: se cobra solo por los días que faltan hasta el corte (D-160), así que los días de gracia salen gratis y pagar el quinto día sale más barato |
+| **l — nueva** | **¿Se corrigen las filas del historial guardadas con tildes dañadas?** (BL) | Es tocar el historial de los tickets. El control 225 dice cuántas son |
 
 ---
 
@@ -120,7 +129,8 @@ Pulsa **Actualizar** en el aviso de versión nueva primero.
 
 ## 8. Por dónde seguir
 
-1. **La lectura de BL** (§3) → corregir la función con tildes dañadas, desde su texto vivo.
+1. **Aplicar la corrección de BL** (§3) con su control 225.
+1-bis. **Tus decisiones k y l**, y los dos detalles de la **i** para construir que el estilista agende para sí mismo.
 2. **Tus verificaciones en pantalla** (§4).
 3. **Tus decisiones** (§5), sobre todo **a** (el orden).
 4. Con BI cerrado, el turno A sigue: **9.8 + 9.7** con $4.500 propios → 9.40 → AD → 9.9.
@@ -146,12 +156,12 @@ permiso general, y lo que corre el propietario se copia de algo que ya
 funcionó.
 
 LO PRIMERO
-BI está cerrado (D-261 aplicada, control 224 en 9/9; D-262). Queda BL: una
-sola función con tildes dañadas, reopen_finished_ticket_service, que no
-coincide con el repositorio. Preguntarle si corrió la lectura del HANDOFF
-§3 (deja _vivo_bl_tildes_danadas.sql) y corregirla desde su texto vivo.
-Y sus decisiones i (¿el estilista agenda?) y j (¿gracia al terminar la
-prueba?).
+BI está cerrado (D-261 aplicada, control 224 en 9/9; D-262). La corrección
+de BL (D-263) está escrita desde el texto vivo y SIN APLICAR: preguntarle
+por el control 225. Decididos: el estilista agenda para sí mismo (faltan
+dos detalles) y la gracia es solo de los meses pagados. Pendientes suyas:
+k (cobrar el mes completo en la gracia, hallazgo BN) y l (las filas del
+historial dañadas).
 
 CÓMO SE TRABAJA CON ÉL
 Va paso a paso y confirma cada uno. No es técnico: qué se hace, cómo y por
