@@ -570,7 +570,6 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
             'servicios dejan mas dinero. Tu plan actual ya te muestra la caja '
             'del dia; esto es la vista del mes y la comparacion con el '
             'anterior.',
-        lockPlan: 'Business',
       ),
       BeautyModule(
         section: const BeautySection(
@@ -588,7 +587,6 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
             'Llevar el inventario es saber que productos tienes, cuales se '
             'estan acabando y cuanto te cuesta cada servicio de verdad. '
             'Incluye aviso por correo cuando algo baja del minimo.',
-        lockPlan: 'Business',
       ),
       BeautyModule(
         section: const BeautySection(
@@ -605,7 +603,6 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         lockExplicacion:
             'Registrar las compras a proveedores mantiene el stock al dia solo '
             'y te deja ver en que se va la plata del negocio mes a mes.',
-        lockPlan: 'Business',
       ),
       BeautyModule(
         section: const BeautySection(
@@ -623,7 +620,6 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
             'Anotar arriendo, servicios y sueldos es lo que separa "cuanto '
             'vendi" de "cuanto me quedo". Sin esto, la utilidad del mes es una '
             'suposicion.',
-        lockPlan: 'Business',
       ),
 
       // ======================================================================
@@ -946,7 +942,6 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                       explicacion:
                           module.lockExplicacion ??
                           'Este módulo no está incluido en tu plan actual.',
-                      planSugerido: module.lockPlan ?? 'Business',
                       onIrAConfiguracion: () =>
                           _irAModulo(modules, 'Configuración'),
                     ),
@@ -1277,7 +1272,6 @@ class BeautyModule {
     required this.allowedRoles,
     this.requiredFeature,
     this.lockExplicacion,
-    this.lockPlan,
     this.recargaAlEntrar = true,
   });
 
@@ -1296,8 +1290,9 @@ class BeautyModule {
   /// Qué hace el módulo, en el idioma del salón, para la pantalla de candado.
   final String? lockExplicacion;
 
-  /// El plan más barato que lo incluye (Plan Maestro, apartado 3).
-  final String? lockPlan;
+  // Aquí había un `lockPlan` que decía 'Business' en cuatro módulos, un plan
+  // que D-188 jubiló. Se quitó con el hallazgo BD (23-sep): el candado ya no
+  // manda a comprar otro plan, dice que se pida a Salón y Más.
 
   /// Si al entrar al módulo hay que recargar sus datos (Hallazgo Q, D-201).
   ///

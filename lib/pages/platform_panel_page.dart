@@ -2470,7 +2470,7 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                   const Padding(
                     padding: EdgeInsets.only(top: 4),
                     child: Text(
-                      'Estas cambiando hasta cuando esta pagada la sede. Eso le regala o le quita dias de servicio a un cliente.',
+                      'Estás cambiando hasta cuándo está pagada la sede. Eso le regala o le quita días de servicio a un cliente.',
                       style: TextStyle(fontSize: 11, color: AppColors.danger),
                     ),
                   ),

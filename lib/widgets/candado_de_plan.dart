@@ -22,11 +22,16 @@ import '../theme/app_dimens.dart';
 /// Se muestra el botón y se explica, en vez de esconderlo: mismo criterio que
 /// D-184, porque la escalera de planes solo funciona si el dueño ve lo que se
 /// está perdiendo.
+///
+/// **No nombra ningún plan** (hallazgo BD, 23-sep). Decía *"Se activa con el
+/// plan Profesional"*, y desde D-188 no hay más plan que Todo Incluido: el
+/// candado mandaba a comprar algo que no se vende. Hoy no se ve —D-188 abrió
+/// todo—, pero el 9.41 (módulos por sede, D-239) lo vuelve a encender, y
+/// entonces lo que se activa se pide a Salón y Más, no se compra con otro plan.
 Future<void> mostrarCandadoDePlan(
   BuildContext context, {
   required String titulo,
   required String explicacion,
-  required String planSugerido,
   bool puedeMejorarElPlan = true,
 }) {
   return showDialog<void>(
@@ -58,12 +63,12 @@ Future<void> mostrarCandadoDePlan(
             child: Text(
               puedeMejorarElPlan
                   // Al dueño se le dice qué hacer.
-                  ? 'Se activa con el plan $planSugerido. Puedes verlo en '
-                        'Configuración → Suscripción.'
+                  ? 'No viene activado en tu cuenta. Pídelo a Salón y Más y lo '
+                        'activamos.'
                   // Al estilista no: no es su decisión, y mandarlo a una
                   // pantalla que no puede tocar solo lo frustra.
-                  : 'Se activa con el plan $planSugerido. Coméntaselo a quien '
-                        'lleva el salón.',
+                  : 'No viene activado en la cuenta del salón. Coméntaselo a '
+                        'quien lo lleva.',
               style: TextStyle(
                 fontSize: 13.5,
                 fontWeight: FontWeight.w600,

@@ -260,7 +260,7 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
               ),
               const SizedBox(height: 20),
               Text(
-                'Todo lo que tu salon necesita,\nen un solo plan por sede',
+                'Todo lo que tu salón necesita,\nen un solo plan por sede',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: isMobile ? 28 : 40,
@@ -272,8 +272,8 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
               const SizedBox(height: 16),
               const Text(
                 'Agenda, caja, comisiones, inventario, reportes, fotos de '
-                'trabajos, resenas y tu pagina web publica. El 100% de las '
-                'funciones, desde el primer dia. Pagas por sede, no por '
+                'trabajos, reseñas y tu página web pública. El 100% de las '
+                'funciones, desde el primer día. Pagas por sede, no por '
                 'funciones.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -325,7 +325,7 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
                   ),
                 ),
                 child: const Text(
-                  'TODO INCLUIDO. SIN MODULOS BLOQUEADOS.',
+                  'TODO INCLUIDO. SIN MÓDULOS BLOQUEADOS.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.white,
@@ -393,8 +393,8 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
-                        '\$${_milesConPunto(lista ~/ 30)} al dia por llevar '
-                        'todo tu salon',
+                        '\$${_milesConPunto(lista ~/ 30)} al día por llevar '
+                        'todo tu salón',
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
@@ -408,7 +408,7 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
                     Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        'Cero limites',
+                        'Cero límites',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w800,
@@ -452,7 +452,7 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
                           padding: const EdgeInsets.symmetric(vertical: 18),
                         ),
                         child: const Text(
-                          'Empezar mi prueba de 21 dias',
+                          'Empezar mi prueba de 21 días',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -462,7 +462,7 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
                     ),
                     const SizedBox(height: 10),
                     const Text(
-                      'Sin tarjeta de credito. Te acompanamos a configurarlo.',
+                      'Sin tarjeta de crédito. Te acompañamos a configurarlo.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 12.5,
@@ -498,7 +498,7 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
                           const Text(
                             'Estamos abriendo ciudad por ciudad, y los primeros '
                             'salones de cada una entran con una tarifa distinta. '
-                            'Escribenos y hablamos de la tuya.',
+                            'Escríbenos y hablamos de la tuya.',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 13,
@@ -538,14 +538,14 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
   }
 
   static const List<String> _incluido = [
-    'Hasta 10 personas en tu equipo, tu incluido',
+    'Hasta 10 personas en tu equipo, tú incluido',
     'Clientas, citas y tickets sin tope',
-    'Caja, cobros, abonos y comisiones automaticas',
+    'Caja, cobros, abonos y comisiones automáticas',
     'Inventario, compras y gastos',
     'Reportes financieros y arqueo de caja',
-    'Fotos de trabajos, sin limite de fotos',
-    'Resenas verificadas de tus clientas',
-    'Tu pagina web publica con reserva en linea',
+    'Fotos de trabajos, sin límite de fotos',
+    'Reseñas verificadas de tus clientas',
+    'Tu página web pública con reserva en línea',
   ];
 
   /// 120000 -> "120.000". Sin dependencias: es el unico sitio de esta pantalla
@@ -622,7 +622,7 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Comparalo con lo que hay',
+          'Compáralo con lo que hay',
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.w800,
@@ -654,12 +654,12 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
               _filaComparativa(
                 titulo: 'AgendaPro, plan completo',
                 precio: '\$510.000',
-                detalle: 'Lo mas parecido a lo que aqui viene de serie.',
+                detalle: 'Lo más parecido a lo que aquí viene de serie.',
                 destacada: false,
               ),
               const Divider(height: 1),
               _filaComparativa(
-                titulo: 'Salon y Mas, Todo Incluido',
+                titulo: 'Salón y Más, Todo Incluido',
                 precio: '\$150.000',
                 detalle:
                     'Todo lo de arriba, por sede. Pregunta por la tarifa de '
@@ -678,7 +678,7 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
             Expanded(
               child: Text(
                 'Y una diferencia que no cabe en la tabla: cuando algo se traba '
-                'un sabado a las 3 de la tarde, aqui te contesta por WhatsApp '
+                'un sábado a las 3 de la tarde, aquí te contesta por WhatsApp '
                 'quien hizo el programa, en tu misma hora.',
                 style: TextStyle(
                   fontSize: 13,
@@ -757,53 +757,53 @@ class _PublicPlansPageState extends State<PublicPlansPage> {
         ),
         const SizedBox(height: 20),
         _buildFaqTile(
-          question: 'De verdad, no hay modulos bloqueados?',
+          question: '¿De verdad no hay módulos bloqueados?',
           answer:
-              'No hay. Antes teniamos tres planes y cada uno escondia cosas: '
-              'el pequeno se quedaba sin inventario, sin reportes y sin fotos. '
-              'Nos parecio mezquino y lo quitamos. Hoy pagas por sede y tienes '
-              'el programa completo desde el primer dia.',
+              'No hay. Antes teníamos tres planes y cada uno escondía cosas: '
+              'el pequeño se quedaba sin inventario, sin reportes y sin fotos. '
+              'Nos pareció mezquino y lo quitamos. Hoy pagas por sede y tienes '
+              'el programa completo desde el primer día.',
         ),
         _buildFaqTile(
-          question: 'Que pasa si abro una segunda sede?',
+          question: '¿Qué pasa si abro una segunda sede?',
           answer:
               'Puedes crearla cuando quieras. Cada sede activa suma su cuota '
-              'mensual, asi que solo pagas mas cuando tu negocio ya crecio. Si '
+              'mensual, así que solo pagas más cuando tu negocio ya creció. Si '
               'cierras una sede, dejas de pagarla.',
         ),
         _buildFaqTile(
-          question: 'Cuanta gente cabe en mi equipo?',
+          question: '¿Cuánta gente cabe en mi equipo?',
           answer:
-              'Diez personas por sede, tu incluido: tu mas nueve entre '
+              'Diez personas por sede, tú incluido: tú más nueve entre '
               'administradores, recepcionistas y estilistas. Cubre a casi '
-              'cualquier salon. Si el tuyo es mas grande, escribenos y lo '
+              'cualquier salón. Si el tuyo es más grande, escríbenos y lo '
               'ampliamos. Clientas, citas y fotos no tienen tope ninguno.',
         ),
         _buildFaqTile(
-          question: 'Y la tarifa de lanzamiento de la que hablan?',
+          question: '¿Y la tarifa de lanzamiento de la que hablan?',
           answer:
-              'Estamos abriendo ciudad por ciudad y acompanamos uno a uno a los '
-              'primeros salones de cada una, asi que su tarifa la hablamos en '
-              'persona. Escribenos por WhatsApp y te contamos como esta la de '
+              'Estamos abriendo ciudad por ciudad y acompañamos uno a uno a los '
+              'primeros salones de cada una, así que su tarifa la hablamos en '
+              'persona. Escríbenos por WhatsApp y te contamos cómo está la de '
               'tu ciudad.',
         ),
         _buildFaqTile(
-          question: 'Tengo que poner una tarjeta para probarlo?',
+          question: '¿Tengo que poner una tarjeta para probarlo?',
           answer:
-              'No. La prueba de 21 dias no pide tarjeta. Y antes de la prueba '
-              'hablamos contigo: no dejamos entrar a nadie sin acompanarlo a '
+              'No. La prueba de 21 días no pide tarjeta. Y antes de la prueba '
+              'hablamos contigo: no dejamos entrar a nadie sin acompañarlo a '
               'configurar sus servicios, su equipo y su horario.',
         ),
         _buildFaqTile(
-          question: 'Como pago y desde donde?',
+          question: '¿Cómo pago y desde dónde?',
           answer:
               'Por ePayco, con PSE, Nequi, Daviplata o tarjeta, desde la misma '
-              'aplicacion. La factura queda registrada en tu cuenta.',
+              'aplicación. La factura queda registrada en tu cuenta.',
         ),
         _buildFaqTile(
-          question: 'Y si quiero irme?',
+          question: '¿Y si quiero irme?',
           answer:
-              'Dejas de pagar y ya. No hay clausula de permanencia ni multa. '
+              'Dejas de pagar y ya. No hay cláusula de permanencia ni multa. '
               'Tus datos son tuyos y te los entregamos si los pides.',
         ),
       ],

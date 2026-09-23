@@ -126,7 +126,7 @@ class _AddWorkPhotoDialogState extends State<AddWorkPhotoDialog> {
                 decoration: const InputDecoration(labelText: 'Tipo de foto'),
                 items: const [
                   DropdownMenuItem(value: 'before', child: Text('Antes')),
-                  DropdownMenuItem(value: 'after', child: Text('Despues')),
+                  DropdownMenuItem(value: 'after', child: Text('Después')),
                   DropdownMenuItem(value: 'final', child: Text('Final')),
                   DropdownMenuItem(
                     value: 'portfolio',
@@ -177,7 +177,7 @@ class _AddWorkPhotoDialogState extends State<AddWorkPhotoDialog> {
               TextField(
                 controller: _captionController,
                 decoration: const InputDecoration(
-                  labelText: 'Descripcion opcional',
+                  labelText: 'Descripción opcional',
                 ),
                 minLines: 2,
                 maxLines: 3,
@@ -193,9 +193,14 @@ class _AddWorkPhotoDialogState extends State<AddWorkPhotoDialog> {
                 contentPadding: EdgeInsets.zero,
                 controlAffinity: ListTileControlAffinity.leading,
                 dense: true,
+                // Hallazgo AQ: decía "La clienta autorizó…", y lo marca quien
+                // sube la foto, que es la parte interesada. Afirmaba un hecho
+                // de un tercero ausente. Mientras no lo apruebe la clienta
+                // desde su portal, lo honesto es que quien la sube diga lo que
+                // él mismo hizo: pedir la autorización.
                 title: const Text(
-                  'La clienta autorizó la publicación de esta foto en '
-                  'portafolio y redes (Ley 1581)',
+                  'Confirmo que le pedí a la clienta su autorización para '
+                  'publicar esta foto en el portafolio y en redes (Ley 1581)',
                   style: TextStyle(fontSize: 13),
                 ),
               ),

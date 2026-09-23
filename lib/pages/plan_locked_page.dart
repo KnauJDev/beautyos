@@ -21,7 +21,6 @@ class PlanLockedPage extends StatelessWidget {
     required this.moduleTitle,
     required this.moduleIcon,
     required this.explicacion,
-    required this.planSugerido,
     this.onIrAConfiguracion,
   });
 
@@ -35,8 +34,9 @@ class PlanLockedPage extends StatelessWidget {
   /// acabando".
   final String explicacion;
 
-  /// El plan más barato que lo incluye (Plan Maestro, apartado 3).
-  final String planSugerido;
+  // Aquí había un `planSugerido` —*"el plan más barato que lo incluye"*— que
+  // decía Business o Profesional, dos planes que D-188 jubiló. Se quitó con el
+  // hallazgo BD (23-sep): lo que no viene activado se pide, no se compra.
 
   /// Lleva a Configuración, donde vive la tarjeta de Suscripción (D-158).
   final VoidCallback? onIrAConfiguracion;
@@ -170,7 +170,8 @@ class PlanLockedPage extends StatelessWidget {
                         const SizedBox(width: AppSpacing.sm),
                         Expanded(
                           child: Text(
-                            'Se activa con el plan $planSugerido.',
+                            'No viene activado en tu cuenta. Pídelo a '
+                            'Salón y Más y lo activamos.',
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
@@ -190,7 +191,7 @@ class PlanLockedPage extends StatelessWidget {
                       child: FilledButton.icon(
                         onPressed: onIrAConfiguracion,
                         icon: const Icon(Icons.arrow_forward, size: 18),
-                        label: const Text('Ver planes y mejorar'),
+                        label: const Text('Ver mi suscripción'),
                       ),
                     ),
 

@@ -753,13 +753,12 @@ class _TicketsPageState extends State<TicketsPage> {
     if (!widget.puedeResenas) {
       await mostrarCandadoDePlan(
         context,
-        titulo: 'Resenas',
+        titulo: 'Reseñas',
         explicacion:
-            'Las resenas dejan que tu clienta califique el servicio y que esa '
-            'calificacion se vea en la pagina publica de tu salon. Tu plan '
-            'actual todavia no las incluye, asi que el enlace no le funcionaria '
+            'Las reseñas dejan que tu clienta califique el servicio y que esa '
+            'calificación se vea en la página pública de tu salón. Tu cuenta '
+            'todavía no las incluye, así que el enlace no le funcionaría '
             'a ella.',
-        planSugerido: 'Profesional',
       );
       return;
     }
@@ -776,7 +775,6 @@ class _TicketsPageState extends State<TicketsPage> {
             'Las fotos de trabajos arman el portafolio de tu salon: lo que '
             'hiciste, con que clienta y con que estilista, listo para ensenarlo '
             'en tu pagina publica.',
-        planSugerido: 'Profesional',
       );
       return;
     }

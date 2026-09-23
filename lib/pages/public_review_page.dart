@@ -70,7 +70,7 @@ class _PublicReviewPageState extends State<PublicReviewPage> {
   Future<void> _submit() async {
     if (selectedRating < 1) {
       setState(() {
-        submitError = 'Selecciona una calificacion de 1 a 5 estrellas.';
+        submitError = 'Selecciona una calificación de 1 a 5 estrellas.';
       });
       return;
     }
@@ -148,8 +148,8 @@ class _PublicReviewPageState extends State<PublicReviewPage> {
       return const _MessageCard(
         icon: Icons.check_circle_outline,
         iconColor: AppColors.success,
-        message: 'Gracias por tu opinion. Tu resena quedara publicada '
-            'despues de ser revisada por el negocio.',
+        message: 'Gracias por tu opinión. Tu reseña quedará publicada '
+            'después de ser revisada por el negocio.',
       );
     }
 
@@ -157,7 +157,7 @@ class _PublicReviewPageState extends State<PublicReviewPage> {
       return const _MessageCard(
         icon: Icons.info_outline,
         iconColor: AppColors.textSecondary,
-        message: 'Ya se registro una resena para esta visita. Gracias.',
+        message: 'Ya se registró una reseña para esta visita. Gracias.',
       );
     }
 
@@ -165,8 +165,8 @@ class _PublicReviewPageState extends State<PublicReviewPage> {
       return const _MessageCard(
         icon: Icons.hourglass_empty_outlined,
         iconColor: AppColors.textSecondary,
-        message: 'Esta visita todavia no ha finalizado. Cuando el negocio '
-            'la marque como finalizada podras dejar tu resena.',
+        message: 'Esta visita todavía no ha finalizado. Cuando el negocio '
+            'la marque como finalizada podrás dejar tu reseña.',
       );
     }
 
@@ -205,12 +205,12 @@ class _PublicReviewPageState extends State<PublicReviewPage> {
             ),
             const SizedBox(height: 6),
             Text(
-              'Hola ${loadedTicket.clientName}, cuentanos como te fue.',
+              'Hola ${loadedTicket.clientName}, cuéntanos cómo te fue.',
               style: const TextStyle(fontSize: 15, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 20),
             const Text(
-              'Calificacion',
+              'Calificación',
               style: TextStyle(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
@@ -277,7 +277,7 @@ class _PublicReviewPageState extends State<PublicReviewPage> {
               maxLines: 5,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
-                hintText: 'Cuentanos tu experiencia...',
+                hintText: 'Cuéntanos tu experiencia...',
               ),
             ),
             if (submitError != null) ...[
@@ -301,7 +301,7 @@ class _PublicReviewPageState extends State<PublicReviewPage> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text('Enviar resena'),
+                    : const Text('Enviar reseña'),
               ),
             ),
           ],

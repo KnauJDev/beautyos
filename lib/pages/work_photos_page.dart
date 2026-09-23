@@ -755,7 +755,9 @@ class _ConsentBadge extends StatelessWidget {
     final color = hasConsent ? AppColors.success : AppColors.textMuted;
     return Tooltip(
       message: hasConsent
-          ? 'La clienta autorizó publicar esta foto (Ley 1581)'
+          // Hallazgo AQ: lo marca quien sube la foto, no la clienta.
+          ? 'Quien subió la foto confirmó haber pedido la autorización de la '
+                'clienta (Ley 1581)'
           : 'Sin autorización de la clienta: solo archivo interno privado',
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),

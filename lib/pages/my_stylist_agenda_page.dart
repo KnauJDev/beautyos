@@ -217,10 +217,9 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
         context,
         titulo: 'Fotos de trabajos',
         explicacion:
-            'Las fotos de trabajos arman el portafolio del salon: lo que '
-            'hiciste, con que clienta y con que servicio. El plan que tiene el '
-            'salon todavia no las incluye.',
-        planSugerido: 'Profesional',
+            'Las fotos de trabajos arman el portafolio del salón: lo que '
+            'hiciste, con qué clienta y con qué servicio. La cuenta del salón '
+            'todavía no las incluye.',
         puedeMejorarElPlan: false,
       );
       return;

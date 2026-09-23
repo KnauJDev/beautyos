@@ -549,7 +549,8 @@ class _SubscriptionSettingsCardState extends State<_SubscriptionSettingsCard> {
           );
         }
 
-        final planName = sub.planName ?? 'Profesional';
+        // Hallazgo BD: el respaldo era 'Profesional', jubilado por D-188.
+        final planName = sub.planName ?? 'Todo Incluido';
         final isFounder = sub.isFounder;
 
         return Card(
