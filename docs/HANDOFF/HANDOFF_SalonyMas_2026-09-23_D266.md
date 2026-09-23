@@ -1,12 +1,12 @@
-# HANDOFF Salón y Más — 23 de septiembre de 2026, noche ("El ciclo del cobro, completo", D-255 a D-266)
+# HANDOFF Salón y Más — 23 de septiembre de 2026, noche ("El ciclo del cobro, completo", D-255 a D-267)
 
-**Bloque documentado:** decisiones **D-255** a **D-266**. Por la tarde, cerrando
+**Bloque documentado:** decisiones **D-255** a **D-267**. Por la tarde, cerrando
 hallazgos con permiso del propietario mientras descansaba (D-255 a D-259). Por la
 noche, con él presente: sus decisiones, la **regla 25** y **cinco migraciones
 aplicadas por él**, todas con su control en verde.
 
 **Estado:** ✅ Todo publicado y aplicado. **Nada escrito queda sin aplicar.**
-`flutter analyze` **0/0** · **483 pruebas** · Guardián en verde · CI en verde.
+`flutter analyze` **0/0** · **489 pruebas** · Guardián en verde · CI en verde.
 **Hallazgos: 57 en total, 40 cerrados o decididos, 17 abiertos** (los cuenta el guardián; esta mañana eran 51 y 24).
 
 > El HANDOFF anterior está en `docs/_archivo/handoffs/HANDOFF_SalonyMas_2026-09-23_D259.md`.
@@ -67,7 +67,7 @@ antes de aplicar (una línea sale y nueve entran, por ejemplo).
 
 Pulsa **Actualizar** en el aviso de versión nueva primero. **No pagues nada.**
 
-1. ✅ **Verificado por ti el 23-sep:** píldora **ámbar**, *"5 días de gracia · Pagar"*, y *Tus sedes* con las dos sedes en *Pago vencido*. *(Lo que sigue es para el 28-sep.)* Al tocarla, te lleva a **Configuración**. **El 28-sep**, si no se paga, pasará a roja: *"Suspendido por falta de pago · Pagar"*.
+1. ✅ **Verificado por ti el 23-sep:** píldora **ámbar**, *"5 días de gracia · Pagar"*, y *Tus sedes* con las dos sedes en *Pago vencido*. **El 28-sep**, si no se paga, la píldora pasará a roja: *"Suspendido por falta de pago · Pagar"*.
 2. **Configuración → Tus sedes (Naguara):** la sede dice **Pago vencido**, con un botón para pagarla.
 3. **Nueva cita en Naguara:** te deja crearla, porque está en su gracia. Y la reserva en línea también (ya lo viste).
 4. **Configuración → la tarjeta con el nombre de tu sede → Editar:** pon un correo **sin arroba** y pulsa Guardar. El formulario **no se cierra**, y el error sale **debajo del correo**.
