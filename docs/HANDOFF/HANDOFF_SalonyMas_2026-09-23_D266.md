@@ -81,14 +81,14 @@ Pulsa **Actualizar** en el aviso de versión nueva primero. **No pagues nada.**
 
 | | Qué | Por qué importa |
 |---|---|---|
-| **a** | **Aprobar el orden propuesto** de la Fase 9 (`PLAN_MAESTRO`) | Sin aprobar, el orden vuelve a vivir en el HANDOFF |
+| ~~a~~ | ~~Aprobar el orden de la Fase 9~~ | ✅ **Aprobado** (D-268), con método: paso a paso, confirmado por él antes de cerrar |
 | **b** | **El pago real del 9.8, de $10.000**, con la sede de Éxito | **No hay que cambiar nada**: la sede ya está en $10.000 (D-265). Antes de pagar, mira qué botón enseña *Tus sedes* de Éxito. Recae en tu propia cuenta; pagas impuestos y comisión |
 | **c** | **Cuándo pasar a Supabase Pro** | D-088 decía *cuando cargue datos*, D-226 *cuando pague* |
 | **d** | **I-13**: acceso de lectura a la base para el asistente | Hoy cada lectura es un comando tuyo con contraseña: hoy fueron cinco |
 | **e** | **El acceso de soporte a los datos de los salones** (BC) | D-076 caduca con el primer cliente real |
 | **h** | **Las fotos: ¿quitamos los tipos *Final* y *Portafolio*?** | Lo decía el hallazgo Ñ, y ya definiste el flujo |
 | ~~o~~ | ~~¿Aviso en *Mi agenda* con el enlace de reservas?~~ | ✅ **Aprobado y construido** (D-267): *"¿Tienes una clienta nueva?"*, con WhatsApp y Copiar |
-| **p — nueva** | **¿Quién ve el pago de cada sede en *Tus sedes*?** | Una sede no le puede pagar a otra: cada botón paga la suya (verificado). Pero hoy **el dueño y cualquier administrador** ven y pueden pagar todas, con sus precios. Opciones: el dueño todas y el administrador solo la suya; o todos solo la sede elegida arriba |
+| ~~p~~ | ~~¿Quién ve el pago de cada sede?~~ | ✅ **El dueño ve todas y paga cada una por su sede; cada administrador, solo la suya** (D-268, hallazgo BP). Va después del 9.8 |
 
 ---
 
@@ -97,7 +97,7 @@ Pulsa **Actualizar** en el aviso de versión nueva primero. **No pagues nada.**
 1. **AK — seis diálogos en `tickets_page.dart`** (agregar, cambiar y quitar servicio; reprogramar; cambiar estado; corregir) todavía se cierran antes de guardar. Van con el **9.13**, porque son flujos de caja.
 2. **AQ y Ñ** — publicar una foto lo autoriza solo la clienta desde su enlace (decidido); hoy la casilla del salón todavía la habilita. Construir esa aprobación es el **9.48**.
 3. **AL** — queda la plantilla de correo del empleado invitado, que se ajusta en Supabase.
-4. **La tarjeta del estilista** (D-267) está publicada pero no vista: entra como un estilista y mira *Mi agenda*, debajo de *Bloqueos de mi agenda*.
+4. ✅ **La tarjeta del estilista** (D-267): vista por el propietario en *Mi agenda* de Erick.
 
 ---
 
