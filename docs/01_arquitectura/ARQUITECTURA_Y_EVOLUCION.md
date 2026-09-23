@@ -200,6 +200,11 @@ Configuración → "Activar esta sede"
   se niega, D-252), pero **la maquinaria que liquida sigue viva** a propósito: un
   pago rezagado tiene que poder registrarse.
 
+> ✅ **Superado el 23-sep (D-269 a D-272):** dos pagos reales de $10.000 por el
+> camino de la sede —Éxito, aplicado al volver a la app; Naguara, aplicado **por el
+> webhook solo**—, después de corregir la llave de firma `EPAYCO_P_KEY` (D-271).
+> Lo de abajo es cómo estaba ese día por la mañana.
+>
 > ⚠️ **El camino de cobro que queda nunca ha cobrado un peso real.** Los dos
 > únicos cobros de la historia (23-ago y 08-sep, $10.000 cada uno, negocios de
 > prueba) fueron por el camino del negocio, que desde el 22-sep está cerrado. El
