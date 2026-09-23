@@ -98,6 +98,8 @@ Pulsa **Actualizar** en el aviso de versión nueva primero.
 | ~~f~~ | ~~Las reglas 5 y 9~~ | ✅ Contestada (D-260) |
 | ~~g~~ | ~~¿Una sede suspendida debe dejar de agendar?~~ | ✅ **Sí**: solo las citas nuevas de esa sede (D-260) |
 | **h — nueva** | **Las fotos: ¿qué hacemos con los tipos *Final* y *Portafolio*?** | Definiste el flujo (se toma con la clienta presente; publicarla lo autoriza solo ella desde su enlace), pero el hallazgo Ñ también decía que esos dos tipos sobran |
+| **i — nueva** | **¿El estilista puede agendar citas?** (hallazgo **BM**) | El diseño de julio dice que sí; el servidor, desde el 20-jul, que no. Nadie lo decidió. Opciones: solo para sí mismo, para cualquiera de su sede, o no (y *Mi agenda* lo explica) |
+| **j — nueva** | **¿Termina la prueba gratis y hay 5 días de gracia?** | Hoy **no**: la gracia de 5 días (D-141) es solo al vencer un mes **pagado**. Al terminar la prueba sin pagar, las citas nuevas se bloquean ese mismo día. El 23-sep el propietario habló de *"5 días de gracia a partir de vencidos los días de la prueba"*: hay que confirmar si eso es lo que quiere |
 
 ---
 
