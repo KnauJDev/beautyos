@@ -1287,7 +1287,13 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
         final activeCount = allTenants
             .where((t) => t.isActive && !t.isDemo)
             .length;
-        final trialCount = allTenants.where((t) => t.isTrialing).length;
+        // Hallazgo AR: esta línea no excluía los ensayos y la de arriba sí.
+        // La tarjeta de métricas (que viene del servidor, `where not
+        // t.is_demo`) decía 0 y esta píldora 1. Los ensayos tienen su propia
+        // píldora, *Demos*: aquí se cuentan las pruebas de verdad.
+        final trialCount = allTenants
+            .where((t) => t.isTrialing && !t.isDemo)
+            .length;
 
         // Filtrar por texto
         var filtered = allTenants.where((t) {
@@ -1313,7 +1319,7 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
           if (selectedFilter == 'activos') {
             return t.isActive && !t.isDemo;
           }
-          if (selectedFilter == 'trialing') return t.isTrialing;
+          if (selectedFilter == 'trialing') return t.isTrialing && !t.isDemo;
           if (selectedFilter == 'demo') return t.isDemo;
           if (selectedFilter == 'suspendidos') return t.isSuspended;
 

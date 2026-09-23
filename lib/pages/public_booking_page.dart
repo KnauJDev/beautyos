@@ -199,6 +199,13 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
 
     if (picked == null || !mounted) return;
 
+    await _cargarHorarios(picked);
+  }
+
+  /// Carga los horarios libres de [picked]. Aparte de `_selectDate` para poder
+  /// **recargarlos sin volver a abrir el calendario** cuando la hora elegida
+  /// caduca mientras la clienta escribe (hallazgo AX).
+  Future<void> _cargarHorarios(DateTime picked) async {
     setState(() {
       selectedDate = picked;
       slotOptions = [];
@@ -300,6 +307,19 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
       return;
     }
 
+    // Hallazgo AX (18-sep): la clienta eligió las 18:15 a las 18:14 y, cuando
+    // terminó de escribir, ya eran las 18:15. El servidor no deja reservar el
+    // pasado —y hace bien—, pero le respondía *"Ese horario ya no está
+    // disponible"*, que se lee como *"alguien me ganó"*. Se comprueba aquí
+    // primero, con su mensaje propio, y se le recarga la lista.
+    if (!slotOption.slot.startsAt.isAfter(DateTime.now())) {
+      await _horaPerdida(
+        'Esa hora ya pasó mientras llenabas tus datos. Te actualizamos '
+        'la lista: elige otra. Lo que escribiste sigue aquí.',
+      );
+      return;
+    }
+
     setState(() {
       isSubmitting = true;
       submitError = null;
@@ -328,11 +348,39 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
       });
     } catch (error) {
       if (!mounted) return;
+      final mensaje = _friendlyError(error);
+      // El servidor usa el mismo texto para "ya pasó" y para "te la quitaron"
+      // (AX). Aquí se distinguen por la hora, y en los dos casos se recarga la
+      // lista: seguir ofreciendo una hora que no se puede reservar es invitar
+      // al mismo error.
+      if (mensaje.contains('Ese horario ya no')) {
+        setState(() => isSubmitting = false);
+        await _horaPerdida(
+          slotOption.slot.startsAt.isAfter(DateTime.now())
+              ? 'Alguien acaba de reservar esa hora. Te actualizamos la '
+                    'lista: elige otra. Lo que escribiste sigue aquí.'
+              : 'Esa hora ya pasó mientras llenabas tus datos. Te '
+                    'actualizamos la lista: elige otra. Lo que escribiste '
+                    'sigue aquí.',
+        );
+        return;
+      }
       setState(() {
-        submitError = _friendlyError(error);
+        submitError = mensaje;
         isSubmitting = false;
       });
     }
+  }
+
+  /// La hora elegida ya no sirve: se explica por qué, se recarga la lista del
+  /// mismo día y **no se toca lo que la clienta escribió**.
+  Future<void> _horaPerdida(String explicacion) async {
+    final fecha = selectedDate;
+    if (fecha != null) {
+      await _cargarHorarios(fecha);
+    }
+    if (!mounted) return;
+    setState(() => submitError = explicacion);
   }
 
   String get _selectedDateText {
