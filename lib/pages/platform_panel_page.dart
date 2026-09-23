@@ -263,8 +263,9 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                         labelText: 'Precio mensual de su sede, en COP',
                         hintText: 'Ej. 75000',
                         helperText:
-                            'Es lo que pagará su sede principal cada mes. Si '
-                            'abre más sedes, cada una se pacta por separado.',
+                            'Es lo que pagará su sede principal cada mes, '
+                            'desde \$10.000 (el cobro mínimo). Si abre más '
+                            'sedes, cada una se pacta por separado.',
                         helperMaxLines: 3,
                         border: OutlineInputBorder(),
                       ),
@@ -2434,7 +2435,8 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                   decoration: const InputDecoration(
                     labelText: 'Precio mensual de ESTA sede, en COP',
                     helperText:
-                        'Vacio = tarifa vigente del plan. No es el precio del negocio.',
+                        'Desde \$10.000, el cobro mínimo. Vacío = '
+                        'tarifa vigente del plan. No es el precio del negocio.',
                     helperMaxLines: 2,
                     border: OutlineInputBorder(),
                   ),

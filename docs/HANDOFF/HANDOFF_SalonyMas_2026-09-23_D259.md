@@ -56,15 +56,23 @@ BI queda cerrado (D-262): la sede suspendida no agenda y la pantalla lo dice.
 
 **BL: cerrado (D-264).** Control 225 en 4/4, y cero filas del historial dañadas.
 
-**Lo siguiente, solo lectura:** el cobro de la sede, para cobrar el mes
-completo en la gracia (BN, decidido) y confirmar o descartar el mínimo de
-$10.000 que dejaría sin activar la sede de $4.500 (BO):
+**BN y BO: migración escrita desde el texto vivo, SIN APLICAR (D-265).** La
+gracia se cobra entera, la sede de Éxito sube a $10.000 y nadie pacta por
+debajo del mínimo. Después, la lectura para que el estilista agende:
 
 ```bash
-powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\sql\intervenciones\extraer_cobro_de_sede_bn.sql"
+powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\migrations\20260923190000_la_gracia_se_cobra_y_el_cobro_minimo_bn_bo.sql"
 ```
 
-Deja `_vivo_bn_cobro_de_sede.sql` en la raíz.
+```bash
+powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\sql\226_test_la_gracia_se_cobra_y_el_minimo.sql"
+```
+
+```bash
+powershell -ExecutionPolicy Bypass -File "scripts\aplicar_sql.ps1" -Archivo "supabase\sql\intervenciones\extraer_agenda_del_estilista_bm.sql"
+```
+
+El control debe decir **7/7**. La lectura deja `_vivo_bm_agenda_del_estilista.sql`.
 
 ---
 
@@ -100,7 +108,8 @@ Pulsa **Actualizar** en el aviso de versión nueva primero.
 | ~~j~~ | ~~¿Gracia al terminar la prueba?~~ | ✅ **No**: la gracia es solo de los meses pagados (D-263) |
 | ~~k~~ | ~~¿Cobrar el mes completo en la gracia?~~ | ✅ **Sí** (D-264). Falta la migración |
 | ~~l~~ | ~~¿Corregir las filas del historial dañadas?~~ | ✅ **No hace falta**: el control 225 contó cero |
-| **m — nueva** | **¿Sabes cuál es el cobro mínimo que acepta ePayco?** (hallazgo **BO**) | Antes del pago de $4.500 del 9.8. Si ePayco no acepta menos de cierto valor, la sede de prueba tiene que pactarse por encima |
+| ~~m~~ | ~~¿Mínimo de ePayco?~~ | ✅ **El cobro mínimo de una sede es $10.000** (D-265). Éxito sube a $10.000 |
+| **n — nueva** | **¿Qué clientas ve el estilista al escoger para quién es la cita?** (BM) | Todas las del salón, como recepción, o solo las que él atendió o dio de alta. Pesa el día que un estilista se va con la lista de clientas |
 
 ---
 
@@ -127,8 +136,8 @@ Pulsa **Actualizar** en el aviso de versión nueva primero.
 
 ## 8. Por dónde seguir
 
-1. **La lectura del cobro de sede** (§3) → una migración para BN y, si se confirma, BO, con su control.
-1-bis. **Los dos detalles de la i** para construir que el estilista agende para sí mismo, y la **m**.
+1. **Aplicar BN y BO** (§3) con su control 226, y correr la lectura del estilista.
+1-bis. **Tu decisión n**, y con la lectura, construir que el estilista agende para sí mismo (BM).
 2. **Tus verificaciones en pantalla** (§4).
 3. **Tus decisiones** (§5), sobre todo **a** (el orden).
 4. Con BI cerrado, el turno A sigue: **9.8 + 9.7** con $4.500 propios → 9.40 → AD → 9.9.
@@ -154,13 +163,12 @@ permiso general, y lo que corre el propietario se copia de algo que ya
 funcionó.
 
 LO PRIMERO
-BI está cerrado (D-261 aplicada, control 224 en 9/9; D-262). BL está cerrado
-(D-264). Decidido y sin construir: cobrar el mes completo en la gracia
-(BN). Sospecha sin comprobar: un mínimo de $10.000 en la activación de la
-sede dejaría sin activar la de $4.500 del paso 9.8 (BO). Preguntarle si
-corrió intervenciones/extraer_cobro_de_sede_bn.sql y escribir desde ese
-texto vivo una sola migración con su control. Faltan los dos detalles de
-la decisión i (el estilista agenda para sí mismo) y la m (mínimo de ePayco).
+BI está cerrado (D-261 aplicada, control 224 en 9/9; D-262). BN (la gracia se
+cobra entera) y BO (el cobro mínimo de una sede es $10.000, Éxito sube a
+$10.000) están en una migración escrita desde el texto vivo, SIN APLICAR:
+preguntarle por el control 226 (7/7). Para BM (el estilista agenda para sí
+mismo, da de alta a la clienta desde Mi agenda, la cita nace por confirmar)
+hay una lectura preparada y falta su decisión n: qué clientas ve.
 
 CÓMO SE TRABAJA CON ÉL
 Va paso a paso y confirma cada uno. No es técnico: qué se hace, cómo y por
