@@ -12,6 +12,7 @@ import '../services/stylist_time_off_service.dart';
 import '../widgets/add_work_photo_dialog.dart';
 import '../widgets/app_widgets.dart';
 import '../widgets/candado_de_plan.dart';
+import '../widgets/compartir_reserva_del_estilista.dart';
 import '../widgets/create_time_off_dialog.dart';
 
 class MyStylistAgendaPage extends StatefulWidget {
@@ -252,6 +253,10 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
           onCancel: _cancelTimeOff,
           onCancelSeries: _cancelTimeOffSeries,
         ),
+        const SizedBox(height: 18),
+        // D-267: el estilista no agenda (D-266), pero trae clientas con el
+        // enlace de reservas de su sede.
+        CompartirReservaDelEstilista(branchId: widget.branchId),
         const SizedBox(height: 18),
         _AgendaDateNavigator(
           selectedDate: selectedDate,

@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../theme/app_theme.dart';
 
+import '../models/enlace_de_reserva.dart';
 import '../models/appointment_policy.dart';
 import '../models/branch_info.dart';
 import '../models/business_hour.dart';
@@ -1621,7 +1622,8 @@ class PublicBookingLinkCard extends StatelessWidget {
 
   final String branchId;
 
-  String get _link => '${Uri.base.origin}/?reservar=$branchId';
+  // El mismo enlace que comparte el estilista desde Mi agenda (D-267).
+  String get _link => enlaceDeReservaDeSede(branchId);
 
   Future<void> _copyLink(BuildContext context) async {
     await Clipboard.setData(ClipboardData(text: _link));
