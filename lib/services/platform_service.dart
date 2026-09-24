@@ -6,6 +6,7 @@ import '../models/platform_saas_metrics.dart';
 import '../models/platform_tenant_feature_override.dart';
 import '../models/platform_tenant_summary.dart';
 import '../models/tenant_subscription_history_entry.dart';
+import 'sesion_supabase.dart';
 
 class PlatformService {
   const PlatformService();
@@ -210,6 +211,65 @@ class PlatformService {
       }
     }
     return borrado;
+  }
+
+  /// Borra los archivos de Storage de un negocio de PRUEBA — fotos de
+  /// trabajo, logo, portada y fotos de estilistas — ANTES de llamar a
+  /// [deleteDemoTenant], y devuelve el equipo del negocio para poder limpiar
+  /// sus cuentas huerfanas DESPUES con [deleteOrphanedAccounts] (hallazgo
+  /// AS).
+  ///
+  /// **El orden importa y no es intercambiable**, mismo criterio que ya usa
+  /// `WorkPhotosService.setPortfolioApproval` para retirar una foto: el
+  /// archivo se borra antes que la fila que lo referencia. Si esto falla,
+  /// no se ha tocado ninguna tabla — el negocio sigue existiendo intacto y
+  /// es seguro reintentar.
+  ///
+  /// El seguro (solo negocios `is_demo = true`) no vive en Flutter: la
+  /// funcion de servidor lo vuelve a comprobar por su cuenta, sin fiarse de
+  /// esta pantalla.
+  Future<({Map<String, int> eliminados, List<String> equipoUserIds})>
+  deleteTenantStorageFiles(String tenantId) async {
+    final respuesta = await Supabase.instance.client.functions.invoke(
+      'platform-delete-tenant-storage',
+      headers: await cabecerasParaEdgeFunction(),
+      body: {'tenantId': tenantId},
+    );
+
+    final datos = Map<String, dynamic>.from(respuesta.data as Map);
+    final eliminados = Map<String, dynamic>.from(
+      datos['eliminados'] as Map? ?? {},
+    ).map((bucket, cantidad) => MapEntry(bucket, (cantidad as num).toInt()));
+    final equipoUserIds = (datos['equipoUserIds'] as List? ?? [])
+        .map((id) => id.toString())
+        .toList();
+
+    return (eliminados: eliminados, equipoUserIds: equipoUserIds);
+  }
+
+  /// Borra de Supabase Auth las cuentas de [userIds] que se hayan quedado
+  /// sin NINGUN negocio, DESPUES de que [deleteDemoTenant] borró sus filas
+  /// (hallazgo AS, segunda mitad).
+  ///
+  /// **El orden no es opcional:** `tenant_memberships.user_id` es `on
+  /// delete restrict` contra `auth.users` -- mientras la fila de membresía
+  /// exista, Postgres se niega a borrar la cuenta. Por eso esto se llama
+  /// DESPUES de [deleteDemoTenant], nunca antes.
+  ///
+  /// Los dos seguros (solo cuentas sin ningun otro negocio; nunca un
+  /// operador de plataforma) no viven en Flutter: la funcion de servidor
+  /// los vuelve a comprobar por su cuenta.
+  Future<int> deleteOrphanedAccounts(List<String> userIds) async {
+    if (userIds.isEmpty) return 0;
+
+    final respuesta = await Supabase.instance.client.functions.invoke(
+      'platform-delete-orphaned-accounts',
+      headers: await cabecerasParaEdgeFunction(),
+      body: {'userIds': userIds},
+    );
+
+    final datos = Map<String, dynamic>.from(respuesta.data as Map);
+    return (datos['cuentasBorradas'] as List? ?? []).length;
   }
 
   /// Escribe los datos propios de UNA sede (D-241, paso 9.42).

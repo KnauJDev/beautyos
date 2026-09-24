@@ -11,6 +11,7 @@ import '../models/platform_tenant_feature_override.dart';
 import '../models/platform_tenant_summary.dart';
 import '../models/tenant_subscription_history_entry.dart';
 import '../models/ticket_board.dart' show formatCOP;
+import '../services/epayco_checkout_service.dart';
 import '../services/platform_service.dart';
 import '../widgets/dialogo_datos_de_sede.dart';
 import '../widgets/security_settings_dialog.dart';
@@ -941,8 +942,11 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
               const SizedBox(height: 10),
               const Text(
                 'Queda un resumen de lo borrado --cuantas filas y cuanto '
-                'dinero-- porque estos negocios llevan pagos reales. Las '
-                'cuentas de correo y los archivos de fotos NO se borran.',
+                'dinero-- porque estos negocios llevan pagos reales. '
+                'Tambien se borran sus archivos (fotos de trabajo, logo, '
+                'portada y fotos de estilistas) y las cuentas de correo de '
+                'su equipo que no pertenezcan a ningun otro negocio '
+                '(hallazgo AS).',
                 style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 16),
@@ -984,29 +988,90 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
 
     if (confirmado != true || !mounted) return;
 
+    // AS, en tres pasos que no se pueden reordenar:
+    //   1. Archivos primero (mismo orden que WorkPhotosService.
+    //      setPortfolioApproval al retirar una foto). Si falla, no se ha
+    //      tocado ninguna tabla -- el negocio sigue intacto.
+    //   2. Las filas (deleteDemoTenant). Esto borra tenant_memberships.
+    //   3. Las cuentas huerfanas, AL FINAL: mientras la fila de membresía
+    //      exista, Postgres no deja borrar la cuenta de Auth (`on delete
+    //      restrict`). Solo se puede despues del paso 2.
+    int archivosBorrados;
+    List<String> equipoUserIds;
     try {
-      final borrado = await platformService.deleteDemoTenant(tenant.tenantId);
-      if (!mounted) return;
-
-      final total = borrado.values.fold<int>(0, (a, b) => a + b);
-      setState(() => _seleccionado = null);
-      reload();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Borrado "${tenant.tenantName}": $total '
-            '${total == 1 ? "fila" : "filas"} en ${borrado.length} '
-            '${borrado.length == 1 ? "tabla" : "tablas"}.',
-          ),
-          duration: const Duration(seconds: 6),
-        ),
+      final resultado = await platformService.deleteTenantStorageFiles(
+        tenant.tenantId,
       );
+      archivosBorrados = resultado.eliminados.values.fold<int>(
+        0,
+        (a, b) => a + b,
+      );
+      equipoUserIds = resultado.equipoUserIds;
+    } on FunctionException catch (fe) {
+      if (mounted) {
+        _showError(
+          EpaycoCheckoutService.mensajeDelServidor(fe) ??
+              'No se pudieron borrar los archivos del negocio.',
+        );
+      }
+      return;
+    }
+
+    if (!mounted) return;
+
+    Map<String, int> borrado;
+    try {
+      borrado = await platformService.deleteDemoTenant(tenant.tenantId);
     } on PostgrestException catch (error) {
       // El mensaje viene del servidor, que es quien conoce el seguro: por
-      // ejemplo, que el negocio no esta marcado como de prueba.
-      if (mounted) _showError(error.message);
+      // ejemplo, que el negocio no esta marcado como de prueba. Los
+      // archivos ya se borraron -- se avisa para que no se reintente esa
+      // parte, solo esta.
+      if (mounted) {
+        _showError(
+          'Los archivos ya se borraron, pero las filas no: ${error.message}',
+        );
+      }
+      return;
     }
+
+    if (!mounted) return;
+
+    // Las cuentas huerfanas se limpian al final. Si esto falla, las filas
+    // ya se borraron de todas formas -- el negocio ya no existe -- asi que
+    // el error se avisa aparte, sin bloquear el resumen principal.
+    var cuentasBorradas = 0;
+    String? avisoCuentas;
+    try {
+      cuentasBorradas = await platformService.deleteOrphanedAccounts(
+        equipoUserIds,
+      );
+    } on FunctionException catch (fe) {
+      avisoCuentas = EpaycoCheckoutService.mensajeDelServidor(fe) ??
+          'No se pudieron limpiar las cuentas huérfanas del equipo.';
+    }
+
+    if (!mounted) return;
+
+    final total = borrado.values.fold<int>(0, (a, b) => a + b);
+    setState(() => _seleccionado = null);
+    reload();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Borrado "${tenant.tenantName}": $total '
+          '${total == 1 ? "fila" : "filas"} en ${borrado.length} '
+          '${borrado.length == 1 ? "tabla" : "tablas"}, $archivosBorrados '
+          '${archivosBorrados == 1 ? "archivo" : "archivos"} y '
+          '$cuentasBorradas ${cuentasBorradas == 1 ? "cuenta" : "cuentas"} '
+          'de correo.',
+        ),
+        duration: const Duration(seconds: 6),
+      ),
+    );
+
+    if (avisoCuentas != null && mounted) _showError(avisoCuentas);
   }
 
   /// La ficha del negocio, construida **una sola vez para sus dos casas**
