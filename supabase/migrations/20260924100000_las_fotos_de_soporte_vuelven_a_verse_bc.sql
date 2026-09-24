@@ -50,11 +50,25 @@
 --   2. El control: supabase\sql\228_test_las_fotos_vuelven_a_verse.sql
 --   3. Verificacion en pantalla (regla 21): Panel de plataforma -> un
 --      negocio con una foto pendiente de aprobar -> pestaña Fotos.
+--
+-- CORREGIDO EL MISMO 24-SEP: el primer intento fallo con "cannot change
+-- return type of existing function" -- Postgres exige soltar una funcion
+-- antes de darle otra lista de columnas de salida, `create or replace` no
+-- basta. Nada se aplico (fallo dentro de begin/commit, sin tocar la base).
+-- Se anyade el `drop function` que faltaba y se restauran, letra por letra,
+-- los mismos `revoke`/`grant` del 27-jul (el `drop` los habria borrado).
 -- ==============================================================================
 
 set client_encoding = 'UTF8';
 
 begin;
+
+-- ---------------------------------------------------------------------------
+-- 1. La funcion. Se suelta primero: Postgres no deja cambiar las columnas
+--    de salida con CREATE OR REPLACE.
+-- ---------------------------------------------------------------------------
+
+drop function if exists public.platform_get_tenant_work_photos(uuid);
 
 CREATE OR REPLACE FUNCTION public.platform_get_tenant_work_photos(p_tenant_id uuid)
  RETURNS TABLE(photo_id uuid, branch_name text, client_name text, stylist_name text, photo_url text, photo_type text, caption text, visible_to_customer boolean, approved_for_portfolio boolean, created_at timestamp with time zone, storage_bucket text, storage_path text)
@@ -101,6 +115,11 @@ begin
   order by wp.created_at desc;
 end;
 $function$;
+
+-- El DROP se llevo los permisos: se restauran identicos a los del 27-jul
+-- (misma linea, letra por letra -- nada nuevo, nada de mas).
+revoke all on function public.platform_get_tenant_work_photos(uuid) from public, anon;
+grant execute on function public.platform_get_tenant_work_photos(uuid) to authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
 -- 2. La politica del almacen privado: una condicion mas, nada se quita
