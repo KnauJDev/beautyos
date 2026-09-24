@@ -85,7 +85,7 @@ Pulsa **Actualizar** en el aviso de versión nueva primero. **No pagues nada.**
 | **b** | **El pago real del 9.8, de $10.000**, con la sede de Éxito | **No hay que cambiar nada**: la sede ya está en $10.000 (D-265). Antes de pagar, mira qué botón enseña *Tus sedes* de Éxito. Recae en tu propia cuenta; pagas impuestos y comisión |
 | **c** | **Cuándo pasar a Supabase Pro** | D-088 decía *cuando cargue datos*, D-226 *cuando pague* |
 | **d** | **I-13**: acceso de lectura a la base para el asistente | Hoy cada lectura es un comando tuyo con contraseña: hoy fueron cinco |
-| **e** | **El acceso de soporte a los datos de los salones** (BC) | D-076 caduca con el primer cliente real |
+| ~~e~~ | ~~El acceso de soporte a los datos de los salones~~ | ✅ **Se queda igual para siempre** (D-277): sin solicitud, motivo, vencimiento ni registro |
 | **h** | **Las fotos: ¿quitamos los tipos *Final* y *Portafolio*?** | Lo decía el hallazgo Ñ, y ya definiste el flujo |
 | ~~o~~ | ~~¿Aviso en *Mi agenda* con el enlace de reservas?~~ | ✅ **Aprobado y construido** (D-267): *"¿Tienes una clienta nueva?"*, con WhatsApp y Copiar |
 | ~~p~~ | ~~¿Quién ve el pago de cada sede?~~ | ✅ **El dueño ve todas y paga cada una por su sede; cada administrador, solo la suya** (D-268, hallazgo BP). Va después del 9.8 |

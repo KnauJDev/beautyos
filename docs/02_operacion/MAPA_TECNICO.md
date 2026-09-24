@@ -109,13 +109,13 @@ para que nadie tenga que acordarse:
    o más. Se corrige con `set_ticket_numbering` (D-117, hallazgo P).
 5. **Los errores dejan de ser gratis.** Hoy un fallo lo sufre el propietario y
    lo reporta; entonces lo sufre alguien que paga y no vuelve.
-6. **Caduca el acceso de soporte de la plataforma.** D-076 (27-jul) dejó que el
-   dueño de plataforma vea clientes, tickets, finanzas, equipo, reseñas y fotos
-   de cualquier negocio, en solo lectura y **sin rastro**, *"mientras la
-   plataforma no tenga clientes reales"*. Ese día hay que decidir si sigue, y
-   con qué: el diseño de julio pedía solicitud, motivo, vencimiento y registro
-   (`ROLES_Y_PERMISOS` §6). Hallazgo **BC**. *(Añadido el 23-sep: esta condición
-   existía desde julio y no estaba en esta lista.)*
+6. ~~Caduca el acceso de soporte de la plataforma.~~ **YA NO APLICA (D-277,
+   24-sep): el propietario decidió que el acceso de soporte —D-076, clientes,
+   tickets, finanzas, equipo, reseñas y fotos de cualquier negocio, en solo
+   lectura y sin rastro— se queda igual para siempre, también con clientes
+   reales. No se construyó solicitud, motivo, vencimiento ni registro: es
+   transparente y solo se usa si el propio negocio pide soporte.** Hallazgo
+   **BC**, cerrado.
 7. **Entran datos personales de terceros sin recuperación a un punto en el
    tiempo**, si todavía se está en el plan Free. D-226 aplazó Supabase Pro
    **hasta que pague** el primer cliente; D-088 decía **hasta que cargue datos**.

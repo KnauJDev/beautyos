@@ -96,7 +96,7 @@ se impuso dos meses después.
 
 | Rol | Alcance | Nota |
 |---|---|---|
-| Dueño de plataforma | Todos los negocios | **Ve datos de cualquier negocio en solo lectura y sin rastro (D-076), condicionado a que no haya clientes reales** — ver §9 |
+| Dueño de plataforma | Todos los negocios | **Ve datos de cualquier negocio en solo lectura y sin rastro (D-076), sin fecha de vencimiento (D-277)** |
 | `tenant_owner` | Todas las sedes de su negocio | No necesita fila de sede |
 | `admin` | Sedes asignadas | Hoy ve lo mismo que el dueño, rentabilidad incluida (**I-17**) |
 | `assistant` (recepción) | Sedes asignadas | Cobra; no deshace pagos ni decide sueldos (D-095, D-251) |
@@ -298,10 +298,12 @@ en la función que aprueba clientes y en un cartel que se lo prometía al salón
   cálculo de cobro que ninguna migración reciente menciona, y el 23-sep **dos de
   `register_tenant`**, la vieja con el fallo de D-245 dentro (hallazgo **BG**).
   `CREATE OR REPLACE` con otra lista de parámetros **no reemplaza: añade**.
-- **Lo que depende de decisiones con fecha de caducidad.** Dos están escritas
-  para *"mientras no haya clientes reales"*: los datos sembrados (D-135) y **el
-  acceso de soporte de la plataforma a todos los datos, sin rastro (D-076)**. La
-  lista completa de lo que cambia ese día vive en `MAPA_TECNICO` §1-bis.
+- **Lo que depende de decisiones con fecha de caducidad.** Una está escrita
+  para *"mientras no haya clientes reales"*: los datos sembrados (D-135). El
+  acceso de soporte de la plataforma a todos los datos, sin rastro (D-076),
+  **ya no tiene fecha**: el propietario decidió el 24-sep que se queda igual
+  para siempre (D-277, hallazgo BC cerrado). La lista completa de lo que
+  cambia el día del primer cliente real vive en `MAPA_TECNICO` §1-bis.
 
 ---
 

@@ -13,8 +13,10 @@
 >   que el dueño de plataforma ve clientes, tickets, finanzas, equipo, reseñas y
 >   fotos de cualquier negocio, **en solo lectura y sin rastro**, *"mientras la
 >   plataforma no tenga clientes reales"*. Contradice el §2 (`platform_operator`),
->   el §6 y la prueba obligatoria del §8. **Esa condición caduca con el primer
->   cliente real** (hallazgo **BC**).
+>   el §6 y la prueba obligatoria del §8. **Esa condición ya NO caduca**: el
+>   propietario decidió el 24-sep que el acceso se queda igual también con
+>   clientes reales, sin solicitud, motivo, vencimiento ni registro (D-277).
+>   Hallazgo **BC**, cerrado.
 > - **Iniciar / finalizar servicio:** la matriz dice que recepción no puede; el
 >   servidor se lo permite desde julio y **D-250 (20-sep)** lo puso en pantalla
 >   para dueño, administrador y recepción.
