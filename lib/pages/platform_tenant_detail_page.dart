@@ -404,14 +404,14 @@ class _PhotosTab extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Solo se ve la foto YA publicada por el negocio. Una que
-                  // todavia espera aprobacion vive en el almacen privado y el
-                  // dueno de plataforma no es miembro del negocio, asi que no
-                  // puede firmarla (H-09). Es coherente con D-076: el acceso
-                  // de soporte es de lectura, no un pase para ver material que
-                  // el negocio no ha decidido publicar.
+                  // D-076 (restaurado el 24-sep, hallazgo BC, D-274): el
+                  // dueño de plataforma ve TODA foto de cualquier negocio, en
+                  // solo lectura, apruebe o no ese negocio publicarla. Una
+                  // pendiente vive en el almacén privado y `displayUrl` ya
+                  // trae su dirección temporal, firmada por el servicio con
+                  // el mismo permiso que usa el propio negocio.
                   Expanded(
-                    child: FotoDeTrabajo(url: photo.photoUrl),
+                    child: FotoDeTrabajo(url: photo.displayUrl),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(8),

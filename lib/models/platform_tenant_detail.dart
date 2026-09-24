@@ -187,6 +187,9 @@ class PlatformWorkPhotoSummary {
     required this.clientName,
     required this.stylistName,
     required this.photoUrl,
+    required this.storageBucket,
+    required this.storagePath,
+    required this.displayUrl,
     required this.photoType,
     required this.visibleToCustomer,
     required this.approvedForPortfolio,
@@ -196,10 +199,25 @@ class PlatformWorkPhotoSummary {
   final String branchName;
   final String clientName;
   final String stylistName;
-  /// Nula cuando el negocio todavia no ha publicado la foto (H-09): el
-  /// acceso de soporte de D-076 es de lectura de lo publicado, no un pase
-  /// para ver material sin aprobar.
+
+  /// Dirección pública **permanente**. Nula mientras el negocio no haya
+  /// aprobado la foto para portafolio (H-09).
   final String? photoUrl;
+
+  /// En qué almacén está el archivo hoy: `work-photos` si ya se publicó,
+  /// `work-photos-private` si todavía espera aprobación.
+  final String storageBucket;
+
+  /// Ruta del archivo dentro de su almacén.
+  final String? storagePath;
+
+  /// Lo que la pantalla debe pintar. Para una foto publicada, la dirección
+  /// permanente; para una pendiente, una dirección temporal firmada que el
+  /// servicio resuelve al cargar la lista (D-076, hallazgo BC, D-274:
+  /// el acceso de soporte vuelve a alcanzar también lo que el negocio aún
+  /// no ha aprobado, como decidió julio).
+  final String? displayUrl;
+
   final String photoType;
   final bool visibleToCustomer;
   final bool approvedForPortfolio;
@@ -211,9 +229,30 @@ class PlatformWorkPhotoSummary {
       clientName: map['client_name']?.toString() ?? 'Cliente no asociado',
       stylistName: map['stylist_name']?.toString() ?? 'Estilista no asociado',
       photoUrl: map['photo_url']?.toString(),
+      storageBucket:
+          map['storage_bucket']?.toString() ?? 'work-photos-private',
+      storagePath: map['storage_path']?.toString(),
+      // La dirección temporal se resuelve después, cuando hace falta.
+      displayUrl: map['photo_url']?.toString(),
       photoType: map['photo_type']?.toString() ?? '',
       visibleToCustomer: map['visible_to_customer'] == true,
       approvedForPortfolio: map['approved_for_portfolio'] == true,
+    );
+  }
+
+  PlatformWorkPhotoSummary conDisplayUrl(String? url) {
+    return PlatformWorkPhotoSummary(
+      photoId: photoId,
+      branchName: branchName,
+      clientName: clientName,
+      stylistName: stylistName,
+      photoUrl: photoUrl,
+      storageBucket: storageBucket,
+      storagePath: storagePath,
+      displayUrl: url,
+      photoType: photoType,
+      visibleToCustomer: visibleToCustomer,
+      approvedForPortfolio: approvedForPortfolio,
     );
   }
 }

@@ -115,9 +115,8 @@ Pulsa **Actualizar** en el aviso de versión nueva primero. **No pagues nada.**
 
 ## 8. Por dónde seguir
 
-1. **Tus verificaciones** (§4) y **tus decisiones** (§5), sobre todo **a** y **b**.
-2. Con la **b** aprobada: el **9.8** —el primer cobro real, $10.000 con la sede de Éxito— y el **9.7**. Es el resto del turno A: 9.8 + 9.7 → 9.40 → AD → 9.9.
-3. **AK** con el 9.13, y **AQ** con el 9.48, cuando toque en el orden.
+1. ✅ **El turno A quedó cerrado el 23/24-sep** (D-262, D-272, D-274). Sigue el **turno B**: **BC (D-275)** — falta aplicar su migración —, **AS**, **9.48** (en construcción), **9.20** (documento para el abogado ya publicado) y **9.16** (aplazado por el propietario hasta que empiece a facturar).
+2. **AK** con el 9.13, y **9.48** siguiendo su curso.
 
 ---
 
