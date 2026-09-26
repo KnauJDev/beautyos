@@ -53,3 +53,22 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/client-consent-photo-url/deno.json"
 entrypoint = "./functions/client-consent-photo-url/index.ts"
+
+# Hallazgo AS (D-278, D-279). Se publicaron el 24-sep sin entrada aquí, así
+# que tomaron el valor por defecto de la CLI (`verify_jwt = true`) -- el
+# correcto, pero no estaba escrito en ningún sitio. Anotadas el 26-sep: las
+# dos exigen sesión Y rol de plataforma (`get_my_platform_role`), y además
+# vuelven a comprobar `is_demo` / membresías con `service_role`. Al estar
+# aquí, `test/sesion_fresca_test.dart` (D-207) también vigila que Flutter
+# las llame con `cabecerasParaEdgeFunction()`.
+[functions.platform-delete-tenant-storage]
+enabled = true
+verify_jwt = true
+import_map = "./functions/platform-delete-tenant-storage/deno.json"
+entrypoint = "./functions/platform-delete-tenant-storage/index.ts"
+
+[functions.platform-delete-orphaned-accounts]
+enabled = true
+verify_jwt = true
+import_map = "./functions/platform-delete-orphaned-accounts/deno.json"
+entrypoint = "./functions/platform-delete-orphaned-accounts/index.ts"
