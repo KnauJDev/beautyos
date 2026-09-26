@@ -4,8 +4,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
+import '../models/client_consent.dart';
 import '../models/client_portal_data.dart';
 import '../services/client_portal_service.dart';
+import '../widgets/autorizaciones_de_la_clienta.dart';
 import '../widgets/photo_grid_viewer.dart';
 import 'agenda_page.dart' show buildWhatsAppUri;
 import 'public_review_page.dart';
@@ -45,6 +47,11 @@ class _ClientPortalPageState extends State<ClientPortalPage> {
   String? _token;
   ClientPortalData? _portalData;
   bool _isRefreshing = false;
+
+  /// Cambia solo con el botón "Actualizar": remonta las autorizaciones para
+  /// que vuelvan a leer la base. Una decisión de la clienta NO la cambia --
+  /// remontar ahí se llevaría el aviso de "Listo" antes de mostrarlo.
+  int _recargas = 0;
 
   String get _prefsPhoneKey => 'portal_phone_${widget.tenantId}';
   String get _prefsTokenKey => 'portal_token_${widget.tenantId}';
@@ -157,7 +164,10 @@ class _ClientPortalPageState extends State<ClientPortalPage> {
     final token = _token;
     if (phone == null || token == null) return;
 
-    setState(() => _isRefreshing = true);
+    setState(() {
+      _isRefreshing = true;
+      _recargas++;
+    });
     try {
       final data = await _portalService.getPortalData(
         tenantId: widget.tenantId,
@@ -172,6 +182,26 @@ class _ClientPortalPageState extends State<ClientPortalPage> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _isRefreshing = false);
+    }
+  }
+
+  /// Tras una decisión de la clienta: solo vuelve a leer "Mis fotos", sin
+  /// remontar las autorizaciones (ver [_recargas]).
+  Future<void> _recargarFotosPublicadas() async {
+    final phone = _phone;
+    final token = _token;
+    if (phone == null || token == null) return;
+    try {
+      final data = await _portalService.getPortalData(
+        tenantId: widget.tenantId,
+        phone: phone,
+        portalToken: token,
+      );
+      if (!mounted) return;
+      setState(() => _portalData = data);
+    } catch (_) {
+      // Si falla, "Mis fotos" queda como estaba hasta el próximo
+      // "Actualizar": la decisión ya quedó guardada en la base.
     }
   }
 
@@ -374,6 +404,18 @@ class _ClientPortalPageState extends State<ClientPortalPage> {
           style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
+        // Paso 9.48 (D-282): lo que ELLA autoriza de sus fotos y reseñas.
+        // Arriba de todo porque es lo único del portal que le pide algo.
+        if (_token != null)
+          AutorizacionesDeLaClienta(
+            key: ValueKey('autorizaciones-$_recargas'),
+            credencial: ClientConsentCredential.portal(_token!),
+            nombreSalon: widget.businessName,
+            whatsappSalon: widget.businessWhatsapp,
+            ocultarSiNoHayNada: true,
+            espacioDebajo: 16,
+            alCambiar: _recargarFotosPublicadas,
+          ),
         _PortalSection(
           title: 'Próximas citas',
           icon: Icons.event_available_outlined,

@@ -72,3 +72,13 @@ enabled = true
 verify_jwt = true
 import_map = "./functions/platform-delete-orphaned-accounts/deno.json"
 entrypoint = "./functions/platform-delete-orphaned-accounts/index.ts"
+
+[functions.client-consent-revoke-photo]
+enabled = true
+# Paso 9.48, Bloque 2 (D-282): la clienta retira una foto ya publicada, sin
+# sesión, con el token de su portal o de su enlace directo. La autorización
+# la decide la RPC client_consent_get_published_photo_path; esta función solo
+# mueve el archivo fuera del almacén público y anota con service_role.
+verify_jwt = false
+import_map = "./functions/client-consent-revoke-photo/deno.json"
+entrypoint = "./functions/client-consent-revoke-photo/index.ts"

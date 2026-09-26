@@ -209,6 +209,7 @@ npx.cmd supabase@latest functions list --project-ref eogppgbdnwxdtcbctaol
 | `platform-delete-tenant-storage` | ✅ `true` — y además exige rol de plataforma | Borra los archivos de los cinco almacenes de un negocio **de prueba**, ANTES que sus filas; vuelve a comprobar `is_demo` por su cuenta, y devuelve la lista del equipo | D-278 (AS) |
 | `platform-delete-orphaned-accounts` | ✅ `true` — y además exige rol de plataforma | Borra de Auth las cuentas del equipo que se quedaron sin ningún negocio, DESPUÉS de las filas (`on delete restrict`). Nunca un operador de plataforma | D-279 (AS) |
 | `client-consent-photo-url` | `false` — la llama la clienta sin sesión, con el token de su portal o de su enlace directo | Firma por 5 minutos la ruta de **una** foto privada suya, para que la vea antes de autorizar publicarla. **Toda la autorización la decide antes la RPC `client_consent_get_photo_path`**; esta solo firma | D-281 (9.48) |
+| `client-consent-revoke-photo` | `false` — igual que la anterior | La clienta retira una foto **ya publicada**: la saca del almacén público y DESPUÉS lo anota con `client_consent_finish_revoke` (solo `service_role`). La autorización la decide antes `client_consent_get_published_photo_path`. Reintentar es seguro | D-282 (9.48) |
 
 **Las tareas diarias de `pg_cron`** (desde el 23-sep son dos, en este orden):
 

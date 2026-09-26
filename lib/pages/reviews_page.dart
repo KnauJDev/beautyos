@@ -109,7 +109,9 @@ class _ResenasPageState extends State<ResenasPage> {
         ? review.businessReply!
         : ReviewReplyDraftBuilder.generar(
             rating: review.rating,
-            clientName: review.clientName,
+            // El borrador se publica debajo de la reseña: saluda con el
+            // nombre que ella eligió mostrar, nunca con el real (D-282).
+            clientName: review.publicName,
             serviceName: review.serviceName,
             businessName: _businessName,
           );
@@ -518,6 +520,13 @@ class _ReviewCard extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               'Cliente: ${review.clientName}',
+              style: const TextStyle(fontSize: 14, color: AppColors.textStrong),
+            ),
+            const SizedBox(height: 4),
+            // Paso 9.48 (D-282): lo elige ella. Si es un nombre que escribió,
+            // esta reseña volvió a "pendiente" para que lo revises aquí.
+            Text(
+              'Sale en tu página como: ${review.publicName}',
               style: const TextStyle(fontSize: 14, color: AppColors.textStrong),
             ),
             const SizedBox(height: 4),

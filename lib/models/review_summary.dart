@@ -15,6 +15,12 @@
   final DateTime? businessReplyAt;
   final DateTime createdAt;
 
+  /// Con qué nombre sale la reseña en la página pública (paso 9.48, D-282):
+  /// "Clienta verificada", su nombre real o uno que escribió ella. Lo decide
+  /// la clienta, no el salón -- y un nombre escrito por ella vuelve a
+  /// moderación, así que el salón tiene que verlo antes de aprobar.
+  final String publicName;
+
   const ReviewSummary({
     required this.id,
     required this.ticketId,
@@ -28,6 +34,7 @@
     this.businessReply,
     this.businessReplyAt,
     required this.createdAt,
+    this.publicName = 'Clienta verificada',
   });
 
   factory ReviewSummary.fromMap(Map<String, dynamic> map) {
@@ -46,6 +53,7 @@
           ? null
           : DateTime.tryParse(map['business_reply_at'].toString())?.toLocal(),
       createdAt: DateTime.parse(map['created_at'] as String).toLocal(),
+      publicName: map['public_name']?.toString() ?? 'Clienta verificada',
     );
   }
 

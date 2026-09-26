@@ -39,12 +39,16 @@ class ReviewReplyDraftBuilder {
         'poder ayudarte y hacerlo bien la próxima vez. -- $businessName';
   }
 
-  /// `null` cuando no hay un nombre real que saludar (cliente eliminado o
-  /// nunca asociado) -- mejor omitir el saludo que insertar un genérico
-  /// como "Cliente" a mitad de una frase.
+  /// `null` cuando no hay un nombre que saludar (cliente eliminado o nunca
+  /// asociado, o una clienta que eligió no mostrar su nombre, D-282) --
+  /// mejor omitir el saludo que insertar un genérico a mitad de una frase.
   static String? _primerNombre(String nombreCompleto) {
     final limpio = nombreCompleto.trim();
-    if (limpio.isEmpty || limpio == 'Cliente no asociado') return null;
+    if (limpio.isEmpty ||
+        limpio == 'Cliente no asociado' ||
+        limpio == 'Clienta verificada') {
+      return null;
+    }
     return limpio.split(RegExp(r'\s+')).first;
   }
 

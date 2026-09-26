@@ -264,6 +264,14 @@ Configuración → "Activar esta sede"
 > **después** de que la RPC de SQL ya autorizó el acceso con el token — la
 > autorización entera vive en SQL, no en TypeScript. Sin sesión de Supabase
 > Auth: se identifica con su token, igual que el resto del portal (D-167).
+>
+> **26-sep (D-282), Bloque 2, escrito sin aplicar:** puede **arrepentirse**. Retirar
+> una foto ya publicada es mover el archivo fuera del almacén público, y eso lo
+> hace `client-consent-revoke-photo` **antes** de anotarlo; la base no deja
+> retirarla por otra puerta, y la función que lo anota es solo de `service_role`.
+> La reseña sale como *Clienta verificada*, con su nombre o con uno escrito por
+> ella (`reviews.client_display_name`), que vuelve a moderación. **La respuesta
+> del salón ya no saluda con el nombre real**: se publicaba bajo la reseña.
 
 ---
 
