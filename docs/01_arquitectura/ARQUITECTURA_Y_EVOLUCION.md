@@ -255,6 +255,16 @@ Configuración → "Activar esta sede"
   `ROLES_Y_PERMISOS` dice *"Fotos, reseñas y redes — Customer: P/consentido"*.
   El paso **9.48** no inventa nada: cumple el diseño del 19-jul.
 
+> **26-sep (D-281): el Bloque 1 de 9.48 está escrito, sin aplicar.** Nace
+> `clients.consent_link_token` (enlace directo, permanente) junto al token
+> de sesión del portal que ya existía; `work_photos.client_consent_decided_at`
+> y `reviews.client_name_consent`/`_decided_at` distinguen "pendiente de
+> preguntarle" de "ya decidió". Cinco funciones nuevas y una Edge Function
+> (`client-consent-photo-url`) que firma la ruta de una foto privada
+> **después** de que la RPC de SQL ya autorizó el acceso con el token — la
+> autorización entera vive en SQL, no en TypeScript. Sin sesión de Supabase
+> Auth: se identifica con su token, igual que el resto del portal (D-167).
+
 ---
 
 ## 8. Cómo llegó aquí — la evolución

@@ -42,3 +42,14 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/send-subscription-expiry-alerts/deno.json"
 entrypoint = "./functions/send-subscription-expiry-alerts/index.ts"
+
+[functions.client-consent-photo-url]
+enabled = true
+# Paso 9.48: sin sesión de Supabase Auth -- la llama la clienta desde el
+# portal o desde su enlace directo, identificada con un token propio, no
+# con un JWT. Toda la autorización real vive en la RPC de SQL que llama
+# primero (client_consent_get_photo_path); esto solo firma la ruta ya
+# autorizada. Mismo criterio que epayco-webhook.
+verify_jwt = false
+import_map = "./functions/client-consent-photo-url/deno.json"
+entrypoint = "./functions/client-consent-photo-url/index.ts"
