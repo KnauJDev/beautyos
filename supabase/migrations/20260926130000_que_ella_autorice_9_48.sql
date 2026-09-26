@@ -406,7 +406,13 @@ comment on function public.client_consent_set_review_name(uuid, boolean, text, t
 
 -- ----------------------------------------------------------------------------
 -- 10. get_public_salon_reviews: sin nombre autorizado, sale una etiqueta
---     genérica. Misma firma, mismas columnas -- create or replace basta.
+--     genérica. GENERADA DESDE EL TEXTO VIVO (extraer_resenas_y_estudio_9_48,
+--     26-sep), no desde el repositorio: la primera versión de esta migración
+--     se escribió desde la del 27-ago (D-165) y le quitaba `business_reply`,
+--     que D-170 agregó el 29-ago -- la respuesta del salón bajo cada reseña.
+--     Postgres la rechazó ("cannot change return type") y no aplicó nada.
+--     Contra el texto vivo cambia UNA línea: `c.name` pasa a ser el `case`.
+--     Mismas 7 columnas en el mismo orden -- create or replace basta.
 -- ----------------------------------------------------------------------------
 
 create or replace function public.get_public_salon_reviews(p_tenant_id uuid)
@@ -416,6 +422,7 @@ returns table (
   client_name text,
   rating integer,
   comment text,
+  business_reply text,
   created_at timestamptz
 )
 language plpgsql
@@ -443,6 +450,7 @@ begin
     case when r.client_name_consent then c.name else 'Clienta verificada' end,
     r.rating,
     r.comment,
+    r.business_reply,
     r.created_at
   from public.reviews r
   join public.clients c
@@ -460,7 +468,7 @@ revoke all on function public.get_public_salon_reviews(uuid) from public;
 grant execute on function public.get_public_salon_reviews(uuid) to anon, authenticated;
 
 comment on function public.get_public_salon_reviews(uuid) is
-  'Promedio, total y últimas 10 reseñas públicas de un negocio, sin sesión (D-165). Desde el paso 9.48, el nombre real solo sale si la clienta lo autorizó (client_name_consent) -- si no, "Clienta verificada".';
+  'Promedio, total y últimas 10 reseñas públicas del negocio, con la respuesta del salón si existe (D-165, D-170). Sin sesión. Desde el paso 9.48, el nombre real solo sale si la clienta lo autorizó (client_name_consent) -- si no, "Clienta verificada".';
 
 -- ----------------------------------------------------------------------------
 -- 11. get_publication_studio_data: la pieza de Instagram respeta lo mismo.
