@@ -116,6 +116,17 @@ begin
   values (v_tenant, 'C229 estilista', '3000000230', 'Corte')
   returning id into v_stylist;
 
+  -- El servicio y el estilista, dados de alta EN LA SEDE. Sin esto,
+  -- ticket_services revienta: sus llaves apuntan a branch_services y a
+  -- branch_stylists, no al catálogo (Tramo B). Copiado del control 218,
+  -- que ya corrió en verde (regla 25 d) -- la primera versión de este
+  -- control copió del 188, que usaba un negocio existente, y falló aquí.
+  insert into public.branch_services (
+    tenant_id, branch_id, service_id, price, duration_minutes, visible_to_customer, active
+  ) values (v_tenant, v_branch, v_service, 50000, 30, true, true);
+  insert into public.branch_stylists (tenant_id, branch_id, stylist_id, active, starts_at)
+  values (v_tenant, v_branch, v_stylist, true, now() - interval '1 day');
+
   -- El estilista SÍ tiene cuenta -- para probar que no puede generar el
   -- enlace de consentimiento de nadie (paso 4).
   insert into public.tenant_memberships (tenant_id, user_id, role, active, stylist_id)
