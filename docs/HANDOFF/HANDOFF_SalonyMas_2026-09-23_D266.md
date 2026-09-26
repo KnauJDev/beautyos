@@ -115,7 +115,7 @@ Pulsa **Actualizar** en el aviso de versión nueva primero. **No pagues nada.**
 
 ## 8. Por dónde seguir
 
-1. ✅ **El turno A quedó cerrado el 23/24-sep** (D-262, D-272, D-274). ✅ **BC cerrado del todo** (D-275–D-277). ✅ **AS cerrado el 24-sep** (D-278, D-279) — **falta la verificación en pantalla**: borrar Naguara de Uñas y confirmar que sus archivos y las 5 cuentas de correo de su equipo desaparecen. Sigue el **turno B**: **9.48** (en construcción), **9.20** (documento para el abogado ya publicado) y **9.16** (aplazado por el propietario hasta que empiece a facturar).
+1. ✅ **El turno A quedó cerrado el 23/24-sep** (D-262, D-272, D-274). ✅ **BC cerrado del todo** (D-275–D-277). ✅ **AS cerrado del todo el 26-sep** (D-278, D-279, D-280) — verificado en pantalla con un negocio real. Salieron **BR** y **BS**, dos hallazgos nuevos sin relación con AS, anotados en el buzón de ideas. Sigue el **turno B**: **9.48** (en construcción), **9.20** (documento para el abogado ya publicado) y **9.16** (aplazado por el propietario hasta que empiece a facturar).
 2. **AK** con el 9.13, y **9.48** siguiendo su curso.
 
 ---
