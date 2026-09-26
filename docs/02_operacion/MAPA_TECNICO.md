@@ -206,6 +206,7 @@ npx.cmd supabase@latest functions list --project-ref eogppgbdnwxdtcbctaol
 | `send-subscription-expiry-alerts` | `false` — la llama `pg_cron` con `CRON_SECRET` | Avisos de vencimiento de negocio y de sedes, **y suspende los negocios con la gracia vencida** | D-143, D-145, D-196 |
 | `send-invitation-email` | ✅ `true` | Correo de invitación de equipo | D-065, D-128 |
 | `send-low-stock-alert` | ✅ `true` | Alarma de stock bajo | D-086, D-131 |
+| `client-consent-photo-url` | `false` — la llama la clienta sin sesión, con el token de su portal o de su enlace directo | Firma por 5 minutos la ruta de **una** foto privada suya, para que la vea antes de autorizar publicarla. **Toda la autorización la decide antes la RPC `client_consent_get_photo_path`**; esta solo firma | D-281 (9.48) |
 
 **Las tareas diarias de `pg_cron`** (desde el 23-sep son dos, en este orden):
 
