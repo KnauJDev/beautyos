@@ -126,7 +126,25 @@ class WorkPhotosService {
         },
       );
 
-      await _almacen.publicar(storagePath);
+      try {
+        await _almacen.publicar(storagePath);
+      } catch (_) {
+        // D-284 (hallazgo BW): si el archivo no se pudo mover, la base NO
+        // puede quedarse diciendo "publicada" -- así nació el cuadro roto
+        // del portafolio el 27-sep. Se deshace la anotación y se avisa del
+        // fallo original. El archivo no se movió: sigue privado, que es lo
+        // que la base vuelve a decir.
+        await Supabase.instance.client.rpc(
+          'set_work_photo_portfolio_approval',
+          params: {
+            'p_branch_id': branchId,
+            'p_photo_id': photoId,
+            'p_approved': false,
+            'p_public_url': null,
+          },
+        );
+        rethrow;
+      }
       return;
     }
 
