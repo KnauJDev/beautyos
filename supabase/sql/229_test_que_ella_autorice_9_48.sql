@@ -359,8 +359,11 @@ begin
   from public.get_public_salon_reviews(v_tenant)
   where comment = 'Control229 comentario clienta uno';
 
-  if v_fila.client_name = 'Clienta verificada' and v_fila.rating = 5 then
-    raise notice 'OK    12 sin autorizar, sale "Clienta verificada" y el comentario/calificacion igual';
+  -- Desde D-283 (hallazgo BU) la etiqueta es "Reseña verificada": la de
+  -- antes le decía "Clienta" también a un hombre. Este control se corre
+  -- después de 20260927100000_resena_verificada_bu.sql.
+  if v_fila.client_name = 'Reseña verificada' and v_fila.rating = 5 then
+    raise notice 'OK    12 sin autorizar, sale "Reseña verificada" y el comentario/calificacion igual';
   else
     v_fallos := v_fallos + 1;
     raise notice 'FALLO 12 fila=%', v_fila;

@@ -46,6 +46,9 @@ class ReviewReplyDraftBuilder {
     final limpio = nombreCompleto.trim();
     if (limpio.isEmpty ||
         limpio == 'Cliente no asociado' ||
+        limpio == 'Reseña verificada' ||
+        // La etiqueta anterior (D-282, cambiada por D-283): se sigue
+        // reconociendo por si llega de una respuesta vieja en caché.
         limpio == 'Clienta verificada') {
       return null;
     }

@@ -71,7 +71,7 @@ class AutorizacionesDeLaClienta extends StatefulWidget {
         return resena.displayName ?? nombreReal;
       case ReviewNameChoice.verificada:
       case null:
-        return 'Clienta verificada';
+        return 'Reseña verificada';
     }
   }
 
@@ -252,7 +252,7 @@ class _AutorizacionesDeLaClientaState extends State<AutorizacionesDeLaClienta> {
           SimpleDialogOption(
             onPressed: () =>
                 Navigator.of(context).pop(ReviewNameChoice.verificada),
-            child: const Text('Como «Clienta verificada»'),
+            child: const Text('Sin mi nombre («Reseña verificada»)'),
           ),
           SimpleDialogOption(
             onPressed: () =>
@@ -378,8 +378,8 @@ class _AutorizacionesDeLaClientaState extends State<AutorizacionesDeLaClienta> {
                 for (final resena in datos.pendingReviews) ...[
                   _ResenaConNombre(
                     resena: resena,
-                    comoSale: 'Mientras no elijas, tu reseña aparece como '
-                        '«Clienta verificada».',
+                    comoSale: 'Mientras no elijas, tu reseña aparece sin tu '
+                        'nombre, como «Reseña verificada».',
                     textoBoton: 'Elegir cómo aparezco',
                     ocupado: _ocupado,
                     onElegir: () => _elegirNombre(resena),

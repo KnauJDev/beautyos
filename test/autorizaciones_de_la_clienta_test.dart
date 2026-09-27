@@ -157,25 +157,25 @@ void main() {
             ConsentReview(id: 'r', rating: 5, choice: c, displayName: alias),
             'Ana Gómez',
           );
-      expect(publico(null), 'Clienta verificada');
-      expect(publico(ReviewNameChoice.verificada), 'Clienta verificada');
+      expect(publico(null), 'Reseña verificada');
+      expect(publico(ReviewNameChoice.verificada), 'Reseña verificada');
       expect(publico(ReviewNameChoice.nombreReal), 'Ana Gómez');
       expect(publico(ReviewNameChoice.nombrePropio, 'Caro'), 'Caro');
     });
   });
 
   group('D-282 — El salón no revela el nombre por la puerta de atrás', () {
-    test('el borrador de respuesta no saluda a una «Clienta verificada»', () {
+    test('el borrador de respuesta no saluda a una «Reseña verificada»', () {
       final borrador = ReviewReplyDraftBuilder.generar(
         rating: 5,
-        clientName: 'Clienta verificada',
+        clientName: 'Reseña verificada',
         serviceName: 'Manicure',
         businessName: 'Naguara',
       );
       expect(borrador, startsWith('¡Muchas gracias!'),
           reason: 'La respuesta se publica bajo la reseña: si ella eligió no '
               'mostrar su nombre, el borrador no puede ponerlo.');
-      expect(borrador, isNot(contains('Clienta')));
+      expect(borrador, isNot(contains('verificada')));
     });
 
     test('ReviewSummary trae el nombre público, y sin él asume el genérico',
@@ -188,7 +188,7 @@ void main() {
             'public_name': ?publico,
           };
       expect(ReviewSummary.fromMap(fila('Caro')).publicName, 'Caro');
-      expect(ReviewSummary.fromMap(fila()).publicName, 'Clienta verificada',
+      expect(ReviewSummary.fromMap(fila()).publicName, 'Reseña verificada',
           reason: 'Si falta el dato, el valor seguro es no revelar el nombre.');
     });
   });
@@ -306,7 +306,7 @@ void main() {
       expect(servicio.llamadas, ['setReviewAlias:r1:Caro de Chapinero']);
     });
 
-    testWidgets('elegir «Clienta verificada» manda el nombre real en falso',
+    testWidgets('elegir «Reseña verificada» manda el nombre real en falso',
         (tester) async {
       final servicio = _ServicioFalso(
         _datos(
@@ -324,7 +324,7 @@ void main() {
       expect(find.text('Apareces como: Ana Gómez'), findsOneWidget);
       await tester.tap(find.text('Cambiar'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Como «Clienta verificada»'));
+      await tester.tap(find.text('Sin mi nombre («Reseña verificada»)'));
       await tester.pumpAndSettle();
       expect(servicio.llamadas, ['setReviewName:r2:false']);
     });

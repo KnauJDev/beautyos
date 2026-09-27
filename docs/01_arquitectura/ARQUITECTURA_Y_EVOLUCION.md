@@ -269,7 +269,8 @@ Configuración → "Activar esta sede"
 > una foto ya publicada es mover el archivo fuera del almacén público, y eso lo
 > hace `client-consent-revoke-photo` **antes** de anotarlo; la base no deja
 > retirarla por otra puerta, y la función que lo anota es solo de `service_role`.
-> La reseña sale como *Clienta verificada*, con su nombre o con uno escrito por
+> La reseña sale como *Reseña verificada* (D-283; hasta el 27-sep decía *Clienta
+> verificada*, también para un hombre), con su nombre o con uno escrito por
 > ella (`reviews.client_display_name`), que vuelve a moderación. **La respuesta
 > del salón ya no saluda con el nombre real**: se publicaba bajo la reseña.
 

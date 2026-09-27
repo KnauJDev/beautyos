@@ -74,7 +74,7 @@ class ClientConsentService {
     );
   }
 
-  /// "Clienta verificada" (`nombreReal = false`) o su nombre real (`true`).
+  /// "Reseña verificada", sin su nombre (`nombreReal = false`), o su nombre real (`true`).
   Future<void> setReviewName(
     String reviewId,
     bool nombreReal,
