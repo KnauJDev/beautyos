@@ -233,6 +233,23 @@ void main() {
       expect(servicio.llamadas, ['setPhoto:f1:true']);
     });
 
+    testWidgets('la foto pendiente no tapa la pregunta ni los botones',
+        (tester) async {
+      // 27-sep: a todo el ancho, en una pantalla normal había que alejar el
+      // zoom para llegar a "Sí, autorizo". Aquí se monta en 800x600 SIN
+      // desplazar, y los botones tienen que caber a la vista.
+      final servicio = _ServicioFalso(
+        _datos(pendientes: [const ConsentPhoto(id: 'f1', isPublished: false)]),
+      );
+      await _montar(tester, servicio);
+
+      final boton = tester.getRect(find.text('Sí, autorizo'));
+      expect(boton.bottom, lessThanOrEqualTo(600),
+          reason: 'El botón de responder tiene que verse sin bajar.');
+      expect(tester.getSize(find.byType(AspectRatio).first).width,
+          lessThanOrEqualTo(280));
+    });
+
     testWidgets(
         'un «no» a una foto YA publicada la retira por el camino que la saca '
         'de internet, y avisa lo de las redes', (tester) async {

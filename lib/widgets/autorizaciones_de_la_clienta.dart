@@ -555,7 +555,15 @@ class _FotoPendiente extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _Imagen(direccion: direccion),
+        // Tope de 280: a todo el ancho, la foto empujaba la pregunta y los
+        // botones fuera de la pantalla y había que alejar el zoom para
+        // responder (visto por el propietario el 27-sep).
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 280),
+            child: _Imagen(direccion: direccion),
+          ),
+        ),
         if (foto.caption != null && foto.caption!.trim().isNotEmpty) ...[
           const SizedBox(height: 8),
           Text(
