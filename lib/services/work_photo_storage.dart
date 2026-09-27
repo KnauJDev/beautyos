@@ -2,7 +2,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/work_photo_summary.dart';
 
-/// Los dos almacenes de fotos de trabajo y el movimiento entre ellos (H-09).
+/// Los dos almacenes de fotos de trabajo (H-09). Moverlas entre ellos lo
+/// hace la Edge Function `move-work-photo` (D-285).
 ///
 /// **Por que hay dos.** Hasta el 09-ago toda foto se subia a un almacen
 /// publico y quedaba alcanzable desde ese instante, con los interruptores de
@@ -92,25 +93,5 @@ class WorkPhotoStorage {
               : foto.conDisplayUrl(firmadas[foto.storagePath!]),
         )
         .toList();
-  }
-
-  /// Mueve el archivo al almacen publico y devuelve su direccion permanente.
-  Future<String> publicar(String storagePath) async {
-    await _cliente.storage.from(bucketPrivado).move(
-          storagePath,
-          storagePath,
-          destinationBucket: bucketPublico,
-        );
-
-    return urlPublica(storagePath);
-  }
-
-  /// Devuelve el archivo al almacen privado: deja de ser alcanzable.
-  Future<void> despublicar(String storagePath) async {
-    await _cliente.storage.from(bucketPublico).move(
-          storagePath,
-          storagePath,
-          destinationBucket: bucketPrivado,
-        );
   }
 }

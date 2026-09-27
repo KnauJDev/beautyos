@@ -82,3 +82,13 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/client-consent-revoke-photo/deno.json"
 entrypoint = "./functions/client-consent-revoke-photo/index.ts"
+
+[functions.move-work-photo]
+enabled = true
+# Hallazgo BX (D-285): publicar una foto en el portafolio o retirarla de él.
+# Con sesión obligatoria: la llama el dueño o el administrador desde la
+# galería. La autorización la decide work_photo_authorize_move con la sesión
+# de quien llama; esta función solo mueve el archivo con service_role.
+verify_jwt = true
+import_map = "./functions/move-work-photo/deno.json"
+entrypoint = "./functions/move-work-photo/index.ts"

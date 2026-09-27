@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/publication_studio_data.dart';
 import '../models/work_photo_summary.dart';
+import 'sesion_supabase.dart';
 import 'storage_cleanup.dart';
 import 'work_photo_storage.dart';
 
@@ -110,6 +111,11 @@ class WorkPhotosService {
   /// Al reves, un fallo dejaria el archivo publico con la base diciendo que
   /// no lo esta. Eso si seria una fuga, y en fotos de clientas reales no es
   /// un detalle tecnico.
+  ///
+  /// **Quién mueve el archivo (D-285, hallazgo BX):** la Edge Function
+  /// `move-work-photo`, no la app. Mover exige un permiso de Storage que nadie
+  /// tiene, y por eso desde el 09-ago ninguna foto llegó nunca al almacén
+  /// público. El orden de arriba no cambia.
   Future<void> setPortfolioApproval({
     required String photoId,
     required bool approved,
@@ -127,7 +133,7 @@ class WorkPhotosService {
       );
 
       try {
-        await _almacen.publicar(storagePath);
+        await _moverEnServidor(photoId, 'publico');
       } catch (_) {
         // D-284 (hallazgo BW): si el archivo no se pudo mover, la base NO
         // puede quedarse diciendo "publicada" -- así nació el cuadro roto
@@ -148,7 +154,7 @@ class WorkPhotosService {
       return;
     }
 
-    await _almacen.despublicar(storagePath);
+    await _moverEnServidor(photoId, 'privado');
 
     await Supabase.instance.client.rpc(
       'set_work_photo_portfolio_approval',
@@ -161,12 +167,22 @@ class WorkPhotosService {
     );
   }
 
+  /// Mueve el archivo de la foto al almacén `publico` o `privado` por la Edge
+  /// Function `move-work-photo` (D-285). Ella pregunta a la base, con la
+  /// sesión de quien llama, si puede; a público solo si ya está aprobada y
+  /// con consentimiento.
+  Future<void> _moverEnServidor(String photoId, String destino) async {
+    await Supabase.instance.client.functions.invoke(
+      'move-work-photo',
+      headers: await cabecerasParaEdgeFunction(),
+      body: {'branchId': branchId, 'photoId': photoId, 'destino': destino},
+    );
+  }
+
   /// Datos para el Estudio de publicación (paso 6.2, D-169). El servidor
   /// rechaza una foto que no esté aprobada para portafolio o sin
   /// consentimiento de la clienta -- mismo candado que D-167.
-  Future<PublicationStudioData> getPublicationStudioData(
-    String photoId,
-  ) async {
+  Future<PublicationStudioData> getPublicationStudioData(String photoId) async {
     final response = await Supabase.instance.client
         .rpc(
           'get_publication_studio_data',

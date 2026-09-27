@@ -210,6 +210,7 @@ npx.cmd supabase@latest functions list --project-ref eogppgbdnwxdtcbctaol
 | `platform-delete-orphaned-accounts` | ✅ `true` — y además exige rol de plataforma | Borra de Auth las cuentas del equipo que se quedaron sin ningún negocio, DESPUÉS de las filas (`on delete restrict`). Nunca un operador de plataforma | D-279 (AS) |
 | `client-consent-photo-url` | `false` — la llama la clienta sin sesión, con el token de su portal o de su enlace directo | Firma por 5 minutos la ruta de **una** foto privada suya, para que la vea antes de autorizar publicarla. **Toda la autorización la decide antes la RPC `client_consent_get_photo_path`**; esta solo firma | D-281 (9.48) |
 | `client-consent-revoke-photo` | `false` — igual que la anterior | La clienta retira una foto **ya publicada**: la saca del almacén público y DESPUÉS lo anota con `client_consent_finish_revoke` (solo `service_role`). La autorización la decide antes `client_consent_get_published_photo_path`. Reintentar es seguro | D-282 (9.48) |
+| `move-work-photo` | ✅ `true` — la llama el dueño o el administrador desde la galería | Publica una foto en el portafolio o la retira: mueve su archivo entre `work-photos-private` y `work-photos` con `service_role`, **después** de que `work_photo_authorize_move` lo autoriza con la sesión de quien llama (a público, solo aprobada y consentida). Desde la app nunca funcionó: mover exige un permiso de Storage que nadie tiene | D-285 (BX) |
 
 **Las tareas diarias de `pg_cron`** (desde el 23-sep son dos, en este orden):
 
