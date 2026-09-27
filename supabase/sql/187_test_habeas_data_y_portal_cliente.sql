@@ -223,8 +223,9 @@ begin
     raise notice 'FALLO 3a  get_work_photos_summary_v2 no distingue el consentimiento correctamente';
   end if;
 
-  -- Foto visible al cliente pero SIN aprobar para portafolio (D-119): no
-  -- debe salir en el portal porque no tiene URL publica todavia.
+  -- Foto visible al cliente pero SIN aprobar para portafolio (D-119). Hasta
+  -- el 27-sep NO salia en el portal (sin URL publica); desde D-286 (AU) SI
+  -- sale, sin direccion y con in_portfolio = false (caso 9e).
   v_photo_privada_visible := public.create_work_photo(
     v_branch, v_ticket_pasado, v_branch::text || '/prueba-privada-visible.jpg',
     'after', 'Visible pero privada', v_stylist, false
@@ -237,7 +238,11 @@ begin
   -- =====================================================================
   v_auth := public.client_portal_authenticate(v_tenant, '3000000199', '1234');
 
-  if (v_auth->>'error') = 'Todavía no tienes un PIN de acceso. Pídelo en el salón.' then
+  -- Desde D-183 (TL-04, 01-sep) los cuatro rechazos dicen lo MISMO, para no
+  -- confirmar quien es clienta. Este control se escribio antes (29-ago) y no
+  -- se actualizo; corregido el 27-sep al correrlo para D-286. Se compara
+  -- el comienzo, sin tildes, por la codificacion de la consola.
+  if (v_auth->>'token') is null and (v_auth->>'error') like 'Celular o PIN incorrectos%' then
     raise notice 'OK  4a  sin PIN asignado, el portal rechaza el ingreso (no lo crea solo)';
   else
     v_fallos := v_fallos + 1;
@@ -277,7 +282,7 @@ begin
 
   select portal_failed_attempts into v_intentos from public.clients where id = v_client;
 
-  if (v_auth->>'error') = 'PIN incorrecto.' and v_intentos = 1 then
+  if (v_auth->>'token') is null and (v_auth->>'error') like 'Celular o PIN incorrectos%' and v_intentos = 1 then
     raise notice 'OK  6a  un PIN incorrecto se rechaza y queda contado como intento fallido';
   else
     v_fallos := v_fallos + 1;
@@ -296,7 +301,7 @@ begin
 
   v_auth := public.client_portal_authenticate(v_tenant, '3000000199', '1234');
 
-  if v_intentos = 5 and (v_auth->>'error') like 'Demasiados intentos%' then
+  if v_intentos = 5 and (v_auth->>'token') is null and (v_auth->>'error') like 'Celular o PIN incorrectos%' then
     raise notice 'OK  7a  tras 5 intentos fallidos, hasta el PIN correcto queda bloqueado';
   else
     v_fallos := v_fallos + 1;
@@ -340,7 +345,7 @@ begin
 
   v_auth := public.client_portal_authenticate(v_tenant, '3000000199', '1234');
 
-  if (v_auth->>'error') = 'PIN incorrecto.' then
+  if (v_auth->>'token') is null and (v_auth->>'error') like 'Celular o PIN incorrectos%' then
     raise notice 'OK  8b  el PIN viejo (1234) ya no funciona tras restablecer';
   else
     v_fallos := v_fallos + 1;
@@ -400,12 +405,25 @@ begin
     raise notice 'FALLO 9d  already_reviewed no distingue correctamente';
   end if;
 
+  -- Desde D-286 (AU, 27-sep): salen las DOS visibles -- la publicada, con
+  -- su direccion, y la privada, sin direccion y marcada como no publicada.
+  -- La foto sin consentimiento no es visible para ella y no sale.
   select jsonb_array_length(v_portal_data -> 'photos') into v_count;
-  if v_count = 1 then
-    raise notice 'OK  9e  solo aparece 1 foto: la unica marcada visible para ella (desde D-286 tambien saldrian las privadas visibles)';
+  if v_count = 2
+     and exists (
+       select 1 from jsonb_array_elements(v_portal_data -> 'photos') f
+       where (f ->> 'id')::uuid = v_photo_con_consentimiento
+         and (f ->> 'in_portfolio')::boolean)
+     and exists (
+       select 1 from jsonb_array_elements(v_portal_data -> 'photos') f
+       where (f ->> 'id')::uuid = v_photo_privada_visible
+         and not (f ->> 'in_portfolio')::boolean
+         and f ->> 'photo_url' is null)
+  then
+    raise notice 'OK  9e  salen las 2 fotos visibles: la publicada marcada, la privada sin direccion (D-286)';
   else
     v_fallos := v_fallos + 1;
-    raise notice 'FALLO 9e  se esperaba 1 foto en el portal; llegaron %', v_count;
+    raise notice 'FALLO 9e  se esperaban 2 fotos (publicada y privada visible); llego %', v_portal_data -> 'photos';
   end if;
 
   -- =====================================================================
