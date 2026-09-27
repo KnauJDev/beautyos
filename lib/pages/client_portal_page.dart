@@ -8,7 +8,7 @@ import '../models/client_consent.dart';
 import '../models/client_portal_data.dart';
 import '../services/client_portal_service.dart';
 import '../widgets/autorizaciones_de_la_clienta.dart';
-import '../widgets/photo_grid_viewer.dart';
+import '../widgets/mis_fotos_del_portal.dart';
 import 'agenda_page.dart' show buildWhatsAppUri;
 import 'public_review_page.dart';
 
@@ -455,16 +455,12 @@ class _ClientPortalPageState extends State<ClientPortalPage> {
         _PortalSection(
           title: 'Mis fotos de trabajos',
           icon: Icons.photo_library_outlined,
-          child: data.photos.isEmpty
-              ? const Text(
-                  'Todavía no tienes fotos publicadas aquí.',
-                  style: TextStyle(fontSize: 13, color: AppColors.textMuted),
-                )
-              : PhotoGridViewer(
-                  photos: data.photos
-                      .map((p) => (url: p.photoUrl, caption: p.caption))
-                      .toList(),
-                ),
+          // D-286 (AU): también las privadas que el salón le marcó como
+          // visibles, con la etiqueta de si están publicadas o no.
+          child: MisFotosDelPortal(
+            fotos: data.photos,
+            credencial: ClientConsentCredential.portal(_token ?? ''),
+          ),
         ),
       ],
     );

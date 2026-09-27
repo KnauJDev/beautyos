@@ -32,10 +32,21 @@ class ClientConsentService {
     ClientConsentCredential credencial,
   ) async {
     if (foto.photoUrl != null) return foto.photoUrl;
+    return urlTemporal(foto.id, credencial);
+  }
+
+  /// Una URL temporal (5 minutos) de una foto suya del almacén privado,
+  /// firmada por `client-consent-photo-url` (D-281). La usan las
+  /// autorizaciones y, desde D-286 (AU), "Mis fotos de trabajos". `null` si
+  /// no se pudo.
+  Future<String?> urlTemporal(
+    String photoId,
+    ClientConsentCredential credencial,
+  ) async {
     try {
       final respuesta = await _cliente.functions.invoke(
         'client-consent-photo-url',
-        body: {'photoId': foto.id, ...credencial.edgeParams},
+        body: {'photoId': photoId, ...credencial.edgeParams},
       );
       final datos = respuesta.data;
       if (datos is Map) return datos['url']?.toString();

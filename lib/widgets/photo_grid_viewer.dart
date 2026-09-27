@@ -7,10 +7,16 @@ import '../theme/app_theme.dart';
 /// clienta (D-167) -- ambos son "una lista de fotos que se ven en grande al
 /// tocarlas", solo cambia de dónde sale la lista.
 class PhotoGridViewer extends StatelessWidget {
-  const PhotoGridViewer({super.key, required this.photos});
+  const PhotoGridViewer({super.key, required this.photos, this.etiquetas});
 
   /// Una foto para el grid: su URL y, si tiene, un pie de foto.
   final List<({String url, String? caption})> photos;
+
+  /// Opcional: una etiqueta corta por foto, pintada sobre la miniatura, en
+  /// el mismo orden que [photos] (`null` = sin etiqueta). La usa el portal
+  /// de la clienta para distinguir lo publicado de lo que es solo para ella
+  /// (D-286, AU). El portafolio público no la pasa y se ve igual que antes.
+  final List<String?>? etiquetas;
 
   @override
   Widget build(BuildContext context) {
@@ -25,22 +31,61 @@ class PhotoGridViewer extends StatelessWidget {
       itemCount: photos.length,
       itemBuilder: (context, index) {
         final photo = photos[index];
+        final etiqueta = (etiquetas != null && index < etiquetas!.length)
+            ? etiquetas![index]
+            : null;
+        final miniatura = Image.network(
+          photo.url,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => Container(
+            color: AppColors.surfaceAlt,
+            child: const Icon(
+              Icons.broken_image_outlined,
+              color: AppColors.textMuted,
+            ),
+          ),
+        );
         return InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: () => _openViewer(context, photo),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Image.network(
-              photo.url,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                color: AppColors.surfaceAlt,
-                child: const Icon(
-                  Icons.broken_image_outlined,
-                  color: AppColors.textMuted,
-                ),
-              ),
-            ),
+            child: etiqueta == null
+                ? miniatura
+                : Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      miniatura,
+                      Positioned(
+                        left: 6,
+                        right: 6,
+                        bottom: 6,
+                        child: Align(
+                          alignment: Alignment.bottomLeft,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.6),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              etiqueta,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
           ),
         );
       },

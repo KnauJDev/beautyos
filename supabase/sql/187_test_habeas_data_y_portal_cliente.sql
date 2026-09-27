@@ -402,7 +402,7 @@ begin
 
   select jsonb_array_length(v_portal_data -> 'photos') into v_count;
   if v_count = 1 then
-    raise notice 'OK  9e  solo aparece 1 foto: la aprobada para portafolio (con URL publica)';
+    raise notice 'OK  9e  solo aparece 1 foto: la unica marcada visible para ella (desde D-286 tambien saldrian las privadas visibles)';
   else
     v_fallos := v_fallos + 1;
     raise notice 'FALLO 9e  se esperaba 1 foto en el portal; llegaron %', v_count;

@@ -85,22 +85,33 @@ class ClientPortalPastAppointment {
 class ClientPortalPhoto {
   const ClientPortalPhoto({
     required this.id,
-    required this.photoUrl,
+    this.photoUrl,
+    this.inPortfolio = false,
     this.photoType,
     this.caption,
     this.createdAt,
   });
 
   final String id;
-  final String photoUrl;
+
+  /// La dirección pública; `null` si la foto vive en el almacén privado.
+  /// Desde D-286 (AU) el portal también entrega esas, y la app les pide una
+  /// URL temporal a `client-consent-photo-url`.
+  final String? photoUrl;
+
+  /// Si está publicada en la página del salón (D-286): la marca que la
+  /// distingue de las que son solo para ella.
+  final bool inPortfolio;
   final String? photoType;
   final String? caption;
   final DateTime? createdAt;
 
   factory ClientPortalPhoto.fromMap(Map<String, dynamic> map) {
+    final url = map['photo_url']?.toString();
     return ClientPortalPhoto(
       id: map['id'].toString(),
-      photoUrl: map['photo_url']?.toString() ?? '',
+      photoUrl: (url == null || url.isEmpty) ? null : url,
+      inPortfolio: map['in_portfolio'] == true,
       photoType: map['photo_type']?.toString(),
       caption: map['caption']?.toString(),
       createdAt: map['created_at'] == null
