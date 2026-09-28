@@ -38,7 +38,6 @@ class _AddWorkPhotoDialogState extends State<AddWorkPhotoDialog> {
   XFile? _pickedImage;
   bool _isSaving = false;
   String? _error;
-  bool _clientConsent = false;
 
   @override
   void initState() {
@@ -91,7 +90,6 @@ class _AddWorkPhotoDialogState extends State<AddWorkPhotoDialog> {
             ? null
             : _captionController.text.trim(),
         stylistId: _selectedStylistId,
-        clientConsent: _clientConsent,
       );
 
       if (!mounted) return;
@@ -182,28 +180,11 @@ class _AddWorkPhotoDialogState extends State<AddWorkPhotoDialog> {
                 minLines: 2,
                 maxLines: 3,
               ),
-              const SizedBox(height: 8),
-              CheckboxListTile(
-                value: _clientConsent,
-                onChanged: (value) {
-                  setState(() {
-                    _clientConsent = value ?? false;
-                  });
-                },
-                contentPadding: EdgeInsets.zero,
-                controlAffinity: ListTileControlAffinity.leading,
-                dense: true,
-                // Hallazgo AQ: decía "La clienta autorizó…", y lo marca quien
-                // sube la foto, que es la parte interesada. Afirmaba un hecho
-                // de un tercero ausente. Mientras no lo apruebe la clienta
-                // desde su portal, lo honesto es que quien la sube diga lo que
-                // él mismo hizo: pedir la autorización.
-                title: const Text(
-                  'Confirmo que le pedí a la clienta su autorización para '
-                  'publicar esta foto en el portafolio y en redes (Ley 1581)',
-                  style: TextStyle(fontSize: 13),
-                ),
-              ),
+              // Hallazgo AQ (D-288): aquí había una casilla con la que quien
+              // subía la foto daba el permiso de publicarla -- la parte
+              // interesada firmando por la clienta. Se quitó por decisión del
+              // propietario (D-260): el permiso solo lo da ella, desde su
+              // enlace o su portal. El servidor tampoco lo acepta ya.
               const SizedBox(height: 8),
               OutlinedButton.icon(
                 onPressed: _pickImage,

@@ -117,4 +117,17 @@ class ClientConsentService {
       },
     );
   }
+
+  /// Para el botón "Pedir autorización por WhatsApp" del salón (D-288). Lo
+  /// llama el dueño o el administrador, con su sesión; a un estilista la
+  /// base le responde "No autorizado".
+  Future<ClientConsentWhatsapp> whatsappData(String clientId) async {
+    final respuesta = await _cliente.rpc(
+      'client_consent_whatsapp_data',
+      params: {'p_client_id': clientId},
+    );
+    return ClientConsentWhatsapp.fromMap(
+      Map<String, dynamic>.from(respuesta as Map),
+    );
+  }
 }

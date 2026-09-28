@@ -459,14 +459,18 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         ),
         allowedRoles: const <String>{'owner', 'admin', 'assistant'},
       ),
-      const BeautyModule(
-        section: BeautySection(
+      BeautyModule(
+        section: const BeautySection(
           'Clientes',
           Icons.people_outline,
           category: BeautyCategory.operacion,
         ),
-        page: ClientesPage(),
-        allowedRoles: <String>{'owner', 'admin', 'assistant'},
+        // D-288: pedirle la autorización por WhatsApp es de dueño o
+        // administrador; al asistente la base se lo niega.
+        page: ClientesPage(
+          puedePedirAutorizacion: role == 'owner' || role == 'admin',
+        ),
+        allowedRoles: const <String>{'owner', 'admin', 'assistant'},
       ),
 
       // ======================================================================

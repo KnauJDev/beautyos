@@ -133,17 +133,26 @@ begin
     'after', 'Con autorizacion', v_stylist, true
   );
 
+  -- Desde D-288 (AQ, 28-sep) el servidor IGNORA ese `true`: el permiso de
+  -- publicar solo lo da ella, desde su portal o su enlace (D-260). Antes
+  -- este caso comprobaba lo contrario.
   if exists (
     select 1 from public.work_photos
     where id = v_photo_con_consentimiento
-      and client_consent = true
-      and client_consent_at is not null
+      and client_consent = false
+      and client_consent_at is null
   ) then
-    raise notice 'OK  1a  create_work_photo con consentimiento guarda client_consent=true y la fecha';
+    raise notice 'OK  1a  create_work_photo ignora el permiso de quien sube la foto (D-288)';
   else
     v_fallos := v_fallos + 1;
-    raise notice 'FALLO 1a  el consentimiento no quedo guardado como se esperaba';
+    raise notice 'FALLO 1a  quien subio la foto pudo dar el permiso por ella';
   end if;
+
+  -- Ella autoriza (se simula lo que hace client_consent_set_photo desde su
+  -- enlace), para que el resto del control siga probando lo mismo.
+  update public.work_photos
+  set client_consent = true, client_consent_at = now(), client_consent_decided_at = now()
+  where id = v_photo_con_consentimiento;
 
   v_photo_sin_consentimiento := public.create_work_photo(
     v_branch, v_ticket_pasado, v_branch::text || '/prueba-sin-consentimiento.jpg',

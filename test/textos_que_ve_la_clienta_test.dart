@@ -79,8 +79,12 @@ void main() {
   });
 
   group('AQ — quien sube la foto no firma por la clienta', () {
-    test('la casilla dice lo que hizo quien la marca, no lo que hizo ella', () {
+    test('la casilla ya no existe: el permiso solo lo da ella (D-288)', () {
       final dialogo = _cadenas('lib/widgets/add_work_photo_dialog.dart');
+      final codigo = File('lib/widgets/add_work_photo_dialog.dart')
+          .readAsLinesSync()
+          .where((l) => !l.trimLeft().startsWith('//'))
+          .join('\n');
 
       expect(
         dialogo.any((c) => c.startsWith('La clienta autorizó')),
@@ -88,7 +92,18 @@ void main() {
         reason:
             'lo marca el estilista: no puede afirmar un hecho de la clienta',
       );
-      expect(dialogo.any((c) => c.startsWith('Confirmo que le pedí')), isTrue);
+      expect(
+        dialogo.any((c) => c.startsWith('Confirmo que le pedí')),
+        isFalse,
+        reason: 'D-288: la casilla se quitó por decisión del propietario',
+      );
+      expect(codigo, isNot(contains('CheckboxListTile')));
+      expect(codigo, isNot(contains('clientConsent')));
+      expect(
+        File('lib/services/work_photos_service.dart').readAsStringSync(),
+        isNot(contains("'p_client_consent'")),
+        reason: 'la app no manda el permiso al crear la foto',
+      );
     });
   });
 }

@@ -186,3 +186,35 @@ class ClientConsentOverview {
     );
   }
 }
+
+/// Lo que el salón necesita para pedirle la autorización a una clienta por
+/// WhatsApp (paso 9.48, Bloque 4, D-288): su enlace, su nombre, su celular
+/// y el nombre del salón. Lo entrega `client_consent_whatsapp_data`, solo a
+/// dueño o administrador.
+class ClientConsentWhatsapp {
+  const ClientConsentWhatsapp({
+    required this.token,
+    required this.clientName,
+    this.clientPhone,
+    required this.businessName,
+  });
+
+  final String token;
+  final String clientName;
+  final String? clientPhone;
+  final String businessName;
+
+  factory ClientConsentWhatsapp.fromMap(Map<String, dynamic> map) {
+    String? texto(String clave) {
+      final valor = map[clave]?.toString().trim();
+      return valor == null || valor.isEmpty ? null : valor;
+    }
+
+    return ClientConsentWhatsapp(
+      token: texto('token') ?? '',
+      clientName: texto('client_name') ?? '',
+      clientPhone: texto('client_phone'),
+      businessName: texto('business_name') ?? '',
+    );
+  }
+}

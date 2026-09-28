@@ -7,6 +7,7 @@ import '../models/work_photo_summary.dart';
 import '../services/work_photos_service.dart';
 import '../widgets/app_widgets.dart';
 import '../widgets/foto_de_trabajo.dart';
+import '../widgets/pedir_autorizacion.dart';
 import '../widgets/publication_studio_dialog.dart';
 
 class FotosTrabajosPage extends StatefulWidget {
@@ -604,7 +605,10 @@ class _WorkPhotoCard extends StatelessWidget {
                   children: [
                     _PhotoTypeBadge(text: photo.photoTypeText),
                     const SizedBox(width: 6),
-                    _ConsentBadge(hasConsent: photo.clientConsent),
+                    _ConsentBadge(
+                      hasConsent: photo.clientConsent,
+                      decidioElla: photo.clientConsentDecidedAt != null,
+                    ),
                     const Spacer(),
                     if (photo.ticketCode != null)
                       Container(
@@ -734,6 +738,18 @@ class _WorkPhotoCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                // D-288: el permiso solo lo da ella. Si nunca ha respondido,
+                // se le pide por WhatsApp con su enlace.
+                if (photo.puedePedirAutorizacion) ...[
+                  const SizedBox(height: 6),
+                  SizedBox(
+                    width: double.infinity,
+                    child: BotonPedirAutorizacion(
+                      clientId: photo.clientId!,
+                      compacto: true,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -748,17 +764,29 @@ class _WorkPhotoCard extends StatelessWidget {
 class _ConsentBadge extends StatelessWidget {
   final bool hasConsent;
 
-  const _ConsentBadge({required this.hasConsent});
+  /// Si respondió ella (D-281) o el permiso viene de la casilla vieja que
+  /// marcaba quien subía la foto (AQ, respetado por D-288).
+  final bool decidioElla;
+
+  const _ConsentBadge({required this.hasConsent, required this.decidioElla});
 
   @override
   Widget build(BuildContext context) {
     final color = hasConsent ? AppColors.success : AppColors.textMuted;
     return Tooltip(
+      // D-288: el letrero dice de dónde viene el permiso, sin atribuirle a
+      // la clienta lo que no hizo.
       message: hasConsent
-          // Hallazgo AQ: lo marca quien sube la foto, no la clienta.
-          ? 'Quien subió la foto confirmó haber pedido la autorización de la '
-                'clienta (Ley 1581)'
-          : 'Sin autorización de la clienta: solo archivo interno privado',
+          ? (decidioElla
+                ? 'La clienta autorizó publicarla desde su enlace o su portal '
+                      '(Ley 1581)'
+                : 'Autorización marcada al subir la foto, antes de que la '
+                      'diera la propia clienta (Ley 1581)')
+          : (decidioElla
+                ? 'La clienta prefirió que no se publique: solo archivo '
+                      'interno privado'
+                : 'Sin respuesta de la clienta todavía: solo archivo interno '
+                      'privado'),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(

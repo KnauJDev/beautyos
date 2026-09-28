@@ -118,6 +118,12 @@ begin
 
   insert into public.reviews (tenant_id, branch_id, ticket_id, client_id, rating, comment, moderation_status, visible_to_public, active)
   values (v_tenant, v_branch, v_ticket_con_resena, v_client, 5, 'Quedé feliz con el resultado', 'approved', true, true);
+  -- Desde el paso 9.48 (D-281) el Estudio solo muestra el nombre si ella lo
+  -- autorizó; este caso quiere la pieza completa, con nombre. Corregido el
+  -- 28-sep: el caso 1 fallaba desde el 26-sep sin que nadie lo corriera.
+  update public.reviews
+  set client_name_consent = true, client_name_consent_decided_at = now()
+  where ticket_id = v_ticket_con_resena;
 
   -- Ticket sin ninguna reseña.
   insert into public.tickets (tenant_id, branch_id, client_id, status, channel, scheduled_at)
@@ -142,8 +148,13 @@ begin
   -- cuarta que se queda sin aprobar.
   v_photo_completa := public.create_work_photo(
     v_branch, v_ticket_con_resena, v_branch::text || '/estudio-completa.jpg',
-    'final', 'Resultado final', v_stylist, true
+    'final', 'Resultado final', v_stylist
   );
+  -- D-288 (AQ): el servidor ya no acepta el permiso de quien sube la foto;
+  -- lo da ella desde su enlace. Aqui se simula que ya lo dio.
+  update public.work_photos
+  set client_consent = true, client_consent_at = now(), client_consent_decided_at = now()
+  where id = v_photo_completa;
   perform public.set_work_photo_portfolio_approval(
     v_branch, v_photo_completa, true,
     'https://ejemplo.supabase.co/storage/v1/object/public/work-photos/' ||
@@ -152,8 +163,13 @@ begin
 
   v_photo_sin_resena := public.create_work_photo(
     v_branch, v_ticket_sin_resena, v_branch::text || '/estudio-sin-resena.jpg',
-    'final', 'Sin reseña todavía', v_stylist, true
+    'final', 'Sin reseña todavía', v_stylist
   );
+  -- D-288 (AQ): el servidor ya no acepta el permiso de quien sube la foto;
+  -- lo da ella desde su enlace. Aqui se simula que ya lo dio.
+  update public.work_photos
+  set client_consent = true, client_consent_at = now(), client_consent_decided_at = now()
+  where id = v_photo_sin_resena;
   perform public.set_work_photo_portfolio_approval(
     v_branch, v_photo_sin_resena, true,
     'https://ejemplo.supabase.co/storage/v1/object/public/work-photos/' ||
@@ -162,8 +178,13 @@ begin
 
   v_photo_resena_baja := public.create_work_photo(
     v_branch, v_ticket_resena_baja, v_branch::text || '/estudio-resena-baja.jpg',
-    'final', 'Reseña de 3 estrellas', v_stylist, true
+    'final', 'Reseña de 3 estrellas', v_stylist
   );
+  -- D-288 (AQ): el servidor ya no acepta el permiso de quien sube la foto;
+  -- lo da ella desde su enlace. Aqui se simula que ya lo dio.
+  update public.work_photos
+  set client_consent = true, client_consent_at = now(), client_consent_decided_at = now()
+  where id = v_photo_resena_baja;
   perform public.set_work_photo_portfolio_approval(
     v_branch, v_photo_resena_baja, true,
     'https://ejemplo.supabase.co/storage/v1/object/public/work-photos/' ||
@@ -173,8 +194,13 @@ begin
   -- Foto sin aprobar para portafolio (consentimiento sí, aprobación no).
   v_photo_no_aprobada := public.create_work_photo(
     v_branch, v_ticket_sin_resena, v_branch::text || '/estudio-no-aprobada.jpg',
-    'before', 'Antes', v_stylist, true
+    'before', 'Antes', v_stylist
   );
+  -- D-288 (AQ): el servidor ya no acepta el permiso de quien sube la foto;
+  -- lo da ella desde su enlace. Aqui se simula que ya lo dio.
+  update public.work_photos
+  set client_consent = true, client_consent_at = now(), client_consent_decided_at = now()
+  where id = v_photo_no_aprobada;
 
   -- =====================================================================
   -- CASO 1: foto completa trae servicio(s) y la reseña de 5 estrellas.

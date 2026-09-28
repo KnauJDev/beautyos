@@ -20,6 +20,7 @@ import '../services/tickets_service.dart';
 import '../widgets/add_work_photo_dialog.dart';
 import '../widgets/app_widgets.dart';
 import '../widgets/candado_de_plan.dart';
+import '../widgets/pedir_autorizacion.dart';
 import 'agenda_page.dart' show buildWhatsAppUri;
 
 /// Abre el diálogo de crear cita para [branchId] y devuelve `true` si la
@@ -816,6 +817,19 @@ class _TicketsPageState extends State<TicketsPage> {
     );
 
     if (saved != true || !mounted) return;
+
+    // D-288: la foto nace sin permiso de publicar; se ofrece pedírselo a la
+    // clienta ya mismo. Solo dueño o administrador: al asistente la base se
+    // lo niega, así que ni se le ofrece.
+    final clientId = ticket.clientId;
+    if (widget.isOwnerOrAdmin && clientId != null) {
+      await ofrecerPedirAutorizacion(
+        context,
+        clientId: clientId,
+        clientName: ticket.clientName,
+      );
+      return;
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Foto agregada correctamente.')),

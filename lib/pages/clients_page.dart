@@ -7,10 +7,15 @@ import '../models/celular_colombiano.dart';
 import '../models/client_summary.dart';
 import '../services/clients_service.dart';
 import '../widgets/app_widgets.dart';
+import '../widgets/pedir_autorizacion.dart';
 import 'agenda_page.dart' show buildWhatsAppUri;
 
 class ClientesPage extends StatefulWidget {
-  const ClientesPage({super.key});
+  const ClientesPage({super.key, this.puedePedirAutorizacion = false});
+
+  /// Dueño o administrador (D-288): ve "Pedir autorización por WhatsApp" en
+  /// la ficha de la clienta.
+  final bool puedePedirAutorizacion;
 
   @override
   State<ClientesPage> createState() => _ClientesPageState();
@@ -132,6 +137,7 @@ class _ClientesPageState extends State<ClientesPage> {
       backgroundColor: Colors.transparent,
       builder: (context) => _ClientDetailSheet(
         client: client,
+        puedePedirAutorizacion: widget.puedePedirAutorizacion,
         onEdit: () {
           Navigator.of(context).pop();
           _openEditClientDialog(client);
@@ -623,10 +629,12 @@ class _ClientDetailSheet extends StatelessWidget {
   const _ClientDetailSheet({
     required this.client,
     required this.onEdit,
+    this.puedePedirAutorizacion = false,
   });
 
   final ClientSummary client;
   final VoidCallback onEdit;
+  final bool puedePedirAutorizacion;
 
   Future<void> _openResetPortalPinDialog(BuildContext context) async {
     final newPin = await showDialog<String>(
@@ -976,6 +984,10 @@ class _ClientDetailSheet extends StatelessWidget {
                         icon: const Icon(Icons.lock_reset_outlined, size: 16),
                         label: const Text('Restablecer PIN del portal'),
                       ),
+                      // D-288: sus fotos y su reseña, las decide ella desde
+                      // su enlace.
+                      if (puedePedirAutorizacion)
+                        BotonPedirAutorizacion(clientId: client.id),
                     ],
                   ),
                   const SizedBox(height: 20),

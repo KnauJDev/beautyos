@@ -39,6 +39,11 @@ class WorkPhotoSummary {
   /// portafolio (D-167).
   final bool clientConsent;
   final DateTime? clientConsentAt;
+
+  /// Cuándo respondió ELLA desde su portal o su enlace (D-281); `null` si
+  /// nunca respondió. Una foto con permiso y sin esta fecha lo tiene de la
+  /// casilla vieja que marcaba quien la subía (AQ), que se respeta (D-288).
+  final DateTime? clientConsentDecidedAt;
   final String createdAt;
 
   const WorkPhotoSummary({
@@ -61,6 +66,7 @@ class WorkPhotoSummary {
     required this.approvedForPortfolio,
     required this.clientConsent,
     this.clientConsentAt,
+    this.clientConsentDecidedAt,
     required this.createdAt,
   });
 
@@ -104,6 +110,9 @@ class WorkPhotoSummary {
       clientConsentAt: map['client_consent_at'] == null
           ? null
           : DateTime.tryParse(map['client_consent_at'].toString()),
+      clientConsentDecidedAt: map['client_consent_decided_at'] == null
+          ? null
+          : DateTime.tryParse(map['client_consent_decided_at'].toString()),
       createdAt: map['created_at'] as String,
     );
   }
@@ -129,6 +138,7 @@ class WorkPhotoSummary {
       approvedForPortfolio: approvedForPortfolio,
       clientConsent: clientConsent,
       clientConsentAt: clientConsentAt,
+      clientConsentDecidedAt: clientConsentDecidedAt,
       createdAt: createdAt,
     );
   }
@@ -136,6 +146,12 @@ class WorkPhotoSummary {
   /// Si la foto es alcanzable desde internet por cualquiera. Es lo que hace
   /// verdadera la promesa de "aprobar publica, retirar despublica" (H-09).
   bool get estaPublicada => approvedForPortfolio && photoUrl != null;
+
+  /// El botón "Pedir autorización" de la galería (D-288): solo si se sabe de
+  /// qué clienta es, no tiene permiso y ella NUNCA ha respondido. A quien
+  /// dijo que no, no se le vuelve a insistir (decisión del propietario).
+  bool get puedePedirAutorizacion =>
+      clientId != null && !clientConsent && clientConsentDecidedAt == null;
 
   String get photoTypeText {
     switch (photoType) {
