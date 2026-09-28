@@ -137,6 +137,7 @@ class ClientConsentOverview {
     required this.clientName,
     this.businessName,
     this.businessWhatsapp,
+    this.businessSlug,
     required this.pendingPhotos,
     required this.answeredPhotos,
     required this.pendingReviews,
@@ -146,6 +147,11 @@ class ClientConsentOverview {
   final String clientName;
   final String? businessName;
   final String? businessWhatsapp;
+
+  /// La dirección pública del salón (D-287). La usa la página del enlace
+  /// directo, que no sabe de qué salón viene, para pintar sus colores y
+  /// ofrecer ir a su página.
+  final String? businessSlug;
   final List<ConsentPhoto> pendingPhotos;
   final List<ConsentPhoto> answeredPhotos;
   final List<ConsentReview> pendingReviews;
@@ -172,6 +178,7 @@ class ClientConsentOverview {
       clientName: texto('client_name') ?? 'Clienta',
       businessName: texto('business_name'),
       businessWhatsapp: texto('business_whatsapp'),
+      businessSlug: texto('business_slug'),
       pendingPhotos: lista('pending_photos', ConsentPhoto.fromMap),
       answeredPhotos: lista('answered_photos', ConsentPhoto.fromMap),
       pendingReviews: lista('pending_reviews', ConsentReview.fromMap),

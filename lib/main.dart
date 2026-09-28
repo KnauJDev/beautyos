@@ -19,6 +19,7 @@ import 'services/tenant_subscription_service.dart';
 import 'pages/accept_invitation_page.dart';
 import 'pages/auth_gate.dart';
 import 'pages/authenticated_router.dart';
+import 'pages/autorizar_por_enlace_page.dart';
 import 'pages/complete_tenant_setup_page.dart';
 import 'pages/public_booking_page.dart';
 import 'pages/public_partner_page.dart';
@@ -77,6 +78,10 @@ class BeautyOSApp extends StatelessWidget {
     // Resena publica (D-058): enlace sin sesion, ej. "?resena=<ticket_id>".
     // Mismo motivo: un cliente anonimo nunca debe pasar por login.
     final publicReviewTicketId = Uri.base.queryParameters['resena'];
+    // Autorizar fotos y resenas (paso 9.48, Bloque 3, D-287): el enlace
+    // directo que el salon le manda a la clienta, ej. "?autorizar=<token>".
+    // Mismo motivo: sin sesion y sin PIN, el enlace es suyo.
+    final consentLinkToken = Uri.base.queryParameters['autorizar'];
     // Planes publicos (Paso 3.8 / D-140): enlace sin sesion, ej. "?planes=1".
     final isPublicPlans =
         Uri.base.queryParameters.containsKey('planes') ||
@@ -143,6 +148,9 @@ class BeautyOSApp extends StatelessWidget {
         final Widget home;
         if (publicBranchId != null && publicBranchId.trim().isNotEmpty) {
           home = PublicBookingPage(branchId: publicBranchId.trim());
+        } else if (consentLinkToken != null &&
+            consentLinkToken.trim().isNotEmpty) {
+          home = AutorizarPorEnlacePage(token: consentLinkToken.trim());
         } else if (publicReviewTicketId != null &&
             publicReviewTicketId.trim().isNotEmpty) {
           home = PublicReviewPage(ticketId: publicReviewTicketId.trim());
