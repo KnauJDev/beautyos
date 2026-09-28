@@ -58,6 +58,9 @@ order by routine_name, grantee;
 select '-- la usa: ' || n.nspname || '.' || p.proname
 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
 where n.nspname in ('public', 'private')
+  -- Solo funciones: pg_get_functiondef revienta con un agregado
+  -- (primera corrida, 28-sep: "array_agg is an aggregate function").
+  and p.prokind = 'f'
   and p.proname <> 'get_work_photos_summary_v2'
   and pg_get_functiondef(p.oid) ilike '%get_work_photos_summary_v2%';
 
