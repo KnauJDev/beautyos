@@ -9,8 +9,9 @@
 --     migración no toca ni una fila.
 --   * El salón le pide la autorización por WhatsApp con su enlace, desde tres
 --     sitios: al subir la foto, en la galería (solo en las fotos que ella aún
---     no ha respondido) y en su ficha. Solo dueño o administrador: el
---     estilista no (se conserva la regla del control 229, caso 4).
+--     no ha respondido) y en su ficha. Dueño, administrador o asistente (el
+--     asistente, en Tickets y en la ficha: la galería sigue siendo de dueño
+--     y administrador); el estilista no (control 229, caso 4).
 --
 -- QUÉ CAMBIA, todo contra el texto VIVO (`extraer_bloque_4_9_48.sql`, 28-sep):
 --   1. create_work_photo: ignora `p_client_consent` (dos líneas, `diff`).
@@ -22,8 +23,10 @@
 --   3. client_consent_whatsapp_data (NUEVA): en una llamada, lo que el botón
 --      necesita para armar el WhatsApp -- el enlace de ella, su nombre, su
 --      celular y el nombre del salón. El permiso lo decide
---      get_or_create_client_consent_link, que llama primero: dueño o
---      administrador, y solo clientas de su negocio.
+--      get_or_create_client_consent_link, que llama primero: dueño,
+--      administrador o asistente, y solo clientas de su negocio.
+--   4. get_or_create_client_consent_link: también el asistente (decisión
+--      del propietario al revisar este bloque, 28-sep). El estilista, no.
 -- ============================================================================
 
 begin;
@@ -232,8 +235,8 @@ declare
   v_token text;
   v_result jsonb;
 begin
-  -- Primero el permiso, en un solo sitio: dueño o administrador, y la
-  -- clienta de su negocio. Si no, esto revienta y no sale nada más.
+  -- Primero el permiso, en un solo sitio: dueño, administrador o asistente,
+  -- y la clienta de su negocio. Si no, esto revienta y no sale nada más.
   v_token := public.get_or_create_client_consent_link(p_client_id);
 
   select jsonb_build_object(
@@ -256,6 +259,80 @@ revoke all on function public.client_consent_whatsapp_data(uuid) from public, an
 grant execute on function public.client_consent_whatsapp_data(uuid) to authenticated;
 
 comment on function public.client_consent_whatsapp_data(uuid) is
-  'Paso 9.48, Bloque 4 (D-288): el enlace de autorizaciones de una clienta, con su nombre, su celular y el nombre del salón, para armar el WhatsApp. El permiso lo decide get_or_create_client_consent_link (dueño o administrador).';
+  'Paso 9.48, Bloque 4 (D-288): el enlace de autorizaciones de una clienta, con su nombre, su celular y el nombre del salón, para armar el WhatsApp. El permiso lo decide get_or_create_client_consent_link (dueño, administrador o asistente).';
+
+-- ----------------------------------------------------------------------------
+-- 4. get_or_create_client_consent_link: también el asistente (decisión del
+--    propietario, 28-sep). Contra el texto vivo (idéntico al de la migración
+--    20260926130000, comparado con `diff`): cambia solo la comprobación de
+--    permiso. Mismo nombre, parámetros y retorno: `create or replace`, los
+--    permisos vivos (authenticated) se conservan.
+-- ----------------------------------------------------------------------------
+
+create or replace function public.get_or_create_client_consent_link(
+  p_client_id uuid
+)
+returns text
+language plpgsql
+security definer
+set search_path = pg_catalog
+as $$
+declare
+  v_tenant_id uuid := public.get_my_tenant_id();
+  v_token text;
+begin
+  if v_tenant_id is null then
+    raise exception 'No existe un perfil activo asociado al usuario actual.';
+  end if;
+
+  -- D-288 (decisión del propietario, 28-sep): también el asistente -- es
+  -- administrativo y ya ve el celular de las clientas en Clientes y en
+  -- Tickets; pedir la autorización puede ser tarea suya. Antes:
+  -- `public.is_owner_or_admin()`. El estilista sigue sin poder (control 229,
+  -- caso 4). Ahora la membresía se exige en ESTE negocio.
+  if not exists (
+    select 1
+    from public.tenant_memberships tm
+    where tm.user_id = auth.uid()
+      and tm.tenant_id = v_tenant_id
+      and tm.active
+      and tm.starts_at <= now()
+      and (tm.ends_at is null or tm.ends_at > now())
+      and tm.role in ('tenant_owner', 'admin', 'assistant')
+  ) then
+    raise exception 'No autorizado. Solo el dueño, el administrador o el asistente pueden generar este enlace.';
+  end if;
+
+  select consent_link_token into v_token
+  from public.clients
+  where id = p_client_id
+    and tenant_id = v_tenant_id;
+
+  if not found then
+    raise exception 'El cliente no existe o no pertenece a este negocio.';
+  end if;
+
+  if v_token is not null then
+    return v_token;
+  end if;
+
+  -- Reintento simple ante una colisión de la lotería (gen_random_uuid tiene
+  -- 122 bits al azar; esto es una red, no una expectativa real).
+  loop
+    v_token := replace(gen_random_uuid()::text, '-', '');
+    begin
+      update public.clients
+      set consent_link_token = v_token
+      where id = p_client_id
+        and tenant_id = v_tenant_id;
+      exit;
+    exception when unique_violation then
+      continue;
+    end;
+  end loop;
+
+  return v_token;
+end;
+$$;
 
 commit;

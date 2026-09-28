@@ -12,8 +12,8 @@ import '../services/client_consent_service.dart';
 /// (AQ), esta es la única forma de conseguir el permiso: lo da ella.
 ///
 /// Se usa desde tres sitios, por decisión del propietario (28-sep): al subir
-/// la foto, en la galería y en la ficha de la clienta. Solo dueño o
-/// administrador: la base se lo niega a un estilista.
+/// la foto, en la galería y en la ficha de la clienta. Dueño, administrador
+/// o asistente; la base se lo niega a un estilista.
 class PedirAutorizacion {
   const PedirAutorizacion._();
 
@@ -116,7 +116,7 @@ class BotonPedirAutorizacion extends StatelessWidget {
   }
 }
 
-/// Después de subir una foto (dueño o administrador): la foto nace sin
+/// Después de subir una foto desde Tickets: la foto nace sin
 /// permiso de publicar, así que se ofrece pedírselo a ella en ese momento.
 Future<void> ofrecerPedirAutorizacion(
   BuildContext context, {

@@ -819,10 +819,11 @@ class _TicketsPageState extends State<TicketsPage> {
     if (saved != true || !mounted) return;
 
     // D-288: la foto nace sin permiso de publicar; se ofrece pedírselo a la
-    // clienta ya mismo. Solo dueño o administrador: al asistente la base se
-    // lo niega, así que ni se le ofrece.
+    // clienta ya mismo. Tickets es de dueño, administrador y asistente, y los
+    // tres pueden pedirlo (decisión del propietario, 28-sep). El estilista
+    // sube desde "Mi agenda", donde no se ofrece.
     final clientId = ticket.clientId;
-    if (widget.isOwnerOrAdmin && clientId != null) {
+    if (clientId != null) {
       await ofrecerPedirAutorizacion(
         context,
         clientId: clientId,

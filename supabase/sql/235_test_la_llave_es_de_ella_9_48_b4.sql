@@ -7,7 +7,8 @@
 -- da ella. Si esto se rompe, nada en pantalla lo delata -- la casilla ya no
 -- existe --, pero cualquiera que llame a la función directamente volvería a
 -- firmar por ella. Y el botón nuevo del WhatsApp entrega el celular de la
--- clienta: tiene que ser solo para el dueño o el administrador.
+-- clienta: dueño, administrador o asistente (que ya lo ven en Clientes y
+-- Tickets), nunca el estilista.
 --
 -- Datos de prueba copiados del control 230, que corrió en verde (regla 25 d).
 --
@@ -30,6 +31,7 @@ declare
   v_stylist uuid;
   v_dueno uuid := gen_random_uuid();
   v_estilista_cuenta uuid := gen_random_uuid();
+  v_asistente uuid := gen_random_uuid();
   v_memb uuid;
   v_cliente1 uuid;
   v_cliente2 uuid;
@@ -106,6 +108,17 @@ begin
   ) values (v_tenant, v_branch, v_memb, true, now() - interval '1 day', v_dueno);
   insert into public.user_profiles (tenant_id, user_id, full_name, role, active, stylist_id)
   values (v_tenant, v_estilista_cuenta, 'C235 estilista cuenta', 'stylist', true, v_stylist);
+
+  -- El asistente (decisión del propietario, 28-sep: también pide la
+  -- autorización). Mismo alta que la del estilista, sin estilista.
+  insert into auth.users (id, email) values (v_asistente, 'asistente_test235@salonymas.com')
+  on conflict (id) do nothing;
+  insert into public.tenant_memberships (tenant_id, user_id, role, active)
+  values (v_tenant, v_asistente, 'assistant', true)
+  returning id into v_memb;
+  insert into public.branch_memberships (
+    tenant_id, branch_id, tenant_membership_id, active, starts_at, created_by
+  ) values (v_tenant, v_branch, v_memb, true, now() - interval '1 day', v_dueno);
 
   -- Dos clientas. La uno ya tiene sesión de portal abierta (D-167); la dos
   -- solo existe para probar que nadie decide por ella.
@@ -230,6 +243,27 @@ begin
   end if;
 
   -- ==========================================================================
+  -- 5b. El asistente SÍ puede (decisión del propietario, 28-sep): recibe el
+  --     mismo enlace que el dueño.
+  -- ==========================================================================
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', v_asistente::text, 'role', 'authenticated')::text, true);
+  v_capturo := false;
+  begin
+    v_datos := public.client_consent_whatsapp_data(v_cliente1);
+  exception when others then
+    v_capturo := true; v_error := sqlerrm;
+  end;
+  if not v_capturo and v_datos ->> 'client_phone' = '3010000001'
+     and v_datos ->> 'token' is not null
+  then
+    raise notice 'OK    5b el asistente si puede pedir la autorizacion';
+  else
+    v_fallos := v_fallos + 1;
+    raise notice 'FALLO 5b capturo=%, mensaje=%, datos=%', v_capturo, v_error, v_datos;
+  end if;
+
+  -- ==========================================================================
   -- 6. Una clienta que no es del negocio (o no existe) no devuelve nada.
   -- ==========================================================================
   perform set_config('request.jwt.claims',
@@ -282,7 +316,7 @@ begin
 
   raise notice ' ';
   if v_fallos = 0 then
-    raise notice '=== CONTROL 235: 7/7 ===';
+    raise notice '=== CONTROL 235: 8/8 ===';
   else
     raise notice '=== % FALLO(S) EN EL CONTROL 235. Revisar arriba. ===', v_fallos;
   end if;

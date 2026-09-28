@@ -11,8 +11,8 @@ import 'package:salonymas/widgets/pedir_autorizacion.dart';
 /// Paso 9.48, Bloque 4 (D-288): el permiso de publicar solo lo da ella, y el
 /// salón se lo pide por WhatsApp con su enlace. Lo que se vigila: el mensaje
 /// exacto que decidió el propietario, que el botón de la galería salga solo
-/// en las fotos que ella nunca ha respondido, y que el asistente no vea la
-/// oferta al subir una foto.
+/// en las fotos que ella nunca ha respondido, y que el estilista no vea la
+/// oferta al subir una foto desde "Mi agenda".
 class _ServicioFalso extends ClientConsentService {
   _ServicioFalso(this.datos);
 
@@ -144,13 +144,11 @@ void main() {
     expect(find.textContaining('no tiene celular'), findsOneWidget);
   });
 
-  test('al subir la foto, solo dueno o admin ven la oferta', () {
+  test('el estilista no ve la oferta al subir desde Mi agenda', () {
+    // Dueño, administrador y asistente sí (Tickets): decisión del
+    // propietario del 28-sep. La base se lo niega al estilista (control 229).
     final codigo = File('lib/pages/tickets_page.dart').readAsStringSync();
-    expect(
-      codigo,
-      contains('if (widget.isOwnerOrAdmin && clientId != null) {'),
-      reason: 'al asistente la base le niega el enlace: no se le ofrece',
-    );
+    expect(codigo, contains('ofrecerPedirAutorizacion('));
     final agenda =
         File('lib/pages/my_stylist_agenda_page.dart').readAsStringSync();
     expect(
