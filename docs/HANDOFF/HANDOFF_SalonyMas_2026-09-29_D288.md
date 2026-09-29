@@ -128,10 +128,12 @@ Lo que el propietario ya dejó decidido: **en cuanto cerrara el 9.48, el turno C
    si no se toca el campo, se guarda el código original.
 4. ✅ **AN** — el nombre del catálogo manda (**D-292**). ✅ **9.30** — la URL del
    webhook sale de `SUPABASE_URL` (**D-293**).
-5. **Lo que queda del turno C:** **9.17** (HSTS en Cloudflare: 👤 dos minutos del
-   propietario; yo lo guío), **AA** (a la Fase 8, decidido el 29-sep: no está roto)
-   y **los seis AK** de `tickets_page.dart` (van con el 9.13). AV, BD, AR, AX y BH
-   ya estaban cerrados.
+5. ✅ **9.17** — HSTS activado en Cloudflare, 6 meses, sin subdominios ni preload
+   (**D-294**), comprobado desde fuera.
+6. **El turno C queda cerrado en lo que se puede cerrar hoy:** **AA** pasó a la
+   Fase 8 (decidido el 29-sep: no está roto) y **los seis AK** de `tickets_page.dart`
+   van con el 9.13. AV, BD, AR, AX y BH ya estaban cerrados. **Lo siguiente es
+   preguntarle al propietario por el turno D** (regla 8: no asumir el paso).
 
 **Equipo antes que Portafolio** en la página pública está anotado en **I-19**
 (rediseño de layout), no en el turno C: no se toca antes.

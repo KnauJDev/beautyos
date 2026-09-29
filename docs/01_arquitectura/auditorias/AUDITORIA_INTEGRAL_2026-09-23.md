@@ -161,7 +161,7 @@ las aplicas tú. **Es tu decisión, no la mía**: es acceso permanente a producc
 - **Resend** (correos), **Sentry** (errores, con datos personales saneados),
   **Cloudflare** (hospedaje, dominio, reenvío de correo) y **GitHub** (código y CI)
   están bien elegidos y cuestan casi nada.
-- **Falta HSTS en Cloudflare** (9.17): dos minutos tuyos en su panel.
+- **Falta HSTS en Cloudflare** (9.17): dos minutos tuyos en su panel. ✅ **Hecho el 29-sep (D-294).**
 
 ### Dependencias
 
