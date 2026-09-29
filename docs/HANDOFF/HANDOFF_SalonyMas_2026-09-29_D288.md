@@ -112,11 +112,12 @@ cuando haya ocasión, sin urgencia:
 Lo que el propietario ya dejó decidido: **en cuanto cerrara el 9.48, el turno C**
 (PLAN_MAESTRO §5, *"Lo que ve el cliente, barato"*), empezando por:
 
-1. **I-18 + I-20** — la agenda abre en *Cada 1 hora* y en la hora actual, con
-   los encabezados de columna fijos al bajar.
-2. **BT** — *"1 tickets pendientes"* → singular.
-3. **BV** — la página pública dice *"salon"* en vez del tipo de negocio
-   traducido.
+1. ✅ **I-18 + I-20** — la agenda abre en *Cada 1 hora* y en la hora actual, con
+   los encabezados de columna fijos al bajar (**D-289**).
+2. ✅ **BT** — *"1 ticket pendiente"* en singular (**D-290**).
+3. ✅ **BV** — la página pública traduce el tipo de negocio; una sola lista (**D-290**).
+   *Preguntar:* la ficha del Panel de plataforma y Configuración muestran aún el
+   código crudo (`salon`); no se tocaron.
 4. El resto del turno C según la tabla del Plan Maestro (AV, BD, AR, AX, AN,
    los AK, 9.17, 9.30, AA, BH).
 

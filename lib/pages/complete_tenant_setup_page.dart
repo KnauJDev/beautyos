@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../theme/app_theme.dart';
+import '../models/tipo_de_negocio.dart';
 import '../services/tenant_registration_service.dart';
 
 /// Se muestra cuando hay una sesión autenticada pero el usuario todavía no
@@ -30,14 +31,7 @@ class _CompleteTenantSetupPageState extends State<CompleteTenantSetupPage> {
   bool isLoading = false;
   String? errorMessage;
 
-  final List<Map<String, String>> businessTypeOptions = const [
-    {'value': 'salon', 'label': 'Peluquería / Salón de Belleza'},
-    {'value': 'unas', 'label': 'Spa de Uñas (Nail Spa)'},
-    {'value': 'barberia', 'label': 'Barbería'},
-    {'value': 'spa', 'label': 'Centro de Estética / Spa'},
-    {'value': 'canina', 'label': 'Peluquería / Estética Canina'},
-    {'value': 'otro', 'label': 'Otro centro de cuidado personal'},
-  ];
+  final List<Map<String, String>> businessTypeOptions = tiposDeNegocio;
 
   final List<Map<String, String>> referralOptions = const [
     {'value': 'instagram', 'label': 'Instagram'},

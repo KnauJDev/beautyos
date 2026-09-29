@@ -8,6 +8,7 @@ import '../models/public_salon_profile.dart';
 import '../models/public_salon_review_item.dart';
 import '../models/public_salon_service_item.dart';
 import '../models/public_salon_team_member.dart';
+import '../models/tipo_de_negocio.dart';
 import '../services/public_salon_service.dart';
 import '../widgets/photo_grid_viewer.dart';
 import 'agenda_page.dart' show buildWhatsAppUri;
@@ -267,7 +268,7 @@ class _HeroHeader extends StatelessWidget {
                     salon.businessType!.trim().isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
-                    salon.businessType!,
+                    etiquetaDelTipoDeNegocio(salon.businessType!),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 14,

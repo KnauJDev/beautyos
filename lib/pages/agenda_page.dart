@@ -97,6 +97,12 @@ int indiceDeLaHoraActual(List<String> franjas, DateTime ahora) {
   return indice;
 }
 
+/// BT: el aviso del tablero sabe decir el singular. Antes pegaba el número a
+/// «tickets» sin mirar si era uno: «1 tickets pendientes».
+String textoDePendientesDeCierre(int pendientes) => pendientes == 1
+    ? '1 ticket pendiente de cierre comercial'
+    : '$pendientes tickets pendientes de cierre comercial';
+
 /// Pantalla principal del Tablero de Agenda (D-101 / D-116 / D-147).
 class AgendaPage extends StatefulWidget {
   const AgendaPage({
@@ -679,7 +685,7 @@ class _AgendaPageState extends State<AgendaPage> {
                   child: Text(
                     alDia
                         ? 'Jornada al día — Todas las columnas en cero salvo Cerrado'
-                        : '$pendientesCierre tickets pendientes de cierre comercial',
+                        : textoDePendientesDeCierre(pendientesCierre),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
