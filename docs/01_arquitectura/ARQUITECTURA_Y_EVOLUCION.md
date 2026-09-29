@@ -126,6 +126,7 @@ Las reglas de *cómo trabajamos* siguen viviendo solo en `PLAN_MAESTRO` §8.
 | 10 | **Las funciones nuevas de operación llevan `_v2` y `p_branch_id` obligatorio**; sin sobrecargas ambiguas en `public` | ADR-005, D-021 | En `private` conviven versiones del cálculo de cobro: el webhook usa una (D-252) |
 | 11 | **Los secretos nunca van al código ni al repositorio** | AGENTS.md | El DSN de Sentry, a propósito: es de solo escritura (D-228) |
 | 12 | **Dinero de la plataforma y dinero del salón nunca comparten tablas** | `SUSCRIPCION_Y_ENTITLEMENTS` §1, D-013 | — |
+| 13 | **El nombre de un estilista lo manda el catálogo (`stylists.name`), no la cuenta (`user_profiles.full_name`).** Es el que ve la clienta y sale en agenda, tickets, comisiones y reserva pública. El que teclea el empleado al unirse solo identifica a la persona detrás de la cuenta | D-292 (hallazgo AN) | — |
 
 > **La lección más cara de septiembre ya estaba escrita el 19-jul.**
 > El invariante 9 aparece en `SUSCRIPCION_Y_ENTITLEMENTS` desde el primer día:

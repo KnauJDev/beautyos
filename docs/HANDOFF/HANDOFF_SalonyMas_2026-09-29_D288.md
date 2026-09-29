@@ -58,8 +58,16 @@ decide desde su celular, sin PIN.
 
 ## 3. Lo que tienes que mirar en pantalla (regla 21)
 
-**Nada pendiente.** Todo lo del bloque se vio en pantalla. Una cosa por probar
-cuando haya ocasión, sin urgencia:
+**Dos comprobaciones pendientes, de lo publicado el 29-sep:**
+
+- **D-291 — Panel y Configuración.** Abre una **ventana nueva** (la pestaña vieja
+  del Panel seguía mostrando *salon*; el sitio ya trae el cambio, comprobado en
+  el código publicado). La ficha, *Editar Contacto* y *Configuración → Tipo de
+  negocio* deben decir *Peluquería / Salón de Belleza*.
+- **D-293 — la URL del webhook.** Cuando se abra un cobro (abrirlo no es pagar),
+  leer `confirmation_url` en el registro de `create-epayco-session`.
+
+Y una cosa por probar cuando haya ocasión, sin urgencia:
 
 - **El botón de WhatsApp con un celular guardado sin el 57.** Puede que WhatsApp
   no encuentre el número. Es la misma limitación que ya tienen los recordatorios
@@ -118,8 +126,12 @@ Lo que el propietario ya dejó decidido: **en cuanto cerrara el 9.48, el turno C
 3. ✅ **BV** — la página pública traduce el tipo de negocio; una sola lista (**D-290**).
    Ampliado a la ficha del Panel y a Configuración (**D-291**): enseñan el texto y,
    si no se toca el campo, se guarda el código original.
-4. El resto del turno C según la tabla del Plan Maestro (AV, BD, AR, AX, AN,
-   los AK, 9.17, 9.30, AA, BH).
+4. ✅ **AN** — el nombre del catálogo manda (**D-292**). ✅ **9.30** — la URL del
+   webhook sale de `SUPABASE_URL` (**D-293**).
+5. **Lo que queda del turno C:** **9.17** (HSTS en Cloudflare: 👤 dos minutos del
+   propietario; yo lo guío), **AA** (a la Fase 8, decidido el 29-sep: no está roto)
+   y **los seis AK** de `tickets_page.dart` (van con el 9.13). AV, BD, AR, AX y BH
+   ya estaban cerrados.
 
 **Equipo antes que Portafolio** en la página pública está anotado en **I-19**
 (rediseño de layout), no en el turno C: no se toca antes.

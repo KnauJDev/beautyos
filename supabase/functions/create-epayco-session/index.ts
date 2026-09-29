@@ -413,7 +413,10 @@ Deno.serve(async (req) => {
       extra1: tenantId,
       extra2: planCodeResuelto,
       extra3: "beautyos_app",
-      confirmation_url: "https://eogppgbdnwxdtcbctaol.supabase.co/functions/v1/epayco-webhook",
+      // 9.30: sale del proyecto donde corre esta funcion. Escrita a mano, seguia
+      // apuntando al backend viejo si el proyecto se clonaba o se movia. El
+      // guardian de arriba (`!SUPABASE_URL`) ya impide llegar aqui sin ella.
+      confirmation_url: `${SUPABASE_URL.replace(/\/+$/, "")}/functions/v1/epayco-webhook`,
       response_url: "https://salonymas.com",
       test: EPAYCO_TEST_MODE,
       billing: {
