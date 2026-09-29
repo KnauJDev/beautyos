@@ -134,6 +134,13 @@ Lo que el propietario ya dejó decidido: **en cuanto cerrara el 9.48, el turno C
    Fase 8 (decidido el 29-sep: no está roto) y **los seis AK** de `tickets_page.dart`
    van con el 9.13. AV, BD, AR, AX y BH ya estaban cerrados. **Lo siguiente es
    preguntarle al propietario por el turno D** (regla 8: no asumir el paso).
+7. **Turno D, en curso (29-sep).** El propietario eligió **9.26 (Meta)** y **9.33
+   (protocolo)**. **9.33:** borrador escrito en
+   `02_operacion/PROTOCOLO_DE_BIENVENIDA_SOCIOS_DE_DISENO.md`, pendiente de que lo
+   valide (§9 del documento). **9.26:** investigado en la ayuda oficial de Meta; **no
+   puede arrancar hasta saber si Salón y Más está registrado como negocio** (Meta lo
+   exige). Detalle en la fila 9.26 del Plan Maestro. **9.24** (entrevistas) sigue
+   siendo suyo y bloquea el turno E.
 
 **Equipo antes que Portafolio** en la página pública está anotado en **I-19**
 (rediseño de layout), no en el turno C: no se toca antes.
