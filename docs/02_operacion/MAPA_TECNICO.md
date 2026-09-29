@@ -143,9 +143,26 @@ Son **tres caminos distintos** y confundirlos cuesta tiempo.
 
 ### Cómo comprobar que un cambio de la app SALIÓ de verdad
 
-**Un `push` correcto no garantiza que la app se publicara** (D-133). Sin salir de
-la terminal, se busca en el JavaScript publicado algo que solo exista en el
-cambio nuevo — el nombre de una función, un texto:
+**Un `push` correcto no garantiza que la app se publicara** (D-133).
+
+**La forma buena, desde el 29-sep (D-289): preguntarle al sitio qué commit
+tiene publicado.** Cloudflare escribe `build-info.json` al compilar
+(`CF_PAGES_COMMIT_SHA`); el `Get-Random` evita que responda una caché:
+
+```
+(Invoke-RestMethod "https://salonymas.com/build-info.json?v=$(Get-Random)").commit
+```
+
+Tiene que empezar por el commit que se acaba de subir. Es lo mismo que enseña
+la app en **Configuración → Versión**. Sirve para **cualquier** cambio, también
+los que no traen texto nuevo.
+
+**La forma vieja** — buscar en el JavaScript publicado algo que solo exista en
+el cambio nuevo — sigue valiendo para confirmar un texto concreto, con dos
+trampas: **nada con tildes** (D-249, volvió a morder el 28-sep) y **nada que sea
+un nombre interno del código** (una función, una constante): la compilación
+los renombra y el resultado es un `False` aunque esté publicado (29-sep,
+`altoFilaTableroDia`). Solo textos que ve la persona:
 
 ```
 curl -s https://salonymas.com/main.dart.js -o /tmp/pub.js
@@ -364,6 +381,8 @@ Cada una costó tiempo real. Están aquí para que cueste una sola vez.
 | **`\echo` dentro de un guion SQL no va al archivo** | Va a la consola aunque haya un `\o` abierto. Para que quede escrito, `select 'texto'` | D-251 |
 | **Buscar con tildes en el JavaScript publicado da ceros falsos** | Buscar un trozo sin tildes del texto nuevo | D-249 |
 | **`python -c` o un heredoc largo en Bash se comen el texto** | Acentos graves y comillas se interpretan: el registro quedó con huecos y dos guiones se cortaron. Texto largo → guion escrito a disco con la herramienta de escribir | D-249, D-254 |
+| **Una pestaña abierta antes de publicar sigue con la app vieja** | El ↻ de una pantalla recarga los datos, no la app. Dos veces el 27 y 28-sep se probó con la versión anterior (una foto rota en "Mis fotos"; la casilla que ya se había quitado). **Al verificar: ventana nueva, o *Actualizar* en el aviso de versión nueva** | D-286, D-288 |
+| **`pg_get_functiondef` y los agregados, otra vez** | Ya estaba anotado arriba (D-252) y volvió a morder el 28-sep en `extraer_bloque_4_9_48.sql`. Además del filtro, **dentro de un `CASE`**: Postgres no garantiza el orden de las condiciones de un `WHERE` | D-288 |
 | **La dirección del webhook está escrita a mano** en `create-epayco-session` | Si el proyecto se mueve, ePayco sigue avisando al viejo sin que nadie lo note | Paso 9.30 |
 
 ---
