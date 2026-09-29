@@ -35,6 +35,14 @@ class _FakeSaleAgendaBoardService extends AgendaBoardService {
   }
 }
 
+
+/// El tablero Día salta a la hora actual (I-20); estas pruebas miran las
+/// filas de las 08:00, así que "ahora" son las 08:00 de hoy.
+DateTime _hoyALasOcho() {
+  final hoy = DateTime.now();
+  return DateTime(hoy.year, hoy.month, hoy.day, 8);
+}
+
 void main() {
   group('BranchSaleNumbering Model & DIAN Rules (D-150 / Hallazgo P)', () {
     test('Mapea correctamente configuración por defecto', () {
@@ -165,6 +173,9 @@ void main() {
           home: Scaffold(
             body: AgendaPage(
               branchId: '00000000-0000-0000-0000-000000000001',
+              // I-20: sin reloj fijo, el tablero salta a la hora real de
+              // la máquina y las filas de las 08:00 pueden quedar fuera.
+              reloj: _hoyALasOcho,
               agendaService: fakeService,
             ),
           ),

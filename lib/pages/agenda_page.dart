@@ -79,6 +79,24 @@ const List<String> _diasSemana = [
   'Domingo',
 ];
 
+/// Alto de cada fila del tablero Día (I-20). Fijo, para poder saltar con
+/// exactitud a la fila de la hora actual.
+const double altoFilaTableroDia = 48;
+
+/// I-20: la fila en la que cae [ahora] -- la última franja que ya empezó.
+/// Antes de la primera franja, la primera; después de la última, la última.
+/// [franjas] son "HH:MM" ordenadas, como las pinta el tablero.
+int indiceDeLaHoraActual(List<String> franjas, DateTime ahora) {
+  if (franjas.isEmpty) return 0;
+  final actual =
+      '${ahora.hour.toString().padLeft(2, '0')}:${ahora.minute.toString().padLeft(2, '0')}';
+  var indice = 0;
+  for (var i = 0; i < franjas.length; i++) {
+    if (franjas[i].compareTo(actual) <= 0) indice = i;
+  }
+  return indice;
+}
+
 /// Pantalla principal del Tablero de Agenda (D-101 / D-116 / D-147).
 class AgendaPage extends StatefulWidget {
   const AgendaPage({
@@ -88,10 +106,15 @@ class AgendaPage extends StatefulWidget {
     this.businessName,
     this.onOpenTicket,
     this.onCollectTicket,
+    this.reloj,
   });
 
   final String branchId;
   final AgendaBoardService? agendaService;
+
+  /// La hora "de ahora" (I-20). Solo lo cambian las pruebas, para que el
+  /// tablero no dependa del reloj de la máquina donde corren.
+  final DateTime Function()? reloj;
 
   /// Nombre del negocio (`BranchContext.tenantName`), para el mensaje de
   /// WhatsApp pre-armado de la tarjeta de cita.
@@ -116,8 +139,16 @@ class _AgendaPageState extends State<AgendaPage> {
   RealtimeChannel? _realtimeChannel;
 
   AgendaViewMode _viewMode = AgendaViewMode.dia;
-  DateTime _selectedDate = DateTime.now();
-  String _granularity = '15min'; // '15min', '30min', 'hour'
+  late DateTime _selectedDate = _ahora();
+  // I-18 (decisión del propietario, 29-sep): siempre abre en «Cada 1 hora».
+  // Con 15 minutos el día eran 56 filas y había que buscar la cita.
+  String _granularity = 'hour'; // '15min', '30min', 'hour'
+
+  /// I-20: el tablero Día se desplaza por dentro, con los encabezados fijos,
+  /// y al abrir el día de HOY salta a la hora actual.
+  final ScrollController _scrollDia = ScrollController();
+
+  DateTime _ahora() => (widget.reloj ?? DateTime.now)();
   bool _isLoading = false;
   String? _errorMessage;
   List<TicketBoardCount> _counts = [];
@@ -144,6 +175,7 @@ class _AgendaPageState extends State<AgendaPage> {
   @override
   void dispose() {
     _realtimeChannel?.unsubscribe();
+    _scrollDia.dispose();
     super.dispose();
   }
 
@@ -223,6 +255,10 @@ class _AgendaPageState extends State<AgendaPage> {
           _counts = results;
           _isLoading = false;
         });
+        // I-20: solo en una carga que pidió la persona (abrir, cambiar de
+        // fecha o de intervalo). La recarga silenciosa de tiempo real no la
+        // mueve de donde esté mirando.
+        if (!silent) _saltarAHoraActual();
       }
     } catch (e) {
       if (mounted) {
@@ -257,9 +293,29 @@ class _AgendaPageState extends State<AgendaPage> {
 
   void _irAHoy() {
     setState(() {
-      _selectedDate = DateTime.now();
+      _selectedDate = _ahora();
     });
     _loadData();
+  }
+
+  /// I-20 (decisión del propietario, 29-sep): en la vista Día de HOY, la
+  /// fila de la hora actual queda la primera visible. Otro día, arriba.
+  void _saltarAHoraActual() {
+    if (_viewMode != AgendaViewMode.dia) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollDia.hasClients) return;
+      final ahora = _ahora();
+      final esHoy =
+          _selectedDate.year == ahora.year &&
+          _selectedDate.month == ahora.month &&
+          _selectedDate.day == ahora.day;
+      final indice = esHoy ? indiceDeLaHoraActual(_franjasDelDia(), ahora) : 0;
+      final destino = (indice * altoFilaTableroDia).clamp(
+        0.0,
+        _scrollDia.position.maxScrollExtent,
+      );
+      _scrollDia.jumpTo(destino);
+    });
   }
 
   Future<void> _seleccionarFechaCalendario() async {
@@ -710,17 +766,28 @@ class _AgendaPageState extends State<AgendaPage> {
   // VISTA DÍA (D-101 / D-147)
   // ===========================================================================
 
-  Widget _buildDayView() {
-    // Generar franjas de tiempo según la granularidad
+  /// Las franjas del día: las del intervalo elegido, más las de cualquier
+  /// cita fuera de 08:00-20:00. Una sola fuente para pintar y para saltar a
+  /// la hora actual (I-20).
+  List<String> _franjasDelDia() {
     final List<String> timeSlots = _generateTimeSlots(_granularity);
-
-    // Asegurarse de incluir buckets con citas fuera del rango 08:00 a 20:00
     for (final c in _counts) {
       if (c.bucket.isNotEmpty && !timeSlots.contains(c.bucket)) {
         timeSlots.add(c.bucket);
       }
     }
     timeSlots.sort();
+    return timeSlots;
+  }
+
+  Widget _buildDayView() {
+    final List<String> timeSlots = _franjasDelDia();
+    // I-20: el tablero ocupa el alto de la pantalla y se desplaza por
+    // dentro, así los encabezados de las columnas no se pierden al bajar.
+    final double altoTablero = (MediaQuery.sizeOf(context).height * 0.62).clamp(
+      320.0,
+      900.0,
+    );
 
     return AppCard(
       padding: EdgeInsets.zero,
@@ -776,62 +843,77 @@ class _AgendaPageState extends State<AgendaPage> {
             ),
           ),
 
-          // Filas por tramo de tiempo
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: timeSlots.length,
-            separatorBuilder: (_, _) =>
-                const Divider(height: 1, color: AppColors.border),
-            itemBuilder: (context, index) {
-              final slot = timeSlots[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 70,
-                      child: Text(
-                        slot,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary,
-                        ),
-                        textAlign: TextAlign.center,
+          // Filas por tramo de tiempo. Alto fijo por fila (itemExtent) para
+          // poder saltar con exactitud a la hora actual (I-20).
+          SizedBox(
+            height: altoTablero,
+            child: Scrollbar(
+              controller: _scrollDia,
+              thumbVisibility: true,
+              child: ListView.builder(
+                controller: _scrollDia,
+                itemExtent: altoFilaTableroDia,
+                itemCount: timeSlots.length,
+                itemBuilder: (context, index) {
+                  final slot = timeSlots[index];
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 6,
+                      horizontal: 8,
+                    ),
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(color: AppColors.border),
                       ),
                     ),
-                    ...DayBoardColumn.values.map((col) {
-                      final count = _counts
-                          .where(
-                            (c) => c.bucket == slot && col.contiene(c.status),
-                          )
-                          .fold(0, (sum, c) => sum + c.ticketCount);
-
-                      return Expanded(
-                        child: _DayGridCell(
-                          count: count,
-                          column: col,
-                          onTap: count == 0
-                              ? null
-                              : () {
-                                  _abrirListaNivel2(
-                                    titulo:
-                                        '$slot · ${col.titulo} (${_selectedDate.day} de ${_meses[_selectedDate.month - 1]})',
-                                    startDate: _selectedDate,
-                                    endDate: _selectedDate,
-                                    statuses: col.estados,
-                                    bucket: slot,
-                                    granularity: _granularity,
-                                  );
-                                },
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 70,
+                          child: Text(
+                            slot,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
                         ),
-                      );
-                    }),
-                  ],
-                ),
-              );
-            },
+                        ...DayBoardColumn.values.map((col) {
+                          final count = _counts
+                              .where(
+                                (c) =>
+                                    c.bucket == slot && col.contiene(c.status),
+                              )
+                              .fold(0, (sum, c) => sum + c.ticketCount);
+
+                          return Expanded(
+                            child: _DayGridCell(
+                              count: count,
+                              column: col,
+                              onTap: count == 0
+                                  ? null
+                                  : () {
+                                      _abrirListaNivel2(
+                                        titulo:
+                                            '$slot · ${col.titulo} (${_selectedDate.day} de ${_meses[_selectedDate.month - 1]})',
+                                        startDate: _selectedDate,
+                                        endDate: _selectedDate,
+                                        statuses: col.estados,
+                                        bucket: slot,
+                                        granularity: _granularity,
+                                      );
+                                    },
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
           ),
         ],
       ),

@@ -35,6 +35,14 @@ class FakeAgendaBoardService extends AgendaBoardService {
   }
 }
 
+
+/// El tablero Día salta a la hora actual (I-20); estas pruebas miran las
+/// filas de las 08:00, así que "ahora" son las 08:00 de hoy.
+DateTime _hoyALasOcho() {
+  final hoy = DateTime.now();
+  return DateTime(hoy.year, hoy.month, hoy.day, 8);
+}
+
 void main() {
   group('TicketBoard Models & Formatters', () {
     test('formatCOP formatea números en pesos colombianos con separadores de miles', () {
@@ -219,6 +227,9 @@ void main() {
           home: Scaffold(
             body: AgendaPage(
               branchId: '00000000-0000-0000-0000-000000000001',
+              // I-20: sin reloj fijo, el tablero salta a la hora real de
+              // la máquina y las filas de las 08:00 pueden quedar fuera.
+              reloj: _hoyALasOcho,
               agendaService: fakeService,
             ),
           ),
@@ -281,6 +292,9 @@ void main() {
           home: Scaffold(
             body: AgendaPage(
               branchId: '00000000-0000-0000-0000-000000000001',
+              // I-20: sin reloj fijo, el tablero salta a la hora real de
+              // la máquina y las filas de las 08:00 pueden quedar fuera.
+              reloj: _hoyALasOcho,
               agendaService: fakeService,
             ),
           ),
@@ -350,6 +364,9 @@ void main() {
           home: Scaffold(
             body: AgendaPage(
               branchId: '00000000-0000-0000-0000-000000000001',
+              // I-20: sin reloj fijo, el tablero salta a la hora real de
+              // la máquina y las filas de las 08:00 pueden quedar fuera.
+              reloj: _hoyALasOcho,
               agendaService: fakeService,
               onCollectTicket: (ticketId) => collectedTicketId = ticketId,
             ),
@@ -414,6 +431,9 @@ void main() {
           home: Scaffold(
             body: AgendaPage(
               branchId: '00000000-0000-0000-0000-000000000001',
+              // I-20: sin reloj fijo, el tablero salta a la hora real de
+              // la máquina y las filas de las 08:00 pueden quedar fuera.
+              reloj: _hoyALasOcho,
               agendaService: fakeService,
               onCollectTicket: (_) {},
             ),
@@ -437,6 +457,9 @@ void main() {
           home: Scaffold(
             body: AgendaPage(
               branchId: '00000000-0000-0000-0000-000000000001',
+              // I-20: sin reloj fijo, el tablero salta a la hora real de
+              // la máquina y las filas de las 08:00 pueden quedar fuera.
+              reloj: _hoyALasOcho,
               agendaService: fakeService,
             ),
           ),
@@ -468,6 +491,9 @@ void main() {
           home: Scaffold(
             body: AgendaPage(
               branchId: '00000000-0000-0000-0000-000000000001',
+              // I-20: sin reloj fijo, el tablero salta a la hora real de
+              // la máquina y las filas de las 08:00 pueden quedar fuera.
+              reloj: _hoyALasOcho,
               agendaService: fakeService,
             ),
           ),
