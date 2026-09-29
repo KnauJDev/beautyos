@@ -11,6 +11,7 @@ import '../models/platform_tenant_feature_override.dart';
 import '../models/platform_tenant_summary.dart';
 import '../models/tenant_subscription_history_entry.dart';
 import '../models/ticket_board.dart' show formatCOP;
+import '../models/tipo_de_negocio.dart';
 import '../services/epayco_checkout_service.dart';
 import '../services/platform_service.dart';
 import '../widgets/dialogo_datos_de_sede.dart';
@@ -567,7 +568,7 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
       text: tenant.whatsapp ?? '',
     );
     final businessTypeController = TextEditingController(
-      text: tenant.businessType ?? '',
+      text: etiquetaDelTipoDeNegocio(tenant.businessType ?? ''),
     );
     final cityController = TextEditingController(text: tenant.city ?? '');
 
@@ -662,7 +663,10 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
         contactName: nameController.text.trim(),
         contactEmail: emailController.text.trim(),
         whatsapp: whatsappController.text.trim(),
-        businessType: businessTypeController.text.trim(),
+        businessType: tipoDeNegocioAGuardar(
+          original: tenant.businessType ?? '',
+          escrito: businessTypeController.text,
+        ),
         city: cityController.text.trim(),
       );
 
@@ -3162,7 +3166,9 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                         _buildInfoRow('Negocio:', tenant.tenantName),
                         _buildInfoRow(
                           'Tipo de Negocio:',
-                          tenant.businessType ?? 'Peluquería / Salón',
+                          etiquetaDelTipoDeNegocio(
+                            tenant.businessType ?? 'Peluquería / Salón',
+                          ),
                         ),
                         _buildInfoRow(
                           'Contacto Titular:',

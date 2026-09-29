@@ -41,6 +41,78 @@ void main() {
     });
   });
 
+  group('BV (D-291) — Configuración y el Panel enseñan el texto, no el código',
+      () {
+    test('si no se toca el campo, se conserva el código original', () {
+      expect(
+        tipoDeNegocioAGuardar(
+          original: 'salon',
+          escrito: 'Peluquería / Salón de Belleza',
+        ),
+        'salon',
+        reason: 'guardar otro dato del formulario no debe reescribir el tipo',
+      );
+    });
+
+    test('si se cambia, se guarda lo que escribió', () {
+      expect(
+        tipoDeNegocioAGuardar(original: 'salon', escrito: ' Estudio de cejas '),
+        'Estudio de cejas',
+      );
+      expect(
+        tipoDeNegocioAGuardar(original: 'salon', escrito: 'Barbería'),
+        'Barbería',
+      );
+    });
+
+    test('un texto libre que no se toca queda igual', () {
+      expect(
+        tipoDeNegocioAGuardar(
+          original: 'Peluquería canina',
+          escrito: 'Peluquería canina',
+        ),
+        'Peluquería canina',
+      );
+    });
+
+    test('vaciar el campo guarda vacío, como antes', () {
+      expect(tipoDeNegocioAGuardar(original: 'salon', escrito: '  '), '');
+      expect(tipoDeNegocioAGuardar(original: '', escrito: ''), '');
+    });
+
+    test('ida y vuelta: lo que se enseña y se guarda sin tocar no cambia nada',
+        () {
+      for (final opcion in tiposDeNegocio) {
+        final codigo = opcion['value']!;
+        final enPantalla = etiquetaDelTipoDeNegocio(codigo);
+
+        expect(
+          tipoDeNegocioAGuardar(original: codigo, escrito: enPantalla),
+          codigo,
+        );
+      }
+    });
+
+    test('las pantallas usan las dos funciones, no el código crudo', () {
+      final panel = File('lib/pages/platform_panel_page.dart').readAsStringSync();
+      final ajustes = File('lib/pages/settings_page.dart').readAsStringSync();
+
+      expect(
+        panel,
+        contains("etiquetaDelTipoDeNegocio(\n                            tenant.businessType ?? 'Peluquería / Salón',"),
+      );
+      expect(panel, contains('etiquetaDelTipoDeNegocio(tenant.businessType ?? \'\')'));
+      expect(panel, contains('tipoDeNegocioAGuardar('));
+      expect(ajustes, contains('etiquetaDelTipoDeNegocio(_tipoOriginal)'));
+      expect(ajustes, contains('tipoDeNegocioAGuardar('));
+      expect(
+        ajustes.contains('businessType: _businessTypeController.text.trim()'),
+        isFalse,
+        reason: 'guardar el texto crudo reescribiría el código sin que nadie lo pida',
+      );
+    });
+  });
+
   group('BV — la página pública traduce el tipo de negocio', () {
     test('«salon» se lee como se eligió al registrarse', () {
       expect(

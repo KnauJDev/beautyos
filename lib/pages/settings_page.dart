@@ -18,6 +18,7 @@ import '../models/sale_numbering.dart';
 import '../models/stylist_commission_override.dart';
 import '../models/stylist_management_item.dart';
 import '../models/tenant_subscription_status.dart';
+import '../models/tipo_de_negocio.dart';
 import '../services/appointment_policy_service.dart';
 import '../services/branch_sale_numbering_service.dart';
 import '../services/branches_service.dart';
@@ -982,7 +983,7 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
     super.initState();
     _nameController = TextEditingController(text: widget.settings.contactName ?? '');
     _businessTypeController = TextEditingController(
-      text: _editableOrEmpty(widget.settings.businessType, 'Sin tipo de negocio'),
+      text: etiquetaDelTipoDeNegocio(_tipoOriginal),
     );
     _phoneController = TextEditingController(
       text: _editableOrEmpty(widget.settings.contactPhone, 'Sin teléfono'),
@@ -1005,6 +1006,11 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
   String _editableOrEmpty(String value, String placeholder) =>
       value == placeholder ? '' : value;
 
+  /// El tipo de negocio tal como está guardado (a menudo el código `salon`).
+  /// El campo enseña su texto traducido; si no lo tocan, se guarda esto.
+  String get _tipoOriginal =>
+      _editableOrEmpty(widget.settings.businessType, 'Sin tipo de negocio');
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -1021,7 +1027,10 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
     try {
       await widget.businessSettingsService.updateContactInfo(
         fullName: _nameController.text.trim(),
-        businessType: _businessTypeController.text.trim(),
+        businessType: tipoDeNegocioAGuardar(
+          original: _tipoOriginal,
+          escrito: _businessTypeController.text,
+        ),
         contactPhone: _phoneController.text.trim(),
         whatsapp: _whatsappController.text.trim(),
         instagram: _instagramController.text.trim(),

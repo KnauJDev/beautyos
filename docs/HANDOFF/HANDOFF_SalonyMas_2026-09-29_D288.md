@@ -116,8 +116,8 @@ Lo que el propietario ya dejó decidido: **en cuanto cerrara el 9.48, el turno C
    los encabezados de columna fijos al bajar (**D-289**).
 2. ✅ **BT** — *"1 ticket pendiente"* en singular (**D-290**).
 3. ✅ **BV** — la página pública traduce el tipo de negocio; una sola lista (**D-290**).
-   *Preguntar:* la ficha del Panel de plataforma y Configuración muestran aún el
-   código crudo (`salon`); no se tocaron.
+   Ampliado a la ficha del Panel y a Configuración (**D-291**): enseñan el texto y,
+   si no se toca el campo, se guarda el código original.
 4. El resto del turno C según la tabla del Plan Maestro (AV, BD, AR, AX, AN,
    los AK, 9.17, 9.30, AA, BH).
 

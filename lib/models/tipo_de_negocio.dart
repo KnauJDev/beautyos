@@ -29,3 +29,23 @@ String etiquetaDelTipoDeNegocio(String tipo) {
 
   return limpio;
 }
+
+/// Lo que se guarda al editar el tipo de negocio a mano (Configuración y la
+/// ficha del Panel de plataforma).
+///
+/// Esos campos enseñan el texto traducido, no el código. Si quien edita **no
+/// lo tocó**, se conserva el valor original: guardar otro dato del formulario
+/// no debe reescribir `salon` como «Peluquería / Salón de Belleza» sin que
+/// nadie lo pida. Si lo cambió, se guarda lo que escribió.
+String tipoDeNegocioAGuardar({
+  required String original,
+  required String escrito,
+}) {
+  final limpio = escrito.trim();
+
+  if (limpio.isNotEmpty && limpio == etiquetaDelTipoDeNegocio(original)) {
+    return original.trim();
+  }
+
+  return limpio;
+}
