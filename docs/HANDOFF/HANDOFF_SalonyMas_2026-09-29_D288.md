@@ -60,10 +60,9 @@ decide desde su celular, sin PIN.
 
 **Dos comprobaciones pendientes, de lo publicado el 29-sep:**
 
-- **D-291 — Panel y Configuración.** Abre una **ventana nueva** (la pestaña vieja
-  del Panel seguía mostrando *salon*; el sitio ya trae el cambio, comprobado en
-  el código publicado). La ficha, *Editar Contacto* y *Configuración → Tipo de
-  negocio* deben decir *Peluquería / Salón de Belleza*.
+- **D-291 — Panel y Configuración.** ✅ *Configuración* visto el 30-sep. Falta la
+  ficha del **Panel de plataforma** (ventana nueva) y la lectura
+  `intervenciones/verificar_tipo_de_negocio_d291.sql`, que dice qué quedó guardado.
 - **D-293 — la URL del webhook.** Cuando se abra un cobro (abrirlo no es pagar),
   leer `confirmation_url` en el registro de `create-epayco-session`.
 
@@ -141,6 +140,11 @@ Lo que el propietario ya dejó decidido: **en cuanto cerrara el 9.48, el turno C
    puede arrancar hasta saber si Salón y Más está registrado como negocio** (Meta lo
    exige). Detalle en la fila 9.26 del Plan Maestro. **9.24** (entrevistas) sigue
    siendo suyo y bloquea el turno E.
+8. **30-sep.** **9.33 vigente (D-295)**, con dos preguntas abiertas: dónde va la
+   bitácora y qué se dice de factura electrónica. **9.26:** Salón y Más tiene RUT
+   pero no matrícula mercantil; eso y la factura electrónica de los salones son
+   ahora preguntas para el contador (9.16). La factura electrónica quedó como
+   **I-21** en el buzón de ideas.
 
 **Equipo antes que Portafolio** en la página pública está anotado en **I-19**
 (rediseño de layout), no en el turno C: no se toca antes.

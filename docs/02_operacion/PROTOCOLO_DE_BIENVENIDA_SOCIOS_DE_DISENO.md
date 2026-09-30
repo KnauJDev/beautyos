@@ -1,8 +1,9 @@
 # Protocolo de bienvenida de los socios de diseño (paso 9.33)
 
-**Estado:** 🟡 **BORRADOR del 29 de septiembre de 2026.** Documento vivo: se ajusta
-cuando el primer salón lo use, no se reemplaza. **No es una decisión hasta que el
-propietario lo valide.**
+**Estado:** ✅ **VIGENTE desde el 30 de septiembre de 2026 (D-295)**, con dos
+preguntas abiertas (§9). Borrador del 29-sep; el propietario contestó cuatro de las
+seis preguntas y escribió él mismo el primer mensaje. Documento vivo: se ajusta
+cuando el primer salón lo use, no se reemplaza.
 
 **Cómo leerlo.** Cada parte dice de dónde sale:
 
@@ -36,10 +37,14 @@ que hacer**, y por eso se le puede pedir su tiempo.
   adicionales van a la **tarifa vigente** (hoy 150.000 por sede, según la ventana de
   aprobar del Panel; mira ahí el valor de hoy antes de prometer una cifra).
 
-**Lo que dan a cambio** (D-222, punto 8) — **hay que decirlo en el primer mensaje**:
+**Lo que dan a cambio** (D-222, punto 8, ajustado por D-295) — **hay que decirlo en
+el primer mensaje**:
 
-1. Dejar **mirar un día de trabajo**.
-2. **Avisar cuando algo se rompe.**
+1. **Describir un día de operación** de su negocio. *(D-222 decía "dejar mirar un día
+   de trabajo"; el propietario lo cambió el 30-sep. Es coherente con el 9.24, que el
+   18-sep pasó de observar a entrevistar porque no hay un salón donde pasar el día.)*
+2. **Retroalimentar la aplicación:** avisar si algo no funciona y qué cambiarían,
+   modificarían o agregarían.
 3. **Decir la verdad**, aunque duela.
 
 **Por qué se cobra y no se regala** (D-222): un cliente que paga dice la verdad; uno
@@ -52,14 +57,31 @@ gratis es amable.
 Objetivo del primer intercambio: **saber si encaja y ofrecer los 20 minutos**, no
 explicar toda la app.
 
-**Primera respuesta** (propuesta, para pegar y ajustar):
+**Primera respuesta** ✅ (escrita por el propietario el 30-sep, D-295; aquí solo se
+corrigieron tildes):
 
-> Hola, gracias por escribir a Salón y Más. Estamos buscando 10 salones que
-> prueben la app con nosotros y nos ayuden a pulirla. Son 21 días gratis, sin
-> tarjeta, y te acompañamos uno a uno. Si te sirve, después son 50.000 al mes,
-> fijos de por vida. A cambio te pedimos tres cosas: dejarnos mirar un día de
-> trabajo, avisarnos cuando algo se rompa, y decirnos la verdad aunque duela.
-> ¿Qué tipo de salón tienes y cuántas personas trabajan contigo?
+> Hola, gracias por escribir a Salón y Más. En este momento estamos seleccionando
+> 10 salones para participar en el programa de prelanzamiento de nuestra APP.
+> Tendrás 21 días gratis, sin tarjeta, con acompañamiento uno a uno para dejarla
+> funcionando perfecto en tu negocio.
+> Si después de este tiempo consideras que te sirve y te aporta valor, podrás
+> congelar un precio de $50.000 mensuales, fijo de por vida por ser parte del
+> grupo inicial.
+>
+> A cambio solo pedimos tres cosas:
+>
+> que nos describas un día de operación en tu negocio,
+>
+> que nos retroalimentes respecto al aplicativo, si algo no funciona o si le
+> cambiarías, modificarías o agregarías algo,
+>
+> y que seas sincero y nos digas la verdad aunque duela.
+>
+> Cuéntanos entonces... ¿De qué tipo es tu salón y cuántas personas trabajan contigo?
+
+**Si el salón tiene más de una sede:** el mensaje no lo dice, así que se aclara en la
+conversación. Los 50.000 congelados son **por el negocio**, y las sedes adicionales
+van a la tarifa vigente (D-222).
 
 **Si pregunta "¿qué hace?"** — no contestar con una lista de módulos. Contestar con
 el día: *"Es donde apuntas las citas, cobras y ves cuánto vendiste, sin cuaderno ni
@@ -127,12 +149,19 @@ decirlo con honestidad**. No prometer lo que no existe (§8).
 
 ---
 
-## 5. La configuración inicial, acompañada 🟡
+## 5. La configuración inicial, acompañada ✅ (D-295)
 
 **Es donde se pierden los clientes** (9.33): un salón que llega a una app vacía y
-sola, no vuelve. Propuesta: **una sesión juntos (llamada o video) el mismo día de la
-aprobación**, de 30 a 40 minutos. Al terminar, **la primera cita real ya tiene que
-estar en la agenda**; ese es el criterio de que salió bien.
+sola, no vuelve.
+
+**Quién y cómo (decidido por el propietario, 30-sep):** **la acompaña él mismo**, y al
+principio **en persona**: los primeros clientes los busca él, salón por salón, si no
+llegan por la web. **Cada socio habla con él por separado**; no hay grupo de WhatsApp
+entre los diez. **El acompañamiento dura lo que haga falta**, sin plazo fijo.
+
+🟡 **Sugerencia:** hacer la sesión el mismo día de la aprobación. Al terminar, **la
+primera cita real ya tiene que estar en la agenda**; ese es el criterio de que salió
+bien.
 
 | Qué | Dónde |
 |---|---|
@@ -153,11 +182,19 @@ solo para cuando **lo pidan** (D-277); no se usa para vigilar.
 | Día | Pregunta | Si la respuesta es mala |
 |---|---|---|
 | **3** | ¿Ya agendaron o cobraron algo **real**? | Llamar **ese mismo día** y preguntar qué frenó. No esperar |
-| **10** | ¿La usan todos los días? ¿Qué se rompió o les estorbó? | Pedir el **día de observación** que prometieron (§1) |
+| **10** | ¿La usan todos los días? ¿Qué se rompió o les estorbó? | Pedirles que **describan su día de operación**, como prometieron (§1) |
 | **20** | ¿Qué pedirían cambiar? Preparar el resumen de uso: citas y cobros | Decidir qué decir mañana (§7) |
 
-**Una bitácora por salón** (fecha, qué pasó, qué se rompió, qué pidieron): el proyecto
-recibe a cambio precisamente eso. Un piloto que solo recibe no da información (9.33).
+**Una bitácora por salón** 🟡 (fecha, qué pasó, qué se rompió, qué pidieron): el
+proyecto recibe a cambio precisamente eso. Un piloto que solo recibe no da
+información (9.33).
+
+**Dónde va:** **fuera del repositorio.** Tendrá nombres y teléfonos de personas
+reales, y el repositorio está en GitHub (Ley 1581; `AGENTS.md` ya deja las copias
+personales fuera). Lo natural es una hoja de cálculo en la carpeta personal de
+OneDrive del proyecto, donde ya van los respaldos. Columnas sugeridas: salón,
+contacto, fecha, qué pasó, qué se rompió, qué pidieron, próximo paso. **Falta que el
+propietario elija dónde** (§9).
 
 ---
 
@@ -188,23 +225,41 @@ Lo que se dice, en orden:
   salones **van a encontrar cosas que no funcionan**; por eso se les llama socios de
   diseño y por eso el trato es decir la verdad. Conviene decirlo así desde el primer
   mensaje.
+- **La factura electrónica DIAN.** Hoy la aplicación **numera las ventas por sede**
+  (`VTA-0000001`) y guarda los datos de la resolución DIAN (número, fecha, rango y
+  vigencia) en **Configuración → Numeración de ventas y Resolución DIAN**, pero **no
+  emite factura electrónica ni documento equivalente electrónico (POS)**: no los
+  arma, no los firma y no los envía a la DIAN. La especificación de agosto ya lo
+  advertía (*"esto NO es facturación electrónica"*). Investigado el 30-sep; ver
+  I-21 del `PLAN_MAESTRO`.
+
+  **Qué responder hoy** 🟡 (propuesta):
+
+  > Hoy la app te numera todas las ventas y guarda tu resolución de la DIAN, pero
+  > la factura electrónica la sigues sacando como hoy (tu proveedor o la solución
+  > gratuita de la DIAN). Estamos evaluando conectarla, y justo para eso nos sirve
+  > saber cómo facturas tú.
+
+  **Preguntar a cambio:** ¿factura electrónicamente hoy? ¿Con qué proveedor? ¿Emite
+  tiquete POS? Esas respuestas deciden si vale la pena construirlo.
 
 ---
 
-## 9. Lo que falta decidir 🟡
+## 9. Lo que falta decidir
 
-Preguntas para el propietario, para que este borrador se vuelva definitivo:
+Las seis preguntas del borrador del 29-sep, y su estado:
 
-1. ¿El primer mensaje (§2) dice lo que quieres decir, con tus palabras?
-2. ¿La sesión de configuración (§5) la haces tú sola o con quién?
-3. ¿Se crea un **grupo de WhatsApp** entre los diez socios, o cada uno habla solo contigo?
-4. ¿Cuánto dura el acompañamiento uno a uno después de la sesión inicial?
-5. ¿Dónde se guarda la bitácora (§6)?
-6. ¿Qué se responde a quien pregunta por factura electrónica o DIAN? *(D-219 la cita
-   como ventaja competitiva, pero este borrador no sabe si ya existe: no se afirma.)*
+1. ✅ **El primer mensaje (§2):** lo escribió el propietario (D-295).
+2. ✅ **Quién acompaña la configuración (§5):** él mismo, al principio en persona (D-295).
+3. ✅ **¿Grupo de WhatsApp?** No: cada socio habla con él por separado (D-295).
+4. ✅ **¿Cuánto dura el acompañamiento?** Lo que haga falta (D-295).
+5. 🟡 **¿Dónde va la bitácora (§6)?** Propuesta: una hoja de cálculo en su OneDrive,
+   fuera del repositorio. Falta que elija.
+6. 🟡 **¿Qué se responde sobre factura electrónica?** Hay una respuesta propuesta en
+   §8, pendiente de su visto bueno.
 
 ---
 
-*Fuentes:* `PLAN_MAESTRO` (9.33, 9.22, 9.24), D-125, D-138, D-217, D-222, D-263,
-D-277, D-288; `REDES_SOCIALES.md`; la ventana **Aprobar solicitud** de
-`platform_panel_page.dart`.
+*Fuentes:* `PLAN_MAESTRO` (9.33, 9.22, 9.24, I-21), D-125, D-138, D-217, D-222, D-263,
+D-277, D-288, D-295; `REDES_SOCIALES.md`; la ventana **Aprobar solicitud** de
+`platform_panel_page.dart`; `ESPECIFICACION_AGENDA_2026-08-07.md` §8.1.
