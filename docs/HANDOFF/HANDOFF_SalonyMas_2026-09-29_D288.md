@@ -62,11 +62,10 @@ decide desde su celular, sin PIN.
 se lee traducido en Configuración, el Panel y la página pública) y D-293 (la URL del
 webhook llega idéntica a ePayco).
 
-🔴 **Y salió un hallazgo nuevo, BY:** activar una sede nueva cerca de la fecha de corte
-cobraba menos de $5.000 y ePayco lo rechaza. **Decidido (D-296): cobrar como mínimo
-$5.000.** Migración aplicada y **control 236 en 6/6** (30-sep). Falta que el propietario
-pruebe *Activar esta sede* en *Barberia Barber Elite*: ePayco debe abrir con $5.000
-(**sin pagar**).
+✅ **Y salió, y se cerró el mismo día, un hallazgo nuevo: BY** (D-296). Activar una sede
+nueva cerca de la fecha de corte cobraba menos de $5.000 y ePayco lo rechazaba. Ahora
+cobra como mínimo $5.000: migración aplicada, control 236 en 6/6, y ePayco abrió con
+$5.000 en pantalla. Si ePayco rechaza un cobro, el salón ve el aviso en español.
 
 Y una cosa por probar cuando haya ocasión, sin urgencia:
 
