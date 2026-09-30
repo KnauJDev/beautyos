@@ -2084,7 +2084,10 @@ class _TenantCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        'Plan ${tenant.planNameFormatted} (${tenant.formattedEffectivePrice})',
+                        // D-301: sin precio. El del negocio no cobra desde
+                        // D-239 y en la lista no hay sede elegida: el que
+                        // cuenta está en la ficha, en "1. Esta sede".
+                        'Plan ${tenant.planNameFormatted}',
                         style: const TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600,
@@ -3385,38 +3388,58 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                                 ),
                                 border: Border.all(color: AppColors.border),
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  // Hallazgo AG. Decía "Precio Mensual
-                                  // Fijado", y desde D-239 no fija nada:
-                                  // quien cobra es cada sede. El número se
-                                  // queda porque sirve para negociar, pero
-                                  // rotulado con lo que es.
-                                  const Text(
-                                    'Acuerdo del negocio:',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
-                                  Text(
-                                    tenant.formattedEffectivePrice,
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w800,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
-                                  const Text(
-                                    'no se cobra',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      fontStyle: FontStyle.italic,
-                                      color: AppColors.textMuted,
-                                    ),
-                                  ),
-                                ],
+                              // D-301: aquí se enseñaba el acuerdo viejo del
+                              // negocio, rotulado "no se cobra" (AG, D-252).
+                              // El 30-sep el propietario lo leyó como un
+                              // precio vigente ($4.500 en Éxito) y pidió ver
+                              // el que se cobra de verdad: el de la sede
+                              // elegida arriba, que es quien manda en la
+                              // ficha (D-244). Mismo `Future` que la
+                              // tarjeta 1, así que no se consulta dos veces.
+                              child: FutureBuilder<List<BranchSubscription>>(
+                                future: _branchesFuture,
+                                builder: (context, snapshot) {
+                                  final sedes =
+                                      snapshot.data ??
+                                      const <BranchSubscription>[];
+                                  final sede = sedes.isEmpty
+                                      ? null
+                                      : _sedeVigente(sedes);
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.end,
+                                    children: [
+                                      const Text(
+                                        'Precio de esta sede:',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                      ),
+                                      Text(
+                                        sede == null
+                                            ? '—'
+                                            : '${_formatCop(sede.precioCop)}/mes',
+                                        style: const TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w800,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                      if (sede != null)
+                                        Text(
+                                          sede.tienePrecioPactado
+                                              ? 'pactado'
+                                              : 'tarifa de lista',
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            fontStyle: FontStyle.italic,
+                                            color: AppColors.textMuted,
+                                          ),
+                                        ),
+                                    ],
+                                  );
+                                },
                               ),
                             ),
                           ],
@@ -3434,15 +3457,13 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                               AppRadius.control,
                             ),
                           ),
-                          child: Text(
-                            tenant.tieneAcuerdo
-                                ? 'Este acuerdo es histórico: desde D-239 lo que '
-                                      'se cobra es cada sede, con su propio precio. '
-                                      'Míralo en la tarjeta de sedes.'
-                                : 'Este negocio no tiene acuerdo: sus sedes van a '
-                                      'la tarifa vigente del plan. Lo que se cobra '
-                                      'es cada sede.',
-                            style: const TextStyle(
+                          // D-301: decía "Míralo en la tarjeta de sedes", una
+                          // tarjeta que desde D-244 se llama "1. Esta sede".
+                          child: const Text(
+                            'Lo que se cobra es cada sede, con su propio '
+                            'precio: este es el de la sede elegida arriba. Se '
+                            'cambia en «1. Esta sede», botón Pago.',
+                            style: TextStyle(
                               fontSize: 11,
                               height: 1.35,
                               color: AppColors.info,

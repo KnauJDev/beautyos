@@ -1,15 +1,17 @@
-# HANDOFF Salón y Más — 30 de septiembre de 2026 ("El cobro, probado en pantalla", D-289 a D-300)
+# HANDOFF Salón y Más — 30 de septiembre de 2026 ("El cobro, probado en pantalla", D-289 a D-301)
 
-**Bloque documentado:** decisiones **D-289** a **D-300**. Cierra el **turno C** en lo
+**Bloque documentado:** decisiones **D-289** a **D-301**. Cierra el **turno C** en lo
 que se puede cerrar, arranca el **turno D** (9.33 vigente, 9.26 investigado),
 resuelve tres fallos del cobro que aparecieron al probarlo en pantalla (**BY**,
 **BZ** y **CA**) y cierra dos pasos que se habían quedado fuera del turno A:
-**AD** (D-299) y **9.9** (D-300), que destapó **CB**.
+**AD** (D-299) y **9.9** (D-300), que destapó **CB**. Y la ficha del Panel enseña
+el precio de la sede y no el acuerdo viejo del negocio (D-301).
 
 **Estado:** ✅ Todo aplicado y publicado en `main`. **Verificado en pantalla todo
-salvo CB** (D-300), que necesita el Panel con la sesión del propietario (§3).
+salvo CB y D-301** (D-300 y D-301), que necesitan el Panel con la sesión del
+propietario (§3).
 **Nada escrito queda sin aplicar ni sin desplegar.** `flutter analyze` **0/0** ·
-**606 pruebas** · Guardián en verde.
+**609 pruebas** · Guardián en verde.
 **Hallazgos: 71 en total, 57 cerrados o decididos, 14 abiertos** (los cuenta el
 guardián: `python scripts/verificar_documentos.py`).
 
@@ -37,6 +39,7 @@ fallos que ningún control veía.** Los tres están cerrados y verificados.
 | D-298 | **CA**: el `?ref_payco=` se quedaba en la dirección y el aviso se repetía en cada recarga. Ahora se lee una vez y se quita | ✅ verificado 30-sep |
 | D-299 | **AD**, la otra mitad: el error de un enlace de correo vencido (`?error=…otp_expired`) se quita de la dirección en cuanto se lee | ✅ verificado 30-sep sin sesión, por el asistente |
 | D-300 | **9.9** (pruebas del Panel en precios y aprobaciones) y **CB**: los tres campos de dinero del Panel leían mal *"15.000"* —el precio de una sede se borraba, el precio al aprobar se perdía, la comisión fija de un aliado quedaba en $15— | ✅ en código, **falta verlo en pantalla** |
+| D-301 | La ficha del Panel enseña **"Precio de esta sede"** (pactado o de lista) en vez de *"Acuerdo del negocio: $4.500 — no se cobra"*, que el propietario leyó como vigente. La lista de clientes ya no enseña el precio del negocio | ✅ en código, **falta verlo en pantalla** |
 
 ---
 
@@ -68,7 +71,13 @@ sin sesión (el asistente, en el navegador integrado).
 **Pendiente, un minuto (CB, D-300):** en el Panel, abrir una sede que tenga precio
 pactado, escribir **el mismo precio con punto de miles** y pulsar **Guardar**. Debe
 seguir con ese precio pactado; antes del arreglo pasaba a la tarifa de lista. Y si
-escribes *diez mil*, la ventana no guarda y dice cómo escribirlo.
+escribes *diez mil*, la ventana no guarda y dice cómo escribirlo. **El botón Pago está
+en la tarjeta "1. Esta sede"**, arriba del todo de la ficha; *Cambiar plan o
+etiqueta* no toca precios, a propósito.
+
+**Y D-301, en la misma ficha:** la tarjeta "3. Plan del negocio" debe decir
+**"Precio de esta sede"** con el mismo precio que "1. Esta sede", y *pactado* o
+*tarifa de lista* debajo. Al cambiar de sede en la cabecera, cambia con ella.
 
 Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anterior):
 
@@ -157,7 +166,7 @@ antes de proponer nada.
 ## 8. Prompt para retomar
 
 ```
-Lee el HANDOFF más reciente en docs/HANDOFF/ (D-289 a D-300).
+Lee el HANDOFF más reciente en docs/HANDOFF/ (D-289 a D-301).
 
 Antes de nada: la REGLA 25 del PLAN_MAESTRO §8. Afirmar exige prueba; lo
 aprobado no se cambia sin avisar; el producto se pregunta aunque haya
@@ -177,7 +186,7 @@ anotado CC, el mismo fallo del lado del salón.
 
 LO PRIMERO
 Mira la sección 4 del HANDOFF: casi todo lo pendiente es decisión suya.
-Si no probó CB en pantalla (§3), recuérdaselo: es un minuto.
+Si no probó CB y D-301 en pantalla (§3), recuérdaselo: es un minuto.
 Pidió explorar el layout (I-19): pregúntale qué quiere ver. El Plan lo
 pone después del 9.25, así que explorar sí, construir no.
 
