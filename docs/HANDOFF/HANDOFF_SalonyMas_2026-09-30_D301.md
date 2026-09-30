@@ -10,7 +10,7 @@ el precio de la sede y no el acuerdo viejo del negocio (D-301).
 **Estado:** ✅ Todo aplicado, publicado en `main` y **verificado en pantalla**.
 **Nada escrito queda sin aplicar ni sin desplegar.** `flutter analyze` **0/0** ·
 **609 pruebas** · Guardián en verde.
-**Hallazgos: 71 en total, 57 cerrados o decididos, 14 abiertos** (los cuenta el
+**Hallazgos: 72 en total, 57 cerrados o decididos, 15 abiertos** (los cuenta el
 guardián: `python scripts/verificar_documentos.py`).
 
 > El HANDOFF anterior está en
@@ -107,7 +107,10 @@ Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anter
 4. **Señalado, no tocado:** la intención de pago de un intento cancelado queda en
    estado `verificada`. Ahí significa "ya se cruzó con una referencia de ePayco",
    no "pagada"; las cifras de cobro leen `monto_cop_recibido` (D-297).
-5. **AI**: la mitad honesta ya estaba escrita (el repositorio dice que no contiene
+5. **CD** (nuevo, 30-sep): según el repositorio, cambiar el precio o el estado de
+   una sede desde el Panel no deja evento en el historial. Sin verificar contra la
+   base viva; va bien con el 9.40.
+6. **AI**: la mitad honesta ya estaba escrita (el repositorio dice que no contiene
    el esquema entero); la correcta, volcarlo a una migración, va en el turno E.
 
 ---
