@@ -67,6 +67,11 @@ nueva cerca de la fecha de corte cobraba menos de $5.000 y ePayco lo rechazaba. 
 cobra como mínimo $5.000: migración aplicada, control 236 en 6/6, y ePayco abrió con
 $5.000 en pantalla. Si ePayco rechaza un cobro, el salón ve el aviso en español.
 
+🟡 **Y al cerrar ePayco sin pagar salió BZ** (D-297): la app decía *"estamos validando
+tu pago"*. Ya dice que no se completó ningún pago y no se cobró nada. **Falta verlo en
+pantalla:** abrir *Activar esta sede* en *Barberia Barber Elite*, cerrar con la X y leer
+el aviso.
+
 Y una cosa por probar cuando haya ocasión, sin urgencia:
 
 - **El botón de WhatsApp con un celular guardado sin el 57.** Puede que WhatsApp

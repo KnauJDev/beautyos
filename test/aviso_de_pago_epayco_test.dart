@@ -112,6 +112,61 @@ void main() {
     });
   });
 
+  group('BZ (D-297) — Cerrar ePayco sin pagar no es "validando"', () {
+    test('el caso real del 30-sep: Cancelada, código 11', () {
+      // Lo que devolvió ePayco cuando el propietario cerró la ventana sin
+      // pagar: x_transaction_state "Cancelada", x_cod_transaction_state 11,
+      // "02-Transacción Cancelada por el cliente".
+      final aviso = AvisoDePago.desdeLaPasarela({
+        'transactionState': 'Cancelada',
+        'codResponse': '11',
+        'newStatus': 'pending',
+      });
+
+      expect(aviso.tono, TonoDeAviso.informacion);
+      expect(aviso.mensaje, contains('no se te cobró nada'));
+      expect(aviso.mensaje, isNot(contains('validando')));
+    });
+
+    test('abandonada y expirada tampoco dicen que se está validando', () {
+      for (final estado in ['Abandonada', 'EXPIRADA', ' cancelada ']) {
+        final aviso = AvisoDePago.desdeLaPasarela({'transactionState': estado});
+
+        expect(aviso.mensaje, contains('no se te cobró nada'), reason: estado);
+      }
+    });
+
+    test('los códigos 10 y 11 bastan aunque el estado venga con otro nombre', () {
+      for (final codigo in ['10', '11']) {
+        final aviso = AvisoDePago.desdeLaPasarela({'codResponse': codigo});
+
+        expect(aviso.mensaje, contains('no se te cobró nada'), reason: codigo);
+      }
+    });
+
+    test('no es una advertencia ni suena a error: nadie hizo nada mal', () {
+      final aviso = AvisoDePago.desdeLaPasarela({'transactionState': 'Cancelada'});
+
+      expect(aviso.tono, isNot(TonoDeAviso.advertencia));
+      expect(aviso.mensaje.toLowerCase(), isNot(contains('error')));
+      expect(aviso.mensaje.toLowerCase(), isNot(contains('no aprobó')));
+    });
+
+    test('un pago pendiente de verdad sigue diciendo que se está validando', () {
+      final aviso = AvisoDePago.desdeLaPasarela({
+        'transactionState': 'Pendiente',
+        'codResponse': '3',
+      });
+
+      expect(aviso.mensaje, contains('validando'));
+    });
+
+    test('cancelada NO se volvió un rechazo: la base no la trata como tal', () {
+      // Un rechazo puede mandar al negocio a mora; cerrar la ventana no.
+      expect(AvisoDePago.estadosRechazados, isNot(contains('cancelada')));
+    });
+  });
+
   group('D-200 — Los estados no se desalinean de la base', () {
     test('son exactamente los que clasifica beautyos_procesar_evento_epayco', () {
       // Copiados de la migración 20260823150000, que es quien de verdad

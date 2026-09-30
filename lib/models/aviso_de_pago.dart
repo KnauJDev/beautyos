@@ -110,6 +110,19 @@ class AvisoDePago {
       );
     }
 
+    // BZ (D-297): quien cierra la ventana de ePayco sin pagar vuelve con
+    // "Cancelada" (código 11) y veía "estamos validando tu pago". Solo cambia
+    // el aviso: en la base esto NO es un rechazo, porque un rechazo puede
+    // mandar al negocio a mora y cerrar una ventana no puede hacerlo.
+    if (_sinPago.contains(estado) || codigo == '10' || codigo == '11') {
+      return const AvisoDePago(
+        mensaje:
+            'No se completó ningún pago en ePayco, así que no se te cobró '
+            'nada. Puedes intentarlo de nuevo cuando quieras.',
+        tono: TonoDeAviso.informacion,
+      );
+    }
+
     // Pendiente, o un estado que ePayco añada más adelante.
     return AvisoDePago.enValidacion();
   }
@@ -117,6 +130,7 @@ class AvisoDePago {
   static const _aceptadas = {'aceptada', 'aprobada', 'approved', 'success'};
   static const _rechazadas = {'rechazada', 'fallida', 'rejected', 'failed'};
   static const _reversadas = {'reversada', 'reversed'};
+  static const _sinPago = {'cancelada', 'abandonada', 'expirada'};
 
   /// Los mismos juegos de valores que usa la base, expuestos para que una
   /// prueba pueda fijarlos contra la migración.
