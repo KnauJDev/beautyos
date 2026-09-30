@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/aviso_de_enlace_de_correo.dart';
 import '../models/codigo_de_confirmacion.dart';
 import '../models/mensaje_de_auth.dart';
+import '../services/limpiar_direccion.dart';
 import '../theme/app_theme.dart';
 
 import 'public_plans_page.dart';
@@ -40,6 +41,22 @@ class _LoginPageState extends State<LoginPage> {
       AvisoDeEnlaceDeCorreo.desdeLaDireccion(Uri.base);
 
   bool avisoDescartado = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // AD (D-299): primero se lee el aviso --es `late`, así que esta línea lo
+    // lee-- y después se quita el error de la dirección. Al revés, el aviso
+    // no saldría nunca. Si se quedaba, cada recarga lo volvía a enseñar.
+    if (avisoDelEnlace != null) {
+      final direccionLimpia = AvisoDeEnlaceDeCorreo.direccionSinElError(
+        Uri.base,
+      );
+      if (direccionLimpia != null) {
+        reemplazarDireccionSinRecargar(direccionLimpia);
+      }
+    }
+  }
 
   // --- Confirmar con el código desde aquí (hallazgo AZ, 19-sep) -----------
   //

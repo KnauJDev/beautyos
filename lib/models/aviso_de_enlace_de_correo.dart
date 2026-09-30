@@ -85,6 +85,45 @@ class AvisoDeEnlaceDeCorreo {
     }
   }
 
+  /// AD (D-299): la dirección sin los parámetros del error, para quitarlos de
+  /// la barra en cuanto el aviso quedó leído. Devuelve `null` si no hay nada
+  /// que quitar.
+  ///
+  /// Si se quedaban, el aviso volvía en cada recarga y, peor, días después:
+  /// el 27-sep la sesión de un estilista seguía con `?error=…otp_expired` en
+  /// la barra, y al cerrar sesión la pantalla de acceso le habría contado un
+  /// fallo viejo como si acabara de pasar.
+  ///
+  /// Quita solo `error`, `error_code` y `error_description`, de la consulta y
+  /// del fragmento; lo demás (otros parámetros, la ruta) se queda.
+  static String? direccionSinElError(Uri direccion) {
+    final consulta = Map<String, String>.of(direccion.queryParameters);
+    final fragmento = _parametrosDelFragmento(direccion.fragment);
+    final enLaConsulta = consulta.keys.any(_clavesDelError.contains);
+    final enElFragmento = fragmento.keys.any(_clavesDelError.contains);
+    if (!enLaConsulta && !enElFragmento) return null;
+
+    consulta.removeWhere((clave, _) => _clavesDelError.contains(clave));
+
+    String? fragmentoLimpio = direccion.hasFragment ? direccion.fragment : null;
+    if (enElFragmento) {
+      final resto = Map<String, String>.of(fragmento)
+        ..removeWhere((clave, _) => _clavesDelError.contains(clave));
+      fragmentoLimpio = resto.isEmpty ? null : Uri(queryParameters: resto).query;
+    }
+
+    return Uri(
+      scheme: direccion.scheme,
+      host: direccion.host,
+      port: direccion.hasPort ? direccion.port : null,
+      path: direccion.path,
+      queryParameters: consulta.isEmpty ? null : consulta,
+      fragment: fragmentoLimpio,
+    ).toString();
+  }
+
+  static const _clavesDelError = {'error', 'error_code', 'error_description'};
+
   static Map<String, String> _parametrosDelFragmento(String fragmento) {
     if (fragmento.isEmpty || !fragmento.contains('=')) return const {};
     try {

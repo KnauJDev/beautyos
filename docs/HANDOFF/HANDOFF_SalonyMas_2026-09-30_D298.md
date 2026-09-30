@@ -77,7 +77,7 @@ Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anter
 | **d** | **I-13**: acceso de lectura a la base para el asistente | Hoy cada lectura es un comando tuyo con contraseña |
 | **h** | **Las fotos: ¿quitamos los tipos *Final* y *Portafolio*?** | Es lo único que mantiene abierto el hallazgo **Ñ** |
 | **i** | **BS**: revisar juntos el SMTP de Auth en el panel de Supabase | Antes de decidir si se arregla, hay que saber si Resend está puesto ahí |
-| **j** | **Dónde van 9.40, AD y 9.9**, que se quedaron fuera del turno A | 9.40 y 9.9 tocan el camino del dinero; de AD queda la mitad del enlace de correo vencido |
+| **j** | ~~**Dónde van 9.40, AD y 9.9**, que se quedaron fuera del turno A~~ **30-sep, decidido:** *"a, cierra AD y 9.9 primero"*. AD cerrado (D-299); 9.9 en curso; **9.40 sigue pendiente** | 9.40 toca el camino del dinero y necesita una migración |
 | **k** | **9.26 (Meta)**: ¿se intenta con el RUT o se espera al contador? | Salón y Más tiene RUT pero no matrícula mercantil, y Meta pide el negocio registrado |
 | **l** | **9.33**: dónde guardaste la bitácora, y el visto bueno a la respuesta sobre factura electrónica (§8 del protocolo) | Son las dos preguntas abiertas del protocolo |
 | **m** | **9.16** (contador: matrícula y factura electrónica de los salones), **9.20** (abogado) y **9.24** (entrevistas) | El 9.24 sigue bloqueando la estructura (turno E) |

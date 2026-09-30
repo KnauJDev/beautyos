@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/aviso_de_enlace_de_correo.dart';
+import '../services/limpiar_direccion.dart';
 import 'login_page.dart';
 import 'mfa_challenge_page.dart';
 
@@ -48,6 +50,19 @@ class _AuthGateState extends State<AuthGate> {
     super.initState();
 
     _refreshAuthStatus();
+
+    // AD (D-299): con la sesión ya abierta no se pasa por la pantalla de
+    // acceso, que es la que enseña el aviso de un enlace de correo vencido,
+    // así que el error se quita de la dirección aquí. Si se quedaba, cerrar
+    // sesión días después lo resucitaba como si acabara de pasar (27-sep).
+    if (isAuthenticated) {
+      final direccionLimpia = AvisoDeEnlaceDeCorreo.direccionSinElError(
+        Uri.base,
+      );
+      if (direccionLimpia != null) {
+        reemplazarDireccionSinRecargar(direccionLimpia);
+      }
+    }
 
     authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen(
       (data) {
