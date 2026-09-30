@@ -254,7 +254,9 @@ Las seis preguntas del borrador del 29-sep, y su estado:
 3. ✅ **¿Grupo de WhatsApp?** No: cada socio habla con él por separado (D-295).
 4. ✅ **¿Cuánto dura el acompañamiento?** Lo que haga falta (D-295).
 5. 🟡 **¿Dónde va la bitácora (§6)?** Propuesta: una hoja de cálculo en su OneDrive,
-   fuera del repositorio. Falta que elija.
+   fuera del repositorio. Falta que elija. **30-sep:** pidió una plantilla y se le
+   entregó (`Bitacora_Socios_de_Diseno_SalonyMas.xlsx`, fuera del repositorio); falta
+   que confirme dónde la guardó.
 6. 🟡 **¿Qué se responde sobre factura electrónica?** Hay una respuesta propuesta en
    §8, pendiente de su visto bueno.
 

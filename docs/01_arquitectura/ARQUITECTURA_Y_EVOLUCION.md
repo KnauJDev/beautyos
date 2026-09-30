@@ -190,6 +190,12 @@ Configuración → "Activar esta sede"
   una sede, que se prorratea hasta el corte, no cobra menos que eso
   (`beautyos_cobro_minimo_pasarela_cop`). Son dos mínimos distintos: el de $10.000
   es del precio de la sede; el de $5.000, de cada cobro.
+- **Al volver de ePayco, la app pregunta una sola vez** (D-200, D-298): lee
+  `?ref_payco=`, lo quita de la dirección y consulta `verify-epayco-transaction`,
+  cuya respuesta se traduce a un aviso. **Cerrar la pasarela sin pagar**
+  (*Cancelada*, códigos 10 y 11) dice que no se cobró nada (D-297) y **en la base
+  no cuenta como rechazo**, porque un rechazo puede empujar a mora. La activación
+  la sigue mandando el webhook (D-141).
 - **Gracia de 5 días** y luego suspensión, gradual y reversible, **sin borrar
   datos** (D-014, D-141). ⚠️ **Hoy solo funciona si ePayco rechaza un pago.** Si
   el salón simplemente no paga, nada lo pasa a mora: pierde las citas nuevas al

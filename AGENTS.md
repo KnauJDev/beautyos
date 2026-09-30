@@ -21,7 +21,9 @@ BeautyOS es una SaaS multi-tenant y multi-sede para centros de estética, barber
 
 ## Producto
 
-- Prioridad actual: convertir el núcleo interno existente en una SaaS multi-sede y preparar reservas públicas.
+- ~~Prioridad actual: convertir el núcleo interno existente en una SaaS multi-sede y preparar reservas públicas.~~
+  *(30-sep: cumplida. La multisede y las reservas públicas existen desde agosto. **La prioridad la fija el
+  `PLAN_MAESTRO`** —hoy la Fase 9, la puesta a punto antes del cliente cero— y aquí no se copia, por D-131.)*
 - Los módulos de alertas operativas están pausados hasta autorización explícita.
 - Las reservas públicas deberán usar disponibilidad real y protección contra choques a nivel de base de datos.
 - Las decisiones de UX deben reducir fricción sin debilitar seguridad ni trazabilidad.
