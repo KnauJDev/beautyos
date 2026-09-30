@@ -9,7 +9,9 @@ import 'models/tenant_subscription_status.dart';
 import 'services/branch_context_service.dart';
 import 'services/entitlements_service.dart';
 import 'models/aviso_de_pago.dart';
+import 'models/direccion_sin_ref_payco.dart';
 import 'services/epayco_checkout_service.dart';
+import 'services/limpiar_direccion.dart';
 import 'services/monitoreo_service.dart';
 import 'services/sesion_supabase.dart';
 import 'services/my_profile_service.dart';
@@ -286,6 +288,17 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
     // monitoreo para que quede rastro, y al dueño se le dice la verdad --
     // que se está validando-- en vez de un error que no le corresponde.
     final refPayco = Uri.base.queryParameters['ref_payco'];
+
+    // CA (D-298): el `ref_payco` se lee una vez y se quita de la dirección
+    // antes de preguntar. Si se quedaba, cada recarga --y cada vuelta de este
+    // mismo método-- volvía a preguntar y a enseñar el aviso de un pago que
+    // ya se había contado. Se quita antes del `await` para que una recarga a
+    // mitad de la consulta tampoco lo repita.
+    final direccionLimpia = direccionSinRefPayco(Uri.base);
+    if (direccionLimpia != null) {
+      reemplazarDireccionSinRecargar(direccionLimpia);
+    }
+
     if (refPayco != null && refPayco.isNotEmpty) {
       try {
         final respuesta = await Supabase.instance.client.functions.invoke(

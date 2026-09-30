@@ -69,8 +69,10 @@ $5.000 en pantalla. Si ePayco rechaza un cobro, el salón ve el aviso en españo
 
 ✅ **Y al cerrar ePayco sin pagar salió BZ** (D-297), cerrado el mismo día: la app decía
 *"estamos validando tu pago"*; ya dice que no se completó ningún pago y no se cobró nada,
-verificado en pantalla. **Abierto de ahí: CA** — la dirección se queda con `?ref_payco=`
-y el aviso se repite en cada recarga (ver la fila CA del Plan Maestro).
+verificado en pantalla. **De ahí salió CA** — la dirección se quedaba con `?ref_payco=`
+y el aviso se repetía en cada recarga. **Arreglado en código (D-298):** la app quita
+`ref_payco` de la dirección en cuanto lo lee. **Falta verlo en pantalla:** cerrar
+ePayco con la X, ver el aviso una vez con la dirección limpia, y recargar sin que salga.
 
 Y una cosa por probar cuando haya ocasión, sin urgencia:
 
