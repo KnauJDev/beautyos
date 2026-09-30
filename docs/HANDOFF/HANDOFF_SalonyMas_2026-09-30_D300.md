@@ -1,14 +1,16 @@
-# HANDOFF Salón y Más — 30 de septiembre de 2026 ("El cobro, probado en pantalla", D-289 a D-298)
+# HANDOFF Salón y Más — 30 de septiembre de 2026 ("El cobro, probado en pantalla", D-289 a D-300)
 
-**Bloque documentado:** decisiones **D-289** a **D-298**. Cierra el **turno C** en lo
-que se puede cerrar, arranca el **turno D** (9.33 vigente, 9.26 investigado) y
+**Bloque documentado:** decisiones **D-289** a **D-300**. Cierra el **turno C** en lo
+que se puede cerrar, arranca el **turno D** (9.33 vigente, 9.26 investigado),
 resuelve tres fallos del cobro que aparecieron al probarlo en pantalla (**BY**,
-**BZ** y **CA**).
+**BZ** y **CA**) y cierra dos pasos que se habían quedado fuera del turno A:
+**AD** (D-299) y **9.9** (D-300), que destapó **CB**.
 
-**Estado:** ✅ Todo aplicado, publicado en `main` y **verificado en pantalla**.
+**Estado:** ✅ Todo aplicado y publicado en `main`. **Verificado en pantalla todo
+salvo CB** (D-300), que necesita el Panel con la sesión del propietario (§3).
 **Nada escrito queda sin aplicar ni sin desplegar.** `flutter analyze` **0/0** ·
-**569 pruebas** · Guardián en verde.
-**Hallazgos: 69 en total, 55 cerrados o decididos, 14 abiertos** (los cuenta el
+**606 pruebas** · Guardián en verde.
+**Hallazgos: 71 en total, 57 cerrados o decididos, 14 abiertos** (los cuenta el
 guardián: `python scripts/verificar_documentos.py`).
 
 > El HANDOFF anterior está en
@@ -33,6 +35,8 @@ fallos que ningún control veía.** Los tres están cerrados y verificados.
 | D-296 | 🔴 **BY**: el alta de una sede cerca del corte cobraba menos de $5.000 y ePayco lo rechazaba. Ahora cobra como mínimo $5.000 | ✅ migración aplicada, control 236 6/6, ePayco abrió con $5.000 |
 | D-297 | **BZ**: quien cierra ePayco sin pagar leía *"estamos validando tu pago"*. Ahora lee que no se completó ningún pago y no se cobró nada. **En la base, cancelar no es un rechazo** | ✅ verificado 30-sep |
 | D-298 | **CA**: el `?ref_payco=` se quedaba en la dirección y el aviso se repetía en cada recarga. Ahora se lee una vez y se quita | ✅ verificado 30-sep |
+| D-299 | **AD**, la otra mitad: el error de un enlace de correo vencido (`?error=…otp_expired`) se quita de la dirección en cuanto se lee | ✅ verificado 30-sep sin sesión, por el asistente |
+| D-300 | **9.9** (pruebas del Panel en precios y aprobaciones) y **CB**: los tres campos de dinero del Panel leían mal *"15.000"* —el precio de una sede se borraba, el precio al aprobar se perdía, la comisión fija de un aliado quedaba en $15— | ✅ en código, **falta verlo en pantalla** |
 
 ---
 
@@ -58,8 +62,13 @@ fallos que ningún control veía.** Los tres están cerrados y verificados.
 
 ## 3. Lo que tienes que mirar en pantalla (regla 21)
 
-✅ **Nada pendiente.** Todo lo de este bloque se vio en pantalla: D-291 y D-293
-(30-sep por la mañana), BY, BZ y CA.
+✅ Se vio en pantalla: D-291 y D-293 (30-sep por la mañana), BY, BZ y CA, y AD
+sin sesión (el asistente, en el navegador integrado).
+
+**Pendiente, un minuto (CB, D-300):** en el Panel, abrir una sede que tenga precio
+pactado, escribir **el mismo precio con punto de miles** y pulsar **Guardar**. Debe
+seguir con ese precio pactado; antes del arreglo pasaba a la tarifa de lista. Y si
+escribes *diez mil*, la ventana no guarda y dice cómo escribirlo.
 
 Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anterior):
 
@@ -77,10 +86,11 @@ Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anter
 | **d** | **I-13**: acceso de lectura a la base para el asistente | Hoy cada lectura es un comando tuyo con contraseña |
 | **h** | **Las fotos: ¿quitamos los tipos *Final* y *Portafolio*?** | Es lo único que mantiene abierto el hallazgo **Ñ** |
 | **i** | **BS**: revisar juntos el SMTP de Auth en el panel de Supabase | Antes de decidir si se arregla, hay que saber si Resend está puesto ahí |
-| **j** | ~~**Dónde van 9.40, AD y 9.9**, que se quedaron fuera del turno A~~ **30-sep, decidido:** *"a, cierra AD y 9.9 primero"*. AD cerrado (D-299); 9.9 en curso; **9.40 sigue pendiente** | 9.40 toca el camino del dinero y necesita una migración |
+| **j** | ~~**Dónde van 9.40, AD y 9.9**, que se quedaron fuera del turno A~~ **30-sep, decidido:** *"a, cierra AD y 9.9 primero"*. AD cerrado (D-299) y 9.9 cerrado (D-300, de ahí salió **CB**); **9.40 sigue pendiente** | 9.40 toca el camino del dinero y necesita una migración |
 | **k** | **9.26 (Meta)**: ¿se intenta con el RUT o se espera al contador? | Salón y Más tiene RUT pero no matrícula mercantil, y Meta pide el negocio registrado |
 | **l** | **9.33**: dónde guardaste la bitácora, y el visto bueno a la respuesta sobre factura electrónica (§8 del protocolo) | Son las dos preguntas abiertas del protocolo |
 | **m** | **9.16** (contador: matrícula y factura electrónica de los salones), **9.20** (abogado) y **9.24** (entrevistas) | El 9.24 sigue bloqueando la estructura (turno E) |
+| **n** | **CC**: cuándo arreglar el mismo fallo de CB del lado del salón (Servicios, Gastos, Inventario, Compras, anticipos) | *"35.000"* se guarda como $35. Con `CifraEscrita` ya hecho es una línea por campo |
 
 ---
 
@@ -136,7 +146,8 @@ El orden aprobado el 23-sep (PLAN_MAESTRO §5, *El orden de ejecución*) está a
    el **9.24**.
 
 **El 30-sep el propietario pidió evaluar qué se puede cerrar sin él y, si no hay
-nada, explorar el layout.** **I-19 dice que el rediseño va *después* del 9.25**
+nada, explorar el layout.** Salieron dos, AD y 9.9, y los cerró primero (D-299,
+D-300). **Lo siguiente que pidió es explorar el layout.** **I-19 dice que el rediseño va *después* del 9.25**
 (rediseñar quince pantallas que luego se reagrupan en cinco es hacerlo dos veces).
 Explorar y bocetar no lo contradice; construir, sí. Preguntarle qué quiere explorar
 antes de proponer nada.
@@ -146,7 +157,7 @@ antes de proponer nada.
 ## 8. Prompt para retomar
 
 ```
-Lee el HANDOFF más reciente en docs/HANDOFF/ (D-289 a D-298).
+Lee el HANDOFF más reciente en docs/HANDOFF/ (D-289 a D-300).
 
 Antes de nada: la REGLA 25 del PLAN_MAESTRO §8. Afirmar exige prueba; lo
 aprobado no se cambia sin avisar; el producto se pregunta aunque haya
@@ -160,13 +171,14 @@ El turno C está cerrado y el D, en manos del propietario. El cobro de una
 sede se probó de punta a punta en pantalla el 30-sep: salieron y se
 cerraron BY (mínimo de $5.000 de ePayco), BZ (cerrar sin pagar ya no dice
 "validando") y CA (el ref_payco ya no se queda en la dirección). CA era un
-duplicado de AD: AD sigue abierto por la otra mitad (el enlace de correo
-vencido que se queda en la barra).
+duplicado de AD, y AD ya está cerrado entero (D-299). El 9.9 (pruebas del
+Panel) destapó CB: los campos de dinero leían mal "15.000"; cerrado, y
+anotado CC, el mismo fallo del lado del salón.
 
 LO PRIMERO
 Mira la sección 4 del HANDOFF: casi todo lo pendiente es decisión suya.
-La j (dónde van 9.40, AD y 9.9) es la que desbloquea trabajo técnico.
-Si pidió explorar el layout (I-19), pregúntale qué quiere ver: el Plan lo
+Si no probó CB en pantalla (§3), recuérdaselo: es un minuto.
+Pidió explorar el layout (I-19): pregúntale qué quiere ver. El Plan lo
 pone después del 9.25, así que explorar sí, construir no.
 
 CÓMO SE TRABAJA CON ÉL

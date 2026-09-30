@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
 import '../models/branch_subscription.dart';
+import '../models/cifra_escrita.dart';
 import '../models/platform_partner.dart';
 import '../models/platform_saas_metrics.dart';
 import '../models/platform_tenant_feature_override.dart';
@@ -345,6 +346,21 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
                     return;
                   }
 
+                  // CB (D-300): "75.000" se leía como vacío y el negocio se
+                  // aprobaba a la tarifa del plan sin decir nada. Se comprueba
+                  // aquí, con la ventana abierta, para no borrar lo escrito.
+                  if (!CifraEscrita.pesos(price).esLegible) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Escribe el precio en pesos, sin centavos: por '
+                          'ejemplo 75000 o 75.000.',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+
                   if (price.isNotEmpty && reason.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -378,7 +394,7 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
       // deduce, y **el descuento porcentual no se manda**: el precio de una
       // sede se pacta en pesos.
       if (customPricing) {
-        priceCop = int.tryParse(priceController.text.trim());
+        priceCop = CifraEscrita.pesos(priceController.text).valor?.toInt();
         priceReason = reasonController.text.trim();
       }
 
@@ -2591,15 +2607,26 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
               onPressed: guardando
                   ? null
                   : () async {
+                      // CB (D-300): "15.000" se leía como vacío, y vacío aquí
+                      // significa volver a la tarifa vigente: el acuerdo se
+                      // borraba sin aviso. Lo ilegible ya no se guarda; se
+                      // dice en el mismo recuadro de los errores del servidor.
+                      final lectura = CifraEscrita.pesos(precioCtrl.text);
+                      if (!lectura.esLegible) {
+                        setModalState(() {
+                          errorDelServidor =
+                              'Escribe el precio en pesos, sin centavos: por '
+                              'ejemplo 75000 o 75.000. Vacío = tarifa vigente.';
+                        });
+                        return;
+                      }
+
                       setModalState(() {
                         guardando = true;
                         errorDelServidor = null;
                       });
 
-                      final precioTexto = precioCtrl.text.trim();
-                      final precio = precioTexto.isEmpty
-                          ? null
-                          : int.tryParse(precioTexto);
+                      final precio = lectura.valor?.toInt();
                       final motivo = motivoCtrl.text.trim();
 
                       try {
@@ -4610,6 +4637,22 @@ class _PartnersTabState extends State<_PartnersTab> {
                         );
                         return;
                       }
+                      // CB (D-300): antes, "15.000" en valor fijo se guardaba
+                      // como $15, y lo que no era un número se volvía 15 sin
+                      // decir nada. Ahora lo ilegible, o el campo vacío, se dice.
+                      final comision = commissionType == 'percentage'
+                          ? CifraEscrita.porcentaje(valueController.text)
+                          : CifraEscrita.pesos(valueController.text);
+                      if (comision.valor == null) {
+                        setModalState(
+                          () => error = commissionType == 'percentage'
+                              ? 'Escribe el porcentaje con números: por '
+                                    'ejemplo 15 o 12,5.'
+                              : 'Escribe la comisión en pesos, sin centavos: '
+                                    'por ejemplo 15000 o 15.000.',
+                        );
+                        return;
+                      }
                       setModalState(() {
                         isSubmitting = true;
                         error = null;
@@ -4633,9 +4676,7 @@ class _PartnersTabState extends State<_PartnersTab> {
                               ? null
                               : emailController.text.trim(),
                           commissionType: commissionType,
-                          commissionValue:
-                              double.tryParse(valueController.text.trim()) ??
-                              15.0,
+                          commissionValue: comision.valor!.toDouble(),
                           commissionDuration: commissionDuration,
                           durationMonths: commissionDuration == 'first_n_months'
                               ? int.tryParse(
