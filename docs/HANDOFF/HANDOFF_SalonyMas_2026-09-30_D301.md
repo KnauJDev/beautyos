@@ -7,9 +7,7 @@ resuelve tres fallos del cobro que aparecieron al probarlo en pantalla (**BY**,
 **AD** (D-299) y **9.9** (D-300), que destapó **CB**. Y la ficha del Panel enseña
 el precio de la sede y no el acuerdo viejo del negocio (D-301).
 
-**Estado:** ✅ Todo aplicado y publicado en `main`. **Verificado en pantalla todo
-salvo CB y D-301** (D-300 y D-301), que necesitan el Panel con la sesión del
-propietario (§3).
+**Estado:** ✅ Todo aplicado, publicado en `main` y **verificado en pantalla**.
 **Nada escrito queda sin aplicar ni sin desplegar.** `flutter analyze` **0/0** ·
 **609 pruebas** · Guardián en verde.
 **Hallazgos: 71 en total, 57 cerrados o decididos, 14 abiertos** (los cuenta el
@@ -38,8 +36,8 @@ fallos que ningún control veía.** Los tres están cerrados y verificados.
 | D-297 | **BZ**: quien cierra ePayco sin pagar leía *"estamos validando tu pago"*. Ahora lee que no se completó ningún pago y no se cobró nada. **En la base, cancelar no es un rechazo** | ✅ verificado 30-sep |
 | D-298 | **CA**: el `?ref_payco=` se quedaba en la dirección y el aviso se repetía en cada recarga. Ahora se lee una vez y se quita | ✅ verificado 30-sep |
 | D-299 | **AD**, la otra mitad: el error de un enlace de correo vencido (`?error=…otp_expired`) se quita de la dirección en cuanto se lee | ✅ verificado 30-sep sin sesión, por el asistente |
-| D-300 | **9.9** (pruebas del Panel en precios y aprobaciones) y **CB**: los tres campos de dinero del Panel leían mal *"15.000"* —el precio de una sede se borraba, el precio al aprobar se perdía, la comisión fija de un aliado quedaba en $15— | ✅ en código, **falta verlo en pantalla** |
-| D-301 | La ficha del Panel enseña **"Precio de esta sede"** (pactado o de lista) en vez de *"Acuerdo del negocio: $4.500 — no se cobra"*, que el propietario leyó como vigente. La lista de clientes ya no enseña el precio del negocio | ✅ en código, **falta verlo en pantalla** |
+| D-300 | **9.9** (pruebas del Panel en precios y aprobaciones) y **CB**: los tres campos de dinero del Panel leían mal *"15.000"* —el precio de una sede se borraba, el precio al aprobar se perdía, la comisión fija de un aliado quedaba en $15— | ✅ verificado 30-sep |
+| D-301 | La ficha del Panel enseña **"Precio de esta sede"** (pactado o de lista) en vez de *"Acuerdo del negocio: $4.500 — no se cobra"*, que el propietario leyó como vigente. La lista de clientes ya no enseña el precio del negocio | ✅ verificado 30-sep |
 
 ---
 
@@ -68,16 +66,11 @@ fallos que ningún control veía.** Los tres están cerrados y verificados.
 ✅ Se vio en pantalla: D-291 y D-293 (30-sep por la mañana), BY, BZ y CA, y AD
 sin sesión (el asistente, en el navegador integrado).
 
-**Pendiente, un minuto (CB, D-300):** en el Panel, abrir una sede que tenga precio
-pactado, escribir **el mismo precio con punto de miles** y pulsar **Guardar**. Debe
-seguir con ese precio pactado; antes del arreglo pasaba a la tarifa de lista. Y si
-escribes *diez mil*, la ventana no guarda y dice cómo escribirlo. **El botón Pago está
-en la tarjeta "1. Esta sede"**, arriba del todo de la ficha; *Cambiar plan o
-etiqueta* no toca precios, a propósito.
-
-**Y D-301, en la misma ficha:** la tarjeta "3. Plan del negocio" debe decir
-**"Precio de esta sede"** con el mismo precio que "1. Esta sede", y *pactado* o
-*tarifa de lista* debajo. Al cambiar de sede en la cabecera, cambia con ella.
+✅ **Y CB y D-301, vistos por el propietario el 30-sep:** escribió *"10.000"* con punto
+en la ventana **Pago** de la sede de Éxito y siguió en $10.000 pactado; la tarjeta
+"3. Plan del negocio" dice **"Precio de esta sede"**. **El botón Pago está en la
+tarjeta "1. Esta sede"**, arriba del todo de la ficha; *Cambiar plan o etiqueta* no
+toca precios, a propósito.
 
 Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anterior):
 
@@ -186,7 +179,6 @@ anotado CC, el mismo fallo del lado del salón.
 
 LO PRIMERO
 Mira la sección 4 del HANDOFF: casi todo lo pendiente es decisión suya.
-Si no probó CB y D-301 en pantalla (§3), recuérdaselo: es un minuto.
 Pidió explorar el layout (I-19): pregúntale qué quiere ver. El Plan lo
 pone después del 9.25, así que explorar sí, construir no.
 
