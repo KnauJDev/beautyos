@@ -440,8 +440,11 @@ Deno.serve(async (req) => {
     const sessionJson = await sessionRes.json();
     if (!sessionRes.ok || !sessionJson?.data?.sessionId) {
       console.error("Error al crear sesión en ePayco:", sessionJson);
+      // BY (D-296): ePayco responde en inglés ("Some fields are required...") y el
+      // salón veía ese texto tal cual. El detalle queda en el registro de arriba.
       return responder({
-        error: sessionJson?.textResponse || sessionJson?.message || "No se pudo generar la sesión de pago en ePayco.",
+        error: "ePayco no aceptó abrir este cobro, así que no se te cobró nada. " +
+          "Vuelve a intentarlo en unos minutos y, si sigue igual, escríbenos por WhatsApp.",
       }, 502);
     }
 

@@ -63,8 +63,10 @@ se lee traducido en Configuración, el Panel y la página pública) y D-293 (la 
 webhook llega idéntica a ePayco).
 
 🔴 **Y salió un hallazgo nuevo, BY:** activar una sede nueva cerca de la fecha de corte
-cobra menos de $5.000 y ePayco lo rechaza. **Espera la decisión del propietario**
-sobre qué se cobra en ese caso (ver la fila BY del Plan Maestro).
+cobraba menos de $5.000 y ePayco lo rechaza. **Decidido (D-296): cobrar como mínimo
+$5.000.** Falta que el propietario aplique `20260930100000_el_alta_de_sede_cobra_el_minimo_de_epayco_by.sql`
+y el control `236_test_el_alta_de_sede_cobra_el_minimo_de_epayco_by.sql`, y que pruebe *Activar esta sede*
+en *Barberia Barber Elite*: ePayco debe abrir con $5.000 (**sin pagar**).
 
 Y una cosa por probar cuando haya ocasión, sin urgencia:
 

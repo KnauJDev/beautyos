@@ -186,6 +186,10 @@ Configuración → "Activar esta sede"
 - **El cobro mínimo de una sede es $10.000** (D-265): lo exige la activación
   desde D-159, y desde el 23-sep un disparador en `branch_subscriptions` impide
   pactar por debajo **por cualquier puerta** (hallazgo BO).
+- **Y el mínimo de ePayco es $5.000 por cobro** (D-296, hallazgo BY): el alta de
+  una sede, que se prorratea hasta el corte, no cobra menos que eso
+  (`beautyos_cobro_minimo_pasarela_cop`). Son dos mínimos distintos: el de $10.000
+  es del precio de la sede; el de $5.000, de cada cobro.
 - **Gracia de 5 días** y luego suspensión, gradual y reversible, **sin borrar
   datos** (D-014, D-141). ⚠️ **Hoy solo funciona si ePayco rechaza un pago.** Si
   el salón simplemente no paga, nada lo pasa a mora: pierde las citas nuevas al
