@@ -58,13 +58,13 @@ decide desde su celular, sin PIN.
 
 ## 3. Lo que tienes que mirar en pantalla (regla 21)
 
-**Dos comprobaciones pendientes, de lo publicado el 29-sep:**
+✅ **Las dos comprobaciones del 29-sep, hechas el 30-sep:** D-291 (el tipo de negocio
+se lee traducido en Configuración, el Panel y la página pública) y D-293 (la URL del
+webhook llega idéntica a ePayco).
 
-- **D-291 — Panel y Configuración.** ✅ *Configuración* visto el 30-sep. Falta la
-  ficha del **Panel de plataforma** (ventana nueva) y la lectura
-  `intervenciones/verificar_tipo_de_negocio_d291.sql`, que dice qué quedó guardado.
-- **D-293 — la URL del webhook.** Cuando se abra un cobro (abrirlo no es pagar),
-  leer `confirmation_url` en el registro de `create-epayco-session`.
+🔴 **Y salió un hallazgo nuevo, BY:** activar una sede nueva cerca de la fecha de corte
+cobra menos de $5.000 y ePayco lo rechaza. **Espera la decisión del propietario**
+sobre qué se cobra en ese caso (ver la fila BY del Plan Maestro).
 
 Y una cosa por probar cuando haya ocasión, sin urgencia:
 
