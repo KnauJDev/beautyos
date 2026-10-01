@@ -2419,7 +2419,7 @@ class _TenantDetailSheet extends StatefulWidget {
 }
 
 class _TenantDetailSheetState extends State<_TenantDetailSheet> {
-  late final Future<List<TenantSubscriptionHistoryEntry>> _historyFuture;
+  late Future<List<TenantSubscriptionHistoryEntry>> _historyFuture;
   late Future<List<BranchSubscription>> _branchesFuture;
 
   /// Que pestana de sede esta abierta (D-241). Se guarda el identificador y no
@@ -2444,6 +2444,11 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
   void _recargarSedes() {
     setState(() {
       _branchesFuture = widget.platformService.getTenantBranches(
+        widget.tenant.tenantId,
+      );
+      // D-303: cambiar una sede escribe un renglón en el historial. Sin esto,
+      // el propietario tuvo que recargar la página para verlo (30-sep).
+      _historyFuture = widget.platformService.getTenantSubscriptionHistory(
         widget.tenant.tenantId,
       );
     });

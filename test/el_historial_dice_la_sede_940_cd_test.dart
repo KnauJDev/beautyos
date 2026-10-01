@@ -41,6 +41,15 @@ void main() {
       expect(tabla, contains('entry.branchName'));
     });
 
+    test('al guardar una sede, el historial se vuelve a pedir', () {
+      // El 30-sep el propietario cambió el motivo y tuvo que recargar la
+      // página para ver el renglón nuevo.
+      final ini = panel.indexOf('void _recargarSedes()');
+      final cuerpo = panel.substring(ini, panel.indexOf('\n  }\n', ini));
+      expect(cuerpo, contains('getTenantBranches'));
+      expect(cuerpo, contains('getTenantSubscriptionHistory'));
+    });
+
     test('tantas columnas como celdas, o la tabla revienta en pantalla', () {
       // `'Fecha y Hora'` ya está dentro de la primera columna, así que se
       // cuenta una más de las que encuentra el patrón.
