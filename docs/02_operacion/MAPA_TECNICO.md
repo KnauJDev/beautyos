@@ -156,6 +156,29 @@ grep -c "get_stylists_for_invitation" /tmp/pub.js
 commit. Es más fiable que mirar la pantalla: si el cambio también tocó la base
 de datos, la mitad de la base sí funciona y **parece que se publicó**.
 
+**Si el cambio no añade ningún texto propio** (30-sep): se cuenta en el
+`main.dart.js` publicado un texto que el cambio añade **una vez más**, y se compara
+con la compilación local (`build/web/main.dart.js`). Cuando las dos cuentas
+coinciden, la versión nueva está fuera. Y GitHub dice si Cloudflare terminó, sin
+entrar a su panel:
+
+```
+curl -s https://api.github.com/repos/KnauJDev/beautyos/commits/<sha>/check-runs
+```
+
+Debe decir `Cloudflare Pages completed success`, junto a las comprobaciones del CI.
+
+**Una Edge Function desplegada contra el repositorio** (30-sep): la CLI descarga lo
+que está desplegado. **Siempre a una carpeta temporal**, nunca al proyecto, que lo
+pisaría:
+
+```
+npx.cmd supabase@latest functions download <funcion> --project-ref eogppgbdnwxdtcbctaol --workdir <carpeta temporal>
+```
+
+y se compara con `diff --strip-trailing-cr`. La fecha del despliegue no basta: a
+veces se despliega y el commit llega minutos después.
+
 ### La CLI de Supabase
 
 No está instalada de forma permanente: se usa con `npx`, que la descarga a la
@@ -347,6 +370,9 @@ Cada una costó tiempo real. Están aquí para que cueste una sola vez.
 | **Dependencia con rango (`^1`)** en una Edge Function | El mismo código se comporta distinto en cada despliegue y revienta **antes** de la primera línea propia. **Siempre versión exacta** | D-128 |
 | **El `deno.json` va con el `index.ts`** | Publicar solo el código deja la dependencia rota. La CLI los sube juntos; a mano hay que acordarse | D-128, D-131 |
 | **`npx` bloqueado en PowerShell** | Usar `npx.cmd` | D-131 |
+| **La pestaña que dice "Hay una versión nueva de Salón y Más — Actualizar"** | Está corriendo la versión **vieja**. El 30-sep guardó *"120.000"* como $120 con el arreglo ya publicado. Se pulsa **Actualizar** (o se abre una ventana nueva) **antes** de probar nada | D-302 |
+| **Cambiar solo lo que va detrás del `#` no recarga la página** | Probar un enlace con `#error=…` en una pestaña abierta no arranca la app con él, y la prueba no vale. Pestaña nueva | D-299 |
+| **Un campo de dinero leído con `tryParse`** | *"35.000"* da 35 (`num`) o vacío (`int`), sin aviso; en la sede, vacío borraba el acuerdo. Se lee con `CifraEscrita`, y un guardián lo vigila | D-300, D-302 |
 | **Un `push` puede no publicar nada, y nadie avisa** | El 11-ago la compilación falló en **3 segundos** al descargarse el código: `server certificate verification failed. CAfile: none`. Es una avería **de la máquina de Cloudflare**, no del proyecto. **El propietario probó la app creyendo que era la versión nueva y no lo era.** Se arregla con **"Retry deployment"** | D-133 |
 | **Con HSTS activo, Cloudflare no se toca a la ligera** | Desde el 29-sep el sitio manda `Strict-Transport-Security` a 6 meses. **No poner los registros DNS en "DNS only", no pausar Cloudflare, no cambiar los nameservers, no quitar el certificado SSL, ni redirigir HTTPS a HTTP**: quien ya visitó el sitio no podría abrirlo hasta que venza. **Si algún día se cambia de proveedor, el certificado del nuevo tiene que estar listo antes de mover la dirección** | D-294 |
 | **Un `numeric` puede llegar como texto** | Si se lee como número, revienta en producción y en ninguna prueba | D-121 |

@@ -12,7 +12,7 @@ aplicada por el propietario con el control 237 en **9/9**.
 **Estado:** ✅ Todo aplicado y publicado en `main`. **Nada escrito queda sin aplicar
 ni sin desplegar.** Todo verificado en pantalla.
 `flutter analyze` **0/0** ·
-**626 pruebas** · Guardián en verde.
+**627 pruebas** · Guardián en verde.
 **Hallazgos: 72 en total, 59 cerrados o decididos, 13 abiertos** (los cuenta el
 guardián: `python scripts/verificar_documentos.py`).
 
@@ -55,14 +55,28 @@ fallos que ningún control veía.** Los tres están cerrados y verificados.
    **AD**, anotado el 09-sep con el mismo síntoma. Se vio al listar los abiertos
    (nota en D-298).
 3. **Al cerrar un turno, cada elemento de su fila se tacha o se mueve.** D-274 dio
-   por cerrado el turno A y dejó fuera **9.40, AD y 9.9**, que siguen pendientes y
-   nadie volvió a nombrar hasta el 30-sep.
+   por cerrado el turno A y dejó fuera **9.40, AD y 9.9**, que nadie volvió a nombrar
+   hasta el 30-sep. Ese mismo día se cerraron los tres (D-299, D-300, D-303).
 4. **Para saber si Cloudflare ya publicó, se compara el archivo publicado con la
    compilación local.** Con D-298: `ref_payco` aparecía 2 veces en el `main.dart.js`
    publicado y 3 en el local; cuando el publicado dio 3, la versión nueva estaba
    fuera (unos dos minutos y medio después del `push`).
 5. **Con HSTS activo, Cloudflare no se toca a ciegas** (D-294): nada de *DNS only*,
    pausar Cloudflare, cambiar los *nameservers* ni quitar el certificado.
+6. **Escribir pruebas de lo que entra destapa fallos que las de lo que sale no ven.**
+   El Panel tenía pruebas de cómo enseña el precio; nadie miraba cómo lo lee. Y al
+   arreglarlo (CB) se buscó el patrón en todo `lib/` y salió CC, peor: *"35.000"* →
+   $35 en el catálogo del salón.
+7. **Un lector estricto tiene que aceptar lo que la propia app precarga.** Fuera del
+   navegador un decimal se escribe *"35000.0"*; rechazarlo habría roto editar sin
+   tocar el precio. Se vio antes de que mordiera (D-302).
+8. **El aviso "Hay una versión nueva — Actualizar" es una pestaña vieja.** Se pulsa
+   antes de probar. El 30-sep costó una vuelta (CC).
+9. **La revisión de sincronía del 30-sep** (pedida por el propietario): `main` igual a
+   GitHub, Cloudflare y el CI en verde en el último commit, las **11 Edge Functions**
+   iguales a lo desplegado (tres comparadas descargando su código) y **todas las
+   migraciones desde el 15-sep** con su aplicación o su control registrados. Cómo
+   se hace, en `MAPA_TECNICO` §2.
 
 ---
 
@@ -101,7 +115,7 @@ Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anter
 | **d** | **I-13**: acceso de lectura a la base para el asistente | Hoy cada lectura es un comando tuyo con contraseña |
 | **h** | **Las fotos: ¿quitamos los tipos *Final* y *Portafolio*?** | Es lo único que mantiene abierto el hallazgo **Ñ** |
 | **i** | **BS**: revisar juntos el SMTP de Auth en el panel de Supabase | Antes de decidir si se arregla, hay que saber si Resend está puesto ahí |
-| **j** | ~~**Dónde van 9.40, AD y 9.9**, que se quedaron fuera del turno A~~ **30-sep, decidido:** *"a, cierra AD y 9.9 primero"*. AD cerrado (D-299) y 9.9 cerrado (D-300, de ahí salió **CB**); **9.40 sigue pendiente** | 9.40 toca el camino del dinero y necesita una migración |
+| **j** | ~~**Dónde van 9.40, AD y 9.9**, que se quedaron fuera del turno A~~ **30-sep, decidido:** *"a, cierra AD y 9.9 primero"*. AD cerrado (D-299), 9.9 cerrado (D-300, de ahí salió **CB**) y 9.40 cerrado con CD (D-303, control 237 en 9/9) | — |
 | **k** | **9.26 (Meta)**: ¿se intenta con el RUT o se espera al contador? | Salón y Más tiene RUT pero no matrícula mercantil, y Meta pide el negocio registrado |
 | **l** | **9.33**: dónde guardaste la bitácora, y el visto bueno a la respuesta sobre factura electrónica (§8 del protocolo) | Son las dos preguntas abiertas del protocolo |
 | **m** | **9.16** (contador: matrícula y factura electrónica de los salones), **9.20** (abogado) y **9.24** (entrevistas) | El 9.24 sigue bloqueando la estructura (turno E) |
@@ -152,8 +166,8 @@ Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anter
 
 El orden aprobado el 23-sep (PLAN_MAESTRO §5, *El orden de ejecución*) está así:
 
-1. ✅ **Turno A**, cerrado el 24-sep, **salvo 9.40, AD y 9.9**, que se quedaron
-   fuera (decisión **j**).
+1. ✅ **Turno A**, cerrado de verdad el 30-sep: **9.40, AD y 9.9**, que se habían quedado
+   fuera, cerrados (D-299, D-300, D-303).
 2. **Turno B**: ✅ 9.48, BC y AS. Quedan **9.20** y **9.16**, los dos tuyos.
 3. ✅ **Turno C**, cerrado el 29-sep en lo que se puede cerrar. AA pasó a la
    Fase 8 y los seis AK van con el 9.13.
@@ -163,7 +177,12 @@ El orden aprobado el 23-sep (PLAN_MAESTRO §5, *El orden de ejecución*) está a
 
 **El 30-sep el propietario pidió evaluar qué se puede cerrar sin él y, si no hay
 nada, explorar el layout.** Salieron dos, AD y 9.9, y los cerró primero (D-299,
-D-300). **Lo siguiente que pidió es explorar el layout.** **I-19 dice que el rediseño va *después* del 9.25**
+D-300); de ahí salieron CB, CC y D-301, y pidió también 9.40 + CD (D-303). Al
+terminar pidió **revisar que todo estuviera al día y sincronizado** antes del layout
+(lección 9). **Lo siguiente es el layout, y todavía no eligió qué explorar.** La
+recomendación que se le dio: un **prototipo navegable de los cinco lugares** de
+D-219 (HOY, CLIENTAS, MI DINERO, MI VITRINA, AJUSTES), aparte de la app, para
+llevarlo a las entrevistas del 9.24. **I-19 dice que el rediseño va *después* del 9.25**
 (rediseñar quince pantallas que luego se reagrupan en cinco es hacerlo dos veces).
 Explorar y bocetar no lo contradice; construir, sí. Preguntarle qué quiere explorar
 antes de proponer nada.
@@ -189,12 +208,14 @@ cerraron BY (mínimo de $5.000 de ePayco), BZ (cerrar sin pagar ya no dice
 "validando") y CA (el ref_payco ya no se queda en la dirección). CA era un
 duplicado de AD, y AD ya está cerrado entero (D-299). El 9.9 (pruebas del
 Panel) destapó CB: los campos de dinero leían mal "15.000"; cerrado, y
-anotado CC, el mismo fallo del lado del salón.
+CC, el mismo fallo del lado del salón, también (D-302). El historial del
+Panel dice de qué sede es cada cobro y los cambios de sede dejan rastro
+(D-303, 9.40 + CD). Todo aplicado, publicado y verificado en pantalla.
 
 LO PRIMERO
-Luego, la sección 4 del HANDOFF: casi todo lo pendiente es decisión suya.
-Pidió explorar el layout (I-19): pregúntale qué quiere ver. El Plan lo
-pone después del 9.25, así que explorar sí, construir no.
+Mira la sección 4 del HANDOFF: casi todo lo pendiente es decisión suya.
+Pidió explorar el layout (I-19) y aún no eligió qué: pregúntale (§7 trae
+la recomendación). El Plan lo pone después del 9.25: explorar sí, construir no.
 
 CÓMO SE TRABAJA CON ÉL
 Paso a paso, en español claro y con los nombres exactos de los botones. Los
@@ -204,5 +225,6 @@ intervenciones/extraer_*.sql, y la migración GENERADA desde ese texto vivo,
 comparada con diff.
 ANTES DE PEDIRLE QUE PRUEBE ALGO EN PANTALLA: que haya hecho git push a main,
 que el main.dart.js publicado ya traiga el cambio (compararlo con la
-compilación local) y que abra una ventana nueva.
+compilación local) y que abra una ventana nueva. Si la pestaña dice "Hay una
+versión nueva — Actualizar", que pulse Actualizar antes de probar.
 ```

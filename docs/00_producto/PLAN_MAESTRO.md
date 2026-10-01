@@ -1,6 +1,6 @@
 # PLAN MAESTRO — Salón y Más
 
-**Creado:** 9 de agosto de 2026 · **Última revisión:** 23 de septiembre de 2026 (revisión integral, D-254; hallazgos cerrados por la tarde, D-255 a D-259) · **Puesto al día:** 30 de septiembre de 2026 (D-289 a D-298)
+**Creado:** 9 de agosto de 2026 · **Última revisión:** 23 de septiembre de 2026 (revisión integral, D-254; hallazgos cerrados por la tarde, D-255 a D-259) · **Puesto al día:** 30 de septiembre de 2026 (D-289 a D-303)
 **Estado:** vigente · **Manda sobre:** todo lo demás en materia de qué falta y en qué orden
 
 > **Este documento reemplaza y jubila a siete:** `PLAN_DE_LANZAMIENTO_2026-08-06`,
@@ -203,11 +203,11 @@ plataforma y lo que ve la clienta.
 | **Fotos de trabajos** | Privadas hasta aprobar, filtros, estudio de publicación (D-119, D-156, D-169); **publicar lo autoriza solo la clienta**, desde su enlace o su portal (D-281 a D-288) | ~~Que autorice la clienta; *Visible al cliente* no funciona; el flujo de captura~~ ✅ 9.48 y AQ cerrados el 28-sep, AU el 27-sep. Queda decidir los tipos *Final* y *Portafolio* | Ñ |
 | **Reseñas** | Moderación y respuestas (D-170); la clienta elige cómo sale su nombre (D-282) | ~~Que la clienta autorice su nombre; el formulario público sin tildes~~ ✅ (9.48; AV, D-256) | — |
 | **Blog** | Por salón (D-171) | — | — |
-| **Servicios / Estilistas** | Catálogo y precio por sede (D-156) | ~~El estilista tiene dos nombres que nadie concilia~~ ✅ manda el del catálogo (D-292) | — |
+| **Servicios / Estilistas** | Catálogo y precio por sede (D-156) | ~~El estilista tiene dos nombres que nadie concilia~~ ✅ manda el del catálogo (D-292). Los precios se leen como se escriben: *35.000* son treinta y cinco mil (D-302) | — |
 | **Usuarios** | Invitar, sedes por persona (D-179) | Al invitado le llega el correo del dueño | AL |
 | **Configuración** | Completa: sedes con su pago, **comisión confirmable** (D-193, D-242, D-251); el tipo de negocio se lee traducido (D-291) | — | — |
 | ***Mi agenda / Mis fotos / Mis reseñas / Mi panel*** *(estilista)* | Funcionan; el panel avisa si nadie confirmó la comisión (D-251) | Pasar a una aplicación propia | 9.25 (D-219) |
-| **Panel de plataforma** | Maestro-detalle, sedes con precio y estado, referidos, borrar demos **con sus archivos y sus cuentas** (D-173, D-236, D-240, D-246, D-278 a D-280) | Historial sin sede, módulos por sede, ~~fotos en soporte~~ (BC decidido: el acceso de soporte se queda igual, D-277), ~~pruebas~~ (9.9, D-300) | 9.40, 9.41 |
+| **Panel de plataforma** | Maestro-detalle, sedes con precio y estado, referidos, borrar demos **con sus archivos y sus cuentas** (D-173, D-236, D-240, D-246, D-278 a D-280) | ~~Historial sin sede~~ (9.40, D-303: dice la sede y deja rastro de cada cambio de sede), módulos por sede, ~~fotos en soporte~~ (BC decidido: el acceso de soporte se queda igual, D-277), ~~pruebas~~ (9.9, D-300) | 9.41 |
 | **Lo que ve la clienta** | Página pública, reserva, portal con PIN, reseña (D-165, D-167); **autoriza sus fotos y su nombre desde su enlace o su portal** (D-281 a D-288) | ~~Autorizar sus fotos y su reseña; tildes; la hora que caduca~~ ✅ (9.48; AV, D-256; AX, D-257) | — |
 
 ### Foto del 10-ago, que se conserva

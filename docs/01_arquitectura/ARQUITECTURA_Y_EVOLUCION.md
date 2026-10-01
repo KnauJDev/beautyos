@@ -127,6 +127,7 @@ Las reglas de *cómo trabajamos* siguen viviendo solo en `PLAN_MAESTRO` §8.
 | 11 | **Los secretos nunca van al código ni al repositorio** | AGENTS.md | El DSN de Sentry, a propósito: es de solo escritura (D-228) |
 | 12 | **Dinero de la plataforma y dinero del salón nunca comparten tablas** | `SUSCRIPCION_Y_ENTITLEMENTS` §1, D-013 | — |
 | 13 | **El nombre de un estilista lo manda el catálogo (`stylists.name`), no la cuenta (`user_profiles.full_name`).** Es el que ve la clienta y sale en agenda, tickets, comisiones y reserva pública. El que teclea el empleado al unirse solo identifica a la persona detrás de la cuenta | D-292 (hallazgo AN) | — |
+| 14 | **Toda cifra de dinero que teclea una persona se lee con `CifraEscrita`** (`lib/models/cifra_escrita.dart`), nunca con `int.tryParse`/`num.tryParse`: esos no entienden el punto de miles, y *"35.000"* daba vacío o 35. Distingue **vacío** de **ilegible**, y lo ilegible no se guarda | D-300 (CB), D-302 (CC) | Un guardián (`las_cifras_del_salon_cc_test.dart`) recorre `lib/` y falla si vuelve. Los porcentajes con tope 0-100 y las cantidades no son pesos |
 
 > **La lección más cara de septiembre ya estaba escrita el 19-jul.**
 > El invariante 9 aparece en `SUSCRIPCION_Y_ENTITLEMENTS` desde el primer día:
@@ -196,6 +197,10 @@ Configuración → "Activar esta sede"
   (*Cancelada*, códigos 10 y 11) dice que no se cobró nada (D-297) y **en la base
   no cuenta como rechazo**, porque un rechazo puede empujar a mora. La activación
   la sigue mandando el webhook (D-141).
+- **Lo que la plataforma cambia en una sede queda escrito** (D-303): precio, estado,
+  motivo o vencimiento cambiados desde el Panel escriben `sede_cambiada_desde_el_panel`
+  en `subscription_events`, con el antes, el después y quién; y el historial dice
+  de qué sede es cada renglón (la de un pago cancelado sale de su intención de pago).
 - **Gracia de 5 días** y luego suspensión, gradual y reversible, **sin borrar
   datos** (D-014, D-141). ⚠️ **Hoy solo funciona si ePayco rechaza un pago.** Si
   el salón simplemente no paga, nada lo pasa a mora: pierde las citas nuevas al
