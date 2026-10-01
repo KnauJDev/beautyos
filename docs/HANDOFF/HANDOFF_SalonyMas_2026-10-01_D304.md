@@ -185,7 +185,10 @@ terminar pidió **revisar que todo estuviera al día y sincronizado** antes del 
 decidió: **barra abajo con los 5 lugares** en el celular, **reactivar las alertas
 operativas** de D-008 y **empezar por un prototipo navegable** de los cinco lugares
 (HOY, CLIENTAS, MI DINERO, MI VITRINA, AJUSTES), aparte de la app, para las
-entrevistas del 9.24. **El prototipo es lo que está en curso.** **I-19 dice que el rediseño va *después* del 9.25**
+entrevistas del 9.24. **Prototipo hecho:** https://claude.ai/artifact/1ESsefBVb3dhH6iSYEgqPb (privado). **Ojo, corregido el mismo
+día:** el guion del 9.24 pide **no enseñar la app en la entrevista** (regla 1) y que los nombres de los
+lugares salgan de las dueñas (regla 6). El prototipo se usa **después**, en una prueba de orientación
+aparte (trae seis tareas), y sus nombres son provisionales. **I-19 dice que el rediseño va *después* del 9.25**
 (rediseñar quince pantallas que luego se reagrupan en cinco es hacerlo dos veces).
 Explorar y bocetar no lo contradice; construir, sí. Preguntarle qué quiere explorar
 antes de proponer nada.
@@ -217,8 +220,9 @@ Panel dice de qué sede es cada cobro y los cambios de sede dejan rastro
 
 LO PRIMERO
 Mira la sección 4 del HANDOFF: casi todo lo pendiente es decisión suya.
-El prototipo de los cinco lugares (D-304) está en curso: pregúntale cómo
-lo vio. Construir en la app real sigue esperando al 9.24 y al 9.25.
+El prototipo de los cinco lugares (D-304) está publicado: pregúntale cómo
+lo vio en su celular. Se usa DESPUÉS de las entrevistas, no en ellas (regla 1
+del guion). Construir en la app real sigue esperando al 9.24 y al 9.25.
 
 CÓMO SE TRABAJA CON ÉL
 Paso a paso, en español claro y con los nombres exactos de los botones. Los
