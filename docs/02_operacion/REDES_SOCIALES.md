@@ -76,11 +76,14 @@ del proyecto y no solo en el disco: se perdieron una vez por estar sin commitear
 |---|---|---|
 | `marca.svg` / `marca-maskable.svg` | vectorial | El isotipo `S+`, origen de todo lo demás |
 | `perfil.png` | 512 × 512 | Foto de perfil, con margen para el recorte circular |
-| `portada.png` | 1640 × 624 | Portada de Facebook — *"Menos cuaderno, más control de tu salón"* |
+| `portada.png` | 1640 × 624 | Portada de Facebook — *"Menos cuaderno, más control de tu salón"*. **Rehecha el 01-oct:** la del 06-sep decía *"co Software para Colombia"* (la trampa de abajo) |
 | `post_instagram_1.png` | 1080 × 1080 | Post de lanzamiento |
 
 Se componen en HTML/CSS con los colores de marca y se exportan a PNG con Chrome
-headless. Sin licencias ni herramientas de pago.
+headless. Sin licencias ni herramientas de pago. **Las fuentes HTML viven en
+`marca/plantillas/`, con el comando para exportarlas** (desde el 01-oct). Las
+del 07-sep quedaron en una carpeta temporal y se perdieron; por eso la portada
+hubo que reconstruirla midiendo el PNG.
 
 **Colores:** morado `#7C3AED`, degradado `#4C1D95` → `#7C3AED`, acentos `#F472B6`
 y `#FBBF24`.

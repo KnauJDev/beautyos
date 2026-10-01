@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Portada de Facebook</title>
+<!--
+  Portada de la página de Facebook, 1640 x 624 px.
+  Es la fuente de docs/00_producto/marca/portada.png. Cómo se exporta: LEEME.md.
+
+  Reconstruida el 01-oct a partir del PNG del 06-sep, cuyas plantillas se
+  perdieron. Mismos textos y misma composición; el único cambio es la bandera,
+  que en el original salía como las letras "co".
+-->
+<style>
+  :root {
+    --morado: #7C3AED;
+    --morado-medio: #5B21B6;
+    --morado-noche: #3B0764;
+    --rosado: #F472B6;
+    --ambar: #FBBF24;
+    --lavanda: #E9D5FF;
+    --verde: #34D399;
+    --blanco: #FFFFFF;
+    --logo-claro: #9061F9;
+    --logo-oscuro: #6D28D9;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { width: 1640px; height: 624px; overflow: hidden; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    color: var(--blanco);
+    background:
+      radial-gradient(circle 520px at 1130px 90px, rgba(219, 39, 119, .26), transparent),
+      radial-gradient(circle 420px at 380px 600px, rgba(196, 181, 253, .22), transparent),
+      linear-gradient(130deg, var(--morado-noche) 0%, var(--morado-medio) 48%, var(--morado) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 180px;
+  }
+
+  /* ---------- Bloque de texto, a la izquierda ---------- */
+
+  .etiqueta {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    height: 39px;
+    padding: 0 18px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .12);
+    border: 1px solid rgba(255, 255, 255, .25);
+    font-size: 20px;
+    font-weight: 600;
+    color: #F3F4FF;
+  }
+
+  /*
+    La bandera va dibujada, nunca como emoji: en Chrome sin ventana sobre
+    Windows el emoji de Colombia sale como las letras "co" (REDES_SOCIALES.md §4).
+    Franjas: amarillo 50 %, azul 25 %, rojo 25 %.
+  */
+  .bandera {
+    width: 24px;
+    height: 16px;
+    border-radius: 3px;
+    background: linear-gradient(to bottom,
+      #FCD116 0 50%, #003893 50% 75%, #CE1126 75% 100%);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .35);
+    flex: none;
+  }
+
+  h1 {
+    margin-top: 23px;
+    font-size: 56px;
+    font-weight: 900;
+    line-height: 1.15;
+    letter-spacing: -.5px;
+  }
+
+  h1 .acento {
+    background: linear-gradient(90deg, var(--rosado), var(--ambar));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .resumen {
+    margin-top: 17px;
+    font-size: 23px;
+    color: var(--lavanda);
+  }
+
+  .pilares {
+    display: flex;
+    gap: 16px;
+    margin-top: 28px;
+  }
+
+  .pilar {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 42px;
+    padding: 0 16px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .10);
+    border: 1px solid rgba(255, 255, 255, .22);
+    font-size: 18px;
+    font-weight: 600;
+    color: #F3F4FF;
+  }
+
+  .pilar::before {
+    content: "✓";
+    color: var(--verde);
+    font-weight: 700;
+  }
+
+  /* ---------- Tarjeta del logo, a la derecha ---------- */
+
+  .tarjeta {
+    width: 248px;
+    height: 260px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, .09);
+    border: 1.5px solid rgba(255, 255, 255, .20);
+    box-shadow: 0 24px 60px rgba(30, 0, 60, .35);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .logo {
+    width: 110px;
+    height: 110px;
+    padding: 12px;
+    border-radius: 26px;
+    background: var(--blanco);
+    box-shadow: 0 12px 30px rgba(20, 0, 50, .30);
+  }
+
+  .logo svg { display: block; width: 86px; height: 86px; }
+
+  .nombre {
+    margin-top: 16px;
+    font-size: 28px;
+    font-weight: 900;
+  }
+
+  .web {
+    margin-top: 2px;
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--rosado);
+  }
+</style>
+</head>
+<body>
+
+  <section>
+    <span class="etiqueta"><span class="bandera" aria-hidden="true"></span>Software para Colombia</span>
+    <h1>Menos cuaderno,<br><span class="acento">más control de tu salón</span></h1>
+    <p class="resumen">Agenda sin cruces · Control de caja diario · Comisiones exactas</p>
+    <div class="pilares">
+      <span class="pilar">Citas online 24/7</span>
+      <span class="pilar">Fotos y consentimiento</span>
+      <span class="pilar">Multi-sede</span>
+    </div>
+  </section>
+
+  <aside class="tarjeta">
+    <div class="logo">
+      <!-- El isotipo S+, copiado de ../marca.svg -->
+      <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#9061F9"/>
+            <stop offset="1" stop-color="#6D28D9"/>
+          </linearGradient>
+        </defs>
+        <rect x="0" y="0" width="512" height="512" rx="115.2" ry="115.2" fill="url(#g)"/>
+        <text x="223.232" y="256" fill="#FFFFFF"
+              font-family="Segoe UI, Arial, Helvetica, sans-serif" font-weight="700"
+              font-size="425.984" text-anchor="middle" dominant-baseline="central">S</text>
+        <rect x="324.8128" y="124.1088" width="98.304" height="27.8528" rx="13.9264" fill="#FFFFFF"/>
+        <rect x="360.0384" y="88.8832" width="27.8528" height="98.304" rx="13.9264" fill="#FFFFFF"/>
+      </svg>
+    </div>
+    <div class="nombre">Salón y Más</div>
+    <div class="web">salonymas.com</div>
+  </aside>
+
+</body>
+</html>
