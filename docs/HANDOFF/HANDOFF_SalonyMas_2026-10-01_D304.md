@@ -1,13 +1,14 @@
-# HANDOFF Salón y Más — 30 de septiembre de 2026 ("El cobro, probado en pantalla", D-289 a D-303)
+# HANDOFF Salón y Más — 30 de septiembre y 1 de octubre de 2026 ("El cobro, probado en pantalla", D-289 a D-304)
 
-**Bloque documentado:** decisiones **D-289** a **D-303**. Cierra el **turno C** en lo
+**Bloque documentado:** decisiones **D-289** a **D-304**. Cierra el **turno C** en lo
 que se puede cerrar, arranca el **turno D** (9.33 vigente, 9.26 investigado),
 resuelve tres fallos del cobro que aparecieron al probarlo en pantalla (**BY**,
 **BZ** y **CA**) y cierra dos pasos que se habían quedado fuera del turno A:
 **AD** (D-299) y **9.9** (D-300), que destapó **CB**. Y la ficha del Panel enseña
 el precio de la sede y no el acuerdo viejo del negocio (D-301). Y **CC**, el mismo
 fallo de CB del lado del salón (D-302). Y la migración de **9.40 + CD** (D-303),
-aplicada por el propietario con el control 237 en **9/9**.
+aplicada por el propietario con el control 237 en **9/9**. El 01-oct, las decisiones
+de layout (D-304) y el arranque del prototipo de los cinco lugares.
 
 **Estado:** ✅ Todo aplicado y publicado en `main`. **Nada escrito queda sin aplicar
 ni sin desplegar.** Todo verificado en pantalla.
@@ -43,6 +44,7 @@ fallos que ningún control veía.** Los tres están cerrados y verificados.
 | D-301 | La ficha del Panel enseña **"Precio de esta sede"** (pactado o de lista) en vez de *"Acuerdo del negocio: $4.500 — no se cobra"*, que el propietario leyó como vigente. La lista de clientes ya no enseña el precio del negocio | ✅ verificado 30-sep |
 | D-302 | **CC**: en Servicios, Gastos, Inventario, Compras y el valor fijo de comisión, *"35.000"* se guardaba como **$35**. Ahora se lee en pesos, y una prueba recorre todo `lib/` para que ningún campo de dinero vuelva a leerse con `tryParse` | ✅ verificado 30-sep, tras Actualizar |
 | D-303 | **9.40 + CD**: el historial dice de qué sede es cada cobro, y cambiar precio, estado o vencimiento de una sede deja un evento con el antes y el después. Migración desde el texto vivo y control 237 | ✅ aplicada, control 237 en 9/9, vista en pantalla |
+| D-304 | **Layout:** barra abajo con los 5 lugares en el celular; **se reactivan las alertas operativas** (D-008); primero un **prototipo navegable**, aparte de la app, para las entrevistas del 9.24. Comparado con una referencia (*AuraEstética*): sin *funcionar sin internet* (choca con la protección de las reservas) | ✍️ decidido; prototipo en curso |
 
 ---
 
@@ -179,10 +181,11 @@ El orden aprobado el 23-sep (PLAN_MAESTRO §5, *El orden de ejecución*) está a
 nada, explorar el layout.** Salieron dos, AD y 9.9, y los cerró primero (D-299,
 D-300); de ahí salieron CB, CC y D-301, y pidió también 9.40 + CD (D-303). Al
 terminar pidió **revisar que todo estuviera al día y sincronizado** antes del layout
-(lección 9). **Lo siguiente es el layout, y todavía no eligió qué explorar.** La
-recomendación que se le dio: un **prototipo navegable de los cinco lugares** de
-D-219 (HOY, CLIENTAS, MI DINERO, MI VITRINA, AJUSTES), aparte de la app, para
-llevarlo a las entrevistas del 9.24. **I-19 dice que el rediseño va *después* del 9.25**
+(lección 9). **01-oct (D-304):** comparó la app con una referencia que le gustó (*AuraEstética*) y
+decidió: **barra abajo con los 5 lugares** en el celular, **reactivar las alertas
+operativas** de D-008 y **empezar por un prototipo navegable** de los cinco lugares
+(HOY, CLIENTAS, MI DINERO, MI VITRINA, AJUSTES), aparte de la app, para las
+entrevistas del 9.24. **El prototipo es lo que está en curso.** **I-19 dice que el rediseño va *después* del 9.25**
 (rediseñar quince pantallas que luego se reagrupan en cinco es hacerlo dos veces).
 Explorar y bocetar no lo contradice; construir, sí. Preguntarle qué quiere explorar
 antes de proponer nada.
@@ -192,7 +195,7 @@ antes de proponer nada.
 ## 8. Prompt para retomar
 
 ```
-Lee el HANDOFF más reciente en docs/HANDOFF/ (D-289 a D-303).
+Lee el HANDOFF más reciente en docs/HANDOFF/ (D-289 a D-304).
 
 Antes de nada: la REGLA 25 del PLAN_MAESTRO §8. Afirmar exige prueba; lo
 aprobado no se cambia sin avisar; el producto se pregunta aunque haya
@@ -214,8 +217,8 @@ Panel dice de qué sede es cada cobro y los cambios de sede dejan rastro
 
 LO PRIMERO
 Mira la sección 4 del HANDOFF: casi todo lo pendiente es decisión suya.
-Pidió explorar el layout (I-19) y aún no eligió qué: pregúntale (§7 trae
-la recomendación). El Plan lo pone después del 9.25: explorar sí, construir no.
+El prototipo de los cinco lugares (D-304) está en curso: pregúntale cómo
+lo vio. Construir en la app real sigue esperando al 9.24 y al 9.25.
 
 CÓMO SE TRABAJA CON ÉL
 Paso a paso, en español claro y con los nombres exactos de los botones. Los
