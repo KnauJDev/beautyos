@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<meta name="pieza" content="1640x624">
 <title>Portada de Facebook</title>
 <!--
   Portada de la página de Facebook, 1640 x 624 px.
@@ -10,32 +11,17 @@
   Reconstruida el 01-oct a partir del PNG del 06-sep, cuyas plantillas se
   perdieron. Mismos textos y misma composición; el único cambio es la bandera,
   que en el original salía como las letras "co".
+
+  Los colores y el fondo salen de marca.css, como en las demás plantillas.
 -->
+<link rel="stylesheet" href="marca.css">
 <style>
-  :root {
-    --morado: #7C3AED;
-    --morado-medio: #5B21B6;
-    --morado-noche: #3B0764;
-    --rosado: #F472B6;
-    --ambar: #FBBF24;
-    --lavanda: #E9D5FF;
-    --verde: #34D399;
-    --blanco: #FFFFFF;
-    --logo-claro: #9061F9;
-    --logo-oscuro: #6D28D9;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
   html, body { width: 1640px; height: 624px; overflow: hidden; }
 
   body {
     font-family: 'Segoe UI', system-ui, sans-serif;
     color: var(--blanco);
-    background:
-      radial-gradient(circle 520px at 1130px 90px, rgba(219, 39, 119, .26), transparent),
-      radial-gradient(circle 420px at 380px 600px, rgba(196, 181, 253, .22), transparent),
-      linear-gradient(130deg, var(--morado-noche) 0%, var(--morado-medio) 48%, var(--morado) 100%);
+    background: var(--fondo);
     display: flex;
     align-items: center;
     justify-content: space-between;

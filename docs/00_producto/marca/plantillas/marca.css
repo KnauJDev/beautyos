@@ -1,0 +1,95 @@
+/*
+  Lo común de todas las piezas de Salón y Más: colores, fondo y las piezas
+  pequeñas que se repiten (bandera, etiqueta, logo, texto con degradado).
+  Cada plantilla lo enlaza y solo escribe lo suyo.
+
+  Los colores son los de REDES_SOCIALES.md §4. Una pieza nueva no inventa tonos.
+*/
+
+:root {
+  --morado: #7C3AED;
+  --morado-medio: #5B21B6;
+  --morado-noche: #3B0764;
+  --rosado: #F472B6;
+  --ambar: #FBBF24;
+  --lavanda: #E9D5FF;
+  --verde: #34D399;
+  --blanco: #FFFFFF;
+  --texto-claro: #F3F4FF;
+
+  /* El fondo de la portada (D-305), medido sobre la del 06-sep */
+  --fondo:
+    radial-gradient(circle 520px at 1130px 90px, rgba(219, 39, 119, .26), transparent),
+    radial-gradient(circle 420px at 380px 600px, rgba(196, 181, 253, .22), transparent),
+    linear-gradient(130deg, var(--morado-noche) 0%, var(--morado-medio) 48%, var(--morado) 100%);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  color: var(--blanco);
+  overflow: hidden;
+}
+
+/* Que ninguna palabra quede sola en la última línea */
+h1, h2 { text-wrap: balance; }
+p { text-wrap: pretty; }
+
+/* Texto con el degradado rosado → ámbar de la marca */
+.acento {
+  background: linear-gradient(90deg, var(--rosado), var(--ambar));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/*
+  La bandera va dibujada, nunca como emoji: en Chrome sin ventana sobre
+  Windows el emoji sale como las letras "co" (D-305). Franjas: amarillo 50 %,
+  azul 25 %, rojo 25 %. Se escala con el tamaño de letra de quien la contiene.
+*/
+.bandera {
+  width: 1.33em;
+  height: .89em;
+  border-radius: .17em;
+  background: linear-gradient(to bottom,
+    #FCD116 0 50%, #003893 50% 75%, #CE1126 75% 100%);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .35);
+  flex: none;
+}
+
+/* Píldora translúcida: "Software para Colombia", "Hecho en Colombia"… */
+.etiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: .5em;
+  padding: .45em 1em;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .12);
+  border: 1px solid rgba(255, 255, 255, .25);
+  font-weight: 600;
+  color: var(--texto-claro);
+}
+
+/* El isotipo S+ dentro de su recuadro blanco. El tamaño lo da --lado. */
+.logo {
+  --lado: 110px;
+  width: var(--lado);
+  height: var(--lado);
+  padding: calc(var(--lado) * .11);
+  border-radius: calc(var(--lado) * .236);
+  background: var(--blanco);
+  box-shadow: 0 12px 30px rgba(20, 0, 50, .30);
+  flex: none;
+}
+
+.logo img,
+.logo svg { display: block; width: 100%; height: 100%; }
+
+/* Tarjeta translúcida, la de los cuatro beneficios del post del 07-sep */
+.tarjeta {
+  border-radius: 28px;
+  background: rgba(255, 255, 255, .09);
+  border: 1.5px solid rgba(255, 255, 255, .20);
+}

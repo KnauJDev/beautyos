@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="pieza" content="1080x1440">
+<title>Post vertical</title>
+<!--
+  Post para el feed de Instagram y Facebook, 1080 x 1440 (3:4).
+
+  Por qué 3:4 y no cuadrado: desde 2025 la cuadrícula del perfil de Instagram
+  muestra cada post en un rectángulo 3:4 y recorta lo que no cabe. Medido en
+  @salon_y_mas el 01-oct: el cuadro mide 0,750. El post cuadrado del 07-sep
+  pierde los bordes en el perfil.
+
+  Zona segura: todo lo importante queda a más de 45 px de arriba y de abajo,
+  para que un recorte a 4:5 (1080 x 1350) no corte nada.
+
+  TEXTO DE EJEMPLO: es el del post del 07-sep, ya publicado y aprobado. Cada
+  pieza nueva cambia el texto, con el visto bueno del propietario (D-305).
+-->
+<link rel="stylesheet" href="marca.css">
+<style>
+  html, body { width: 1080px; height: 1440px; }
+
+  body {
+    background: var(--fondo);
+    padding: 100px 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .firma {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    font-size: 36px;
+    font-weight: 900;
+  }
+
+  .firma .logo { --lado: 80px; }
+
+  .cabecera .etiqueta { font-size: 24px; }
+
+  .antetitulo {
+    font-size: 27px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--rosado);
+  }
+
+  h1 {
+    margin-top: 18px;
+    font-size: 86px;
+    font-weight: 900;
+    line-height: 1.08;
+    letter-spacing: -1px;
+  }
+
+  .beneficios {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  .beneficio {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    padding: 30px 36px;
+  }
+
+  .beneficio .icono {
+    width: 92px;
+    height: 92px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, .12);
+    display: grid;
+    place-items: center;
+    font-size: 48px;
+    flex: none;
+  }
+
+  .beneficio h2 {
+    font-size: 36px;
+    font-weight: 800;
+  }
+
+  .beneficio p {
+    margin-top: 6px;
+    font-size: 26px;
+    line-height: 1.35;
+    color: var(--lavanda);
+  }
+
+  .llamado {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 34px 40px;
+    background: rgba(30, 0, 70, .35);
+  }
+
+  .llamado strong {
+    font-size: 34px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--verde);
+  }
+
+  .web {
+    padding: 18px 34px;
+    border-radius: 18px;
+    background: var(--blanco);
+    color: var(--morado-medio);
+    font-size: 32px;
+    font-weight: 800;
+    box-shadow: 0 10px 30px rgba(20, 0, 50, .30);
+  }
+</style>
+</head>
+<body>
+
+  <header class="cabecera">
+    <div class="firma"><div class="logo"><img src="../marca.svg" alt=""></div>Salón y Más</div>
+    <span class="etiqueta"><span class="bandera" aria-hidden="true"></span>Hecho en Colombia</span>
+  </header>
+
+  <section>
+    <p class="antetitulo">Menos cuaderno, más control</p>
+    <h1>El software para <span class="acento">hacer crecer tu salón</span></h1>
+  </section>
+
+  <section class="beneficios">
+    <div class="beneficio tarjeta">
+      <div class="icono">✂️</div>
+      <div>
+        <h2>Agenda sin cruces</h2>
+        <p>Tus clientes reservan solos desde su celular las 24 horas del día.</p>
+      </div>
+    </div>
+    <div class="beneficio tarjeta">
+      <div class="icono">💰</div>
+      <div>
+        <h2>Caja y comisiones</h2>
+        <p>Control diario de ingresos y cálculo automático de comisiones de tu equipo.</p>
+      </div>
+    </div>
+    <div class="beneficio tarjeta">
+      <div class="icono">🛡️</div>
+      <div>
+        <h2>Privacidad y seguridad</h2>
+        <p>Total protección y tratamiento de datos de tus clientes bajo la normatividad colombiana.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="llamado tarjeta">
+    <strong>21 DÍAS DE PRUEBA GRATIS</strong>
+    <span class="web">salonymas.com</span>
+  </footer>
+
+</body>
+</html>

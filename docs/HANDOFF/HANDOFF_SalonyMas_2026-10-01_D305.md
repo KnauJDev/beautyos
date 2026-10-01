@@ -212,8 +212,9 @@ Explorar y bocetar no lo contradice; construir, sí. Preguntarle qué quiere exp
 antes de proponer nada.
 
 **Las redes van en su propio chat y en paralelo (D-305, paso 9.57).** Hecho el 01-oct: la portada de
-Facebook sin *"co"*, subida y comprobada. Sigue: las plantillas de post (1080 × 1080), historia
-(1080 × 1920) y carrusel, y un calendario corto. Antes del calendario hacen falta las respuestas de la
+Facebook sin *"co"*, subida y comprobada; y las **plantillas aprobadas**: post vertical (1080 × 1440,
+porque la cuadrícula de Instagram es 3:4), historia (1080 × 1920) y carrusel, con `marca.css` y
+`exportar.ps1`. Sigue un calendario corto. Antes del calendario hacen falta las respuestas de la
 decisión **o** del §4. El acceso es la extensión de Claude en el perfil **"J"** de Chrome: con dos
 Chrome conectados, comprobar en Facebook qué cuenta está abierta antes de tocar nada.
 

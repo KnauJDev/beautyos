@@ -67,6 +67,10 @@ suena idéntica y quedó aprobada.
 👇 Prueba 21 días gratis:
 ```
 
+**La 🇨🇴 de la biografía se ve como *"co"* en un computador con Windows, y no es un fallo:** Windows
+no dibuja banderas. En el celular sale la bandera. Comprobado el 01-oct; no se "arregla". Distinto es
+meter el emoji **dentro de una imagen**: ahí queda "co" para todo el mundo (§4).
+
 ---
 
 ## 4. Los activos de marca
