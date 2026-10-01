@@ -10,6 +10,8 @@ class TenantSubscriptionHistoryEntry {
     this.amountCop,
     this.paymentDetail,
     this.description,
+    this.branchId,
+    this.branchName,
   });
 
   final String eventId;
@@ -23,6 +25,12 @@ class TenantSubscriptionHistoryEntry {
   final String? paymentDetail;
   final String? description;
 
+  /// De que sede es este renglon (9.40, D-303). Desde D-239 cada sede paga lo
+  /// suyo. `null` en los eventos del negocio (aprobar, plan, contacto) y si el
+  /// servidor todavia no manda la columna: la pantalla aguanta las dos cosas.
+  final String? branchId;
+  final String? branchName;
+
   factory TenantSubscriptionHistoryEntry.fromMap(Map<String, dynamic> map) {
     return TenantSubscriptionHistoryEntry(
       eventId: map['event_id'].toString(),
@@ -35,6 +43,8 @@ class TenantSubscriptionHistoryEntry {
       amountCop: _parseInt(map['amount_cop']),
       paymentDetail: map['payment_detail']?.toString(),
       description: map['description']?.toString(),
+      branchId: map['branch_id']?.toString(),
+      branchName: map['branch_name']?.toString(),
     );
   }
 

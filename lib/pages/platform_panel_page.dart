@@ -3784,6 +3784,16 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                                         ),
                                       ),
                                     ),
+                                    // 9.40 (D-303): de que sede es cada cobro.
+                                    DataColumn(
+                                      label: Text(
+                                        'Sede',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 11.5,
+                                        ),
+                                      ),
+                                    ),
                                     DataColumn(
                                       label: Text(
                                         'Plan',
@@ -3832,6 +3842,14 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                                         DataCell(
                                           Text(
                                             _formatDateTime(entry.createdAt),
+                                            style: const TextStyle(
+                                              fontSize: 11.5,
+                                            ),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            entry.branchName ?? '—',
                                             style: const TextStyle(
                                               fontSize: 11.5,
                                             ),
