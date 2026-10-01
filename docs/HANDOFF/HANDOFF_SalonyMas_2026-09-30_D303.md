@@ -7,13 +7,13 @@ resuelve tres fallos del cobro que aparecieron al probarlo en pantalla (**BY**,
 **AD** (D-299) y **9.9** (D-300), que destapó **CB**. Y la ficha del Panel enseña
 el precio de la sede y no el acuerdo viejo del negocio (D-301). Y **CC**, el mismo
 fallo de CB del lado del salón (D-302). Y la migración de **9.40 + CD** (D-303),
-escrita y **pendiente de que el propietario la aplique**.
+aplicada por el propietario con el control 237 en **9/9**.
 
-**Estado:** publicado en `main`. **Queda una migración escrita y SIN APLICAR**
-(D-303, §5) y falta ver CC en pantalla (D-302, §3).
+**Estado:** ✅ Todo aplicado y publicado en `main`. **Nada escrito queda sin aplicar
+ni sin desplegar.** Falta ver en pantalla CC (D-302) y D-303 (§3).
 `flutter analyze` **0/0** ·
 **626 pruebas** · Guardián en verde.
-**Hallazgos: 72 en total, 58 cerrados o decididos, 14 abiertos** (los cuenta el
+**Hallazgos: 72 en total, 59 cerrados o decididos, 13 abiertos** (los cuenta el
 guardián: `python scripts/verificar_documentos.py`).
 
 > El HANDOFF anterior está en
@@ -42,7 +42,7 @@ fallos que ningún control veía.** Los tres están cerrados y verificados.
 | D-300 | **9.9** (pruebas del Panel en precios y aprobaciones) y **CB**: los tres campos de dinero del Panel leían mal *"15.000"* —el precio de una sede se borraba, el precio al aprobar se perdía, la comisión fija de un aliado quedaba en $15— | ✅ verificado 30-sep |
 | D-301 | La ficha del Panel enseña **"Precio de esta sede"** (pactado o de lista) en vez de *"Acuerdo del negocio: $4.500 — no se cobra"*, que el propietario leyó como vigente. La lista de clientes ya no enseña el precio del negocio | ✅ verificado 30-sep |
 | D-302 | **CC**: en Servicios, Gastos, Inventario, Compras y el valor fijo de comisión, *"35.000"* se guardaba como **$35**. Ahora se lee en pesos, y una prueba recorre todo `lib/` para que ningún campo de dinero vuelva a leerse con `tryParse` | ✅ en código, **falta verlo en pantalla** |
-| D-303 | **9.40 + CD**: el historial dice de qué sede es cada cobro, y cambiar precio, estado o vencimiento de una sede deja un evento con el antes y el después. Migración desde el texto vivo y control 237 | ✍️ **escrita, sin aplicar** |
+| D-303 | **9.40 + CD**: el historial dice de qué sede es cada cobro, y cambiar precio, estado o vencimiento de una sede deja un evento con el antes y el después. Migración desde el texto vivo y control 237 | ✅ aplicada, control 237 en 9/9; **falta verlo en pantalla** |
 
 ---
 
@@ -77,6 +77,11 @@ en la ventana **Pago** de la sede de Éxito y siguió en $10.000 pactado; la tar
 tarjeta "1. Esta sede"**, arriba del todo de la ficha; *Cambiar plan o etiqueta* no
 toca precios, a propósito.
 
+**Pendiente, un minuto (D-303):** en el Panel, en la ficha de Peluquería Éxito Prueba,
+**"5. Historial"** debe tener la columna **Sede**, con el nombre de la sede en los
+pagos y "—" en lo que es del negocio. Y al cambiar algo en **"1. Esta sede" → Pago**
+(por ejemplo, una palabra del motivo) aparece un renglón nuevo que dice qué cambió.
+
 **Pendiente, un minuto (CC, D-302):** en **Servicios**, edita un servicio, escribe su
 precio con punto de miles (por ejemplo *35.000*) y pulsa **Guardar**. La lista debe
 enseñar **$35.000**, no $35.
@@ -107,11 +112,6 @@ Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anter
 
 ## 5. Lo que quedó a medias
 
-0. 🔴 **La migración de D-303, SIN APLICAR.** Lo aplica el propietario, en este orden:
-   respaldo (`scripts\respaldo_supabase.ps1`), la migración
-   `supabase\migrations\20260930190000_el_historial_dice_la_sede_940_cd.sql` y el
-   control `supabase\sql\237_test_el_historial_dice_la_sede_940_cd.sql` (debe decir
-   **9/9**). Si el control falla, no se sigue: se lee el FALLO y se corrige.
 1. **AK**: seis diálogos de `tickets_page.dart` que se cierran antes de guardar.
    Van con el **9.13**.
 2. **BR y BS**: en el buzón de ideas, sin fase.
@@ -121,7 +121,7 @@ Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anter
 4. **Señalado, no tocado:** la intención de pago de un intento cancelado queda en
    estado `verificada`. Ahí significa "ya se cruzó con una referencia de ePayco",
    no "pagada"; las cifras de cobro leen `monto_cop_recibido` (D-297).
-5. **CD**: confirmado en el texto vivo; lo arregla la migración de D-303 (punto 0).
+5. **CD**: confirmado en el texto vivo y cerrado con la migración de D-303.
 6. **AI**: la mitad honesta ya estaba escrita (el repositorio dice que no contiene
    el esquema entero); la correcta, volcarlo a una migración, va en el turno E.
 
@@ -193,8 +193,7 @@ Panel) destapó CB: los campos de dinero leían mal "15.000"; cerrado, y
 anotado CC, el mismo fallo del lado del salón.
 
 LO PRIMERO
-Pregúntale si aplicó la migración de D-303 (9.40 + CD) y si el control 237
-dio 9/9 (§5, punto 0). Si no, guíalo: respaldo, migración, control.
+Pregúntale si vio en pantalla D-303 y CC (§3).
 Luego, la sección 4 del HANDOFF: casi todo lo pendiente es decisión suya.
 Pidió explorar el layout (I-19): pregúntale qué quiere ver. El Plan lo
 pone después del 9.25, así que explorar sí, construir no.
