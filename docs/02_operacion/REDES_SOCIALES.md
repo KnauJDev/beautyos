@@ -28,6 +28,8 @@ Tres trabajos, en este orden:
 | Campo | Valor |
 |---|---|
 | Nombre | `Salón y Más` |
+| Dirección | `https://www.facebook.com/profile.php?id=61593977672817` |
+| Se administra desde | La cuenta de Facebook de **Juan Rodriguez**, abierta en el perfil de Chrome **"J"**. El otro perfil de Chrome (IL Profumo) **no** administra esta página |
 | Categoría | Empresa de software |
 | Teléfono / WhatsApp | `+57 315 978 0158` |
 | Correo | `hola@salonymas.com` (Cloudflare Email Routing → Gmail, D-180) |
@@ -76,7 +78,7 @@ del proyecto y no solo en el disco: se perdieron una vez por estar sin commitear
 |---|---|---|
 | `marca.svg` / `marca-maskable.svg` | vectorial | El isotipo `S+`, origen de todo lo demás |
 | `perfil.png` | 512 × 512 | Foto de perfil, con margen para el recorte circular |
-| `portada.png` | 1640 × 624 | Portada de Facebook — *"Menos cuaderno, más control de tu salón"*. **Rehecha el 01-oct:** la del 06-sep decía *"co Software para Colombia"* (la trampa de abajo) |
+| `portada.png` | 1640 × 624 | Portada de Facebook — *"Menos cuaderno, más control de tu salón"*. **Rehecha el 01-oct:** la del 06-sep decía *"co Software para Colombia"* (la trampa de abajo). **Subida a Facebook el mismo día** y comprobada recargando la página; Facebook publicó solo el aviso *"ha actualizado su foto de portada"* |
 | `post_instagram_1.png` | 1080 × 1080 | Post de lanzamiento |
 
 Se componen en HTML/CSS con los colores de marca y se exportan a PNG con Chrome
