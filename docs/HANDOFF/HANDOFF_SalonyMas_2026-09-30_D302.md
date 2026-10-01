@@ -1,16 +1,18 @@
-# HANDOFF Salón y Más — 30 de septiembre de 2026 ("El cobro, probado en pantalla", D-289 a D-301)
+# HANDOFF Salón y Más — 30 de septiembre de 2026 ("El cobro, probado en pantalla", D-289 a D-302)
 
-**Bloque documentado:** decisiones **D-289** a **D-301**. Cierra el **turno C** en lo
+**Bloque documentado:** decisiones **D-289** a **D-302**. Cierra el **turno C** en lo
 que se puede cerrar, arranca el **turno D** (9.33 vigente, 9.26 investigado),
 resuelve tres fallos del cobro que aparecieron al probarlo en pantalla (**BY**,
 **BZ** y **CA**) y cierra dos pasos que se habían quedado fuera del turno A:
 **AD** (D-299) y **9.9** (D-300), que destapó **CB**. Y la ficha del Panel enseña
-el precio de la sede y no el acuerdo viejo del negocio (D-301).
+el precio de la sede y no el acuerdo viejo del negocio (D-301). Y **CC**, el mismo
+fallo de CB del lado del salón (D-302).
 
-**Estado:** ✅ Todo aplicado, publicado en `main` y **verificado en pantalla**.
+**Estado:** ✅ Todo aplicado y publicado en `main`. **Verificado en pantalla todo salvo
+CC** (D-302, §3).
 **Nada escrito queda sin aplicar ni sin desplegar.** `flutter analyze` **0/0** ·
-**609 pruebas** · Guardián en verde.
-**Hallazgos: 72 en total, 57 cerrados o decididos, 15 abiertos** (los cuenta el
+**619 pruebas** · Guardián en verde.
+**Hallazgos: 72 en total, 58 cerrados o decididos, 14 abiertos** (los cuenta el
 guardián: `python scripts/verificar_documentos.py`).
 
 > El HANDOFF anterior está en
@@ -38,6 +40,7 @@ fallos que ningún control veía.** Los tres están cerrados y verificados.
 | D-299 | **AD**, la otra mitad: el error de un enlace de correo vencido (`?error=…otp_expired`) se quita de la dirección en cuanto se lee | ✅ verificado 30-sep sin sesión, por el asistente |
 | D-300 | **9.9** (pruebas del Panel en precios y aprobaciones) y **CB**: los tres campos de dinero del Panel leían mal *"15.000"* —el precio de una sede se borraba, el precio al aprobar se perdía, la comisión fija de un aliado quedaba en $15— | ✅ verificado 30-sep |
 | D-301 | La ficha del Panel enseña **"Precio de esta sede"** (pactado o de lista) en vez de *"Acuerdo del negocio: $4.500 — no se cobra"*, que el propietario leyó como vigente. La lista de clientes ya no enseña el precio del negocio | ✅ verificado 30-sep |
+| D-302 | **CC**: en Servicios, Gastos, Inventario, Compras y el valor fijo de comisión, *"35.000"* se guardaba como **$35**. Ahora se lee en pesos, y una prueba recorre todo `lib/` para que ningún campo de dinero vuelva a leerse con `tryParse` | ✅ en código, **falta verlo en pantalla** |
 
 ---
 
@@ -72,6 +75,10 @@ en la ventana **Pago** de la sede de Éxito y siguió en $10.000 pactado; la tar
 tarjeta "1. Esta sede"**, arriba del todo de la ficha; *Cambiar plan o etiqueta* no
 toca precios, a propósito.
 
+**Pendiente, un minuto (CC, D-302):** en **Servicios**, edita un servicio, escribe su
+precio con punto de miles (por ejemplo *35.000*) y pulsa **Guardar**. La lista debe
+enseñar **$35.000**, no $35.
+
 Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anterior):
 
 - **El botón de WhatsApp con un celular guardado sin el 57.** Puede que WhatsApp
@@ -92,7 +99,7 @@ Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anter
 | **k** | **9.26 (Meta)**: ¿se intenta con el RUT o se espera al contador? | Salón y Más tiene RUT pero no matrícula mercantil, y Meta pide el negocio registrado |
 | **l** | **9.33**: dónde guardaste la bitácora, y el visto bueno a la respuesta sobre factura electrónica (§8 del protocolo) | Son las dos preguntas abiertas del protocolo |
 | **m** | **9.16** (contador: matrícula y factura electrónica de los salones), **9.20** (abogado) y **9.24** (entrevistas) | El 9.24 sigue bloqueando la estructura (turno E) |
-| **n** | **CC**: cuándo arreglar el mismo fallo de CB del lado del salón (Servicios, Gastos, Inventario, Compras, anticipos) | *"35.000"* se guarda como $35. Con `CifraEscrita` ya hecho es una línea por campo |
+| **n** | ~~**CC**: cuándo arreglar el mismo fallo de CB del lado del salón~~ **30-sep, decidido: *"arregla CC primero"*.** Cerrado en código (D-302) | — |
 
 ---
 

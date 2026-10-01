@@ -10,6 +10,7 @@ import '../theme/app_theme.dart';
 
 import '../models/enlace_de_reserva.dart';
 import '../models/appointment_policy.dart';
+import '../models/cifra_escrita.dart';
 import '../models/branch_info.dart';
 import '../models/business_hour.dart';
 import '../models/business_settings.dart';
@@ -2368,7 +2369,10 @@ class _ServiceCommissionRowState extends State<_ServiceCommissionRow> {
     try {
       if (hasException) {
         final percentage = num.tryParse(percentageController.text.trim());
-        final fixed = num.tryParse(fixedController.text.trim());
+        // CC (D-302): num.tryParse toma el punto de miles como decimal: "35.000"
+        // se guardaba como 35, sin aviso. CifraEscrita lo lee en pesos, y lo que
+        // no se entiende da null, que es el error que esta pantalla ya enseñaba.
+        final fixed = CifraEscrita.pesos(fixedController.text).valor;
 
         if (percentage == null || percentage < 0 || percentage > 100) {
           setState(() {
@@ -2924,7 +2928,10 @@ class _EditCommissionPolicyDialogState
 
   Future<void> save() async {
     final percentage = num.tryParse(percentageController.text.trim());
-    final fixed = num.tryParse(fixedController.text.trim());
+    // CC (D-302): num.tryParse toma el punto de miles como decimal: "35.000"
+    // se guardaba como 35, sin aviso. CifraEscrita lo lee en pesos, y lo que
+    // no se entiende da null, que es el error que esta pantalla ya enseñaba.
+    final fixed = CifraEscrita.pesos(fixedController.text).valor;
 
     if (percentage == null || percentage < 0 || percentage > 100) {
       setState(() => errorMessage = 'El porcentaje debe ser entre 0 y 100.');

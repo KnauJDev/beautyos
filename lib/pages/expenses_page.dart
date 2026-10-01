@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_theme.dart';
 
 import '../models/expense_management_item.dart';
+import '../models/cifra_escrita.dart';
 import '../services/expenses_service.dart';
 import '../services/my_profile_service.dart';
 import '../widgets/app_widgets.dart';
@@ -544,7 +545,10 @@ class _ExpenseFormDialogState extends State<_ExpenseFormDialog> {
   Future<void> _save() async {
     final category = categoryController.text.trim();
     final description = descriptionController.text.trim();
-    final amount = num.tryParse(amountController.text.trim());
+    // CC (D-302): num.tryParse toma el punto de miles como decimal: "35.000"
+    // se guardaba como 35, sin aviso. CifraEscrita lo lee en pesos, y lo que
+    // no se entiende da null, que es el error que esta pantalla ya enseñaba.
+    final amount = CifraEscrita.pesos(amountController.text).valor;
 
     if (category.isEmpty) {
       setState(() => errorMessage = 'La categoría es obligatoria.');

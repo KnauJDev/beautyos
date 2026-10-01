@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_theme.dart';
 
 import '../models/product_management_item.dart';
+import '../models/cifra_escrita.dart';
 import '../models/purchase_item_summary.dart';
 import '../models/purchase_management_item.dart';
 import '../services/my_profile_service.dart';
@@ -859,7 +860,10 @@ class _PurchaseFormDialogState extends State<_PurchaseFormDialog> {
 
     for (final line in lineItems) {
       final quantity = num.tryParse(line.quantityController.text.trim());
-      final unitCost = num.tryParse(line.unitCostController.text.trim());
+      // CC (D-302): num.tryParse toma el punto de miles como decimal: "35.000"
+      // se guardaba como 35, sin aviso. CifraEscrita lo lee en pesos, y lo que
+      // no se entiende da null, que es el error que esta pantalla ya enseñaba.
+      final unitCost = CifraEscrita.pesos(line.unitCostController.text).valor;
 
       if (line.productId == null) {
         setState(() => errorMessage = 'Selecciona un producto en cada línea.');
@@ -921,7 +925,7 @@ class _PurchaseFormDialogState extends State<_PurchaseFormDialog> {
     num total = 0;
     for (final line in lineItems) {
       final quantity = num.tryParse(line.quantityController.text.trim()) ?? 0;
-      final unitCost = num.tryParse(line.unitCostController.text.trim()) ?? 0;
+      final unitCost = CifraEscrita.pesos(line.unitCostController.text).valor ?? 0;
       total += quantity * unitCost;
     }
     return total;

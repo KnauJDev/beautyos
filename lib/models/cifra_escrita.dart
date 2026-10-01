@@ -34,6 +34,12 @@ class CifraEscrita {
   /// Pesos enteros: `75000`, `75.000`, `$75.000`, `$ 75.000`, `75 000` o
   /// `75,000`. El separador de miles va cada tres cifras y es siempre el mismo;
   /// con centavos (`75000,50`) no se lee, porque en pesos no se pactan.
+  ///
+  /// **Centavos en cero sí** (`75000.0`, `75000.00`, `75.000,00`), y no por
+  /// cortesía (CC, D-302): varias casillas se precargan con `valor.toString()`,
+  /// y fuera del navegador un número decimal se escribe `35000.0`. Rechazarlo
+  /// dejaría sin poder guardar una edición en la que nadie tocó el precio.
+  /// Dos ceros como mucho, así que `75.000` sigue siendo setenta y cinco mil.
   static CifraEscrita pesos(String texto) {
     final limpio = texto.trim();
     if (limpio.isEmpty) return _vacia;
@@ -60,6 +66,8 @@ class CifraEscrita {
     );
   }
 
-  static final _pesos = RegExp(r'^\$?\s*(\d+|\d{1,3}([.,\s])\d{3}(?:\2\d{3})*)$');
+  static final _pesos = RegExp(
+    r'^\$?\s*(\d+|\d{1,3}([.,\s])\d{3}(?:\2\d{3})*)(?:[.,]0{1,2})?$',
+  );
   static final _porcentaje = RegExp(r'^(\d{1,3}(?:[.,]\d{1,2})?)\s*%?$');
 }

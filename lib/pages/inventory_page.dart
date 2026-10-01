@@ -7,6 +7,7 @@ import '../theme/app_theme.dart';
 
 import '../models/inventory_movement_summary.dart';
 import '../models/product_management_item.dart';
+import '../models/cifra_escrita.dart';
 import '../services/inventory_movements_service.dart';
 import '../services/low_stock_alert_service.dart';
 import '../services/products_service.dart';
@@ -712,8 +713,11 @@ class _ProductFormDialogState extends State<_ProductFormDialog> {
     final unit = unitController.text.trim();
     final sku = skuController.text.trim();
     final minimumStock = num.tryParse(minimumStockController.text.trim());
-    final purchasePrice = num.tryParse(purchasePriceController.text.trim());
-    final salePrice = num.tryParse(salePriceController.text.trim());
+    // CC (D-302): num.tryParse toma el punto de miles como decimal: "35.000"
+    // se guardaba como 35, sin aviso. CifraEscrita lo lee en pesos, y lo que
+    // no se entiende da null, que es el error que esta pantalla ya enseñaba.
+    final purchasePrice = CifraEscrita.pesos(purchasePriceController.text).valor;
+    final salePrice = CifraEscrita.pesos(salePriceController.text).valor;
 
     if (name.isEmpty) {
       setState(() => errorMessage = 'El nombre es obligatorio.');

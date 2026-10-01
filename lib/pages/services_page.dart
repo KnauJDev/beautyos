@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_theme.dart';
 
 import '../models/service_management_item.dart';
+import '../models/cifra_escrita.dart';
 import '../services/services_service.dart';
 import '../widgets/app_widgets.dart';
 
@@ -506,7 +507,10 @@ class _ServiceFormDialogState extends State<_ServiceFormDialog> {
     final name = nameController.text.trim();
     final category = categoryController.text.trim();
     final duration = int.tryParse(durationController.text.trim());
-    final price = num.tryParse(priceController.text.trim());
+    // CC (D-302): num.tryParse toma el punto de miles como decimal: "35.000"
+    // se guardaba como 35, sin aviso. CifraEscrita lo lee en pesos, y lo que
+    // no se entiende da null, que es el error que esta pantalla ya enseñaba.
+    final price = CifraEscrita.pesos(priceController.text).valor;
 
     if (name.isEmpty) {
       setState(() => errorMessage = 'El nombre es obligatorio.');
