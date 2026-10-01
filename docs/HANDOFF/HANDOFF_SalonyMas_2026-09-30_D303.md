@@ -10,7 +10,7 @@ fallo de CB del lado del salón (D-302). Y la migración de **9.40 + CD** (D-303
 aplicada por el propietario con el control 237 en **9/9**.
 
 **Estado:** ✅ Todo aplicado y publicado en `main`. **Nada escrito queda sin aplicar
-ni sin desplegar.** Falta ver en pantalla CC (D-302, §3).
+ni sin desplegar.** Todo verificado en pantalla.
 `flutter analyze` **0/0** ·
 **626 pruebas** · Guardián en verde.
 **Hallazgos: 72 en total, 59 cerrados o decididos, 13 abiertos** (los cuenta el
@@ -41,7 +41,7 @@ fallos que ningún control veía.** Los tres están cerrados y verificados.
 | D-299 | **AD**, la otra mitad: el error de un enlace de correo vencido (`?error=…otp_expired`) se quita de la dirección en cuanto se lee | ✅ verificado 30-sep sin sesión, por el asistente |
 | D-300 | **9.9** (pruebas del Panel en precios y aprobaciones) y **CB**: los tres campos de dinero del Panel leían mal *"15.000"* —el precio de una sede se borraba, el precio al aprobar se perdía, la comisión fija de un aliado quedaba en $15— | ✅ verificado 30-sep |
 | D-301 | La ficha del Panel enseña **"Precio de esta sede"** (pactado o de lista) en vez de *"Acuerdo del negocio: $4.500 — no se cobra"*, que el propietario leyó como vigente. La lista de clientes ya no enseña el precio del negocio | ✅ verificado 30-sep |
-| D-302 | **CC**: en Servicios, Gastos, Inventario, Compras y el valor fijo de comisión, *"35.000"* se guardaba como **$35**. Ahora se lee en pesos, y una prueba recorre todo `lib/` para que ningún campo de dinero vuelva a leerse con `tryParse` | ✅ en código, **falta verlo en pantalla** |
+| D-302 | **CC**: en Servicios, Gastos, Inventario, Compras y el valor fijo de comisión, *"35.000"* se guardaba como **$35**. Ahora se lee en pesos, y una prueba recorre todo `lib/` para que ningún campo de dinero vuelva a leerse con `tryParse` | ✅ verificado 30-sep, tras Actualizar |
 | D-303 | **9.40 + CD**: el historial dice de qué sede es cada cobro, y cambiar precio, estado o vencimiento de una sede deja un evento con el antes y el después. Migración desde el texto vivo y control 237 | ✅ aplicada, control 237 en 9/9, vista en pantalla |
 
 ---
@@ -80,12 +80,10 @@ toca precios, a propósito.
 ✅ **D-303, visto por el propietario el 30-sep:** la columna Sede en *5. Historial*, y el
 renglón de un cambio de motivo. Tuvo que recargar para verlo; corregido el mismo día.
 
-**Pendiente, un minuto (CC, D-302)** — el primer intento no vale: la pestaña decía
-*"Hay una versión nueva — Actualizar"* y guardó "120.000" como $120 con la versión
-vieja. **Antes de probar, pulsar Actualizar o abrir una ventana nueva**, y corregir el
-servicio de prueba *Cortada de oreja*, que quedó en $120. La prueba: en **Servicios**,
-edítalo, escribe su precio con punto de miles (*120.000*) y pulsa **Guardar**. La lista
-debe enseñar **$120.000**, no $120.
+✅ **CC, verificado el 30-sep:** el primer intento se hizo en una pestaña con la versión
+vieja (avisaba *"Hay una versión nueva — Actualizar"*) y guardó "120.000" como $120.
+Tras **Actualizar**, "120.000" quedó en **$120.000**. **La lección:** si aparece ese
+aviso, se pulsa **Actualizar** antes de probar nada.
 
 Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anterior):
 
@@ -194,7 +192,6 @@ Panel) destapó CB: los campos de dinero leían mal "15.000"; cerrado, y
 anotado CC, el mismo fallo del lado del salón.
 
 LO PRIMERO
-Pregúntale si repitió la prueba de CC tras pulsar Actualizar (§3).
 Luego, la sección 4 del HANDOFF: casi todo lo pendiente es decisión suya.
 Pidió explorar el layout (I-19): pregúntale qué quiere ver. El Plan lo
 pone después del 9.25, así que explorar sí, construir no.
