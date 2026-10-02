@@ -19,7 +19,11 @@ class MensajeDeAuth {
   static String enEspanol(AuthException error) {
     switch (error.code) {
       case 'otp_expired':
-        return 'Ese código ya venció o no es válido. Pide otro aquí abajo.';
+        // CF (D-309): Supabase da este mismo error para un código vencido,
+        // uno equivocado y uno VIEJO. El 02-oct el equipo del primer cliente
+        // real escribió el del primer correo cuando ya se había pedido otro.
+        return 'Ese código ya no sirve. Si te llegaron varios correos, usa el '
+            'del más reciente, o pide otro aquí abajo.';
       case 'invalid_credentials':
         return 'El correo o la contraseña no coinciden.';
       case 'email_not_confirmed':

@@ -155,7 +155,8 @@ Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anter
    dice una frase humana. Falta verlo en el celular con la sesión abierta.
 7. 🔴 **PRIMER CLIENTE REAL (02-oct): David Rojas.** Implementación en persona: usuario, negocio,
    servicios, estilistas, enlace público y agenda funcionaron; **el estilista invitado no pudo entrar**
-   (**CF**, código "vencido o no válido"; lectura escrita, sin correr). David quiere **solo agenda**
+   (**CF**: se escribió el código de un correo viejo; **D-309** lo arregla en código, falta la
+   prueba completa en pantalla). David quiere **solo agenda**
    (sin dinero, cobros ni comisiones), **citas en línea ya confirmadas**, tomar datos rápido a quien
    llega sin cita, **invitar a volver** a quien ya atendió, y sus colores (blanco, dorado, rosado,
    negro). **D-308, el plan de David (0 a 6):** 0 que su estilista entre (CF) · 1 interruptores por

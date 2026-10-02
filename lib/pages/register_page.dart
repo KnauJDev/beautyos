@@ -151,7 +151,9 @@ class _RegisterPageState extends State<RegisterPage> {
         type: OtpType.signup,
       );
 
-      setState(() => mensajeDelCodigo = 'Te enviamos un código nuevo.');
+      setState(() => mensajeDelCodigo =
+          'Te enviamos un código nuevo. El anterior ya no sirve: '
+          'usa el del correo más reciente.');
     } on AuthException catch (error) {
       setState(() => errorMessage = MensajeDeAuth.enEspanol(error));
     } catch (_) {
@@ -305,7 +307,10 @@ class _RegisterPageState extends State<RegisterPage> {
                     if (correoPendienteDeConfirmar != null) ...[
                       Text(
                         'Te enviamos un código a\n'
-                        '$correoPendienteDeConfirmar',
+                        '$correoPendienteDeConfirmar\n'
+                        // CF (D-309): pedir otro anula este.
+                        'Si pides otro, este deja de servir: usa siempre '
+                        'el del correo más reciente.',
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontSize: 14,

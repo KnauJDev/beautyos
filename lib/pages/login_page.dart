@@ -89,20 +89,23 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  /// Cambia la pantalla al modo "escribe tu código" y manda uno nuevo.
+  /// Cambia la pantalla al modo "escribe tu código". **No manda uno nuevo.**
   ///
-  /// El código viejo puede seguir vivo, pero pedir otro cuesta nada y evita
-  /// que alguien pelee con uno caducado sin saberlo.
+  /// Hasta el 02-oct sí lo mandaba, sin avisar (AZ, 19-sep): "pedir otro
+  /// cuesta nada". Costaba: cada código nuevo anula el anterior, y la persona
+  /// escribía el que ya tenía en el correo. Así se quedó fuera el equipo del
+  /// primer cliente real (CF, D-309). Ahora escribe el que tiene, y si no lo
+  /// encuentra pide uno con el botón, sabiendo que el anterior deja de servir.
   Future<void> pasarAConfirmarPorCodigo({required bool avisar}) async {
     setState(() {
       pidiendoCodigo = true;
       errorMessage = null;
       mensajeDelCodigo = avisar
-          ? 'Tu correo todavía no está confirmado. Te enviamos un código.'
+          ? 'Tu correo todavía no está confirmado. Escribe el código que te '
+              'llegó por correo; si no lo encuentras, pide uno nuevo aquí abajo.'
           : null;
       codeController.clear();
     });
-    if (avisar) await reenviarCodigo(silencioso: true);
   }
 
   Future<void> confirmarCodigo() async {
@@ -168,7 +171,9 @@ class _LoginPageState extends State<LoginPage> {
         type: OtpType.signup,
       );
       if (!silencioso) {
-        setState(() => mensajeDelCodigo = 'Te enviamos un código nuevo.');
+        setState(() => mensajeDelCodigo =
+            'Te enviamos un código nuevo. El anterior ya'
+            ' no sirve: usa el del correo más reciente.');
       }
     } on AuthException catch (error) {
       setState(() => errorMessage = MensajeDeAuth.enEspanol(error));
