@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../theme/app_theme.dart';
 
 import '../models/public_review_ticket.dart';
+import '../models/mensaje_para_la_clienta.dart';
 import '../services/public_review_service.dart';
 
 /// Pagina publica de resena (sin sesion), D-058 / sub-bloque 1 de
@@ -61,7 +61,7 @@ class _PublicReviewPageState extends State<PublicReviewPage> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        loadError = _friendlyError(error);
+        loadError = mensajeParaLaClienta(error);
         isLoading = false;
       });
     }
@@ -99,7 +99,7 @@ class _PublicReviewPageState extends State<PublicReviewPage> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        submitError = _friendlyError(error);
+        submitError = mensajeParaLaClienta(error);
         isSubmitting = false;
       });
     }
@@ -344,11 +344,4 @@ class _MessageCard extends StatelessWidget {
       ),
     );
   }
-}
-
-String _friendlyError(Object error) {
-  if (error is PostgrestException) {
-    return error.message;
-  }
-  return error.toString();
 }

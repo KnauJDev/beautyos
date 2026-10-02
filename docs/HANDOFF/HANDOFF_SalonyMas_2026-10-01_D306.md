@@ -151,7 +151,9 @@ Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anter
 5. **CD**: confirmado en el texto vivo y cerrado con la migración de D-303.
 6. 🔴 **CE** (nuevo, 02-oct): con una sesión abierta no se puede reservar en la página pública
    ("permission denied for function public_get_branch_booking_info"): las seis funciones públicas
-   solo se conceden a `anon`. Arreglo propuesto, pendiente del visto bueno del propietario.
+   solo se concedían a `anon`. **D-307: migración escrita y SIN APLICAR**
+   (`20261002100000_la_pagina_publica_tambien_con_sesion_ce.sql`, control **238**), y la página ya
+   dice una frase humana. Falta que el propietario haga respaldo, migración y control (3/3).
 7. **AI**: la mitad honesta ya estaba escrita (el repositorio dice que no contiene
    el esquema entero); la correcta, volcarlo a una migración, va en el turno E.
 

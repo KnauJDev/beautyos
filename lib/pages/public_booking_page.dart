@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
 
 import '../models/celular_colombiano.dart';
+import '../models/mensaje_para_la_clienta.dart';
 import '../models/available_appointment_slot.dart';
 import '../models/public_booking_result.dart';
 import '../models/public_branch_info.dart';
@@ -128,7 +128,7 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        loadError = _friendlyError(error);
+        loadError = mensajeParaLaClienta(error);
         isLoading = false;
       });
     }
@@ -267,7 +267,7 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'No se pudo cargar la disponibilidad: ${_friendlyError(error)}',
+            'No se pudo cargar la disponibilidad. ${mensajeParaLaClienta(error)}',
           ),
         ),
       );
@@ -348,7 +348,7 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
       });
     } catch (error) {
       if (!mounted) return;
-      final mensaje = _friendlyError(error);
+      final mensaje = mensajeParaLaClienta(error);
       // El servidor usa el mismo texto para "ya pasó" y para "te la quitaron"
       // (AX). Aquí se distinguen por la hora, y en los dos casos se recarga la
       // lista: seguir ofreciendo una hora que no se puede reservar es invitar
@@ -858,11 +858,4 @@ class _BookingSuccessCard extends StatelessWidget {
       ),
     );
   }
-}
-
-String _friendlyError(Object error) {
-  if (error is PostgrestException) {
-    return error.message;
-  }
-  return error.toString();
 }
