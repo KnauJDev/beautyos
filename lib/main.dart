@@ -420,6 +420,11 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
     // sobre `modules` en sus callbacks de navegación (_irAModulo), y Dart no
     // permite que una variable se referencie dentro de su propio
     // inicializador aunque sea desde un closure que se ejecuta después.
+    // D-310: con la caja apagada para este negocio, la agenda no ofrece abrir
+    // el ticket ni cobrar. Y no solo por limpieza: abrir el ticket salta al
+    // modulo SIGUIENTE a la agenda, que sin Tickets seria Clientes.
+    final cajaOculta =
+        entitlements.apagadoPorLaPlataforma(ClaveDeCapacidad.cajaYCobros);
     late final List<BeautyModule> modules;
     modules = <BeautyModule>[
       // ======================================================================
@@ -439,14 +444,18 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           // y son adyacentes en esta lista: Tickets siempre queda en el
           // indice inmediatamente siguiente al de Agenda, para cualquier
           // rol que vea Agenda (D-163).
-          onOpenTicket: (ticketId) {
-            setState(() => _pendingOpenTicketId = ticketId);
-            _irAIndice(selectedIndex + 1);
-          },
-          onCollectTicket: (ticketId) {
-            setState(() => _pendingCollectTicketId = ticketId);
-            _irAIndice(selectedIndex + 1);
-          },
+          onOpenTicket: cajaOculta
+              ? null
+              : (ticketId) {
+                  setState(() => _pendingOpenTicketId = ticketId);
+                  _irAIndice(selectedIndex + 1);
+                },
+          onCollectTicket: cajaOculta
+              ? null
+              : (ticketId) {
+                  setState(() => _pendingCollectTicketId = ticketId);
+                  _irAIndice(selectedIndex + 1);
+                },
         ),
         allowedRoles: const <String>{'owner', 'admin', 'assistant'},
       ),
@@ -456,6 +465,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           Icons.confirmation_number_outlined,
           category: BeautyCategory.operacion,
         ),
+        ocultableCon: ClaveDeCapacidad.cajaYCobros,
         page: TicketsPage(
           key: ValueKey('tickets-${branch.branchId}'),
           branchId: branch.branchId,
@@ -504,6 +514,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           Icons.photo_library_outlined,
           category: BeautyCategory.portafolio,
         ),
+        ocultableCon: ClaveDeCapacidad.portafolio,
         page: MyStylistWorkPhotosPage(
           key: ValueKey('my-photos-${branch.branchId}'),
           branchId: branch.branchId,
@@ -516,6 +527,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           Icons.star_outline,
           category: BeautyCategory.portafolio,
         ),
+        ocultableCon: ClaveDeCapacidad.resenas,
         page: MyStylistReviewsPage(
           key: ValueKey('my-reviews-${branch.branchId}'),
           branchId: branch.branchId,
@@ -528,6 +540,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           Icons.payments_outlined,
           category: BeautyCategory.finanzas,
         ),
+        ocultableCon: ClaveDeCapacidad.comisiones,
         page: MyCommissionSummaryPage(
           key: ValueKey('my-commissions-${branch.branchId}'),
           branchId: branch.branchId,
@@ -544,6 +557,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           Icons.dashboard_outlined,
           category: BeautyCategory.finanzas,
         ),
+        ocultableCon: ClaveDeCapacidad.reportesFinancieros,
         page: DashboardPage(
           // Como los otros 17 modulos (D-205). Desde D-201 el modulo visible
           // ya se remonta al cambiar de sede --el contador de visitas se
@@ -652,6 +666,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           Icons.photo_library_outlined,
           category: BeautyCategory.portafolio,
         ),
+        ocultableCon: ClaveDeCapacidad.portafolio,
         page: FotosTrabajosPage(
           key: ValueKey('work-photos-${branch.branchId}'),
           branchId: branch.branchId,
@@ -664,6 +679,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           Icons.rate_review_outlined,
           category: BeautyCategory.portafolio,
         ),
+        ocultableCon: ClaveDeCapacidad.resenas,
         page: ResenasPage(
           key: ValueKey('reviews-${branch.branchId}'),
           branchId: branch.branchId,
@@ -678,6 +694,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         ),
         // El blog es del negocio completo, no de una sede (paso 6.6,
         // D-171) -- por eso recibe tenantId y no branchId.
+        ocultableCon: ClaveDeCapacidad.blog,
         page: BlogPage(
           key: ValueKey('blog-${branch.tenantId}'),
           tenantId: branch.tenantId,
@@ -754,6 +771,14 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
 
     return modules
         .where((module) => module.canAccess(role))
+        // D-310: lo que la plataforma le apago a este negocio desaparece, en
+        // el menu de la duena y en la barra de sus estilistas. Lo que su plan
+        // no trae sigue saliendo con candado (D-184): eso se decide abajo.
+        .where(
+          (module) => !entitlements.apagadoPorLaPlataforma(
+            module.ocultableCon ?? module.requiredFeature,
+          ),
+        )
         .toList(growable: false);
   }
 
@@ -1292,6 +1317,7 @@ class BeautyModule {
     required this.page,
     required this.allowedRoles,
     this.requiredFeature,
+    this.ocultableCon,
     this.lockExplicacion,
     this.recargaAlEntrar = true,
   });
@@ -1307,6 +1333,13 @@ class BeautyModule {
   /// de las RPC del módulo: el backend es quien manda, esto solo se adelanta
   /// para explicar en vez de dejar que reviente.
   final String? requiredFeature;
+
+  /// Clave de `public.features` con la que la plataforma puede APAGARLE este
+  /// módulo a un negocio desde el Panel (D-310). Apagado, desaparece; no sale
+  /// con candado. Si es `null`, se usa [requiredFeature]. A diferencia de
+  /// aquel, no pone candado cuando el plan no lo trae: estos módulos los
+  /// traían todos los planes, y no deben cambiar para nadie más.
+  final String? ocultableCon;
 
   /// Qué hace el módulo, en el idioma del salón, para la pantalla de candado.
   final String? lockExplicacion;

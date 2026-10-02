@@ -15,6 +15,7 @@ class TenantEntitlements {
     required this.porClave,
     required this.limitesPorClave,
     required this.consultado,
+    this.fuentesPorClave = const {},
   });
 
   /// Sin datos todavía, o no aplica (un cliente final, o el dueño de la
@@ -24,10 +25,17 @@ class TenantEntitlements {
   const TenantEntitlements.desconocido()
     : porClave = const {},
       limitesPorClave = const {},
-      consultado = false;
+      consultado = false,
+      fuentesPorClave = const {};
 
   final Map<String, bool> porClave;
   final Map<String, int?> limitesPorClave;
+
+  /// De dónde sale cada decisión, tal como la devuelve el servidor: `plan`,
+  /// `override` (una excepción puesta desde el Panel), `no_incluida_en_plan`…
+  /// D-310: con esto se distingue lo que el plan no trae (candado, D-184) de lo
+  /// que la plataforma le apagó a este negocio (se esconde).
+  final Map<String, String> fuentesPorClave;
 
   /// `true` solo si la consulta se hizo y respondió. Si es `false`, no se sabe
   /// nada y no se bloquea nada.
@@ -36,6 +44,7 @@ class TenantEntitlements {
   factory TenantEntitlements.fromList(List<dynamic> filas) {
     final porClave = <String, bool>{};
     final limites = <String, int?>{};
+    final fuentes = <String, String>{};
 
     for (final fila in filas) {
       if (fila is! Map) continue;
@@ -44,6 +53,8 @@ class TenantEntitlements {
       if (clave == null || clave.isEmpty) continue;
 
       porClave[clave] = mapa['entitled'] == true;
+      final fuente = mapa['source']?.toString();
+      if (fuente != null) fuentes[clave] = fuente;
 
       final limite = mapa['limit_value'];
       limites[clave] = limite is int
@@ -55,6 +66,7 @@ class TenantEntitlements {
       porClave: porClave,
       limitesPorClave: limites,
       consultado: true,
+      fuentesPorClave: fuentes,
     );
   }
 
@@ -82,6 +94,21 @@ class TenantEntitlements {
 
   int? limiteDe(String clave) => limitesPorClave[clave];
 
+  /// ¿La plataforma le APAGÓ esta capacidad a este negocio desde el Panel?
+  /// (D-310, paso 1 del plan del primer cliente real, D-308.)
+  ///
+  /// Es distinto de que el plan no la traiga. Lo que el plan no trae se sigue
+  /// viendo con candado, para no matar la venta (D-184). Lo que el propietario
+  /// apagó a propósito —a David, que solo quiere agenda— **desaparece**: un
+  /// candado ahí sería un estorbo que nadie va a comprar.
+  ///
+  /// Falla en `false` (se ve) igual que [permite] falla en `true`: si la
+  /// consulta no respondió, no se esconde nada.
+  bool apagadoPorLaPlataforma(String? clave) {
+    if (clave == null || clave.isEmpty || !consultado) return false;
+    return porClave[clave] == false && fuentesPorClave[clave] == 'override';
+  }
+
   /// Las capacidades que el plan actual NO cubre, para poder decir en la
   /// pantalla de mejora qué se gana al subir.
   List<String> get bloqueadas => porClave.entries
@@ -101,6 +128,12 @@ abstract final class ClaveDeCapacidad {
   static const portafolio = 'portfolio';
   static const resenas = 'reviews';
   static const publicacionRedes = 'social_publishing';
+
+  /// D-310: nacen para poder apagárselas a un negocio desde el Panel. Entran
+  /// encendidas en todos los planes (`20261002180000`).
+  static const cajaYCobros = 'cash_register';
+  static const comisiones = 'commissions';
+  static const blog = 'blog';
 
   /// Límites numéricos, no módulos: se leen con `limiteDe`, no con `permite`.
   static const sedes = 'branches';

@@ -14,6 +14,7 @@ import '../models/tenant_subscription_history_entry.dart';
 import '../models/ticket_board.dart' show formatCOP;
 import '../models/tipo_de_negocio.dart';
 import '../services/epayco_checkout_service.dart';
+import '../services/monitoreo_service.dart';
 import '../services/platform_service.dart';
 import '../widgets/dialogo_datos_de_sede.dart';
 import '../widgets/security_settings_dialog.dart';
@@ -3559,6 +3560,13 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                                   )
                                 : null,
                           ),
+                        const SizedBox(height: 12),
+                        // D-310: lo que ve este negocio (paso 1, D-308).
+                        _ModulosDelNegocio(
+                          tenantId: tenant.tenantId,
+                          puedeCambiar: isOwner,
+                          platformService: platformService,
+                        ),
                       ],
                     ),
 
@@ -3988,6 +3996,189 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
 // ============================================================================
 // TARJETA 5: LÍMITES Y EXCEPCIONES DEL SALÓN (D-172, paso 7.2)
 // ============================================================================
+/// Los interruptores de módulos de un negocio (D-310, paso 1 del plan del
+/// primer cliente real, D-308).
+///
+/// **Para qué.** David Rojas atiende él mismo su negocio y solo quiere agenda:
+/// ni caja, ni finanzas, ni comisiones, ni vitrina. El propietario quiere poder
+/// venderle a cada negocio la solución que necesita. Aquí apaga lo que no usa,
+/// y eso **desaparece** de su app (el menú de la dueña y la barra de sus
+/// estilistas). No sale con candado: eso queda para lo que el plan no trae.
+///
+/// **Cómo, sin nada nuevo en el servidor.** Apagar es poner una excepción con
+/// `enabled = false` (`platform_set_tenant_feature_override`, que deja su
+/// evento en el historial); encender es cerrar esa excepción
+/// (`platform_delete_tenant_feature_override`, que no borra: le pone fin).
+/// La excepción vigente más reciente manda, igual que en el servidor.
+class _ModulosDelNegocio extends StatefulWidget {
+  const _ModulosDelNegocio({
+    required this.tenantId,
+    required this.puedeCambiar,
+    required this.platformService,
+  });
+
+  final String tenantId;
+
+  /// Solo el `platform_owner` puede poner o quitar excepciones (el servidor
+  /// lo exige); los demás roles de plataforma ven los interruptores quietos.
+  final bool puedeCambiar;
+  final PlatformService platformService;
+
+  /// Clave, nombre y qué esconde, en el orden en que los lee el propietario.
+  /// Gastos va con inventario porque así lo exige el servidor: la capacidad
+  /// se llama "Inventario, compras y gastos".
+  static const modulos = <(String, String, String)>[
+    ('cash_register', 'Caja y cobros', 'Tickets & Caja, y cobrar desde la agenda'),
+    ('financial_reports', 'Finanzas', 'Dashboard y Reportes'),
+    ('inventory', 'Inventario, compras y gastos', 'Inventario, Compras y Gastos'),
+    ('commissions', 'Comisiones', 'El panel financiero de cada estilista'),
+    ('portfolio', 'Fotos de trabajos', 'Fotos de trabajos y Mis fotos'),
+    ('reviews', 'Reseñas', 'Reseñas y Mis reseñas'),
+    ('blog', 'Blog', 'Blog'),
+  ];
+
+  @override
+  State<_ModulosDelNegocio> createState() => _ModulosDelNegocioState();
+}
+
+class _ModulosDelNegocioState extends State<_ModulosDelNegocio> {
+  late Future<List<PlatformTenantFeatureOverride>> _future;
+  String? _guardando;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = widget.platformService.getTenantFeatureOverrides(widget.tenantId);
+  }
+
+  /// Las excepciones vigentes que APAGAN esta clave. El servidor las devuelve
+  /// de la más reciente a la más vieja; si la más reciente apaga, está apagado.
+  List<PlatformTenantFeatureOverride> _apagadoPor(
+    List<PlatformTenantFeatureOverride> lista,
+    String clave,
+  ) {
+    final vigentes = lista
+        .where((o) => o.featureKey == clave && o.isActive)
+        .toList(growable: false);
+    if (vigentes.isEmpty || vigentes.first.enabled) return const [];
+    return vigentes.where((o) => !o.enabled).toList(growable: false);
+  }
+
+  Future<void> _cambiar(
+    String clave,
+    String nombre,
+    bool encender,
+    List<PlatformTenantFeatureOverride> apagadoPor,
+  ) async {
+    setState(() => _guardando = clave);
+    try {
+      if (encender) {
+        for (final o in apagadoPor) {
+          await widget.platformService.deleteTenantFeatureOverride(o.overrideId);
+        }
+      } else {
+        await widget.platformService.setTenantFeatureOverride(
+          tenantId: widget.tenantId,
+          featureKey: clave,
+          enabled: false,
+          reason: 'Apagado desde el Panel: este negocio no usa $nombre.',
+        );
+      }
+      if (!mounted) return;
+      setState(() {
+        _guardando = null;
+        _future = widget.platformService.getTenantFeatureOverrides(
+          widget.tenantId,
+        );
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            encender
+                ? '$nombre, encendido. El negocio lo verá al volver a abrir su app.'
+                : '$nombre, apagado. Desaparece de su app al volver a abrirla.',
+          ),
+        ),
+      );
+    } catch (error, st) {
+      MonitoreoService.reportarError(
+        error,
+        st,
+        motivo: 'Cambiar un módulo del negocio',
+      );
+      if (!mounted) return;
+      setState(() => _guardando = null);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo cambiar $nombre. Intenta de nuevo.')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<PlatformTenantFeatureOverride>>(
+      future: _future,
+      builder: (context, snapshot) {
+        final cargando = snapshot.connectionState == ConnectionState.waiting;
+        final lista = snapshot.data ?? const <PlatformTenantFeatureOverride>[];
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Módulos que ve este negocio',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 2),
+            const Text(
+              'Lo que apagues desaparece de su app y de la de sus estilistas. '
+              'La agenda, los clientes, los servicios, el equipo y los ajustes '
+              'siempre se ven.',
+              style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 6),
+            if (snapshot.hasError)
+              const Text(
+                'No pudimos consultar los módulos de este negocio ahora mismo.',
+                style: TextStyle(fontSize: 12, color: AppColors.danger),
+              )
+            else
+              for (final (clave, nombre, esconde) in _ModulosDelNegocio.modulos)
+                Builder(
+                  builder: (context) {
+                    final apagadoPor = _apagadoPor(lista, clave);
+                    return SwitchListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      value: apagadoPor.isEmpty,
+                      title: Text(
+                        nombre,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      subtitle: Text(
+                        esconde,
+                        style: const TextStyle(fontSize: 11.5),
+                      ),
+                      onChanged:
+                          (!widget.puedeCambiar || cargando || _guardando != null)
+                          ? null
+                          : (valor) => _cambiar(clave, nombre, valor, apagadoPor),
+                    );
+                  },
+                ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 class _TenantOverridesCard extends StatefulWidget {
   const _TenantOverridesCard({
     required this.tenant,
@@ -4298,7 +4489,11 @@ class _TenantOverridesCardState extends State<_TenantOverridesCard> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '${_featureLabel(o.featureKey)}: hasta ${o.limitValue ?? "sin límite"}',
+                                  // D-310: una excepción que APAGA un módulo
+                                  // no es un límite; decía "hasta sin límite".
+                                  o.enabled
+                                      ? '${_featureLabel(o.featureKey)}: hasta ${o.limitValue ?? "sin límite"}'
+                                      : '${o.featureName}: apagado',
                                   style: const TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w700,
