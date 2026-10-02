@@ -153,7 +153,13 @@ Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anter
    ("permission denied for function public_get_branch_booking_info"): las seis funciones públicas
    solo se concedían a `anon`. **D-307: aplicada el 02-oct, control 238 en 3/3**, y la página ya
    dice una frase humana. Falta verlo en el celular con la sesión abierta.
-7. **AI**: la mitad honesta ya estaba escrita (el repositorio dice que no contiene
+7. 🔴 **PRIMER CLIENTE REAL (02-oct): David Rojas.** Implementación en persona: usuario, negocio,
+   servicios, estilistas, enlace público y agenda funcionaron; **el estilista invitado no pudo entrar**
+   (**CF**, código "vencido o no válido"; lectura escrita, sin correr). David quiere **solo agenda**
+   (sin dinero, cobros ni comisiones), **citas en línea ya confirmadas**, tomar datos rápido a quien
+   llega sin cita, **invitar a volver** a quien ya atendió, y sus colores (blanco, dorado, rosado,
+   negro). Contrato propuesto: **$30.000** (D-222 decía 50.000 para socios de diseño: preguntar).
+8. **AI**: la mitad honesta ya estaba escrita (el repositorio dice que no contiene
    el esquema entero); la correcta, volcarlo a una migración, va en el turno E.
 
 ---
