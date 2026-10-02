@@ -1,6 +1,6 @@
-# HANDOFF Salón y Más — 30 de septiembre y 1 de octubre de 2026 ("El cobro, probado en pantalla", y las redes, D-289 a D-305)
+# HANDOFF Salón y Más — 30 de septiembre y 1 de octubre de 2026 ("El cobro, probado en pantalla", y las redes, D-289 a D-306)
 
-**Bloque documentado:** decisiones **D-289** a **D-305**. Cierra el **turno C** en lo
+**Bloque documentado:** decisiones **D-289** a **D-306**. Cierra el **turno C** en lo
 que se puede cerrar, arranca el **turno D** (9.33 vigente, 9.26 investigado),
 resuelve tres fallos del cobro que aparecieron al probarlo en pantalla (**BY**,
 **BZ** y **CA**) y cierra dos pasos que se habían quedado fuera del turno A:
@@ -9,7 +9,7 @@ el precio de la sede y no el acuerdo viejo del negocio (D-301). Y **CC**, el mis
 fallo de CB del lado del salón (D-302). Y la migración de **9.40 + CD** (D-303),
 aplicada por el propietario con el control 237 en **9/9**. El 01-oct, las decisiones
 de layout (D-304) y el arranque del prototipo de los cinco lugares.
-**Y en un chat aparte, las redes (D-305):** la portada de Facebook decía *"co"*; se rehízo, se subió y
+**Y en un chat aparte, las redes (D-305, D-306):** la portada de Facebook decía *"co"*; se rehízo, se subió y
 sus plantillas viven ya en el repositorio. Ese chat sigue con el paso nuevo **9.57**.
 
 **Estado:** ✅ Todo aplicado y publicado en `main`. **Nada escrito queda sin aplicar
@@ -48,6 +48,7 @@ fallos que ningún control veía.** Los tres están cerrados y verificados.
 | D-303 | **9.40 + CD**: el historial dice de qué sede es cada cobro, y cambiar precio, estado o vencimiento de una sede deja un evento con el antes y el después. Migración desde el texto vivo y control 237 | ✅ aplicada, control 237 en 9/9, vista en pantalla |
 | D-304 | **Layout:** barra abajo con los 5 lugares en el celular; **se reactivan las alertas operativas** (D-008); primero un **prototipo navegable**, aparte de la app, para las entrevistas del 9.24. Comparado con una referencia (*AuraEstética*): sin *funcionar sin internet* (choca con la protección de las reservas) | ✍️ decidido; prototipo en curso |
 | D-305 | **Las redes, en un chat aparte:** estilo morado de siempre; la portada de Facebook sin *"co"*, rehecha midiendo el PNG y subida por el asistente desde el perfil "J" de Chrome; plantillas en `marca/plantillas/`; nada público sin el sí del propietario; el post de Instagram con *"sin pagar de más"* se deja | ✅ portada subida y comprobada recargando |
+| D-306 | **Las redes buscan primero entrevistas (9.24), no ventas.** Nadie respondió a la convocatoria del 07-sep. Contacto directo con un mensaje corto, sin precio y sin el nombre del propietario; su historia, en la versión de volver a empezar, en una publicación fija | ✅ mensaje aprobado; la publicación, en curso |
 
 ---
 
@@ -132,7 +133,7 @@ Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anter
 | **l** | **9.33**: dónde guardaste la bitácora, y el visto bueno a la respuesta sobre factura electrónica (§8 del protocolo) | Son las dos preguntas abiertas del protocolo |
 | **m** | **9.16** (contador: matrícula y factura electrónica de los salones), **9.20** (abogado) y **9.24** (entrevistas) | El 9.24 sigue bloqueando la estructura (turno E) |
 | **n** | ~~**CC**: cuándo arreglar el mismo fallo de CB del lado del salón~~ **30-sep, decidido: *"arregla CC primero"*.** Cerrado en código (D-302) | — |
-| **o** | **Las redes (chat de D-305):** ¿respondió alguien a la convocatoria del 07-sep? ¿las redes deben conseguir también salones para las entrevistas del 9.24? ¿solo Facebook e Instagram, o también TikTok o estados de WhatsApp? ¿se hizo el 9.23? | Deciden de qué hablan las piezas del 9.57. Preguntadas el 01-oct, sin respuesta todavía |
+| **o** | **Las redes (chat de D-305):** ¿respondió alguien a la convocatoria del 07-sep? **01-oct: no, nadie** (4 seguidores en Facebook, 1 en Instagram). ¿las redes deben conseguir también salones para las entrevistas del 9.24? **01-oct: sí, y es lo primero (D-306).** ¿solo Facebook e Instagram, o también TikTok o estados de WhatsApp? ¿se hizo el 9.23? | Las dos últimas, sin respuesta todavía |
 
 ---
 
@@ -214,8 +215,10 @@ antes de proponer nada.
 **Las redes van en su propio chat y en paralelo (D-305, paso 9.57).** Hecho el 01-oct: la portada de
 Facebook sin *"co"*, subida y comprobada; y las **plantillas aprobadas**: post vertical (1080 × 1440,
 porque la cuadrícula de Instagram es 3:4), historia (1080 × 1920) y carrusel, con `marca.css` y
-`exportar.ps1`. Sigue un calendario corto. Antes del calendario hacen falta las respuestas de la
-decisión **o** del §4. El acceso es la extensión de Claude en el perfil **"J"** de Chrome: con dos
+`exportar.ps1`. **Y D-306:** nadie respondió a la convocatoria del 07-sep, así que lo primero son
+entrevistas por contacto directo, con el mensaje aprobado de `REDES_SOCIALES.md` §7 (sin precio y sin el
+nombre del propietario). Sigue la publicación fija *"Por qué nació Salón y Más"*, con la historia del
+propietario en su versión de volver a empezar. **Sus detalles personales no se escriben en el repositorio.** El acceso es la extensión de Claude en el perfil **"J"** de Chrome: con dos
 Chrome conectados, comprobar en Facebook qué cuenta está abierta antes de tocar nada.
 
 ---
@@ -223,7 +226,7 @@ Chrome conectados, comprobar en Facebook qué cuenta está abierta antes de toca
 ## 8. Prompt para retomar
 
 ```
-Lee el HANDOFF más reciente en docs/HANDOFF/ (D-289 a D-305).
+Lee el HANDOFF más reciente en docs/HANDOFF/ (D-289 a D-306).
 
 Antes de nada: la REGLA 25 del PLAN_MAESTRO §8. Afirmar exige prueba; lo
 aprobado no se cambia sin avisar; el producto se pregunta aunque haya

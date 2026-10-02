@@ -109,6 +109,9 @@ Lo que se prometió **en público**, y por tanto hay que cumplir:
 - **Acompañamiento uno a uno.**
 - **Tarifa preferencial congelada de por vida**, a cambio de contar cómo les va.
 
+> **Respuesta, al 01-oct: ninguna.** Ni comentarios, ni mensajes, ni WhatsApp en 24 días, según el
+> propietario. La página de Facebook tiene 4 seguidores y la cuenta de Instagram, 1 (vistos ese día).
+
 > 🔴 **La cifra de esa tarifa no está decidida.** El anuncio dice "preferencial"
 > sin decir cuánto, y la lista es de 150.000 por sede (D-189). Hay diez personas
 > que pueden escribir mañana esperando un descuento que nadie ha fijado.
@@ -127,3 +130,29 @@ Lo que se prometió **en público**, y por tanto hay que cumplir:
 - **No cambiar `@salon_y_mas`.** Ya está indexado y coincide con la marca.
 - **No borrar los PNG de `docs/00_producto/marca/`.** Son la base de las piezas
   futuras.
+
+---
+
+## 7. El mensaje para pedir entrevistas (aprobado el 01-oct, D-306)
+
+Para escribir **nosotros** a un salón, uno por uno (Instagram, WhatsApp). El de cuando ellos
+escriben primero está en `PROTOCOLO_DE_BIENVENIDA_SOCIOS_DE_DISENO.md` §2.
+
+> Hola, ¿cómo estás? Te escribo de **Salón y Más**. Soy ingeniero industrial y trabajé varios años en
+> almacenes, desde colaborador de tienda hasta orientador de operaciones. Cuando esa empresa cerró,
+> decidí crear algo propio: una app colombiana para administrar salones de belleza, sencilla y a buen precio.
+>
+> La estoy afinando con los primeros salones, y antes de seguir quiero aprender de quienes conocen el
+> oficio de verdad. ¿Me regalarías **20 minutos** para contarme cómo manejas tu salón en el día a día?
+> No te voy a vender nada en esa charla: solo quiero escucharte.
+>
+> A los primeros que nos ayuden les daremos condiciones especiales para siempre.
+>
+> ¿Te queda bien esta semana, en persona o por videollamada?
+
+- **Si se lo escribes a un salón que viste en Instagram**, una línea al principio con algo concreto
+  de ese salón. Personalizado se contesta mucho más.
+- **Sin precio y sin el nombre del propietario**, a propósito (D-306). La cifra de los socios de diseño
+  ($50.000, D-222) se dice **al final de la entrevista**, con el mensaje del protocolo §2.
+- **En la entrevista manda el guion** (`03_referencias/GUION_ENTREVISTA_SALONES_9.24.txt`): no enseñar
+  la app, preguntar por la última vez y anotar sus palabras exactas.
