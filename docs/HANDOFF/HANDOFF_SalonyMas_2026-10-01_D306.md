@@ -158,7 +158,10 @@ Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anter
    (**CF**, código "vencido o no válido"; lectura escrita, sin correr). David quiere **solo agenda**
    (sin dinero, cobros ni comisiones), **citas en línea ya confirmadas**, tomar datos rápido a quien
    llega sin cita, **invitar a volver** a quien ya atendió, y sus colores (blanco, dorado, rosado,
-   negro). Contrato propuesto: **$30.000** (D-222 decía 50.000 para socios de diseño: preguntar).
+   negro). **D-308, el plan de David (0 a 6):** 0 que su estilista entre (CF) · 1 interruptores por
+   negocio en el Panel, lo apagado desaparece · 2 reservas en línea confirmadas · 3 su tema ·
+   4 invitar a volver · 5 agenda sin cobro · 6 los cinco lugares. **Precio:** $50.000 para los que
+   el propietario visite; David, $30.000, revisable. **Respaldo semanal** desde ya.
 8. **AI**: la mitad honesta ya estaba escrita (el repositorio dice que no contiene
    el esquema entero); la correcta, volcarlo a una migración, va en el turno E.
 
