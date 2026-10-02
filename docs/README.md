@@ -42,7 +42,7 @@ mensajes de commit y en los documentos. **Son sistemas distintos:**
 |---|---|---|
 | **D-001 en adelante** | **Decisiones.** El porqué de cada cosa, con lo que se descartó y por qué | `00_producto/REGISTRO_DE_DECISIONES.md` |
 | **H-01 … H-13** | **Hallazgos** de la auditoría integral del 6 de agosto | `01_arquitectura/auditorias/AUDITORIA_INTEGRAL_2026-08-06.md` |
-| **A … Z, AA … CG** | **Hallazgos anotados en el camino** (la Ñ incluida). *Decía "AA … BF" hasta el 30-sep* | `PLAN_MAESTRO`, sección 7 |
+| **A … Z, AA … CH** | **Hallazgos anotados en el camino** (la Ñ incluida). *Decía "AA … BF" hasta el 30-sep* | `PLAN_MAESTRO`, sección 7 |
 | **I-01 en adelante** | **Buzón de ideas**: lo que aún no tiene fase | `PLAN_MAESTRO`, sección 6 |
 | **Control NNN** | Un control SQL: `supabase/sql/NNN_test_*.sql`. **Se corre contra la base real y termina en `rollback`** | `supabase/sql/` |
 | **TL-xx, UX-xx, C-xx** | Hallazgos de la auditoría de 4 revisiones del 01-sep | `01_arquitectura/auditorias/AUDITORIA_4_REVISIONES_2026-09-01.md` |
