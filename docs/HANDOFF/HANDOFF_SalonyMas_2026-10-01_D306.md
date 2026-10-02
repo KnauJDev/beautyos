@@ -16,7 +16,7 @@ sus plantillas viven ya en el repositorio. Ese chat sigue con el paso nuevo **9.
 ni sin desplegar.** Todo verificado en pantalla.
 `flutter analyze` **0/0** ·
 **627 pruebas** · Guardián en verde.
-**Hallazgos: 72 en total, 59 cerrados o decididos, 13 abiertos** (los cuenta el
+**Hallazgos: 73 en total, 59 cerrados o decididos, 14 abiertos** (los cuenta el
 guardián: `python scripts/verificar_documentos.py`).
 
 > El HANDOFF anterior está en
@@ -149,7 +149,10 @@ Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anter
    estado `verificada`. Ahí significa "ya se cruzó con una referencia de ePayco",
    no "pagada"; las cifras de cobro leen `monto_cop_recibido` (D-297).
 5. **CD**: confirmado en el texto vivo y cerrado con la migración de D-303.
-6. **AI**: la mitad honesta ya estaba escrita (el repositorio dice que no contiene
+6. 🔴 **CE** (nuevo, 02-oct): con una sesión abierta no se puede reservar en la página pública
+   ("permission denied for function public_get_branch_booking_info"): las seis funciones públicas
+   solo se conceden a `anon`. Arreglo propuesto, pendiente del visto bueno del propietario.
+7. **AI**: la mitad honesta ya estaba escrita (el repositorio dice que no contiene
    el esquema entero); la correcta, volcarlo a una migración, va en el turno E.
 
 ---
