@@ -164,9 +164,8 @@ Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anter
    4 invitar a volver · 5 agenda sin cobro · 6 los cinco lugares. **Precio:** $50.000 para los que
    el propietario visite; David, $30.000, revisable. **Respaldo semanal** desde ya.
    **Paso 0** hecho (D-309). **Paso 1** escrito (D-310): interruptores de módulos por negocio en el
-   Panel; **falta aplicar** la migración `20261002180000_capacidades_por_negocio_paso1.sql` y el
-   control **239**, y luego apagarle a David caja, finanzas, inventario, comisiones, fotos, reseñas
-   y blog.
+   Panel; **aplicada** (control **239** en 5/5). Falta verlo en pantalla y luego apagarle a David
+   caja, finanzas, inventario, comisiones, fotos, reseñas y blog.
 8. **AI**: la mitad honesta ya estaba escrita (el repositorio dice que no contiene
    el esquema entero); la correcta, volcarlo a una migración, va en el turno E.
 
