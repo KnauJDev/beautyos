@@ -455,7 +455,9 @@ class ServiceRow extends StatelessWidget {
                     if (tiempoDeVolver != null) ...[
                       const SizedBox(width: 8),
                       Text(
-                        '· vuelve a los $tiempoDeVolver días',
+                        tiempoDeVolver == 1
+                            ? '· vuelve al día siguiente'
+                            : '· vuelve a los $tiempoDeVolver días',
                         style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                       ),
                     ],

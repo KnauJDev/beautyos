@@ -17,11 +17,21 @@ import '../widgets/elegir_fecha.dart';
 
 /// Construye el enlace de WhatsApp a partir de un teléfono de cliente.
 ///
-/// wa.me espera solo dígitos con código de país, sin '+' (mismo criterio que
-/// `public_plans_page.dart` y el soporte de Configuración) — aunque en este
-/// proyecto los teléfonos se guardan con '+', ese carácter se descarta aquí.
+/// wa.me espera solo dígitos **con código de país**, sin '+' (mismo criterio
+/// que `public_plans_page.dart` y el soporte de Configuración).
+///
+/// **CK (03-oct): se le pone el 57 a un celular colombiano.** Desde D-249 los
+/// celulares se guardan con sus diez dígitos y sin indicativo (`3506815620`),
+/// y este enlace los mandaba tal cual: WhatsApp los leía como internacionales
+/// (`350…` es Gibraltar) y no encontraba a nadie. Lo vio el propietario al
+/// probar *Invitar a volver* (D-314). Le pasaba a todos los botones de
+/// WhatsApp a personas: recordatorios, Clientes, invitaciones, el portal, la
+/// reserva y el Panel. Un número que ya trae el 57 (o el '+') no se toca.
 Uri buildWhatsAppUri(String phone, {String? text}) {
-  final cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
+  var cleanPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
+  if (cleanPhone.length == 10 && cleanPhone.startsWith('3')) {
+    cleanPhone = '57$cleanPhone';
+  }
   if (text != null && text.trim().isNotEmpty) {
     return Uri.https('wa.me', '/$cleanPhone', {'text': text.trim()});
   }

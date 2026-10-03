@@ -91,7 +91,10 @@ class ClientSummary {
   String get cadenceText {
     if (totalVisits == 0) return 'Sin visitas';
     if (totalVisits == 1 || avgDaysBetweenVisits == null) return '1ª visita';
-    return 'Cada ~$avgDaysBetweenVisits días';
+    // 03-oct: decía "Cada ~1 días".
+    return avgDaysBetweenVisits == 1
+        ? 'Cada ~1 día'
+        : 'Cada ~$avgDaysBetweenVisits días';
   }
 
   /// Texto legible del tiempo transcurrido desde la última atención.
