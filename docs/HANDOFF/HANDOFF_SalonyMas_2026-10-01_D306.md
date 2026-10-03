@@ -168,6 +168,12 @@ Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anter
    apagaron caja, inventario, comisiones y blog; finanzas se apaga por ahora; fotos y reseñas se le
    quedan (**D-311**). **Con el paso 5** llega su **Dashboard sin dinero** (citas, clientes, servicios,
    equipo y canal), y ahí se decide qué pasa con Reportes, que comparte interruptor con el Dashboard.
+   **Peluquería Éxito Prueba es ahora el ESPEJO de David** (02-oct): tiene apagados los mismos cinco
+   (caja, finanzas, inventario, comisiones, blog). Cada paso nuevo se prueba ahí primero, con la
+   cuenta del dueño de Éxito y la del estilista *Ayudante segunda Linea Celular*. **Mientras sea
+   espejo, en Éxito no se prueban cobros ni caja**: para eso se enciende *Caja y cobros* y todo
+   reaparece (no se borra nada). **Pendiente menor para el próximo cambio de la app:** la lista del
+   Panel dice *"N límites especiales"* cuando son módulos apagados, y no se refresca al moverlos.
 8. **AI**: la mitad honesta ya estaba escrita (el repositorio dice que no contiene
    el esquema entero); la correcta, volcarlo a una migración, va en el turno E.
 
