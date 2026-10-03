@@ -492,14 +492,21 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
         ),
         allowedRoles: const <String>{'owner', 'admin', 'assistant'},
       ),
-      const BeautyModule(
-        section: BeautySection(
+      BeautyModule(
+        section: const BeautySection(
           'Clientes',
           Icons.people_outline,
           category: BeautyCategory.operacion,
         ),
-        page: ClientesPage(),
-        allowedRoles: <String>{'owner', 'admin', 'assistant'},
+        // Paso 4A (03-oct): sin caja, Clientes no enseña dinero; el WhatsApp
+        // saluda con el nombre del salón y la invitación lleva su enlace.
+        page: ClientesPage(
+          sinDinero: cajaOculta,
+          nombreDelSalon: branch.tenantName,
+          branchId: branch.branchId,
+          esSedePrincipal: branch.isPrimary,
+        ),
+        allowedRoles: const <String>{'owner', 'admin', 'assistant'},
       ),
 
       // ======================================================================

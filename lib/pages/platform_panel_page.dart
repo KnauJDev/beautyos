@@ -16,6 +16,7 @@ import '../models/tipo_de_negocio.dart';
 import '../services/epayco_checkout_service.dart';
 import '../services/monitoreo_service.dart';
 import '../services/platform_service.dart';
+import '../services/slug_del_salon_service.dart';
 import '../widgets/dialogo_datos_de_sede.dart';
 import '../widgets/security_settings_dialog.dart';
 import '../widgets/update_banner.dart';
@@ -2423,6 +2424,36 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
   late Future<List<TenantSubscriptionHistoryEntry>> _historyFuture;
   late Future<List<BranchSubscription>> _branchesFuture;
 
+  /// 03-oct: el propietario quería mirar cómo tiene cada salón su página
+  /// pública (*"que tengan bonita y atractiva la suya"*) sin tener que
+  /// pedirle el enlace. La dirección sale de la función pública de D-313, a
+  /// partir de cualquier sede activa del negocio, y se abre en otra pestaña.
+  Future<void> _abrirPaginaPublica() async {
+    final avisos = ScaffoldMessenger.of(context);
+    final sedes = await _branchesFuture.catchError(
+      (_) => const <BranchSubscription>[],
+    );
+    String? slug;
+    for (final sede in sedes) {
+      slug = await const SlugDelSalonService().leer(sede.branchId);
+      if (slug != null) break;
+    }
+    if (slug == null) {
+      avisos.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Este salón todavía no tiene página pública activa.',
+          ),
+        ),
+      );
+      return;
+    }
+    await launchUrl(
+      Uri.parse('${Uri.base.origin}/$slug'),
+      mode: LaunchMode.externalApplication,
+    );
+  }
+
   /// Que pestana de sede esta abierta (D-241). Se guarda el identificador y no
   /// la sede: `_recargarSedes()` trae objetos nuevos tras cada cambio, y el
   /// guardado seguiria ensenando el precio anterior. Mismo cuidado que la
@@ -3612,6 +3643,14 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                                 size: 18,
                               ),
                               label: const Text('Ver Datos (Soporte)'),
+                            ),
+                            OutlinedButton.icon(
+                              onPressed: _abrirPaginaPublica,
+                              icon: const Icon(
+                                Icons.storefront_outlined,
+                                size: 18,
+                              ),
+                              label: const Text('Ver su página pública'),
                             ),
                             if (!isPending && isOwner) ...[
                               OutlinedButton.icon(

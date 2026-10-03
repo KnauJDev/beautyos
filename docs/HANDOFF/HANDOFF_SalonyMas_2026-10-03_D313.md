@@ -138,7 +138,7 @@ commit solo de documentos hace que la app anuncie *"Hay una versión nueva"*) ·
 | **q** | **Juntar las dos tarjetas de enlaces de Configuración** (*Enlace web* y *Reserva pública*, que en un salón de una sede dan el mismo) | Propuesto para el paso 6 |
 | **r** | **Paso 5:** cómo se separan el Dashboard sin dinero y *Reportes*, que comparten interruptor | Se pregunta al llegar al paso 5 (D-311) |
 
-**Ya decidido el 03-oct:** la tarjeta de WhatsApp con el logo y el nombre del salón va
+**Ya decidido el 03-oct:** **no se inventan pagos** en un negocio sin caja (D-314: crearía ventas numeradas y comisiones); el Panel tiene *"Ver su página pública"* (D-314); ver la app como la ve el dueño, más adelante (Ley 1581). La tarjeta de WhatsApp con el logo y el nombre del salón va
 con el **paso 3**; la agenda de la estilista en tarjetas, con semana y mes, va con el
 **paso 6**.
 
@@ -153,8 +153,8 @@ con el **paso 3**; la agenda de la estilista en tarjetas, con semana y mes, va c
 | 0 | Que su equipo pueda entrar (CF) | ✅ D-309. **Falta que su equipo entre** por *Ingresar* pidiendo un código nuevo (sus cuentas estaban sin confirmar) |
 | 1 | Interruptores por negocio | ✅ D-310. A David: apagados *Caja y cobros, Finanzas, Inventario, Comisiones, Blog*; encendidos *Fotos* y *Reseñas* (D-311). Se le pasó el mensaje para que actualice y mande captura |
 | 2 | Citas confirmadas → **agenda de tres estados** | ✅ D-312, probada |
-| 3 | **Su tema** (blanco, dorado, rosado, negro) | Pendiente. Con él: la **tarjeta de WhatsApp** con logo y nombre del salón (una función pequeña en Cloudflare, sin tocar DNS) y **pulir la página pública** del salón |
-| 4 | **Invitar a volver** a quien ya atendió | Pendiente. La base existe: *clientes en riesgo* (dos visitas o más y 45 días sin venir) |
+| 3 | **Su tema** (blanco, dorado, rosado, negro) | **En espera del logo o de fotos de David** (03-oct: con solo los nombres de los colores se haría a ciegas). Con él: la **tarjeta de WhatsApp** con logo y nombre del salón (una función pequeña en Cloudflare, sin tocar DNS) y **pulir la página pública** del salón |
+| 4 | **Invitar a volver** a quien ya atendió (D-314, paso 9.59) | **4A escrita el 03-oct**: Clientes sin dinero en los negocios sin caja y el WhatsApp con el nombre del salón y su enlace; falta verla en pantalla. **4B por diseñar** (servidor): tiempo de volver por servicio, registro de invitaciones, *"Para invitar hoy"*. **Decidido: no se inventan pagos** |
 | 5 | **Agenda sin cobro** | Pendiente, ya en parte hecha por D-312. Queda: el **Dashboard sin dinero** (D-311); *Configuración* le sigue mostrando la política de comisiones y la numeración de ventas; en el celular el tablero tiene el botón *Semana* partido |
 | 6 | **Los cinco lugares** (9.25) | Pendiente. Con él: **la agenda de la estilista en tarjetas, con semana y mes** (hoy es una tabla ancha), sus flechas de fecha descuadradas, y juntar las tarjetas de enlaces de Configuración |
 

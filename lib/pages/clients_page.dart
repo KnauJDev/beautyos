@@ -5,13 +5,33 @@ import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
 import '../models/celular_colombiano.dart';
 import '../models/client_summary.dart';
+import '../models/enlace_de_reserva.dart';
 import '../services/clients_service.dart';
+import '../services/slug_del_salon_service.dart';
 import '../widgets/app_widgets.dart';
 import '../widgets/pedir_autorizacion.dart';
 import 'agenda_page.dart' show buildWhatsAppUri;
 
 class ClientesPage extends StatefulWidget {
-  const ClientesPage({super.key});
+  const ClientesPage({
+    super.key,
+    this.sinDinero = false,
+    this.nombreDelSalon,
+    this.branchId,
+    this.esSedePrincipal = false,
+  });
+
+  /// Paso 4A del plan de David (03-oct): en un negocio con la caja apagada
+  /// no se enseña dinero. Como no cobra en la app, todas sus citas parecían
+  /// sin pagar: cada clienta salía con "Debe: $30.000", "Saldo en mora", el
+  /// filtro "Con saldo", y el WhatsApp le recordaba un saldo que no existe.
+  final bool sinDinero;
+
+  /// Para que el WhatsApp salude con el nombre del salón (decía "Salón y
+  /// Más" en todos) y la invitación a volver lleve su enlace (D-313).
+  final String? nombreDelSalon;
+  final String? branchId;
+  final bool esSedePrincipal;
 
   @override
   State<ClientesPage> createState() => _ClientesPageState();
@@ -25,10 +45,31 @@ class _ClientesPageState extends State<ClientesPage> {
   String _searchQuery = '';
   String _selectedSegmentFilter = 'todos'; // 'todos', 'vip', 'en_riesgo', 'recurrente', 'nuevo', 'con_saldo', 'inactivos'
 
+  /// La dirección del salón, para el enlace de la invitación a volver
+  /// (D-313). `null` mientras llega o si no se pudo leer.
+  String? _slugDelSalon;
+
   @override
   void initState() {
     super.initState();
     clientsFuture = clientsService.getClientsManagementSummary();
+    final branchId = widget.branchId;
+    if (branchId != null && branchId.isNotEmpty) {
+      const SlugDelSalonService().leer(branchId).then((slug) {
+        if (mounted && slug != null) setState(() => _slugDelSalon = slug);
+      });
+    }
+  }
+
+  /// El enlace para reservar que va en la invitación, con la regla de D-313.
+  String? get _enlaceParaInvitar {
+    final branchId = widget.branchId;
+    if (branchId == null || branchId.isEmpty) return null;
+    return enlaceParaCompartir(
+      branchId: branchId,
+      esSedePrincipal: widget.esSedePrincipal,
+      slugDelSalon: _slugDelSalon,
+    );
   }
 
   @override
@@ -133,6 +174,7 @@ class _ClientesPageState extends State<ClientesPage> {
       backgroundColor: Colors.transparent,
       builder: (context) => _ClientDetailSheet(
         client: client,
+        sinDinero: widget.sinDinero,
         onEdit: () {
           Navigator.of(context).pop();
           _openEditClientDialog(client);
@@ -264,7 +306,7 @@ class _ClientesPageState extends State<ClientesPage> {
                               _buildSegmentChip('recurrente', '🟢 Recurrentes ($recurrentCount)', AppColors.stateConfirmed),
                               const SizedBox(width: 8),
                               _buildSegmentChip('nuevo', '🆕 Nuevos ($newCount)', AppColors.stateInProgress),
-                              if (withBalanceCount > 0) ...[
+                              if (withBalanceCount > 0 && !widget.sinDinero) ...[
                                 const SizedBox(width: 8),
                                 _buildSegmentChip('con_saldo', '🔴 Con saldo ($withBalanceCount)', AppColors.danger),
                               ],
@@ -357,6 +399,9 @@ class _ClientesPageState extends State<ClientesPage> {
                               client: client,
                               onTap: () => _openClientDetailSheet(client),
                               onEdit: () => _openEditClientDialog(client),
+                              sinDinero: widget.sinDinero,
+                              nombreDelSalon: widget.nombreDelSalon,
+                              enlaceParaInvitar: _enlaceParaInvitar,
                             ),
                           ),
                         ],
@@ -401,11 +446,19 @@ class ClientRow extends StatelessWidget {
     required this.client,
     this.onTap,
     required this.onEdit,
+    this.sinDinero = false,
+    this.nombreDelSalon,
+    this.enlaceParaInvitar,
   });
 
   final ClientSummary client;
   final VoidCallback? onTap;
   final VoidCallback onEdit;
+
+  /// Paso 4A (03-oct): ver `ClientesPage.sinDinero`.
+  final bool sinDinero;
+  final String? nombreDelSalon;
+  final String? enlaceParaInvitar;
 
   @override
   Widget build(BuildContext context) {
@@ -537,11 +590,15 @@ class ClientRow extends StatelessWidget {
                     tooltip: 'WhatsApp a ${client.firstName}',
                     visualDensity: VisualDensity.compact,
                     onPressed: () {
-                      final greeting = client.segment == 'en_riesgo'
-                          ? 'Hola ${client.firstName}, ¡te extrañamos en el salón! Queríamos saludarte y saber cómo estás.'
-                          : (client.hasPendingBalance
-                              ? 'Hola ${client.firstName}, te escribimos para recordarte tu saldo pendiente de ${client.formattedBalanceAmount}.'
-                              : 'Hola ${client.firstName}, te escribimos de Salón y Más.');
+                      final greeting = mensajeDeWhatsAppAClienta(
+                        nombre: client.firstName,
+                        enRiesgo: client.segment == 'en_riesgo',
+                        tieneSaldo: client.hasPendingBalance,
+                        saldo: client.formattedBalanceAmount,
+                        sinDinero: sinDinero,
+                        nombreDelSalon: nombreDelSalon,
+                        enlace: enlaceParaInvitar,
+                      );
                       launchUrl(
                         buildWhatsAppUri(client.phone, text: greeting),
                         mode: LaunchMode.externalApplication,
@@ -566,8 +623,8 @@ class ClientRow extends StatelessWidget {
                   Icons.event_repeat_outlined,
                   '${client.totalVisits} ${client.totalVisits == 1 ? "visita" : "visitas"}',
                 ),
-                // Gasto Total
-                if (client.totalSpent > 0)
+                // Gasto Total (no en un negocio sin caja, paso 4A)
+                if (client.totalSpent > 0 && !sinDinero)
                   _buildMetricItem(
                     Icons.payments_outlined,
                     'Gasto: ${client.formattedTotalSpent}',
@@ -585,8 +642,8 @@ class ClientRow extends StatelessWidget {
                   'Última: ${client.lastVisitText}',
                   color: client.segment == 'en_riesgo' ? AppColors.stateToCollect : AppColors.textSecondary,
                 ),
-                // Saldo pendiente
-                if (client.hasPendingBalance)
+                // Saldo pendiente (no en un negocio sin caja, paso 4A)
+                if (client.hasPendingBalance && !sinDinero)
                   _buildMetricItem(
                     Icons.error_outline,
                     'Debe: ${client.formattedBalanceAmount}',
@@ -624,10 +681,14 @@ class _ClientDetailSheet extends StatelessWidget {
   const _ClientDetailSheet({
     required this.client,
     required this.onEdit,
+    this.sinDinero = false,
   });
 
   final ClientSummary client;
   final VoidCallback onEdit;
+
+  /// Paso 4A: sin caja, la ficha no enseña gasto, ticket promedio ni saldo.
+  final bool sinDinero;
 
   Future<void> _openResetPortalPinDialog(BuildContext context) async {
     final newPin = await showDialog<String>(
@@ -845,6 +906,7 @@ class _ClientDetailSheet extends StatelessWidget {
                     icon: Icons.insights_outlined,
                     child: Column(
                       children: [
+                        if (!sinDinero) ...[
                         Row(
                           children: [
                             Expanded(
@@ -865,6 +927,7 @@ class _ClientDetailSheet extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 10),
+                        ],
                         Row(
                           children: [
                             Expanded(
@@ -884,7 +947,7 @@ class _ClientDetailSheet extends StatelessWidget {
                             ),
                           ],
                         ),
-                        if (client.hasPendingBalance) ...[
+                        if (client.hasPendingBalance && !sinDinero) ...[
                           const SizedBox(height: 10),
                           Container(
                             width: double.infinity,
@@ -1523,3 +1586,37 @@ class _ClientDialogForm extends StatelessWidget {
   }
 }
 
+/// El mensaje de WhatsApp que arma el botón de cada clienta (paso 4A, 03-oct).
+///
+/// * **En riesgo** (lleva tiempo sin venir): la invita a volver, con el
+///   nombre del salón y, si se conoce, su enlace para reservar (D-313).
+/// * **Con saldo**: se lo recuerda, salvo en un negocio sin caja, donde ese
+///   saldo no existe: no cobra en la app.
+/// * **Las demás**: un saludo del salón. Decía *"te escribimos de Salón y
+///   Más"* en todos los negocios; la clienta no sabe qué es Salón y Más.
+String mensajeDeWhatsAppAClienta({
+  required String nombre,
+  required bool enRiesgo,
+  required bool tieneSaldo,
+  required String saldo,
+  required bool sinDinero,
+  String? nombreDelSalon,
+  String? enlace,
+}) {
+  final salon = nombreDelSalon?.trim() ?? '';
+  if (enRiesgo) {
+    final donde = salon.isEmpty ? 'en el salón' : 'en $salon';
+    final agenda = (enlace == null || enlace.isEmpty)
+        ? ''
+        : ' Cuando quieras, agenda aquí 👉 $enlace';
+    return 'Hola $nombre, ¡te extrañamos $donde! Queríamos saludarte y saber '
+        'cómo estás.$agenda';
+  }
+  if (tieneSaldo && !sinDinero) {
+    return 'Hola $nombre, te escribimos para recordarte tu saldo pendiente '
+        'de $saldo.';
+  }
+  return salon.isEmpty
+      ? 'Hola $nombre, te escribimos del salón.'
+      : 'Hola $nombre, te escribimos de $salon.';
+}
