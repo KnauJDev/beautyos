@@ -189,7 +189,9 @@ Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anter
    **240**. ✅ **Aplicada el 03-oct, control 240 en 9/9.** Primera mirada en pantalla bien; arreglados el
    aviso al crear cita y el dinero que veía la estilista. **Pedido nuevo del propietario (03-oct), sin
    hacer:** acomodar la agenda de la estilista en el celular (hoy es una tabla ancha que se desplaza de
-   lado) y darle vista de semana y mes. **Falta:** terminar la prueba en pantalla con Éxito. **Aquí no se
+   lado) y darle vista de semana y mes. **Hallazgo CI** (la hora de la tarjeta y del recordatorio de
+   WhatsApp salía en UTC), cerrado el 03-oct. Respaldo: `Backup_2026-10-03_08-49-43`. **Falta:** terminar
+   la prueba en pantalla con Éxito. **Aquí no se
    formatea en bloque** (`dart format lib/` reformatea 112 archivos ajenos).
 8. **AI**: la mitad honesta ya estaba escrita (el repositorio dice que no contiene
    el esquema entero); la correcta, volcarlo a una migración, va en el turno E.

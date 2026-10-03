@@ -104,14 +104,19 @@ class TicketBoardItem {
   });
 
   factory TicketBoardItem.fromMap(Map<String, dynamic> map) {
+    // CI (03-oct): la hora llega en UTC y hay que pasarla a la del equipo,
+    // como hace `MyStylistAgendaItem`. Sin `toLocal()` la tarjeta de la
+    // agenda ponia 14:00 a una cita de las 09:00, y el recordatorio de
+    // WhatsApp le decia esa hora a la clienta.
     DateTime? parsedDate;
     if (map['scheduled_at'] != null) {
-      parsedDate = DateTime.tryParse(map['scheduled_at'].toString());
+      parsedDate = DateTime.tryParse(map['scheduled_at'].toString())?.toLocal();
     }
 
     DateTime? parsedClosedAt;
     if (map['closed_at'] != null) {
-      parsedClosedAt = DateTime.tryParse(map['closed_at'].toString());
+      parsedClosedAt =
+          DateTime.tryParse(map['closed_at'].toString())?.toLocal();
     }
 
     return TicketBoardItem(
