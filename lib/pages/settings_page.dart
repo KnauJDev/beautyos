@@ -37,6 +37,8 @@ import '../widgets/app_widgets.dart';
 import '../widgets/create_branch_dialog.dart';
 import '../widgets/theme_selector_card.dart';
 import '../widgets/update_banner.dart';
+import '../services/invitar_a_volver_service.dart';
+import '../models/mensaje_para_la_clienta.dart';
 
 class ConfiguracionPage extends StatefulWidget {
   const ConfiguracionPage({
@@ -321,6 +323,10 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
             esSedePrincipal: widget.esSedePrincipal,
           ),
         ),
+        const SizedBox(height: 16),
+        // D-314 (4B): el tiempo de volver por defecto del salón.
+        const SectionTitle('Invitar a volver'),
+        TiempoDeVolverDelSalonCard(branchId: widget.branchId),
         const SizedBox(height: 16),
         const SectionTitle('Horarios de atención'),
         FutureBuilder<List<BusinessHour>>(
@@ -3630,3 +3636,111 @@ class _PhotoPolicyCard extends StatelessWidget {
   }
 }
 
+/// El tiempo de volver por defecto del salón (D-314, paso 4B): manda en los
+/// servicios que no tienen el suyo. Nace en 45 días, la regla de "En riesgo".
+class TiempoDeVolverDelSalonCard extends StatefulWidget {
+  const TiempoDeVolverDelSalonCard({super.key, required this.branchId});
+
+  final String branchId;
+
+  @override
+  State<TiempoDeVolverDelSalonCard> createState() =>
+      _TiempoDeVolverDelSalonCardState();
+}
+
+class _TiempoDeVolverDelSalonCardState
+    extends State<TiempoDeVolverDelSalonCard> {
+  late final InvitarAVolverService _servicio = InvitarAVolverService(
+    branchId: widget.branchId,
+  );
+  final TextEditingController _controller = TextEditingController();
+  bool _cargando = true;
+  bool _guardando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _servicio
+        .tiempos()
+        .then((t) {
+          if (!mounted) return;
+          setState(() {
+            _controller.text = t.delSalon.toString();
+            _cargando = false;
+          });
+        })
+        .catchError((_) {
+          if (mounted) setState(() => _cargando = false);
+        });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _guardar() async {
+    final avisos = ScaffoldMessenger.of(context);
+    final dias = int.tryParse(_controller.text.trim());
+    if (dias == null || dias < 1 || dias > 365) {
+      avisos.showSnackBar(
+        const SnackBar(content: Text('Escribe un número de 1 a 365 días.')),
+      );
+      return;
+    }
+    setState(() => _guardando = true);
+    try {
+      await _servicio.fijarTiempoDelSalon(dias);
+      avisos.showSnackBar(
+        SnackBar(content: Text('Listo: se invita a volver a los $dias días.')),
+      );
+    } catch (error) {
+      avisos.showSnackBar(SnackBar(content: Text(mensajeParaLaClienta(error))));
+    } finally {
+      if (mounted) setState(() => _guardando = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Cuántos días después de su última visita se le sugiere invitar '
+              'a una clienta a volver. Cada servicio puede tener el suyo en '
+              'Servicios (un rubber, un tinte); este es para los que no lo '
+              'tienen.',
+              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                SizedBox(
+                  width: 120,
+                  child: TextField(
+                    controller: _controller,
+                    enabled: !_cargando,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: 'Días',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                FilledButton(
+                  onPressed: _cargando || _guardando ? null : _guardar,
+                  child: Text(_guardando ? 'Guardando…' : 'Guardar'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

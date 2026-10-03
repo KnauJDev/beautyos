@@ -7,6 +7,8 @@ import '../models/service_management_item.dart';
 import '../models/cifra_escrita.dart';
 import '../services/services_service.dart';
 import '../widgets/app_widgets.dart';
+import '../services/invitar_a_volver_service.dart';
+import '../models/mensaje_para_la_clienta.dart';
 
 class ServiciosPage extends StatefulWidget {
   const ServiciosPage({super.key, required this.branchId});
@@ -21,6 +23,26 @@ class _ServiciosPageState extends State<ServiciosPage> {
   final ServicesService servicesService = const ServicesService();
   late Future<List<ServiceManagementItem>> servicesFuture;
 
+  /// D-314 (4B): el tiempo de volver de cada servicio y el del salón.
+  late final InvitarAVolverService _invitar = InvitarAVolverService(
+    branchId: widget.branchId,
+  );
+  Map<String, int?> _tiempos = const {};
+  int _tiempoDelSalon = 45;
+
+  Future<void> _cargarTiempos() async {
+    try {
+      final t = await _invitar.tiempos();
+      if (!mounted) return;
+      setState(() {
+        _tiempos = t.porServicio;
+        _tiempoDelSalon = t.delSalon;
+      });
+    } catch (_) {
+      // Sin los tiempos, Servicios funciona igual: el campo sale vacío.
+    }
+  }
+
   String _searchQuery = '';
   String _selectedCategory = 'all';
 
@@ -30,6 +52,7 @@ class _ServiciosPageState extends State<ServiciosPage> {
     servicesFuture = servicesService.getServicesForManagement(
       widget.branchId,
     );
+    _cargarTiempos();
   }
 
   void reload() {
@@ -38,6 +61,7 @@ class _ServiciosPageState extends State<ServiciosPage> {
         widget.branchId,
       );
     });
+    _cargarTiempos();
   }
 
   Future<void> openCreateServiceDialog() async {
@@ -47,6 +71,8 @@ class _ServiciosPageState extends State<ServiciosPage> {
         branchId: widget.branchId,
         servicesService: servicesService,
         existing: null,
+        invitar: _invitar,
+        tiempoDelSalon: _tiempoDelSalon,
       ),
     );
 
@@ -60,6 +86,9 @@ class _ServiciosPageState extends State<ServiciosPage> {
         branchId: widget.branchId,
         servicesService: servicesService,
         existing: service,
+        invitar: _invitar,
+        tiempoDelSalon: _tiempoDelSalon,
+        tiempoDeVolver: _tiempos[service.id],
       ),
     );
 
@@ -304,6 +333,7 @@ class _ServiciosPageState extends State<ServiciosPage> {
                               service: service,
                               onEdit: () => openEditServiceDialog(service),
                               onToggleActive: () => toggleActive(service),
+                              tiempoDeVolver: _tiempos[service.id],
                             ),
                           ),
                       ],
@@ -341,7 +371,11 @@ class ServiceRow extends StatelessWidget {
     required this.service,
     required this.onEdit,
     required this.onToggleActive,
+    this.tiempoDeVolver,
   });
+
+  /// D-314: su propio tiempo de volver, si tiene (si no, manda el del salón).
+  final int? tiempoDeVolver;
 
   @override
   Widget build(BuildContext context) {
@@ -418,6 +452,13 @@ class ServiceRow extends StatelessWidget {
                       '${service.durationMinutes} min',
                       style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                     ),
+                    if (tiempoDeVolver != null) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        '· vuelve a los $tiempoDeVolver días',
+                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      ),
+                    ],
                     if (!service.visibleToCustomer) ...[
                       const SizedBox(width: 8),
                       const Text(
@@ -465,11 +506,19 @@ class _ServiceFormDialog extends StatefulWidget {
     required this.branchId,
     required this.servicesService,
     required this.existing,
+    required this.invitar,
+    required this.tiempoDelSalon,
+    this.tiempoDeVolver,
   });
 
   final String branchId;
   final ServicesService servicesService;
   final ServiceManagementItem? existing;
+
+  /// D-314 (4B): el tiempo de volver de este servicio.
+  final InvitarAVolverService invitar;
+  final int tiempoDelSalon;
+  final int? tiempoDeVolver;
 
   @override
   State<_ServiceFormDialog> createState() => _ServiceFormDialogState();
@@ -489,6 +538,9 @@ class _ServiceFormDialogState extends State<_ServiceFormDialog> {
     text: widget.existing?.price.toString() ?? '',
   );
   late bool visibleToCustomer = widget.existing?.visibleToCustomer ?? true;
+  late final tiempoController = TextEditingController(
+    text: widget.tiempoDeVolver?.toString() ?? '',
+  );
   bool isSaving = false;
   String? errorMessage;
 
@@ -500,6 +552,7 @@ class _ServiceFormDialogState extends State<_ServiceFormDialog> {
     categoryController.dispose();
     durationController.dispose();
     priceController.dispose();
+    tiempoController.dispose();
     super.dispose();
   }
 
@@ -526,6 +579,11 @@ class _ServiceFormDialogState extends State<_ServiceFormDialog> {
       setState(() => errorMessage = 'El precio debe ser un número válido.');
       return;
     }
+    final tiempo = leerTiempoDeVolver(tiempoController.text);
+    if (tiempo.error != null) {
+      setState(() => errorMessage = tiempo.error);
+      return;
+    }
 
     setState(() {
       isSaving = true;
@@ -533,6 +591,7 @@ class _ServiceFormDialogState extends State<_ServiceFormDialog> {
     });
 
     try {
+      String? serviceId = widget.existing?.id;
       if (isEditing) {
         await widget.servicesService.updateService(
           branchId: widget.branchId,
@@ -544,7 +603,7 @@ class _ServiceFormDialogState extends State<_ServiceFormDialog> {
           visibleToCustomer: visibleToCustomer,
         );
       } else {
-        await widget.servicesService.createService(
+        serviceId = await widget.servicesService.createService(
           branchId: widget.branchId,
           name: name,
           category: category,
@@ -552,6 +611,28 @@ class _ServiceFormDialogState extends State<_ServiceFormDialog> {
           price: price,
           visibleToCustomer: visibleToCustomer,
         );
+      }
+
+      // D-314: el tiempo de volver, si cambió. Si falla, el servicio ya está
+      // guardado: se avisa y se cierra igual, para no crearlo dos veces.
+      if (serviceId != null && tiempo.dias != widget.tiempoDeVolver) {
+        try {
+          await widget.invitar.fijarTiempoDeServicio(
+            serviceId: serviceId,
+            dias: tiempo.dias,
+          );
+        } catch (error) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'El servicio se guardó, pero no su tiempo de volver: '
+                  '${mensajeParaLaClienta(error)}',
+                ),
+              ),
+            );
+          }
+        }
       }
 
       if (!mounted) return;
@@ -599,6 +680,16 @@ class _ServiceFormDialogState extends State<_ServiceFormDialog> {
               decoration: const InputDecoration(labelText: 'Precio (COP)'),
             ),
             const SizedBox(height: 12),
+            TextField(
+              controller: tiempoController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Invitar a volver a los … días',
+                helperText:
+                    'Vacío: el del salón (${widget.tiempoDelSalon} días)',
+              ),
+            ),
+            const SizedBox(height: 12),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('Visible para reservas públicas'),
@@ -630,4 +721,20 @@ class _ServiceFormDialogState extends State<_ServiceFormDialog> {
       ],
     );
   }
+}
+
+/// El tiempo de volver escrito en el formulario (D-314): vacío es "el del
+/// salón" (`null`); si no, un número de 1 a 365.
+({int? dias, String? error}) leerTiempoDeVolver(String texto) {
+  final limpio = texto.trim();
+  if (limpio.isEmpty) return (dias: null, error: null);
+  final n = int.tryParse(limpio);
+  if (n == null || n < 1 || n > 365) {
+    return (
+      dias: null,
+      error: 'El tiempo de volver va de 1 a 365 días. Déjalo vacío para usar '
+          'el del salón.',
+    );
+  }
+  return (dias: n, error: null);
 }

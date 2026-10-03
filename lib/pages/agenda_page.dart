@@ -9,6 +9,8 @@ import '../models/mensaje_para_la_clienta.dart';
 import '../models/ticket_board.dart';
 import '../services/agenda_board_service.dart';
 import '../services/tickets_service.dart';
+import '../services/invitar_a_volver_service.dart';
+import '../widgets/para_invitar_hoy.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_widgets.dart';
 import '../widgets/elegir_fecha.dart';
@@ -146,7 +148,17 @@ class AgendaPage extends StatefulWidget {
     this.reloj,
     this.tresEstados = false,
     this.ejecutarAccion,
+    this.paraInvitar,
+    this.esSedePrincipal = false,
   });
+
+  /// D-314 (paso 4B): la tarjeta "Para invitar hoy" arriba del tablero. Solo
+  /// la monta el shell (`main.dart`); sin ella, no hay tarjeta (las pruebas
+  /// montan la agenda sin servidor).
+  final InvitarAVolverService? paraInvitar;
+
+  /// Para el enlace de la invitación (D-313).
+  final bool esSedePrincipal;
 
   final String branchId;
   final AgendaBoardService? agendaService;
@@ -515,6 +527,12 @@ class _AgendaPageState extends State<AgendaPage> {
       title: 'Tablero de Agenda',
       subtitle: subtituloDelTablero(tresEstados: widget.tresEstados),
       children: [
+        if (widget.paraInvitar != null)
+          ParaInvitarHoyCard(
+            servicio: widget.paraInvitar!,
+            nombreDelSalon: widget.businessName,
+            esSedePrincipal: widget.esSedePrincipal,
+          ),
         // Barra de Control Superior
         _buildControlBar(isDia),
         const SizedBox(height: AppSpacing.md),

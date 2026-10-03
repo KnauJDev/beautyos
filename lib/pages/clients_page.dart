@@ -6,6 +6,9 @@ import '../theme/app_theme.dart';
 import '../models/celular_colombiano.dart';
 import '../models/client_summary.dart';
 import '../models/enlace_de_reserva.dart';
+import '../models/invitacion_a_volver.dart';
+import '../services/invitar_a_volver_service.dart';
+import '../widgets/para_invitar_hoy.dart' show invitarAVolver;
 import '../services/clients_service.dart';
 import '../services/slug_del_salon_service.dart';
 import '../widgets/app_widgets.dart';
@@ -19,7 +22,12 @@ class ClientesPage extends StatefulWidget {
     this.nombreDelSalon,
     this.branchId,
     this.esSedePrincipal = false,
+    this.paraInvitar,
   });
+
+  /// D-314 (4B): las invitaciones a volver, por servicio. Sin él (las
+  /// pruebas), no hay filtros "Para invitar" ni "No volvieron".
+  final InvitarAVolverService? paraInvitar;
 
   /// Paso 4A del plan de David (03-oct): en un negocio con la caja apagada
   /// no se enseña dinero. Como no cobra en la app, todas sus citas parecían
@@ -49,10 +57,38 @@ class _ClientesPageState extends State<ClientesPage> {
   /// (D-313). `null` mientras llega o si no se pudo leer.
   String? _slugDelSalon;
 
+  /// D-314 (4B): quién toca invitar y quién no volvió, por servicio.
+  List<InvitacionAVolver> _invitaciones = const [];
+
+  Future<void> _cargarInvitaciones() async {
+    final servicio = widget.paraInvitar;
+    if (servicio == null) return;
+    try {
+      final filas = await servicio.listar();
+      if (mounted) setState(() => _invitaciones = filas);
+    } catch (_) {
+      // Sin la lista, Clientes funciona igual: solo no salen los filtros.
+    }
+  }
+
+  Future<void> _invitar(InvitacionAVolver fila) async {
+    final servicio = widget.paraInvitar;
+    if (servicio == null) return;
+    final ok = await invitarAVolver(
+      context,
+      servicio: servicio,
+      fila: fila,
+      nombreDelSalon: widget.nombreDelSalon,
+      enlace: _enlaceParaInvitar,
+    );
+    if (ok) await _cargarInvitaciones();
+  }
+
   @override
   void initState() {
     super.initState();
     clientsFuture = clientsService.getClientsManagementSummary();
+    _cargarInvitaciones();
     final branchId = widget.branchId;
     if (branchId != null && branchId.isNotEmpty) {
       const SlugDelSalonService().leer(branchId).then((slug) {
@@ -118,6 +154,18 @@ class _ClientesPageState extends State<ClientesPage> {
             break;
           case 'con_saldo':
             if (!client.hasPendingBalance) return false;
+            break;
+          case 'para_invitar':
+            if (!clientasDe(_invitaciones.where((f) => f.tocaHoy))
+                .contains(client.id)) {
+              return false;
+            }
+            break;
+          case 'no_volvieron':
+            if (!clientasDe(_invitaciones.where((f) => f.invitadaSinVolver))
+                .contains(client.id)) {
+              return false;
+            }
             break;
           case 'inactivos':
             if (client.active) return false;
@@ -306,6 +354,22 @@ class _ClientesPageState extends State<ClientesPage> {
                               _buildSegmentChip('recurrente', '🟢 Recurrentes ($recurrentCount)', AppColors.stateConfirmed),
                               const SizedBox(width: 8),
                               _buildSegmentChip('nuevo', '🆕 Nuevos ($newCount)', AppColors.stateInProgress),
+                              if (_invitaciones.any((f) => f.tocaHoy)) ...[
+                                const SizedBox(width: 8),
+                                _buildSegmentChip(
+                                  'para_invitar',
+                                  '📨 Para invitar (${clientasDe(_invitaciones.where((f) => f.tocaHoy)).length})',
+                                  AppColors.whatsapp,
+                                ),
+                              ],
+                              if (_invitaciones.any((f) => f.invitadaSinVolver)) ...[
+                                const SizedBox(width: 8),
+                                _buildSegmentChip(
+                                  'no_volvieron',
+                                  '↩️ No volvieron (${clientasDe(_invitaciones.where((f) => f.invitadaSinVolver)).length})',
+                                  AppColors.stateToCollect,
+                                ),
+                              ],
                               if (withBalanceCount > 0 && !widget.sinDinero) ...[
                                 const SizedBox(width: 8),
                                 _buildSegmentChip('con_saldo', '🔴 Con saldo ($withBalanceCount)', AppColors.danger),
@@ -402,6 +466,13 @@ class _ClientesPageState extends State<ClientesPage> {
                               sinDinero: widget.sinDinero,
                               nombreDelSalon: widget.nombreDelSalon,
                               enlaceParaInvitar: _enlaceParaInvitar,
+                              invitaciones: [
+                                for (final f in _invitaciones)
+                                  if (f.clientId == client.id) f,
+                              ],
+                              onInvitar: widget.paraInvitar == null
+                                  ? null
+                                  : _invitar,
                             ),
                           ),
                         ],
@@ -449,7 +520,13 @@ class ClientRow extends StatelessWidget {
     this.sinDinero = false,
     this.nombreDelSalon,
     this.enlaceParaInvitar,
+    this.invitaciones = const [],
+    this.onInvitar,
   });
+
+  /// D-314 (4B): sus recordatorios por servicio, y qué hacer al invitar.
+  final List<InvitacionAVolver> invitaciones;
+  final Future<void> Function(InvitacionAVolver fila)? onInvitar;
 
   final ClientSummary client;
   final VoidCallback? onTap;
@@ -652,6 +729,40 @@ class ClientRow extends StatelessWidget {
                   ),
               ],
             ),
+
+            // D-314 (4B): un renglón por cada servicio que le toca o por el
+            // que ya se la invitó. Uno no borra el otro.
+            for (final fila in invitaciones) ...[
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Icon(
+                    fila.invitadaSinVolver
+                        ? Icons.mark_email_read_outlined
+                        : Icons.forward_to_inbox_outlined,
+                    size: 16,
+                    color: fila.invitadaSinVolver
+                        ? AppColors.stateToCollect
+                        : AppColors.whatsapp,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      '${fila.serviceName}: ${fila.textoDeEstado(DateTime.now())}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                  if (onInvitar != null && (fila.tocaHoy || fila.invitadaSinVolver))
+                    TextButton(
+                      onPressed: () => onInvitar!(fila),
+                      child: Text(fila.invitadaSinVolver ? 'Invitar otra vez' : 'Invitar'),
+                    ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

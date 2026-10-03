@@ -218,8 +218,8 @@ void main() {
       expect(ajustes, contains('esSedePrincipal: widget.esSedePrincipal,'));
       expect(
         'esSedePrincipal: branch.isPrimary,'.allMatches(leer('lib/main.dart')).length,
-        3,
-        reason: 'la estilista, Configuración y Clientes (paso 4A)',
+        4,
+        reason: 'la estilista, Configuración, Clientes (4A) y la Agenda (4B)',
       );
     });
 

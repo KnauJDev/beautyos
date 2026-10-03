@@ -47,7 +47,10 @@ class ServicesService {
     );
   }
 
-  Future<void> createService({
+  /// Devuelve el id del servicio nuevo (D-314): la función siempre lo
+  /// devolvió (`service_id`) y la app lo tiraba; hace falta para ponerle su
+  /// tiempo de volver al crearlo.
+  Future<String?> createService({
     required String branchId,
     required String name,
     required String category,
@@ -55,7 +58,7 @@ class ServicesService {
     required num price,
     bool visibleToCustomer = true,
   }) async {
-    await Supabase.instance.client.rpc(
+    final respuesta = await Supabase.instance.client.rpc(
       'create_service',
       params: {
         'p_branch_id': branchId,
@@ -66,6 +69,9 @@ class ServicesService {
         'p_visible_to_customer': visibleToCustomer,
       },
     );
+    final filas = respuesta is List ? respuesta : const [];
+    if (filas.isEmpty || filas.first is! Map) return null;
+    return (filas.first as Map)['service_id']?.toString();
   }
 
   Future<void> updateService({

@@ -9,6 +9,7 @@ import 'models/tenant_entitlements.dart';
 import 'models/tenant_subscription_status.dart';
 import 'services/branch_context_service.dart';
 import 'services/entitlements_service.dart';
+import 'services/invitar_a_volver_service.dart';
 import 'models/aviso_de_pago.dart';
 import 'models/direccion_sin_ref_payco.dart';
 import 'services/epayco_checkout_service.dart';
@@ -450,6 +451,9 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           // D-312: con la caja apagada por la plataforma, la agenda es de
           // tres estados y lleva los botones en cada cita.
           tresEstados: cajaOculta,
+          // D-314 (4B): "Para invitar hoy", arriba del tablero.
+          paraInvitar: InvitarAVolverService(branchId: branch.branchId),
+          esSedePrincipal: branch.isPrimary,
           // Agenda y Tickets comparten exactamente los mismos allowedRoles
           // y son adyacentes en esta lista: Tickets siempre queda en el
           // indice inmediatamente siguiente al de Agenda, para cualquier
@@ -505,6 +509,8 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           nombreDelSalon: branch.tenantName,
           branchId: branch.branchId,
           esSedePrincipal: branch.isPrimary,
+          // D-314 (4B): los filtros "Para invitar" y "No volvieron".
+          paraInvitar: InvitarAVolverService(branchId: branch.branchId),
         ),
         allowedRoles: const <String>{'owner', 'admin', 'assistant'},
       ),
