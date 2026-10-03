@@ -21,6 +21,7 @@ class MyStylistAgendaPage extends StatefulWidget {
     required this.branchId,
     this.puedePortafolio = true,
     this.citasNacenConfirmadas = false,
+    this.mostrarDinero = true,
   });
 
   final String branchId;
@@ -32,6 +33,11 @@ class MyStylistAgendaPage extends StatefulWidget {
   /// D-312: el negocio tiene la agenda de tres estados, y la cita que pide
   /// una clienta por el enlace le llega confirmada.
   final bool citasNacenConfirmadas;
+
+  /// D-312: en un negocio con la caja apagada la estilista no ve el valor de
+  /// sus servicios: ni la tarjeta "Valor servicios" ni la columna "Valor".
+  /// El propietario lo pidió al verlo en el celular del espejo de David.
+  final bool mostrarDinero;
 
   @override
   State<MyStylistAgendaPage> createState() => _MyStylistAgendaPageState();
@@ -330,6 +336,7 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
                     items: requestedItems,
                     onUpdateServiceStatus: _confirmAndUpdateServiceStatus,
                     onAddWorkPhoto: _openAddWorkPhotoDialog,
+                    mostrarDinero: widget.mostrarDinero,
                   ),
                   const SizedBox(height: 24),
                 ],
@@ -337,6 +344,7 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
                   _AgendaSummary(
                     itemsCount: confirmedItems.length,
                     totalValue: totalValue,
+                    mostrarDinero: widget.mostrarDinero,
                   ),
                   const SizedBox(height: 24),
                   const SectionTitle('Servicios confirmados'),
@@ -345,6 +353,7 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
                     items: confirmedItems,
                     onUpdateServiceStatus: _confirmAndUpdateServiceStatus,
                     onAddWorkPhoto: _openAddWorkPhotoDialog,
+                    mostrarDinero: widget.mostrarDinero,
                   ),
                 ] else
                   InfoPanel(
@@ -586,10 +595,15 @@ String _formatLongDate(DateTime date) {
 }
 
 class _AgendaSummary extends StatefulWidget {
-  const _AgendaSummary({required this.itemsCount, required this.totalValue});
+  const _AgendaSummary({
+    required this.itemsCount,
+    required this.totalValue,
+    this.mostrarDinero = true,
+  });
 
   final int itemsCount;
   final double totalValue;
+  final bool mostrarDinero;
 
   @override
   State<_AgendaSummary> createState() => _AgendaSummaryState();
@@ -612,6 +626,7 @@ class _AgendaSummaryState extends State<_AgendaSummary> {
           description: 'Asignados a tu agenda',
           icon: Icons.event_available_outlined,
         ),
+        if (widget.mostrarDinero)
         SizedBox(
           width: 260,
           child: Card(
@@ -685,9 +700,11 @@ class _AgendaTable extends StatelessWidget {
     required this.items,
     required this.onUpdateServiceStatus,
     required this.onAddWorkPhoto,
+    this.mostrarDinero = true,
   });
 
   final List<MyStylistAgendaItem> items;
+  final bool mostrarDinero;
   final Future<void> Function(MyStylistAgendaItem item, String newStatus)
   onUpdateServiceStatus;
   final Future<void> Function(MyStylistAgendaItem item) onAddWorkPhoto;
@@ -706,17 +723,17 @@ class _AgendaTable extends StatelessWidget {
         child: DataTable(
           dataRowMinHeight: 56,
           dataRowMaxHeight: 108,
-          columns: const [
-            DataColumn(label: Text('Fecha')),
-            DataColumn(label: Text('Hora')),
-            DataColumn(label: Text('Cliente')),
-            DataColumn(label: Text('Servicio')),
-            DataColumn(label: Text('Ticket')),
-            DataColumn(label: Text('Servicio estado')),
-            DataColumn(label: Text('Duracion')),
-            DataColumn(label: Text('Valor')),
-            DataColumn(label: Text('Notas')),
-            DataColumn(label: Text('Acción')),
+          columns: [
+            const DataColumn(label: Text('Fecha')),
+            const DataColumn(label: Text('Hora')),
+            const DataColumn(label: Text('Cliente')),
+            const DataColumn(label: Text('Servicio')),
+            const DataColumn(label: Text('Ticket')),
+            const DataColumn(label: Text('Servicio estado')),
+            const DataColumn(label: Text('Duracion')),
+            if (mostrarDinero) const DataColumn(label: Text('Valor')),
+            const DataColumn(label: Text('Notas')),
+            const DataColumn(label: Text('Acción')),
           ],
           rows: items
               .map(
@@ -729,7 +746,7 @@ class _AgendaTable extends StatelessWidget {
                     DataCell(Text(item.ticketStatusText)),
                     DataCell(Text(item.serviceStatusText)),
                     DataCell(Text(item.durationText)),
-                    DataCell(Text(item.formattedPrice)),
+                    if (mostrarDinero) DataCell(Text(item.formattedPrice)),
                     DataCell(Text(item.notesText)),
                     DataCell(
                       _ServiceActionButton(

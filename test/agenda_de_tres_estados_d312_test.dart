@@ -6,6 +6,7 @@ import 'package:salonymas/models/public_booking_result.dart';
 import 'package:salonymas/models/ticket_board.dart';
 import 'package:salonymas/pages/agenda_page.dart';
 import 'package:salonymas/pages/public_booking_page.dart';
+import 'package:salonymas/pages/tickets_page.dart' show avisoDeCitaCreada;
 import 'package:salonymas/widgets/compartir_reserva_del_estilista.dart';
 import 'package:salonymas/widgets/ticket_status.dart';
 
@@ -251,6 +252,34 @@ void main() {
       expect(
         avisoDeAccionHecha(AccionDeTresEstados.cerrar, 'Ana'),
         'La cita de Ana quedó cerrada.',
+      );
+    });
+  });
+
+  group('lo que vio el propietario en el espejo (03-oct)', () {
+    test('crear una cita sin caja no dice "pendiente de confirmación"', () {
+      expect(avisoDeCitaCreada(confirmada: true), 'Cita creada y confirmada.');
+      expect(
+        avisoDeCitaCreada(confirmada: false),
+        contains('pendiente de confirmación'),
+      );
+      expect(
+        leer('lib/main.dart'),
+        contains('citasNacenConfirmadas: entitlements\n'),
+      );
+    });
+
+    test('sin caja, la estilista no ve el valor de sus servicios', () {
+      final estilista = leer('lib/pages/my_stylist_agenda_page.dart');
+      expect(leer('lib/main.dart'), contains('mostrarDinero: !cajaOculta,'));
+      expect(estilista, contains('if (widget.mostrarDinero)'));
+      expect(
+        estilista,
+        contains("if (mostrarDinero) const DataColumn(label: Text('Valor')),"),
+      );
+      expect(
+        estilista,
+        contains('if (mostrarDinero) DataCell(Text(item.formattedPrice)),'),
       );
     });
   });

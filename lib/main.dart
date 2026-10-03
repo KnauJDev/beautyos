@@ -508,8 +508,10 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           key: ValueKey('my-agenda-${branch.branchId}'),
           branchId: branch.branchId,
           puedePortafolio: entitlements.permite(ClaveDeCapacidad.portafolio),
-          // D-312: la reserva que trae la estilista nace confirmada.
+          // D-312: la reserva que trae la estilista nace confirmada, y sin
+          // caja la estilista no ve dinero.
           citasNacenConfirmadas: cajaOculta,
+          mostrarDinero: !cajaOculta,
         ),
         allowedRoles: const <String>{'stylist'},
       ),
@@ -1126,6 +1128,11 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                             onPressed: () => openCreateAppointmentDialog(
                               context,
                               branch.branchId,
+                              // D-312: sin caja, la cita nace confirmada.
+                              citasNacenConfirmadas: entitlements
+                                  .apagadoPorLaPlataforma(
+                                    ClaveDeCapacidad.cajaYCobros,
+                                  ),
                             ),
                             icon: const Icon(Icons.add, size: 18),
                             label: Text(isWide ? 'Nueva Cita' : 'Cita'),

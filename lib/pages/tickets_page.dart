@@ -30,8 +30,9 @@ import 'agenda_page.dart' show buildWhatsAppUri;
 /// carga de clientes/servicios.
 Future<bool> openCreateAppointmentDialog(
   BuildContext context,
-  String branchId,
-) async {
+  String branchId, {
+  bool citasNacenConfirmadas = false,
+}) async {
   final clientsService = const ClientsService();
   final ticketsService = TicketsService(branchId: branchId);
 
@@ -73,9 +74,9 @@ Future<bool> openCreateAppointmentDialog(
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+      SnackBar(
         content: Text(
-          'Reserva creada correctamente y pendiente de confirmación.',
+          avisoDeCitaCreada(confirmada: citasNacenConfirmadas),
         ),
       ),
     );
@@ -95,6 +96,13 @@ Future<bool> openCreateAppointmentDialog(
     return false;
   }
 }
+
+/// Lo que se dice al crear una cita. D-312: en un negocio con la agenda de
+/// tres estados la cita nace confirmada, y decir "pendiente de confirmación"
+/// era falso (lo vio el propietario el 03-oct en el espejo de David).
+String avisoDeCitaCreada({required bool confirmada}) => confirmada
+    ? 'Cita creada y confirmada.'
+    : 'Reserva creada correctamente y pendiente de confirmación.';
 
 class TicketsPage extends StatefulWidget {
   const TicketsPage({
