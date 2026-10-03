@@ -118,8 +118,8 @@ commit solo de documentos hace que la app anuncie *"Hay una versión nueva"*) ·
    pero no consta si la pestaña tenía sesión. Basta una reserva en una pestaña normal
    del navegador donde esté abierta la sesión de Erick.
 4. ✅ **03-oct: era un fallo de verdad (hallazgo CK)** y está cerrado: los botones de WhatsApp
-   mandaban el celular sin el 57. **Falta verlo con un número real** (por ejemplo, invitar a una
-   clienta de prueba que tenga el celular del propietario).
+   mandaban el celular sin el 57. ✅ **Visto con un número real** (el del propietario): abre su chat
+   con *"Hola Juan, te escribimos de Peluquería Éxito Prueba."*
 
 ---
 
