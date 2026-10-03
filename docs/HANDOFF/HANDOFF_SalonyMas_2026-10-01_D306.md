@@ -174,6 +174,13 @@ Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anter
    espejo, en Éxito no se prueban cobros ni caja**: para eso se enciende *Caja y cobros* y todo
    reaparece (no se borra nada). **Pendiente menor para el próximo cambio de la app:** la lista del
    Panel dice *"N límites especiales"* cuando son módulos apagados, y no se refresca al moverlos.
+   ✅ **Paso 1 cumplido** (02-oct): en el celular, el dueño de Éxito ve *Agenda · Clientes · Fotos ·
+   Reseñas · Más* y el estilista *Mi agenda · Mis fotos · Mis reseñas · Cuenta*, sin panel financiero.
+   **Visto en el celular, para el paso 5** (no se tocó): el encabezado de la agenda dice *"Control de
+   flujo y cobro de tickets. Regla del cero…"*; las cinco columnas quedan cortadas (*"Por co… Confir…"*)
+   y una es *Por cobrar*; el botón *Semana* se parte en dos líneas. **Para el paso 2:** la tarjeta del
+   estilista dice *"la cita llega al salón por confirmar"*. **Para el paso 6:** en *Mi agenda* del
+   estilista, las flechas de fecha quedan apiladas y descuadradas.
 8. **AI**: la mitad honesta ya estaba escrita (el repositorio dice que no contiene
    el esquema entero); la correcta, volcarlo a una migración, va en el turno E.
 
