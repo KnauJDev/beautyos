@@ -191,8 +191,8 @@ Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anter
    hacer:** acomodar la agenda de la estilista en el celular (hoy es una tabla ancha que se desplaza de
    lado) y darle vista de semana y mes. **Hallazgo CI** (la hora de la tarjeta y del recordatorio de
    WhatsApp salía en UTC), cerrado el 03-oct. Respaldo: `Backup_2026-10-03_08-49-43`. Probado en
-   pantalla: crear (nace confirmada), Iniciar, Cerrar, Cancelar. **Falta:** No asistió, la hoja que se
-   cierra sola y una reserva por el enlace que diga *"Cita confirmada"*. Pendiente menor: *"1 canceladas"*
+   pantalla: crear (nace confirmada), Iniciar, Cerrar (también directo desde Confirmado), Cancelar,
+   No asistió y la hoja que se cierra sola. **Falta:** una reserva por el enlace que diga *"Cita confirmada"*. Pendiente menor: *"1 canceladas"*
    debe decir *"1 cancelada"*. **Aquí no se
    formatea en bloque** (`dart format lib/` reformatea 112 archivos ajenos).
 8. **AI**: la mitad honesta ya estaba escrita (el repositorio dice que no contiene
