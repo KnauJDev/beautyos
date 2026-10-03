@@ -8,8 +8,8 @@ apagada (D-312). Y el 03-oct, el **enlace para reservar con el nombre del salón
 regla para todos (D-313).
 
 **Estado:** ✅ Todo escrito está **aplicado y publicado**: tres migraciones, con sus
-controles en verde (**239** 5/5, **240** 9/9 y **241** 6/6). Falta **una sola mirada en
-pantalla**: el enlace con el nombre que copia la estilista (§3).
+controles en verde (**239** 5/5, **240** 9/9 y **241** 6/6), y **todo visto en pantalla**
+el 03-oct (§3). Solo queda mirar, sin prisa, la tarjeta *Reserva pública* de Configuración.
 `flutter analyze` sin avisos · **695 pruebas** · guardián en verde.
 **Hallazgos: 78 en total, 63 cerrados o decididos, 15 abiertos** (los cuenta
 `python scripts/verificar_documentos.py`).
@@ -38,13 +38,13 @@ estilistas (*Ayudante segunda Linea Celular* y *Erick Estilista*).
 
 | Decisión | Qué | Estado |
 |---|---|---|
-| D-307 | **CE**: la página pública de un salón también funciona con una sesión abierta (las seis funciones públicas, concedidas también a `authenticated`) | ✅ aplicada, control 238 en 3/3. Falta confirmar en el celular **con sesión** (§3) |
+| D-307 | **CE**: la página pública de un salón también funciona con una sesión abierta (las seis funciones públicas, concedidas también a `authenticated`) | ✅ aplicada, control 238 en 3/3, **vista en el celular con sesión el 03-oct** |
 | D-308 | **El primer cliente real cambia el orden.** El plan de David, pasos 0 a 6 (abajo). **Precio:** $50.000 al mes para los que el propietario visite y convenza; David, **$30.000**, revisable | ✍️ en curso |
 | D-309 | **CF** (paso 0): el estilista de David no pudo entrar porque escribió el código de un correo viejo. *Ingresar* ya no manda un código solo; vale el del correo más reciente | ✅ verificado en pantalla con una cuenta nueva |
 | D-310 | **Paso 1:** el Panel apaga módulos **por negocio** (*Caja y cobros, Finanzas, Inventario, Comisiones, Fotos, Reseñas, Blog*), y lo apagado desaparece en vez de salir con candado | ✅ control 239 en 5/5, probado en pantalla en el espejo |
 | D-311 | **David conserva el Dashboard, pero sin dinero**, en cuatro bloques: citas, clientes, servicios, equipo y canal. Se construye **con el paso 5**. Mientras tanto, *Finanzas* apagada; *Fotos* y *Reseñas* se le quedan, a propósito | ✍️ decidida, sin construir |
 | D-312 | **Paso 2, ampliado: agenda de tres estados** para los negocios con la caja apagada. Toda cita nace confirmada (enlace, salón y recurrentes); Iniciar, Cerrar, Cancelar y No asistió en la propia cita; Cerrar se puede pulsar desde Confirmado. **Arregló que, sin caja, la agenda no podía mover ninguna cita** | ✅ control 240 en 9/9, **probada de punta a punta** |
-| D-313 | **El enlace para reservar lleva el nombre del salón** (`salonymas.com/<nombre>`), **regla para todos**, en la sede principal; las otras sedes, el enlace directo hasta tener `<salon>/<sede>`. Mismo bloque: **CJ** (la app en español y el calendario de un toque), el botón **Listo** al confirmar y dos textos viejos | ✅ control 241 en 6/6. Falta mirarlo en pantalla (§3) |
+| D-313 | **El enlace para reservar lleva el nombre del salón** (`salonymas.com/<nombre>`), **regla para todos**, en la sede principal; las otras sedes, el enlace directo hasta tener `<salon>/<sede>`. Mismo bloque: **CJ** (la app en español y el calendario de un toque), el botón **Listo** al confirmar y dos textos viejos | ✅ control 241 en 6/6, **vista en pantalla el 03-oct** (enlace, calendario y *Listo*) |
 
 **Hallazgos de estos dos días:** **CE** y **CF** (cerrados con D-307 y D-309) · **CG**
 (abierto: el aviso de términos no se borra al marcar la casilla) · **CH** (abierto: cada
@@ -111,10 +111,10 @@ commit solo de documentos hace que la app anuncie *"Hay una versión nueva"*) ·
    chat sin enviarlo. Debe salir `salonymas.com/<nombre de Éxito>`, sin el código. Y en
    el computador, como dueño de Éxito: *Configuración* → *Reserva pública* debe dar la
    misma dirección.
-2. **D-313, el calendario y el *Listo*.** Al reservar por el enlace, el calendario sale
+2. ✅ **03-oct: visto.** **D-313, el calendario y el *Listo*.** Al reservar por el enlace, el calendario sale
    en español y se cierra al tocar el día. Al confirmar, **Listo** devuelve a la página
    del salón.
-3. **CE en el celular con la sesión abierta.** El 03-oct se reservó desde el celular,
+3. ✅ **03-oct: visto** (reservó con la sesión de Erick abierta, desde el enlace de WhatsApp). **CE en el celular con la sesión abierta.** El 03-oct se reservó desde el celular,
    pero no consta si la pestaña tenía sesión. Basta una reserva en una pestaña normal
    del navegador donde esté abierta la sesión de Erick.
 4. Sin urgencia, del bloque anterior: **el botón de WhatsApp con un celular guardado
@@ -206,8 +206,7 @@ con el **paso 3**; la agenda de la estilista en tarjetas, con semana y mes, va c
 
 ## 7. Por dónde seguir
 
-**Lo inmediato:** la mirada en pantalla de D-313 (§3, punto 1). Después, el **paso 3 de
-David**: su tema, la tarjeta de WhatsApp con su logo y su nombre, y pulir la página
+**Lo inmediato:** el **paso 3 de David**: su tema, la tarjeta de WhatsApp con su logo y su nombre, y pulir la página
 pública. Antes de proponer, **preguntar** cómo quiere los colores (regla 25: el
 producto se pregunta).
 
@@ -245,12 +244,11 @@ El primer cliente real, David Rojas, quiere solo agenda. Su plan (D-308) va
 por el paso 3: el 0 (que su equipo entre, D-309), el 1 (interruptores por
 negocio, D-310) y el 2 (agenda de tres estados, D-312) están hechos y
 probados. Peluquería Éxito Prueba es su ESPEJO: todo se prueba ahí primero.
-El enlace para reservar lleva el nombre del salón (D-313); falta mirarlo en
-pantalla (§3 del HANDOFF).
+El enlace para reservar lleva el nombre del salón (D-313), visto en pantalla.
 
 LO PRIMERO
-La mirada en pantalla de D-313. Luego el paso 3 (su tema, la tarjeta de
-WhatsApp con su logo, pulir la página pública): preguntar antes de proponer.
+El paso 3 de David (su tema, la tarjeta de WhatsApp con su logo, pulir la
+página pública): preguntar antes de proponer.
 
 CÓMO SE TRABAJA CON ÉL
 Paso a paso, un paso por mensaje, en español claro y con los nombres exactos
