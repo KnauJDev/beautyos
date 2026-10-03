@@ -36,12 +36,15 @@ void main() {
   test('el enlace se arma en un solo sitio', () {
     // Configuración y Mi agenda usan la misma función: dos copias del mismo
     // enlace son dos enlaces el día que cambie uno.
-    for (final ruta in [
-      'lib/pages/settings_page.dart',
-      'lib/widgets/compartir_reserva_del_estilista.dart',
+    // D-313: las dos tarjetas usan `enlaceParaCompartir`, que vive en el
+    // mismo archivo que `enlaceDeReservaDeSede` y la llama cuando no puede
+    // usar la dirección con el nombre del salón. Sigue siendo un solo sitio.
+    for (final (ruta, funcion) in [
+      ('lib/pages/settings_page.dart', 'enlaceParaCompartir('),
+      ('lib/widgets/compartir_reserva_del_estilista.dart', 'enlaceParaCompartir('),
     ]) {
       final codigo = File(ruta).readAsStringSync();
-      expect(codigo, contains('enlaceDeReservaDeSede('), reason: ruta);
+      expect(codigo, contains(funcion), reason: ruta);
       expect(codigo, isNot(contains("?reservar=\$")), reason: ruta);
     }
   });

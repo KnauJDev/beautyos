@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'models/my_profile.dart';
@@ -178,6 +179,12 @@ class BeautyOSApp extends StatelessWidget {
           title: 'Salón y Más',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light(),
+          // CJ (03-oct): sin esto, todo lo que trae Flutter de serie --los
+          // calendarios, "Cancel", "OK", copiar y pegar-- salía en inglés.
+          // Lo vio el propietario reservando como clienta desde el celular.
+          locale: const Locale('es', 'CO'),
+          supportedLocales: const [Locale('es', 'CO'), Locale('es')],
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
           home: home,
         );
       },
@@ -512,6 +519,10 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           // caja la estilista no ve dinero.
           citasNacenConfirmadas: cajaOculta,
           mostrarDinero: !cajaOculta,
+          // 03-oct: el enlace que comparte lleva el nombre del salón.
+          tenantId: branch.tenantId,
+          nombreDelSalon: branch.tenantName,
+          esSedePrincipal: branch.isPrimary,
         ),
         allowedRoles: const <String>{'stylist'},
       ),
@@ -759,6 +770,10 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           key: ValueKey('settings-${branch.branchId}'),
           branchId: branch.branchId,
           isOwner: role == 'owner',
+          // D-312: sin caja, la tarjeta del enlace no dice "pendiente".
+          citasNacenConfirmadas: cajaOculta,
+          // D-313: en la sede principal, el enlace lleva el nombre del salón.
+          esSedePrincipal: branch.isPrimary,
           // Mismo refresco que usa el badge de prueba (D-238): la lista de
           // sedes se arma aquí, en `_loadHomeContext`, y Configuración no
           // tiene forma de tocarla. No se cambia de sede automáticamente: eso

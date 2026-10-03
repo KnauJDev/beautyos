@@ -14,6 +14,8 @@ import '../widgets/app_widgets.dart';
 import '../widgets/candado_de_plan.dart';
 import '../widgets/compartir_reserva_del_estilista.dart';
 import '../widgets/create_time_off_dialog.dart';
+import '../widgets/elegir_fecha.dart';
+import '../services/slug_del_salon_service.dart';
 
 class MyStylistAgendaPage extends StatefulWidget {
   const MyStylistAgendaPage({
@@ -22,6 +24,9 @@ class MyStylistAgendaPage extends StatefulWidget {
     this.puedePortafolio = true,
     this.citasNacenConfirmadas = false,
     this.mostrarDinero = true,
+    this.tenantId,
+    this.nombreDelSalon,
+    this.esSedePrincipal = false,
   });
 
   final String branchId;
@@ -39,6 +44,12 @@ class MyStylistAgendaPage extends StatefulWidget {
   /// El propietario lo pidió al verlo en el celular del espejo de David.
   final bool mostrarDinero;
 
+  /// 03-oct: para compartir el enlace con el nombre del salón
+  /// (`enlaceParaCompartir`, D-313). Sin `tenantId` se comparte el de siempre.
+  final String? tenantId;
+  final String? nombreDelSalon;
+  final bool esSedePrincipal;
+
   @override
   State<MyStylistAgendaPage> createState() => _MyStylistAgendaPageState();
 }
@@ -51,9 +62,19 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
   late Future<List<MyStylistAgendaItem>> agendaFuture;
   late Future<List<StylistTimeOff>> timeOffFuture;
 
+  /// 03-oct: la dirección pública del salón, para el enlace que comparte.
+  /// `null` mientras llega o si no se pudo leer: entonces va el de siempre.
+  String? _slugDelSalon;
+
   @override
   void initState() {
     super.initState();
+    final tenantId = widget.tenantId;
+    if (tenantId != null && tenantId.isNotEmpty) {
+      const SlugDelSalonService().leer(tenantId).then((slug) {
+        if (mounted && slug != null) setState(() => _slugDelSalon = slug);
+      });
+    }
     agendaService = MyStylistAgendaService(branchId: widget.branchId);
     timeOffService = StylistTimeOffService(branchId: widget.branchId);
     selectedDate = DateUtils.dateOnly(DateTime.now());
@@ -132,14 +153,13 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
   }
 
   Future<void> _pickDate() async {
-    final pickedDate = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(DateTime.now().year + 5, 12, 31),
-      helpText: 'Selecciona el dia de la agenda',
-      cancelText: 'Cancelar',
-      confirmText: 'Ver agenda',
+    // CJ: al tocar el día queda elegido, sin "OK".
+    final pickedDate = await elegirFechaDeUnToque(
+      context,
+      fechaInicial: selectedDate,
+      primeraFecha: DateTime(2020),
+      ultimaFecha: DateTime(DateTime.now().year + 5, 12, 31),
+      titulo: 'Elige el día de tu agenda',
     );
 
     if (pickedDate != null) {
@@ -270,6 +290,9 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
         CompartirReservaDelEstilista(
           branchId: widget.branchId,
           citasNacenConfirmadas: widget.citasNacenConfirmadas,
+          nombreDelSalon: widget.nombreDelSalon,
+          slugDelSalon: _slugDelSalon,
+          esSedePrincipal: widget.esSedePrincipal,
         ),
         const SizedBox(height: 18),
         _AgendaDateNavigator(

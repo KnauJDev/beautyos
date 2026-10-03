@@ -192,7 +192,13 @@ Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anter
    lado) y darle vista de semana y mes. **Hallazgo CI** (la hora de la tarjeta y del recordatorio de
    WhatsApp salía en UTC), cerrado el 03-oct. Respaldo: `Backup_2026-10-03_08-49-43`. Probado en
    pantalla: crear (nace confirmada), Iniciar, Cerrar (también directo desde Confirmado), Cancelar,
-   No asistió y la hoja que se cierra sola. **Falta:** una reserva por el enlace que diga *"Cita confirmada"*. Pendiente menor: *"1 canceladas"*
+   No asistió, la hoja que se cierra sola y la reserva por el enlace (*"Cita confirmada"*): **D-312 probada**.
+   **D-313 (03-oct):** el enlace para reservar lleva el nombre del salón (`salonymas.com/<nombre>`), regla para
+   todos en la sede principal; las otras sedes, el directo hasta tener `<salon>/<sede>`. Mismo bloque: CJ
+   cerrado (español y calendario de un toque), *Listo* al confirmar, textos viejos. **Decidido:** la tarjeta
+   de WhatsApp con logo y nombre del salón va con el **paso 3**; la agenda de la estilista en tarjetas, con
+   semana y mes, con el **paso 6**. **Visto y sin hacer:** Configuración le enseña a David la política de
+   comisiones y la numeración de ventas (para el paso 5). Pendiente menor: *"1 canceladas"*
    debe decir *"1 cancelada"*. **Aquí no se
    formatea en bloque** (`dart format lib/` reformatea 112 archivos ajenos).
 8. **AI**: la mitad honesta ya estaba escrita (el repositorio dice que no contiene

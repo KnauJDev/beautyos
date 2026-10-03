@@ -20,6 +20,7 @@ import '../services/tickets_service.dart';
 import '../widgets/add_work_photo_dialog.dart';
 import '../widgets/app_widgets.dart';
 import '../widgets/candado_de_plan.dart';
+import '../widgets/elegir_fecha.dart';
 import '../widgets/pedir_autorizacion.dart';
 import 'agenda_page.dart' show buildWhatsAppUri;
 
@@ -1612,11 +1613,12 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
   Future<void> _selectDate() async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final date = await showDatePicker(
-      context: context,
-      initialDate: selectedDate ?? today,
-      firstDate: today,
-      lastDate: DateTime(now.year + 3),
+    // CJ: al tocar el día queda elegido, sin "OK".
+    final date = await elegirFechaDeUnToque(
+      context,
+      fechaInicial: selectedDate ?? today,
+      primeraFecha: today,
+      ultimaFecha: DateTime(now.year + 3),
     );
 
     if (date == null || !mounted) {

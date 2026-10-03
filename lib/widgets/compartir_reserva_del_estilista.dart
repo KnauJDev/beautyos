@@ -24,12 +24,25 @@ class CompartirReservaDelEstilista extends StatelessWidget {
     super.key,
     required this.branchId,
     this.citasNacenConfirmadas = false,
+    this.nombreDelSalon,
+    this.slugDelSalon,
+    this.esSedePrincipal = false,
   });
 
   final String branchId;
   final bool citasNacenConfirmadas;
 
-  String get _enlace => enlaceDeReservaDeSede(branchId);
+  /// 03-oct: el mensaje nombra el salón y, si se puede, el enlace lleva su
+  /// nombre (`enlaceParaCompartir`, D-313).
+  final String? nombreDelSalon;
+  final String? slugDelSalon;
+  final bool esSedePrincipal;
+
+  String get _enlace => enlaceParaCompartir(
+    branchId: branchId,
+    esSedePrincipal: esSedePrincipal,
+    slugDelSalon: slugDelSalon,
+  );
 
   Future<void> _copiar(BuildContext context) async {
     await Clipboard.setData(ClipboardData(text: _enlace));
@@ -40,9 +53,10 @@ class CompartirReservaDelEstilista extends StatelessWidget {
   }
 
   Future<void> _porWhatsApp() async {
-    final mensaje =
-        'Reserva tu cita conmigo aquí 👉 $_enlace\n'
-        'Escoges el servicio y la hora, y al elegir estilista me buscas a mí.';
+    final mensaje = mensajeDeLaEstilista(
+      enlace: _enlace,
+      nombreDelSalon: nombreDelSalon,
+    );
     final uri = Uri.https('wa.me', '/', {'text': mensaje});
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -126,3 +140,12 @@ String textoDeCompartirReserva({required bool citasNacenConfirmadas}) =>
     : 'Compártele el enlace de reservas de tu sede. Ella escoge el servicio y '
           'la hora, te elige a ti como estilista, y la cita llega al salón por '
           'confirmar.';
+
+/// El WhatsApp que manda la estilista. 03-oct: nombra el salón, para que la
+/// clienta sepa de dónde viene el enlace.
+String mensajeDeLaEstilista({required String enlace, String? nombreDelSalon}) {
+  final nombre = nombreDelSalon?.trim() ?? '';
+  final donde = nombre.isEmpty ? '' : ' en $nombre';
+  return 'Reserva tu cita conmigo$donde aquí 👉 $enlace\n'
+      'Escoges el servicio y la hora, y al elegir estilista me buscas a mí.';
+}

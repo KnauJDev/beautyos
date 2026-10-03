@@ -10,6 +10,7 @@ import '../models/public_booking_result.dart';
 import '../models/public_branch_info.dart';
 import '../models/public_service_option.dart';
 import '../services/public_booking_service.dart';
+import '../widgets/elegir_fecha.dart';
 import 'agenda_page.dart' show buildWhatsAppUri;
 
 /// Pagina publica de reserva (web/QR), D-005. No requiere sesion: usa el
@@ -190,11 +191,12 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
     if (selectedServiceId == null) return;
 
     final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: now,
-      firstDate: now,
-      lastDate: now.add(const Duration(days: 90)),
+    // CJ: al tocar el día queda elegido, sin "OK".
+    final picked = await elegirFechaDeUnToque(
+      context,
+      fechaInicial: now,
+      primeraFecha: now,
+      ultimaFecha: now.add(const Duration(days: 90)),
     );
 
     if (picked == null || !mounted) return;
@@ -850,17 +852,27 @@ class _BookingSuccessCard extends StatelessWidget {
                 label: const Text('Guardar en Google Calendar'),
               ),
             ),
-            if (canPop) ...[
-              const SizedBox(height: 10),
+            // Una salida clara (03-oct). El propietario reservó como clienta
+            // y, después de las tres opciones, no sabía por dónde terminar:
+            // "Volver a la página del salón" parecía una opción más. Si llegó
+            // desde la página del salón, "Listo" la devuelve allí; si abrió
+            // el enlace directo, no hay página detrás y se le dice que ya
+            // terminó.
+            const SizedBox(height: 20),
+            if (canPop)
               SizedBox(
                 width: double.infinity,
-                child: TextButton.icon(
+                child: FilledButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  icon: const Text('🏠', style: TextStyle(fontSize: 16)),
-                  label: const Text('Volver a la página del salón'),
+                  child: const Text('Listo'),
                 ),
+              )
+            else
+              const Text(
+                'Listo. Ya puedes cerrar esta página.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.textSecondary),
               ),
-            ],
           ],
         ),
       ),

@@ -44,10 +44,20 @@ class ConfiguracionPage extends StatefulWidget {
     required this.branchId,
     required this.isOwner,
     required this.onSedeCreada,
+    this.citasNacenConfirmadas = false,
+    this.esSedePrincipal = false,
   });
 
   final String branchId;
   final bool isOwner;
+
+  /// D-312: el negocio tiene la caja apagada, y la reserva en línea le llega
+  /// confirmada. La tarjeta del enlace no debe decir "pendiente".
+  final bool citasNacenConfirmadas;
+
+  /// D-313: en la sede principal, el enlace de reserva es la dirección con
+  /// el nombre del salón.
+  final bool esSedePrincipal;
 
   /// Qué hacer cuando el propietario acaba de crear una sede (D-238).
   ///
@@ -300,7 +310,17 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
         ),
         const SizedBox(height: 16),
         const SectionTitle('Reserva pública'),
-        PublicBookingLinkCard(branchId: widget.branchId),
+        // D-313: la dirección con el nombre sale de los datos del negocio;
+        // mientras llegan, o si fallan, la tarjeta muestra el enlace directo.
+        FutureBuilder<BusinessSettings>(
+          future: businessSettingsFuture,
+          builder: (context, snapshot) => PublicBookingLinkCard(
+            branchId: widget.branchId,
+            citasNacenConfirmadas: widget.citasNacenConfirmadas,
+            slugDelSalon: snapshot.data?.slug,
+            esSedePrincipal: widget.esSedePrincipal,
+          ),
+        ),
         const SizedBox(height: 16),
         const SectionTitle('Horarios de atención'),
         FutureBuilder<List<BusinessHour>>(
@@ -1627,13 +1647,38 @@ class _CoverPhotoUploadButtonState extends State<_CoverPhotoUploadButton> {
   }
 }
 
+/// Lo que explica la tarjeta del enlace de reservas. D-312: sin caja, la
+/// reserva no queda pendiente; queda confirmada.
+String textoDeLaTarjetaDeReserva({required bool citasNacenConfirmadas}) =>
+    citasNacenConfirmadas
+    ? 'Comparte este enlace por WhatsApp, redes o un código QR generado a '
+          'partir de él. Tus clientes reservan sin crear cuenta ni contraseña, '
+          'y la cita queda confirmada en tu agenda.'
+    : 'Comparte este enlace por WhatsApp, redes o un código QR generado a '
+          'partir de él. Tus clientes reservan sin crear cuenta ni contraseña; '
+          'la reserva queda pendiente de tu confirmación.';
+
 class PublicBookingLinkCard extends StatelessWidget {
-  const PublicBookingLinkCard({super.key, required this.branchId});
+  const PublicBookingLinkCard({
+    super.key,
+    required this.branchId,
+    this.citasNacenConfirmadas = false,
+    this.slugDelSalon,
+    this.esSedePrincipal = false,
+  });
 
   final String branchId;
+  final bool citasNacenConfirmadas;
+  final String? slugDelSalon;
+  final bool esSedePrincipal;
 
-  // El mismo enlace que comparte el estilista desde Mi agenda (D-267).
-  String get _link => enlaceDeReservaDeSede(branchId);
+  // El mismo enlace que comparte el estilista desde Mi agenda (D-267), con
+  // la regla de D-313: la dirección con el nombre en la sede principal.
+  String get _link => enlaceParaCompartir(
+    branchId: branchId,
+    esSedePrincipal: esSedePrincipal,
+    slugDelSalon: slugDelSalon,
+  );
 
   Future<void> _copyLink(BuildContext context) async {
     await Clipboard.setData(ClipboardData(text: _link));
@@ -1651,12 +1696,14 @@ class PublicBookingLinkCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Comparte este enlace por WhatsApp, redes o un código QR '
-              'generado a partir de él. Tus clientes reservan sin crear '
-              'cuenta ni contraseña; la reserva queda pendiente de tu '
-              'confirmación.',
-              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+            Text(
+              textoDeLaTarjetaDeReserva(
+                citasNacenConfirmadas: citasNacenConfirmadas,
+              ),
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+              ),
             ),
             const SizedBox(height: 12),
             Container(

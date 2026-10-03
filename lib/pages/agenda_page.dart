@@ -11,6 +11,7 @@ import '../services/agenda_board_service.dart';
 import '../services/tickets_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_widgets.dart';
+import '../widgets/elegir_fecha.dart';
 
 /// Construye el enlace de WhatsApp a partir de un teléfono de cliente.
 ///
@@ -113,6 +114,12 @@ String textoDePendientesDeCierre(int pendientes, {bool tresEstados = false}) {
       ? '1 ticket pendiente de cierre comercial'
       : '$pendientes tickets pendientes de cierre comercial';
 }
+
+/// Las citas sin efecto del periodo, con su singular: decía "1 canceladas"
+/// (03-oct, lo vio el propietario en el espejo de David).
+String textoDeSinEfecto(int canceladas, int noAsistio) =>
+    '${canceladas == 1 ? '1 cancelada' : '$canceladas canceladas'} · '
+    '$noAsistio no asistió';
 
 /// El subtítulo del tablero. D-312: la frase de siempre habla de cobro de
 /// tickets, que a un negocio sin caja no le dice nada.
@@ -366,12 +373,12 @@ class _AgendaPageState extends State<AgendaPage> {
   }
 
   Future<void> _seleccionarFechaCalendario() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime(2025, 1, 1),
-      lastDate: DateTime(2030, 12, 31),
-      locale: const Locale('es', 'CO'),
+    // CJ: al tocar el día queda elegido, sin "OK".
+    final picked = await elegirFechaDeUnToque(
+      context,
+      fechaInicial: _selectedDate,
+      primeraFecha: DateTime(2025, 1, 1),
+      ultimaFecha: DateTime(2030, 12, 31),
     );
     if (picked != null) {
       setState(() {
@@ -818,7 +825,7 @@ class _AgendaPageState extends State<AgendaPage> {
               }
               _abrirListaNivel2(
                 titulo:
-                    'Sin efecto ($canceladas canceladas, $noAsistio no asistió)',
+                    'Sin efecto (${textoDeSinEfecto(canceladas, noAsistio)})',
                 startDate: start,
                 endDate: end,
                 statuses: ['cancelado', 'no_asistio'],
@@ -847,7 +854,7 @@ class _AgendaPageState extends State<AgendaPage> {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    '$canceladas canceladas · $noAsistio no asistió',
+                    textoDeSinEfecto(canceladas, noAsistio),
                     style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
