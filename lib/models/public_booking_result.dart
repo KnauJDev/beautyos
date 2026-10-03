@@ -13,6 +13,10 @@ class PublicBookingResult {
   final String stylistName;
   final String status;
 
+  /// D-312: un negocio con la agenda de tres estados devuelve la cita ya
+  /// confirmada, y la página se lo dice así a la clienta.
+  bool get confirmada => status == 'confirmado';
+
   factory PublicBookingResult.fromMap(Map<String, dynamic> map) {
     return PublicBookingResult(
       ticketId: map['ticket_id'].toString(),

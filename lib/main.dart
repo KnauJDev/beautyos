@@ -440,6 +440,9 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           key: ValueKey('agenda-${branch.branchId}'),
           branchId: branch.branchId,
           businessName: branch.tenantName,
+          // D-312: con la caja apagada por la plataforma, la agenda es de
+          // tres estados y lleva los botones en cada cita.
+          tresEstados: cajaOculta,
           // Agenda y Tickets comparten exactamente los mismos allowedRoles
           // y son adyacentes en esta lista: Tickets siempre queda en el
           // indice inmediatamente siguiente al de Agenda, para cualquier
@@ -505,6 +508,8 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           key: ValueKey('my-agenda-${branch.branchId}'),
           branchId: branch.branchId,
           puedePortafolio: entitlements.permite(ClaveDeCapacidad.portafolio),
+          // D-312: la reserva que trae la estilista nace confirmada.
+          citasNacenConfirmadas: cajaOculta,
         ),
         allowedRoles: const <String>{'stylist'},
       ),

@@ -32,7 +32,11 @@ void main() {
     test('la pantalla usa la función, no el número pegado a «tickets»', () {
       final fuente = File('lib/pages/agenda_page.dart').readAsStringSync();
 
-      expect(fuente, contains('textoDePendientesDeCierre(pendientesCierre)'));
+      // D-312 le añadió `tresEstados`: se mira sin espacios.
+      expect(
+        fuente.replaceAll(RegExp(r'\s+'), ''),
+        contains('textoDePendientesDeCierre(pendientesCierre,'),
+      );
       expect(
         fuente.contains(r"'$pendientesCierre tickets pendientes"),
         isFalse,

@@ -181,6 +181,13 @@ Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anter
    y una es *Por cobrar*; el botón *Semana* se parte en dos líneas. **Para el paso 2:** la tarjeta del
    estilista dice *"la cita llega al salón por confirmar"*. **Para el paso 6:** en *Mi agenda* del
    estilista, las flechas de fecha quedan apiladas y descuadradas.
+   **Paso 2, ampliado por el propietario (D-312, paso 9.58): AGENDA DE TRES ESTADOS** para los negocios
+   con la caja apagada. Toda cita nace confirmada (enlace o salón); Confirmado → En proceso → Cerrado;
+   Iniciar, Cerrar, Cancelar y No asistió en la propia cita; "Cerrado" = atendida, sin pago ni
+   comisión. **Arregla que, sin caja, la agenda de David no podía mover ninguna cita** (y tenía 3 en
+   *Por confirmar*). Escrita: migración `20261003100000_agenda_de_tres_estados_d312.sql` y control
+   **240**. **Falta:** que el propietario la aplique y verlo en pantalla con Éxito. **Aquí no se
+   formatea en bloque** (`dart format lib/` reformatea 112 archivos ajenos).
 8. **AI**: la mitad honesta ya estaba escrita (el repositorio dice que no contiene
    el esquema entero); la correcta, volcarlo a una migración, va en el turno E.
 

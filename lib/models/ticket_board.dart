@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 import '../widgets/ticket_status.dart';
+import 'agenda_de_tres_estados.dart';
 
 /// Formateador canónico de moneda colombiana en pesos enteros: `$50.000`,
 /// `-$50.000` (TL-12, D-198). El signo se saca ANTES de agrupar por miles:
@@ -241,4 +242,84 @@ enum WeekBoardColumn {
 
   bool contiene(String estado) =>
       estados.contains(estado.toLowerCase().trim());
+}
+
+/// Una columna del tablero, sea de la vista Día o de la Semana.
+///
+/// D-312: un negocio con la caja apagada por la plataforma tiene la agenda de
+/// tres estados (`AgendaDeTresEstados`), y su tablero no puede salir de las
+/// enumeraciones de arriba, que traen *Por confirmar* y *Por cobrar*. Esta
+/// clase deja que la pantalla pinte cualquiera de las dos sin saber cuál es.
+class ColumnaDeAgenda {
+  const ColumnaDeAgenda({
+    required this.titulo,
+    required this.subtitulo,
+    required this.estados,
+    required this.color,
+    required this.colorFondo,
+  });
+
+  final String titulo;
+  final String subtitulo;
+  final List<String> estados;
+  final Color color;
+  final Color colorFondo;
+
+  bool contiene(String estado) =>
+      estados.contains(estado.toLowerCase().trim());
+
+  /// Las tres de la agenda de tres estados. Iguales en Día y en Semana.
+  static const deTresEstados = [
+    ColumnaDeAgenda(
+      titulo: 'Confirmado',
+      subtitulo: 'Citas por atender',
+      estados: AgendaDeTresEstados.estadosConfirmado,
+      color: AppColors.stateConfirmed,
+      colorFondo: AppColors.stateConfirmedTint,
+    ),
+    ColumnaDeAgenda(
+      titulo: 'En proceso',
+      subtitulo: 'Sucediendo ahora',
+      estados: AgendaDeTresEstados.estadosEnProceso,
+      color: AppColors.stateInProgress,
+      colorFondo: AppColors.stateInProgressTint,
+    ),
+    ColumnaDeAgenda(
+      titulo: 'Cerrado',
+      subtitulo: 'Atendidas',
+      estados: AgendaDeTresEstados.estadosCerrado,
+      color: AppColors.stateClosed,
+      colorFondo: AppColors.stateClosedTint,
+    ),
+  ];
+
+  /// Las columnas de la vista Día.
+  static List<ColumnaDeAgenda> delDia({required bool tresEstados}) {
+    if (tresEstados) return deTresEstados;
+    return [
+      for (final c in DayBoardColumn.values)
+        ColumnaDeAgenda(
+          titulo: c.titulo,
+          subtitulo: c.subtitulo,
+          estados: c.estados,
+          color: c.color,
+          colorFondo: c.colorFondo,
+        ),
+    ];
+  }
+
+  /// Las columnas de la vista Semana.
+  static List<ColumnaDeAgenda> deLaSemana({required bool tresEstados}) {
+    if (tresEstados) return deTresEstados;
+    return [
+      for (final c in WeekBoardColumn.values)
+        ColumnaDeAgenda(
+          titulo: c.titulo,
+          subtitulo: c.titulo,
+          estados: c.estados,
+          color: c.color,
+          colorFondo: c.color.withValues(alpha: 0.12),
+        ),
+    ];
+  }
 }

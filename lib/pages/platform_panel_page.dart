@@ -2163,7 +2163,7 @@ class _TenantCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(AppRadius.pill),
                       ),
                       child: Text(
-                        '⚙️ ${tenant.activeOverridesCount} ${tenant.activeOverridesCount == 1 ? "límite especial" : "límites especiales"}',
+                        '⚙️ ${tenant.activeOverridesCount} ${tenant.activeOverridesCount == 1 ? "ajuste especial" : "ajustes especiales"}',
                         style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w700,
@@ -4028,7 +4028,8 @@ class _ModulosDelNegocio extends StatefulWidget {
   /// Gastos va con inventario porque así lo exige el servidor: la capacidad
   /// se llama "Inventario, compras y gastos".
   static const modulos = <(String, String, String)>[
-    ('cash_register', 'Caja y cobros', 'Tickets & Caja, y cobrar desde la agenda'),
+    // D-312: apagar la caja también cambia la agenda del negocio.
+    ('cash_register', 'Caja y cobros', 'Tickets & Caja y cobrar. Apagada, su agenda queda en tres estados y las citas nacen confirmadas'),
     ('financial_reports', 'Finanzas', 'Dashboard y Reportes'),
     ('inventory', 'Inventario, compras y gastos', 'Inventario, Compras y Gastos'),
     ('commissions', 'Comisiones', 'El panel financiero de cada estilista'),

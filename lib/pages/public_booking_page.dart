@@ -753,9 +753,12 @@ class _BookingSuccessCard extends StatelessWidget {
     final whatsapp = branchInfo.whatsapp;
     if (whatsapp == null || whatsapp.trim().isEmpty) return;
 
-    final mensaje =
-        'Hola, soy $clientName. Acabo de solicitar una cita para '
-        '${result.serviceName} el $_dateText. ¿Me confirman?';
+    final mensaje = mensajeDeWhatsAppDeLaReserva(
+      clientName: clientName,
+      serviceName: result.serviceName,
+      fecha: _dateText,
+      confirmada: result.confirmada,
+    );
 
     _abrir(context, buildWhatsAppUri(whatsapp, text: mensaje));
   }
@@ -798,7 +801,9 @@ class _BookingSuccessCard extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Solicitud enviada a ${branchInfo.businessName}',
+              result.confirmada
+                  ? 'Cita confirmada en ${branchInfo.businessName}'
+                  : 'Solicitud enviada a ${branchInfo.businessName}',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 20,
@@ -812,9 +817,12 @@ class _BookingSuccessCard extends StatelessWidget {
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 16),
-            const Text(
-              'Tu reserva quedo pendiente de confirmacion. El negocio te '
-              'contactara para confirmarla.',
+            Text(
+              result.confirmada
+                  ? 'Tu cita quedó confirmada. Si no puedes asistir, avísale '
+                        'al salón.'
+                  : 'Tu reserva quedo pendiente de confirmacion. El negocio te '
+                        'contactara para confirmarla.',
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.textSecondary),
             ),
@@ -859,3 +867,17 @@ class _BookingSuccessCard extends StatelessWidget {
     );
   }
 }
+
+/// El mensaje que la clienta le manda al salón al terminar de reservar.
+/// D-312: si la cita ya nació confirmada, no tiene sentido preguntar
+/// "¿Me confirman?".
+String mensajeDeWhatsAppDeLaReserva({
+  required String clientName,
+  required String serviceName,
+  required String fecha,
+  required bool confirmada,
+}) => confirmada
+    ? 'Hola, soy $clientName. Acabo de agendar una cita para $serviceName '
+          'el $fecha.'
+    : 'Hola, soy $clientName. Acabo de solicitar una cita para $serviceName '
+          'el $fecha. ¿Me confirman?';

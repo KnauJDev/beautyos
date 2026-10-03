@@ -20,6 +20,7 @@ class MyStylistAgendaPage extends StatefulWidget {
     super.key,
     required this.branchId,
     this.puedePortafolio = true,
+    this.citasNacenConfirmadas = false,
   });
 
   final String branchId;
@@ -27,6 +28,10 @@ class MyStylistAgendaPage extends StatefulWidget {
   /// Si el plan del salon cubre el portafolio (paso 8.14, D-187). Por defecto
   /// `true`: si no se pudo consultar no se bloquea nada (D-184).
   final bool puedePortafolio;
+
+  /// D-312: el negocio tiene la agenda de tres estados, y la cita que pide
+  /// una clienta por el enlace le llega confirmada.
+  final bool citasNacenConfirmadas;
 
   @override
   State<MyStylistAgendaPage> createState() => _MyStylistAgendaPageState();
@@ -256,7 +261,10 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
         const SizedBox(height: 18),
         // D-267: el estilista no agenda (D-266), pero trae clientas con el
         // enlace de reservas de su sede.
-        CompartirReservaDelEstilista(branchId: widget.branchId),
+        CompartirReservaDelEstilista(
+          branchId: widget.branchId,
+          citasNacenConfirmadas: widget.citasNacenConfirmadas,
+        ),
         const SizedBox(height: 18),
         _AgendaDateNavigator(
           selectedDate: selectedDate,

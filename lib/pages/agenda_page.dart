@@ -4,8 +4,11 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/acciones_de_ticket.dart';
+import '../models/agenda_de_tres_estados.dart';
+import '../models/mensaje_para_la_clienta.dart';
 import '../models/ticket_board.dart';
 import '../services/agenda_board_service.dart';
+import '../services/tickets_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_widgets.dart';
 
@@ -99,9 +102,30 @@ int indiceDeLaHoraActual(List<String> franjas, DateTime ahora) {
 
 /// BT: el aviso del tablero sabe decir el singular. Antes pegaba el número a
 /// «tickets» sin mirar si era uno: «1 tickets pendientes».
-String textoDePendientesDeCierre(int pendientes) => pendientes == 1
-    ? '1 ticket pendiente de cierre comercial'
-    : '$pendientes tickets pendientes de cierre comercial';
+///
+/// D-312: con la agenda de tres estados no hay "cierre comercial" -- el
+/// negocio no cobra en la app --, así que habla de citas sin cerrar.
+String textoDePendientesDeCierre(int pendientes, {bool tresEstados = false}) {
+  if (tresEstados) {
+    return pendientes == 1 ? '1 cita sin cerrar' : '$pendientes citas sin cerrar';
+  }
+  return pendientes == 1
+      ? '1 ticket pendiente de cierre comercial'
+      : '$pendientes tickets pendientes de cierre comercial';
+}
+
+/// El subtítulo del tablero. D-312: la frase de siempre habla de cobro de
+/// tickets, que a un negocio sin caja no le dice nada.
+String subtituloDelTablero({required bool tresEstados}) => tresEstados
+    ? 'Tus citas pasan de Confirmado a En proceso y a Cerrado. Al final del '
+          'día, todas deberían quedar en Cerrado.'
+    : 'Control de flujo y cobro de tickets. Regla del cero: al final de la '
+          'jornada todas las columnas en 0 salvo Cerrado.';
+
+/// El aviso verde de "todo en orden".
+String textoDeJornadaAlDia({required bool tresEstados}) => tresEstados
+    ? 'Jornada al día — todas las citas cerradas'
+    : 'Jornada al día — Todas las columnas en cero salvo Cerrado';
 
 /// Pantalla principal del Tablero de Agenda (D-101 / D-116 / D-147).
 class AgendaPage extends StatefulWidget {
@@ -113,10 +137,27 @@ class AgendaPage extends StatefulWidget {
     this.onOpenTicket,
     this.onCollectTicket,
     this.reloj,
+    this.tresEstados = false,
+    this.ejecutarAccion,
   });
 
   final String branchId;
   final AgendaBoardService? agendaService;
+
+  /// D-312: el negocio tiene la caja apagada por la plataforma, y su agenda
+  /// va Confirmado -> En proceso -> Cerrado, con los botones en la propia
+  /// cita. Lo decide el shell (`main.dart`) con
+  /// `TenantEntitlements.apagadoPorLaPlataforma(cajaYCobros)`.
+  final bool tresEstados;
+
+  /// Ejecuta un botón de la agenda de tres estados. Solo lo cambian las
+  /// pruebas; por defecto llama al servidor con `TicketsService`.
+  final Future<void> Function(
+    TicketBoardItem cita,
+    AccionDeTresEstados accion,
+    String? motivo,
+  )?
+  ejecutarAccion;
 
   /// La hora "de ahora" (I-20). Solo lo cambian las pruebas, para que el
   /// tablero no dependa del reloj de la máquina donde corren.
@@ -386,9 +427,59 @@ class _AgendaPageState extends State<AgendaPage> {
           businessName: widget.businessName,
           onOpenTicket: widget.onOpenTicket,
           onCollectTicket: widget.onCollectTicket,
+          tresEstados: widget.tresEstados,
+          ejecutarAccion: widget.tresEstados ? _ejecutarAccion : null,
         );
       },
     );
+  }
+
+  /// D-312: las columnas que pinta el tablero.
+  List<ColumnaDeAgenda> get _columnasDia =>
+      ColumnaDeAgenda.delDia(tresEstados: widget.tresEstados);
+  List<ColumnaDeAgenda> get _columnasSemana =>
+      ColumnaDeAgenda.deLaSemana(tresEstados: widget.tresEstados);
+
+  /// D-312: lo que hace un botón de la agenda de tres estados. Lee los
+  /// servicios de la cita, arma los pasos (`AgendaDeTresEstados.pasos`) y los
+  /// da en orden con las funciones de siempre, que dejan su historial y no
+  /// tocan dinero. Al terminar recarga el tablero.
+  Future<void> _ejecutarAccion(
+    TicketBoardItem cita,
+    AccionDeTresEstados accion,
+    String? motivo,
+  ) async {
+    final propio = widget.ejecutarAccion;
+    if (propio != null) {
+      await propio(cita, accion, motivo);
+    } else {
+      final tickets = TicketsService(branchId: widget.branchId);
+      final servicios = await tickets.getTicketServicesForManagement(cita.id);
+      final pasos = AgendaDeTresEstados.pasos(
+        accion,
+        estadoDelTicket: cita.status,
+        servicios: [
+          for (final s in servicios)
+            (id: s.ticketServiceId, estado: s.serviceStatus),
+        ],
+        motivo: motivo,
+      );
+      for (final paso in pasos) {
+        if (paso.esDelTicket) {
+          await tickets.changeTicketStatus(
+            ticketId: cita.id,
+            newStatus: paso.nuevoEstado,
+            reason: paso.motivo,
+          );
+        } else {
+          await tickets.changeTicketServiceStatus(
+            ticketServiceId: paso.servicioId!,
+            newStatus: paso.nuevoEstado,
+          );
+        }
+      }
+    }
+    if (mounted) await _loadData(silent: true);
   }
 
   @override
@@ -401,20 +492,21 @@ class _AgendaPageState extends State<AgendaPage> {
         .where((c) => c.status == 'no_asistio')
         .fold(0, (sum, c) => sum + c.ticketCount);
 
-    // Sumatoria de regla del cero (todas las columnas salvo Cerrado)
+    // Sumatoria de regla del cero (todas las columnas salvo Cerrado). D-312:
+    // en la agenda de tres estados, "finalizado" ya es Cerrado.
     final int pendientesCierre = _counts
         .where(
-          (c) =>
-              c.status != 'cerrado' &&
-              c.status != 'cancelado' &&
-              c.status != 'no_asistio',
+          (c) => widget.tresEstados
+              ? AgendaDeTresEstados.pendienteAlFinalDelDia(c.status)
+              : c.status != 'cerrado' &&
+                    c.status != 'cancelado' &&
+                    c.status != 'no_asistio',
         )
         .fold(0, (sum, c) => sum + c.ticketCount);
 
     return AppPage(
       title: 'Tablero de Agenda',
-      subtitle:
-          'Control de flujo y cobro de tickets. Regla del cero: al final de la jornada todas las columnas en 0 salvo Cerrado.',
+      subtitle: subtituloDelTablero(tresEstados: widget.tresEstados),
       children: [
         // Barra de Control Superior
         _buildControlBar(isDia),
@@ -684,8 +776,11 @@ class _AgendaPageState extends State<AgendaPage> {
                 Expanded(
                   child: Text(
                     alDia
-                        ? 'Jornada al día — Todas las columnas en cero salvo Cerrado'
-                        : textoDePendientesDeCierre(pendientesCierre),
+                        ? textoDeJornadaAlDia(tresEstados: widget.tresEstados)
+                        : textoDePendientesDeCierre(
+                            pendientesCierre,
+                            tresEstados: widget.tresEstados,
+                          ),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -823,7 +918,7 @@ class _AgendaPageState extends State<AgendaPage> {
                     textAlign: TextAlign.center,
                   ),
                 ),
-                ...DayBoardColumn.values.map(
+                ..._columnasDia.map(
                   (col) => Expanded(
                     child: Tooltip(
                       message: col.subtitulo,
@@ -886,7 +981,7 @@ class _AgendaPageState extends State<AgendaPage> {
                             textAlign: TextAlign.center,
                           ),
                         ),
-                        ...DayBoardColumn.values.map((col) {
+                        ..._columnasDia.map((col) {
                           final count = _counts
                               .where(
                                 (c) =>
@@ -983,7 +1078,7 @@ class _AgendaPageState extends State<AgendaPage> {
                     textAlign: TextAlign.center,
                   ),
                 ),
-                ...WeekBoardColumn.values.map(
+                ..._columnasSemana.map(
                   (col) => Expanded(
                     child: Text(
                       col.titulo,
@@ -1058,7 +1153,7 @@ class _AgendaPageState extends State<AgendaPage> {
                           ],
                         ),
                       ),
-                      ...WeekBoardColumn.values.map((col) {
+                      ..._columnasSemana.map((col) {
                         final count = _counts
                             .where(
                               (c) =>
@@ -1206,6 +1301,7 @@ class _AgendaPageState extends State<AgendaPage> {
                     _MonthProportionBar(
                       dayCounts: dayCounts,
                       total: totalTickets,
+                      tresEstados: widget.tresEstados,
                     )
                   else
                     const Center(
@@ -1282,7 +1378,7 @@ class _MonthHeaderDay extends StatelessWidget {
 
 class _DayGridCell extends StatelessWidget {
   final int count;
-  final DayBoardColumn column;
+  final ColumnaDeAgenda column;
   final VoidCallback? onTap;
 
   const _DayGridCell({required this.count, required this.column, this.onTap});
@@ -1378,11 +1474,42 @@ class _MonthProportionBar extends StatelessWidget {
   final List<TicketBoardCount> dayCounts;
   final int total;
 
-  const _MonthProportionBar({required this.dayCounts, required this.total});
+  /// D-312: en la agenda de tres estados, lo terminado es Cerrado (gris) y
+  /// lo que nacio por confirmar es Confirmado (verde): no hay ambar ni coral.
+  final bool tresEstados;
+
+  const _MonthProportionBar({
+    required this.dayCounts,
+    required this.total,
+    this.tresEstados = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     if (total == 0) return const SizedBox.shrink();
+
+    if (tresEstados) {
+      int contar(List<String> estados) => dayCounts
+          .where((c) => estados.contains(c.status))
+          .fold(0, (sum, c) => sum + c.ticketCount);
+      final partes = [
+        for (final col in ColumnaDeAgenda.deTresEstados)
+          (contar(col.estados), col.color),
+      ];
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(3),
+        child: SizedBox(
+          height: 4,
+          child: Row(
+            children: [
+              for (final (n, color) in partes)
+                if (n > 0)
+                  Expanded(flex: n, child: Container(color: color)),
+            ],
+          ),
+        ),
+      );
+    }
 
     final cerrados = dayCounts
         .where((c) => c.status == 'cerrado')
@@ -1459,6 +1586,16 @@ class _Level2Sheet extends StatefulWidget {
   final void Function(String ticketId)? onOpenTicket;
   final void Function(String ticketId)? onCollectTicket;
 
+  /// D-312: agenda de tres estados. La cita lleva sus botones y no enseña
+  /// montos: este negocio no cobra en la app.
+  final bool tresEstados;
+  final Future<void> Function(
+    TicketBoardItem cita,
+    AccionDeTresEstados accion,
+    String? motivo,
+  )?
+  ejecutarAccion;
+
   const _Level2Sheet({
     required this.service,
     required this.titulo,
@@ -1470,6 +1607,8 @@ class _Level2Sheet extends StatefulWidget {
     this.businessName,
     this.onOpenTicket,
     this.onCollectTicket,
+    this.tresEstados = false,
+    this.ejecutarAccion,
   });
 
   @override
@@ -1477,11 +1616,18 @@ class _Level2Sheet extends StatefulWidget {
 }
 
 class _Level2SheetState extends State<_Level2Sheet> {
-  late final Future<List<TicketBoardItem>> _boardListFuture;
+  late Future<List<TicketBoardItem>> _boardListFuture;
+
+  /// D-312: la cita cuyo botón se está ejecutando, para no pulsarlo dos veces.
+  String? _ocupada;
 
   @override
   void initState() {
     super.initState();
+    _cargar();
+  }
+
+  void _cargar() {
     _boardListFuture = widget.service.getBoardList(
       startDate: widget.startDate,
       endDate: widget.endDate,
@@ -1489,6 +1635,42 @@ class _Level2SheetState extends State<_Level2Sheet> {
       bucket: widget.bucket,
       granularity: widget.granularity,
     );
+  }
+
+  /// D-312: un botón de la agenda de tres estados. Cancelar y No asistió
+  /// piden el motivo antes, porque el servidor lo exige y queda en el
+  /// historial de la cita. Después la lista se vuelve a leer: la cita ya no
+  /// pertenece a esta casilla.
+  Future<void> _alPulsar(TicketBoardItem cita, AccionDeTresEstados accion) async {
+    final ejecutar = widget.ejecutarAccion;
+    if (ejecutar == null || _ocupada != null) return;
+
+    String? motivo;
+    if (accion.pideMotivo) {
+      motivo = await pedirMotivoDeLaCita(context, accion);
+      if (motivo == null) return;
+    }
+
+    setState(() => _ocupada = cita.id);
+    try {
+      await ejecutar(cita, accion, motivo);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(avisoDeAccionHecha(accion, cita.clientName))),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mensajeParaLaClienta(error))),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _ocupada = null;
+          _cargar();
+        });
+      }
+    }
   }
 
   Future<void> _abrirWhatsApp(String phone, String message) async {
@@ -1594,6 +1776,12 @@ class _Level2SheetState extends State<_Level2Sheet> {
                         final item = items[index];
                         return _TicketCardNivel2(
                           item: item,
+                          tresEstados: widget.tresEstados,
+                          acciones: widget.ejecutarAccion == null
+                              ? const []
+                              : AgendaDeTresEstados.acciones(item.status),
+                          ocupada: _ocupada == item.id,
+                          onAccion: (accion) => _alPulsar(item, accion),
                           onWhatsAppTap: item.clientPhone.isNotEmpty
                               ? () => _abrirWhatsApp(
                                   item.clientPhone,
@@ -1642,11 +1830,21 @@ class _TicketCardNivel2 extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onCollectTap;
 
+  /// D-312: agenda de tres estados.
+  final bool tresEstados;
+  final List<AccionDeTresEstados> acciones;
+  final bool ocupada;
+  final void Function(AccionDeTresEstados accion)? onAccion;
+
   const _TicketCardNivel2({
     required this.item,
     this.onWhatsAppTap,
     this.onTap,
     this.onCollectTap,
+    this.tresEstados = false,
+    this.acciones = const [],
+    this.ocupada = false,
+    this.onAccion,
   });
 
   @override
@@ -1726,7 +1924,11 @@ class _TicketCardNivel2 extends StatelessWidget {
                     ),
                   ],
                   const SizedBox(width: 8),
-                  StatusPill(status: item.ticketStatus),
+                  StatusPill(
+                    status: tresEstados
+                        ? AgendaDeTresEstados.comoSeMuestra(item.status)
+                        : item.ticketStatus,
+                  ),
                 ],
               ),
               Row(
@@ -1829,6 +2031,15 @@ class _TicketCardNivel2 extends StatelessWidget {
           ),
           const Divider(height: AppSpacing.md),
 
+          // D-312: en la agenda de tres estados, en vez del dinero, los
+          // botones de la cita.
+          if (tresEstados)
+            _BotonesDeLaCita(
+              acciones: acciones,
+              ocupada: ocupada,
+              onAccion: onAccion,
+            )
+          else
           // Fila 4: Dinero (Total, Pagado, Saldo pendiente)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1882,4 +2093,110 @@ class _TicketCardNivel2 extends StatelessWidget {
       ),
     );
   }
+}
+
+/// D-312: los botones de una cita en la agenda de tres estados.
+class _BotonesDeLaCita extends StatelessWidget {
+  const _BotonesDeLaCita({
+    required this.acciones,
+    required this.ocupada,
+    this.onAccion,
+  });
+
+  final List<AccionDeTresEstados> acciones;
+  final bool ocupada;
+  final void Function(AccionDeTresEstados accion)? onAccion;
+
+  @override
+  Widget build(BuildContext context) {
+    if (acciones.isEmpty) return const SizedBox.shrink();
+    if (ocupada) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
+        child: LinearProgressIndicator(),
+      );
+    }
+
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.xs,
+      children: [
+        for (final accion in acciones)
+          switch (accion) {
+            AccionDeTresEstados.iniciar => FilledButton.tonalIcon(
+              onPressed: () => onAccion?.call(accion),
+              icon: const Icon(Icons.play_arrow_rounded, size: 18),
+              label: Text(accion.etiqueta),
+            ),
+            AccionDeTresEstados.cerrar => FilledButton.icon(
+              onPressed: () => onAccion?.call(accion),
+              icon: const Icon(Icons.check_rounded, size: 18),
+              label: Text(accion.etiqueta),
+            ),
+            _ => TextButton(
+              onPressed: () => onAccion?.call(accion),
+              style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+              child: Text(accion.etiqueta),
+            ),
+          },
+      ],
+    );
+  }
+}
+
+/// D-312: lo que se le dice a quien pulsó el botón, cuando salió bien.
+String avisoDeAccionHecha(AccionDeTresEstados accion, String cliente) =>
+    switch (accion) {
+      AccionDeTresEstados.iniciar => 'La cita de $cliente está en proceso.',
+      AccionDeTresEstados.cerrar => 'La cita de $cliente quedó cerrada.',
+      AccionDeTresEstados.cancelar => 'La cita de $cliente quedó cancelada.',
+      AccionDeTresEstados.noAsistio =>
+        'Quedó anotado que $cliente no asistió.',
+    };
+
+/// D-312: el motivo de Cancelar o No asistió. Devuelve `null` si la persona
+/// se arrepiente; el botón de confirmar no se habilita con el motivo vacío,
+/// porque el servidor lo rechazaría.
+Future<String?> pedirMotivoDeLaCita(
+  BuildContext context,
+  AccionDeTresEstados accion,
+) {
+  final controller = TextEditingController();
+  return showDialog<String>(
+    context: context,
+    builder: (dialogo) => StatefulBuilder(
+      builder: (dialogo, setDialogState) {
+        final motivo = controller.text.trim();
+        return AlertDialog(
+          title: Text(
+            accion == AccionDeTresEstados.cancelar
+                ? '¿Cancelar la cita?'
+                : '¿Marcar que no asistió?',
+          ),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            maxLength: 200,
+            decoration: const InputDecoration(
+              labelText: 'Motivo',
+              hintText: 'Por ejemplo: avisó que no podía venir',
+            ),
+            onChanged: (_) => setDialogState(() {}),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogo).pop(),
+              child: const Text('Volver'),
+            ),
+            FilledButton(
+              onPressed: motivo.isEmpty
+                  ? null
+                  : () => Navigator.of(dialogo).pop(motivo),
+              child: Text(accion.etiqueta),
+            ),
+          ],
+        );
+      },
+    ),
+  );
 }

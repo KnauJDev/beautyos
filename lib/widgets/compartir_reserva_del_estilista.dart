@@ -13,14 +13,21 @@ import '../theme/app_dimens.dart';
 /// vez dijo cómo trae a sus conocidos: *"puede compartir el link del salón o la
 /// reserva pública"*. Esta tarjeta le pone ese enlace a mano: lo copia o lo
 /// manda por WhatsApp, la clienta escoge servicio y hora, y la cita llega al
-/// salón **por confirmar**, como cualquier reserva en línea.
+/// salón **por confirmar**, como cualquier reserva en línea. En un negocio
+/// con la agenda de tres estados (D-312) llega ya confirmada, y la tarjeta
+/// lo dice.
 ///
 /// No le enseña ninguna clienta ni le deja crear ninguna: es justo lo que la
 /// decisión quería evitar.
 class CompartirReservaDelEstilista extends StatelessWidget {
-  const CompartirReservaDelEstilista({super.key, required this.branchId});
+  const CompartirReservaDelEstilista({
+    super.key,
+    required this.branchId,
+    this.citasNacenConfirmadas = false,
+  });
 
   final String branchId;
+  final bool citasNacenConfirmadas;
 
   String get _enlace => enlaceDeReservaDeSede(branchId);
 
@@ -72,10 +79,10 @@ class CompartirReservaDelEstilista extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Compártele el enlace de reservas de tu sede. Ella escoge el '
-            'servicio y la hora, te elige a ti como estilista, y la cita llega '
-            'al salón por confirmar.',
+          Text(
+            textoDeCompartirReserva(
+              citasNacenConfirmadas: citasNacenConfirmadas,
+            ),
             style: TextStyle(
               fontSize: 13.5,
               height: 1.4,
@@ -108,3 +115,14 @@ class CompartirReservaDelEstilista extends StatelessWidget {
     );
   }
 }
+
+/// Lo que la tarjeta le explica a la estilista. D-312: en un negocio con la
+/// agenda de tres estados la cita no llega "por confirmar".
+String textoDeCompartirReserva({required bool citasNacenConfirmadas}) =>
+    citasNacenConfirmadas
+    ? 'Compártele el enlace de reservas de tu sede. Ella escoge el servicio y '
+          'la hora, te elige a ti como estilista, y la cita queda confirmada '
+          'en tu agenda.'
+    : 'Compártele el enlace de reservas de tu sede. Ella escoge el servicio y '
+          'la hora, te elige a ti como estilista, y la cita llega al salón por '
+          'confirmar.';

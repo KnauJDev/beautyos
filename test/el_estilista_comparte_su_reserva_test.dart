@@ -17,7 +17,10 @@ void main() {
 
   test('Mi agenda le pone el enlace a mano al estilista', () {
     final agenda = File('lib/pages/my_stylist_agenda_page.dart').readAsStringSync();
-    expect(agenda, contains('CompartirReservaDelEstilista(branchId: widget.branchId)'));
+    // D-312 le añadió un segundo dato (si la cita nace confirmada): se mira
+    // la llamada sin espacios para no depender de cómo quedó partida.
+    final sinEspacios = agenda.replaceAll(RegExp(r'\s+'), '');
+    expect(sinEspacios, contains('CompartirReservaDelEstilista(branchId:widget.branchId'));
   });
 
   test('la tarjeta no le enseña ni le deja crear clientas', () {

@@ -392,6 +392,8 @@ Cada una costó tiempo real. Están aquí para que cueste una sola vez.
 | **Buscar con tildes en el JavaScript publicado da ceros falsos** | Buscar un trozo sin tildes del texto nuevo | D-249 |
 | **`python -c` o un heredoc largo en Bash se comen el texto** | Acentos graves y comillas se interpretan: el registro quedó con huecos y dos guiones se cortaron. Texto largo → guion escrito a disco con la herramienta de escribir | D-249, D-254 |
 | **La dirección del webhook está escrita a mano** en `create-epayco-session` | Si el proyecto se mueve, ePayco sigue avisando al viejo sin que nadie lo note | Paso 9.30 |
+| **`dart format lib/` reformatea 112 archivos ajenos** | El repositorio no está con el formato de la versión de Flutter instalada: formatear en bloque ensucia el cambio con cientos de líneas que no tocan nada. **Se formatea solo el archivo nuevo, o nada.** Si pasa, se deshace con git y se reaplican los cambios propios | D-312 |
+| **Tras un `git checkout` los archivos vuelven con CRLF** | Algunas pruebas buscan texto con `\n` y fallan en local aunque el código esté bien (en Cloudflare, con LF, pasan). Se arregla dejando la copia de trabajo en LF: `git diff` no cambia | D-312 |
 
 ---
 
