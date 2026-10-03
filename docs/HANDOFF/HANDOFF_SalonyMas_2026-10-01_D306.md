@@ -186,7 +186,7 @@ Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anter
    Iniciar, Cerrar, Cancelar y No asistió en la propia cita; "Cerrado" = atendida, sin pago ni
    comisión. **Arregla que, sin caja, la agenda de David no podía mover ninguna cita** (y tenía 3 en
    *Por confirmar*). Escrita: migración `20261003100000_agenda_de_tres_estados_d312.sql` y control
-   **240**. **Falta:** que el propietario la aplique y verlo en pantalla con Éxito. **Aquí no se
+   **240**. ✅ **Aplicada el 03-oct, control 240 en 9/9.** **Falta:** verlo en pantalla con Éxito. **Aquí no se
    formatea en bloque** (`dart format lib/` reformatea 112 archivos ajenos).
 8. **AI**: la mitad honesta ya estaba escrita (el repositorio dice que no contiene
    el esquema entero); la correcta, volcarlo a una migración, va en el turno E.
