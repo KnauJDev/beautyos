@@ -106,7 +106,7 @@ commit solo de documentos hace que la app anuncie *"Hay una versión nueva"*) ·
 
 ## 3. Lo que tienes que mirar en pantalla (regla 21)
 
-1. **D-313, el enlace con el nombre.** En el celular, con la sesión de Erick:
+1. ✅ **03-oct: la estilista copia `https://salonymas.com/peluqueria-exito-prueba`.** Queda la otra mitad. **D-313, el enlace con el nombre.** En el celular, con la sesión de Erick:
    **Actualizar** si sale el aviso → *Mi agenda* → **"Copiar enlace"** → pegarlo en un
    chat sin enviarlo. Debe salir `salonymas.com/<nombre de Éxito>`, sin el código. Y en
    el computador, como dueño de Éxito: *Configuración* → *Reserva pública* debe dar la
