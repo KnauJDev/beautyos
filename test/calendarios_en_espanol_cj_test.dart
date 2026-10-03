@@ -188,6 +188,30 @@ void main() {
       );
     });
 
+    test('la dirección se pide por la sede, con la función pública, no leyendo la tabla',
+        () {
+      // La lectura del 03-oct: leer `tenants` con la sesión de la estilista se
+      // niega ("permission denied for table tenant_memberships").
+      final servicio = leer('lib/services/slug_del_salon_service.dart');
+      expect(servicio, contains("'public_get_salon_slug_by_branch'"));
+      expect(servicio, isNot(contains(".from('tenants')")));
+      final m = leer(
+        'supabase/migrations/20261003150000_la_direccion_del_salon_por_sede_d313.sql',
+      );
+      expect(m, contains('security definer'));
+      expect(
+        m,
+        contains(
+          'grant execute on function public.public_get_salon_slug_by_branch(uuid) to anon, authenticated;',
+        ),
+      );
+      expect(m.toLowerCase(), isNot(contains('drop function')));
+      expect(
+        leer('supabase/sql/241_test_la_direccion_del_salon_por_sede.sql'),
+        contains('--- CONTROL 241: 6/6 ---'),
+      );
+    });
+
     test('D-313: Configuración sigue la misma regla', () {
       final ajustes = leer('lib/pages/settings_page.dart');
       expect(ajustes, contains('slugDelSalon: snapshot.data?.slug,'));
@@ -201,7 +225,6 @@ void main() {
 
     test('main le pasa a la estilista su salón y si es la sede principal', () {
       final main = leer('lib/main.dart');
-      expect(main, contains('tenantId: branch.tenantId,'));
       expect(main, contains('nombreDelSalon: branch.tenantName,'));
       expect(main, contains('esSedePrincipal: branch.isPrimary,'));
     });

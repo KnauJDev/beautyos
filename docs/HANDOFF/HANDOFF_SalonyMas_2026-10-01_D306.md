@@ -194,7 +194,9 @@ Y una cosa por probar cuando haya ocasión, sin urgencia (viene del bloque anter
    pantalla: crear (nace confirmada), Iniciar, Cerrar (también directo desde Confirmado), Cancelar,
    No asistió, la hoja que se cierra sola y la reserva por el enlace (*"Cita confirmada"*): **D-312 probada**.
    **D-313 (03-oct):** el enlace para reservar lleva el nombre del salón (`salonymas.com/<nombre>`), regla para
-   todos en la sede principal; las otras sedes, el directo hasta tener `<salon>/<sede>`. Mismo bloque: CJ
+   todos en la sede principal; las otras sedes, el directo hasta tener `<salon>/<sede>`. **Falta aplicar** la
+   migración `20261003150000` (función pública `public_get_salon_slug_by_branch`) y el control **241**: la
+   estilista no puede leer `tenants` con su sesión (lectura del 03-oct). Mismo bloque: CJ
    cerrado (español y calendario de un toque), *Listo* al confirmar, textos viejos. **Decidido:** la tarjeta
    de WhatsApp con logo y nombre del salón va con el **paso 3**; la agenda de la estilista en tarjetas, con
    semana y mes, con el **paso 6**. **Visto y sin hacer:** Configuración le enseña a David la política de

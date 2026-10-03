@@ -24,7 +24,6 @@ class MyStylistAgendaPage extends StatefulWidget {
     this.puedePortafolio = true,
     this.citasNacenConfirmadas = false,
     this.mostrarDinero = true,
-    this.tenantId,
     this.nombreDelSalon,
     this.esSedePrincipal = false,
   });
@@ -45,8 +44,7 @@ class MyStylistAgendaPage extends StatefulWidget {
   final bool mostrarDinero;
 
   /// 03-oct: para compartir el enlace con el nombre del salón
-  /// (`enlaceParaCompartir`, D-313). Sin `tenantId` se comparte el de siempre.
-  final String? tenantId;
+  /// (`enlaceParaCompartir`, D-313). La dirección se pide a partir de la sede.
   final String? nombreDelSalon;
   final bool esSedePrincipal;
 
@@ -69,12 +67,9 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
   @override
   void initState() {
     super.initState();
-    final tenantId = widget.tenantId;
-    if (tenantId != null && tenantId.isNotEmpty) {
-      const SlugDelSalonService().leer(tenantId).then((slug) {
-        if (mounted && slug != null) setState(() => _slugDelSalon = slug);
-      });
-    }
+    const SlugDelSalonService().leer(widget.branchId).then((slug) {
+      if (mounted && slug != null) setState(() => _slugDelSalon = slug);
+    });
     agendaService = MyStylistAgendaService(branchId: widget.branchId);
     timeOffService = StylistTimeOffService(branchId: widget.branchId);
     selectedDate = DateUtils.dateOnly(DateTime.now());

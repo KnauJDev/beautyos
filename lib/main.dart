@@ -520,7 +520,6 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           citasNacenConfirmadas: cajaOculta,
           mostrarDinero: !cajaOculta,
           // 03-oct: el enlace que comparte lleva el nombre del salón.
-          tenantId: branch.tenantId,
           nombreDelSalon: branch.tenantName,
           esSedePrincipal: branch.isPrimary,
         ),
