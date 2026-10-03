@@ -269,6 +269,18 @@ void main() {
       );
     });
 
+    test('si el botón sale bien, la hoja se cierra y el aviso se ve', () {
+      final agenda = leer('lib/pages/agenda_page.dart');
+      expect(
+        agenda,
+        contains(
+          '      await ejecutar(cita, accion, motivo);\n'
+          '      navegador.pop();\n'
+          '      avisos.showSnackBar(',
+        ),
+      );
+    });
+
     test('sin caja, la estilista no ve el valor de sus servicios', () {
       final estilista = leer('lib/pages/my_stylist_agenda_page.dart');
       expect(leer('lib/main.dart'), contains('mostrarDinero: !cajaOculta,'));

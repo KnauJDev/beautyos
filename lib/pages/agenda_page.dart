@@ -1639,8 +1639,14 @@ class _Level2SheetState extends State<_Level2Sheet> {
 
   /// D-312: un botón de la agenda de tres estados. Cancelar y No asistió
   /// piden el motivo antes, porque el servidor lo exige y queda en el
-  /// historial de la cita. Después la lista se vuelve a leer: la cita ya no
-  /// pertenece a esta casilla.
+  /// historial de la cita.
+  ///
+  /// **Si sale bien, la hoja se cierra** y el aviso se ve sobre el tablero,
+  /// que ya se recargó. Antes se quedaba abierta y, como la cita ya no
+  /// pertenecía a esa casilla, decía *"Sin tickets en esta sección"*: parecía
+  /// un error sin serlo, y el aviso quedaba escondido detrás de la hoja (lo
+  /// vio el propietario el 03-oct en el espejo de David). **Si falla**, el
+  /// motivo sale en una ventana encima de la hoja, para que se lea.
   Future<void> _alPulsar(TicketBoardItem cita, AccionDeTresEstados accion) async {
     final ejecutar = widget.ejecutarAccion;
     if (ejecutar == null || _ocupada != null) return;
@@ -1648,28 +1654,37 @@ class _Level2SheetState extends State<_Level2Sheet> {
     String? motivo;
     if (accion.pideMotivo) {
       motivo = await pedirMotivoDeLaCita(context, accion);
-      if (motivo == null) return;
+      if (motivo == null || !mounted) return;
     }
 
+    final avisos = ScaffoldMessenger.of(context);
+    final navegador = Navigator.of(context);
     setState(() => _ocupada = cita.id);
     try {
       await ejecutar(cita, accion, motivo);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      navegador.pop();
+      avisos.showSnackBar(
         SnackBar(content: Text(avisoDeAccionHecha(accion, cita.clientName))),
       );
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(mensajeParaLaClienta(error))),
+      setState(() {
+        _ocupada = null;
+        _cargar();
+      });
+      await showDialog<void>(
+        context: context,
+        builder: (dialogo) => AlertDialog(
+          title: const Text('No se pudo'),
+          content: Text(mensajeParaLaClienta(error)),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.of(dialogo).pop(),
+              child: const Text('Entendido'),
+            ),
+          ],
+        ),
       );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _ocupada = null;
-          _cargar();
-        });
-      }
     }
   }
 
