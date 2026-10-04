@@ -134,13 +134,35 @@ class AppBrand {
     brandSurface: Color(0xFFF5FAF4),
   );
 
-  /// Los cinco verificados a mano, en el orden en que se muestran.
+  /// Dorado, negro y el rosa de las flores (paso 3 del plan de David,
+  /// 03-oct). Sale del local de *Inspirant Salon*, el primer cliente real: el
+  /// dorado de las grecas y la recepción, el negro del mostrador y el rosa de
+  /// las flores del techo. El propietario eligió entre dos combinaciones la de
+  /// **barra dorada y títulos negros**, como tema para todos.
+  ///
+  /// El dorado va más oscuro que el de la decoración porque el texto blanco
+  /// de la barra tiene que leerse (~4,98:1); el rosa vive solo en los fondos y
+  /// las selecciones, porque sobre un rosa tan claro el blanco no se lee.
+  static const inspirant = BrandPalette(
+    key: 'inspirant',
+    label: 'Inspirant',
+    description: 'Dorado, negro y rosa. Elegante, de salón con estilo.',
+    brand: Color(0xFF8C6A2E),
+    brandDark: Color(0xFF735626),
+    brandDeep: Color(0xFF2B2522),
+    brandTint: Color(0xFFF6DDE4),
+    brandTintSoft: Color(0xFFFBEEF1),
+    brandSurface: Color(0xFFFDF7F8),
+  );
+
+  /// Los seis verificados a mano, en el orden en que se muestran.
   static const predefinidos = <BrandPalette>[
     morado,
     barberia,
     spaUnas,
     clasica,
     canina,
+    inspirant,
   ];
 
   /// Color con el que arranca el selector personalizado si el negocio todavia

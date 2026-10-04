@@ -7,7 +7,7 @@ import 'app_states.dart';
 
 /// Selector de tema de marca blanca (tarea 2.4, D-093, D-109).
 ///
-/// Ofrece los cinco temas verificados a mano y, aparte, uno **personalizado**
+/// Ofrece los seis temas verificados a mano y, aparte, uno **personalizado**
 /// donde el propietario elige un color y la aplicacion deriva los otros cinco
 /// tonos. D-093 habia descartado elegir colores libremente; se reabrio porque
 /// dos decisiones posteriores desactivaron el riesgo que lo motivaba: D-097

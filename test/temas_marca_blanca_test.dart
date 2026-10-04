@@ -15,16 +15,18 @@ import 'package:salonymas/theme/app_colors.dart';
 void main() {
   group('los cinco temas estan completos y se leen', () {
     test('las claves no se repiten y coinciden con la base de datos', () {
-      // Estas seis claves estan escritas tambien en la restriccion
-      // `tenants_theme_key_valido` de 20260807120000. Si alguien agrega un
-      // tema aqui y olvida la migracion, el negocio que lo elija recibe un
-      // error de la base de datos.
+      // Estas siete claves estan escritas tambien en la restriccion
+      // `tenants_theme_key_valido` (20260807120000, y desde el 03-oct
+      // 20261003230000, que agrego 'inspirant'). Si alguien agrega un tema
+      // aqui y olvida la migracion, el negocio que lo elija recibe un error de
+      // la base de datos.
       const enLaBaseDeDatos = {
         'morado',
         'barberia',
         'spa_unas',
         'clasica',
         'canina',
+        'inspirant',
         'personalizado',
       };
 
