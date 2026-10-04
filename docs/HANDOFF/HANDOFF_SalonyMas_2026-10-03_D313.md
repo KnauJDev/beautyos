@@ -154,7 +154,7 @@ con el **paso 3**; la agenda de la estilista en tarjetas, con semana y mes, va c
 | 0 | Que su equipo pueda entrar (CF) | ✅ D-309. **Falta que su equipo entre** por *Ingresar* pidiendo un código nuevo (sus cuentas estaban sin confirmar) |
 | 1 | Interruptores por negocio | ✅ D-310. A David: apagados *Caja y cobros, Finanzas, Inventario, Comisiones, Blog*; encendidos *Fotos* y *Reseñas* (D-311). Se le pasó el mensaje para que actualice y mande captura |
 | 2 | Citas confirmadas → **agenda de tres estados** | ✅ D-312, probada |
-| 3 | **Su tema** (blanco, dorado, rosado, negro) | **03-oct, en curso.** David mandó su logo (monograma *DM*, café sobre champán) y una foto del local (el rosa es el de las flores del techo; dorado en las grecas y la recepción; mostrador negro). **El propietario eligió:** barra **dorada** (#8C6A2E), títulos **negros** (#2B2522), fondos y selecciones con el **rosa de las flores** (#F6DDE4…), como **sexto tema para todos**, con el nombre **"Inspirant"**. Lectura viva: `intervenciones/extraer_tema_inspirant_paso3.sql` (la lista de temas vive en la restricción `tenants_theme_key_valido` y en `update_tenant_theme`). **Al buzón:** un *personalizado de tres elecciones* (barra, títulos, color suave) con corrección automática de contraste, que el propietario pidió como "4 colores que el salón seleccione"; toca las funciones públicas.  (Antes: en espera del logo.) **Escritos el 03-oct:** migración `20261003230000_tema_inspirant_paso3.sql` (desde el texto vivo: solo agrega 'inspirant' a la restricción y a `update_tenant_theme`), **control 243** y `AppBrand.inspirant` (las pruebas de contraste pasan). ✅ **Aplicada el 03-oct, control 243 en 4/4** (respaldo `Backup_2026-10-03_19-15-32`). Falta elegirlo en Configuración (solo el dueño del salón puede) y verlo. *(El `data.sql` de ese respaldo pesó 41 KB menos que el de las 15:45; comparadas tabla por tabla, solo bajaron las sesiones vencidas `auth.refresh_tokens`, 407 → 199, que Supabase limpia sola; los datos del negocio, iguales, más 3 invitaciones de prueba.)* **Pista:** su página ya tiene su portada (negra, con su firma *"David Marin"* en blanco) y su logo (beige o dorado). **Y le faltan las fotos de sus estilistas**: se suben en *Estilistas → editar → Subir foto*. Con él: la **tarjeta de WhatsApp** con logo y nombre del salón (una función pequeña en Cloudflare, sin tocar DNS) y **pulir la página pública** del salón |
+| 3 | **Su tema** (blanco, dorado, rosado, negro) | ✅ **El tema, hecho y visto en el espejo el 03-oct (D-315, paso 9.60):** el propietario eligió *Inspirant* en Éxito y se ve en Configuración, Agenda, Clientes, Reseñas, Servicios y Estilistas (barra y botones dorados, títulos negros, selecciones rosa; los estados, igual). De esas capturas salieron **CL** y **CM**. **Quedan del paso 3:** que David lo elija (solo el dueño del salón puede), la tarjeta de WhatsApp y pulir la página pública. **El tema propio de tres elecciones quedó en el buzón como I-22.** *Lo de antes:* David mandó su logo (monograma *DM*, café sobre champán) y una foto del local (el rosa es el de las flores del techo; dorado en las grecas y la recepción; mostrador negro). **El propietario eligió:** barra **dorada** (#8C6A2E), títulos **negros** (#2B2522), fondos y selecciones con el **rosa de las flores** (#F6DDE4…), como **sexto tema para todos**, con el nombre **"Inspirant"**. Lectura viva: `intervenciones/extraer_tema_inspirant_paso3.sql` (la lista de temas vive en la restricción `tenants_theme_key_valido` y en `update_tenant_theme`). **Al buzón:** un *personalizado de tres elecciones* (barra, títulos, color suave) con corrección automática de contraste, que el propietario pidió como "4 colores que el salón seleccione"; toca las funciones públicas.  (Antes: en espera del logo.) **Escritos el 03-oct:** migración `20261003230000_tema_inspirant_paso3.sql` (desde el texto vivo: solo agrega 'inspirant' a la restricción y a `update_tenant_theme`), **control 243** y `AppBrand.inspirant` (las pruebas de contraste pasan). ✅ **Aplicada el 03-oct, control 243 en 4/4** (respaldo `Backup_2026-10-03_19-15-32`). Falta elegirlo en Configuración (solo el dueño del salón puede) y verlo. *(El `data.sql` de ese respaldo pesó 41 KB menos que el de las 15:45; comparadas tabla por tabla, solo bajaron las sesiones vencidas `auth.refresh_tokens`, 407 → 199, que Supabase limpia sola; los datos del negocio, iguales, más 3 invitaciones de prueba.)* **Pista:** su página ya tiene su portada (negra, con su firma *"David Marin"* en blanco) y su logo (beige o dorado). **Y le faltan las fotos de sus estilistas**: se suben en *Estilistas → editar → Subir foto*. Con él: la **tarjeta de WhatsApp** con logo y nombre del salón (una función pequeña en Cloudflare, sin tocar DNS) y **pulir la página pública** del salón |
 | 4 | **Invitar a volver** a quien ya atendió (D-314, paso 9.59) | ✅ **4A escrita y vista en el espejo el 03-oct**: Clientes sin dinero en los negocios sin caja y el WhatsApp con el nombre del salón y su enlace. Textos menores pendientes: *"Cada ~1 días"*, el filtro VIP cortado, *"historial de valor"* y *"Retorno y Valor (RFM)"*. **4B, diseño decidido el 03-oct** (D-314): un recordatorio **por cada servicio** que se hizo la clienta (rubber a 20 días no borra el tinte a 60-90), invitar eligiendo el servicio; las invitadas que no volvieron, aparte y con *"última invitación hace N días"*; 45 días por defecto, por salón; la lista arriba de la Agenda y como filtro en Clientes. Lectura corrida el 03-oct. **Escritas:** migración `20261003200000_invitar_a_volver_por_servicio_d314.sql` (solo agrega: dos columnas, una tabla cerrada como `clients` y cinco funciones nuevas) y **control 242** (8 comprobaciones). ✅ **Aplicada el 03-oct, control 242 en 8/8** (respaldo `Backup_2026-10-03_15-45-21`). **App escrita y vista en pantalla el 03-oct** en el espejo (con Pedicure a 1 día: *"Para invitar hoy (4 clientas)"*, el WhatsApp con salón, servicio y enlace, *"Invitada hoy · Invitar otra vez"*). De ahí salió **CK** (WhatsApp sin el 57), cerrado. **En Éxito, Corte de Cabello y Pedicure Basico quedaron en 1 día de prueba**: devolverlos a vacío cuando ya no hagan falta. **Decidido: no se inventan pagos** |
 | 5 | **Agenda sin cobro** | Pendiente, ya en parte hecha por D-312. Queda: el **Dashboard sin dinero** (D-311); *Configuración* le sigue mostrando la política de comisiones y la numeración de ventas; en el celular el tablero tiene el botón *Semana* partido |
 | 6 | **Los cinco lugares** (9.25) | Pendiente. Con él: **la agenda de la estilista en tarjetas, con semana y mes** (hoy es una tabla ancha), sus flechas de fecha descuadradas, y juntar las tarjetas de enlaces de Configuración |
@@ -175,6 +175,13 @@ con el **paso 3**; la agenda de la estilista en tarjetas, con semana y mes, va c
    cancelado queda `verificada` (significa "cruzada con ePayco", D-297).
 8. **AI**: el repositorio no tiene el esquema entero. Ejemplo del 03-oct:
    `get_my_branch_context_v2` no está en ninguna migración. Volcarlo va en el turno E.
+9. **CL** (la cabecera dice *"BeautyOS"* bajo el nombre del salón, en pantalla ancha): qué
+   poner ahí lo decide el propietario. **CM** (*"Precio medio $24333"* sin punto de miles en
+   Servicios; igual en Gastos y Compras): sin decisión de producto.
+10. **Visto una vez, sin confirmar:** justo después de guardar el tema, la primera captura
+   tenía la vista previa dorada pero la cabecera y el menú todavía con los colores del tema
+   anterior; en las siguientes ya estaba todo dorado. Puede ser que la cabecera solo se
+   repinte al cambiar de pantalla. No se abrió hallazgo: falta verlo otra vez.
 
 ---
 
@@ -207,8 +214,9 @@ con el **paso 3**; la agenda de la estilista en tarjetas, con semana y mes, va c
 
 ## 7. Por dónde seguir
 
-**Lo inmediato:** el **paso 3 de David**: su tema, la tarjeta de WhatsApp con su logo y su nombre, y pulir la página
-pública. Antes de proponer, **preguntar** cómo quiere los colores (regla 25: el
+**Lo inmediato:** lo que queda del **paso 3 de David** (el tema ya está, D-315): ver
+*Inspirant* en la página pública del espejo, la tarjeta de WhatsApp con su logo y su
+nombre, y pulir la página pública. Antes de proponer, **preguntar** (regla 25: el
 producto se pregunta).
 
 **El orden general** (PLAN_MAESTRO §5): el primer cliente real lo cambió (D-308). Los
@@ -228,7 +236,7 @@ detalles personales del propietario no se escriben en el repositorio.**
 ## 8. Prompt para retomar
 
 ```
-Lee el HANDOFF más reciente en docs/HANDOFF/ (D-307 a D-313).
+Lee el HANDOFF más reciente en docs/HANDOFF/ (D-307 a D-315).
 
 Antes de nada: la REGLA 25 del PLAN_MAESTRO §8. Afirmar exige prueba; lo
 aprobado no se cambia sin avisar; el producto se pregunta aunque haya
@@ -243,13 +251,15 @@ el paso 9.57. Nada se publica sin su sí, pieza por pieza.
 DÓNDE ESTAMOS
 El primer cliente real, David Rojas, quiere solo agenda. Su plan (D-308) va
 por el paso 3: el 0 (que su equipo entre, D-309), el 1 (interruptores por
-negocio, D-310) y el 2 (agenda de tres estados, D-312) están hechos y
-probados. Peluquería Éxito Prueba es su ESPEJO: todo se prueba ahí primero.
+negocio, D-310), el 2 (agenda de tres estados, D-312) y el 4 (invitar a
+volver, D-314) están hechos y probados; del 3, el tema Inspirant (D-315).
+Peluquería Éxito Prueba es su ESPEJO: todo se prueba ahí primero.
 El enlace para reservar lleva el nombre del salón (D-313), visto en pantalla.
 
 LO PRIMERO
-El paso 3 de David (su tema, la tarjeta de WhatsApp con su logo, pulir la
-página pública): preguntar antes de proponer.
+Lo que queda del paso 3 de David (el tema Inspirant ya está, D-315): la
+tarjeta de WhatsApp con su logo y pulir la página pública. Preguntar antes
+de proponer.
 
 CÓMO SE TRABAJA CON ÉL
 Paso a paso, un paso por mensaje, en español claro y con los nombres exactos
