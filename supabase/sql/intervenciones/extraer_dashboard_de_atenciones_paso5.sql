@@ -109,9 +109,13 @@ select '-- resenas | total=' || count(*)
        || ' | con cita=' || count(*) filter (where r.ticket_id is not null)
 from public.reviews r;
 
-select '-- resenas por estado | ' || coalesce(r.status::text, '(vacio)') || ' | ' || count(*)
+-- La columna es `moderation_status` (la primera corrida, del 04-oct, falló
+-- aquí por suponer `status`: se corrigió leyendo las columnas de la sección 1).
+select '-- resenas por moderacion | ' || coalesce(r.moderation_status, '(vacio)')
+       || ' | publicas=' || count(*) filter (where r.visible_to_public)
+       || ' | activas=' || count(*) filter (where r.active) || ' | ' || count(*)
 from public.reviews r
-group by r.status
+group by r.moderation_status
 order by count(*) desc;
 
 select '-- invitaciones a volver | total=' || count(*)
