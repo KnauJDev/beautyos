@@ -848,7 +848,9 @@ class _BookingSuccessCard extends StatelessWidget {
               width: double.infinity,
               child: OutlinedButton.icon(
                 onPressed: () => _guardarEnGoogleCalendar(context),
-                icon: const Text('📅', style: TextStyle(fontSize: 16)),
+                // El mismo cambio que en la página del salón (D-316): el
+                // emoji 📅 dice "July 17" en Android.
+                icon: const Icon(Icons.event_outlined, size: 18),
                 label: const Text('Guardar en Google Calendar'),
               ),
             ),

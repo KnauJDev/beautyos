@@ -294,6 +294,7 @@ había quedado. Para contar: `find lib/pages -name '*.dart' | wc -l`.)*
 | `supabase/sql/` | Los **controles** `NNN_test_*.sql`: se corren contra la base real y terminan en `rollback` |
 | `supabase/sql/intervenciones/` | Lo que lee o toca datos reales a mano (D-233) |
 | `supabase/functions/` | Las Edge Functions y su módulo compartido `_shared/` |
+| `functions/` | **Funciones de Cloudflare Pages** (no son de Supabase). Hoy una: `[slug].js`, la tarjeta de WhatsApp de cada salón (D-316). **Se publican con el `push`**, junto con la app. Qué direcciones pasan por ellas lo dice `web/_routes.json` |
 | `test/` | Las pruebas de Flutter |
 | `.github/workflows/ci.yml` | El CI: `analyze`, pruebas, guardián de documentos y `deno check` en cada `push` (D-197, D-234) |
 

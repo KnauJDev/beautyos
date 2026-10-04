@@ -298,7 +298,10 @@ class _HeroHeader extends StatelessWidget {
                   const SizedBox(height: 20),
                   FilledButton.icon(
                     onPressed: onBook,
-                    icon: const Text('📅', style: TextStyle(fontSize: 16)),
+                    // Ícono dibujado y no el emoji 📅: en Android el emoji
+                    // dice "July 17", en inglés, y no toma el color del tema
+                    // (03-oct, D-316).
+                    icon: const Icon(Icons.event_available_outlined, size: 18),
                     label: const Text('Agendar Cita'),
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
@@ -365,7 +368,9 @@ class _HeroHeader extends StatelessWidget {
                 Center(
                   child: TextButton.icon(
                     onPressed: onOpenPortal,
-                    icon: const Text('👤', style: TextStyle(fontSize: 14)),
+                    // Ícono dibujado: el emoji 👤 salía azul, fuera de los
+                    // colores del salón (03-oct, D-316).
+                    icon: const Icon(Icons.person_outline, size: 18),
                     label: const Text('Mis citas y fotos'),
                   ),
                 ),
