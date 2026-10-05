@@ -443,7 +443,7 @@ List<TrozoDeHistoria> historiaDelPeriodo(
   }
 
   if (a.nuevas > 0) {
-    dice('Vinieron ');
+    dice(a.nuevas == 1 ? 'Vino ' : 'Vinieron ');
     resalta('${miles(a.nuevas)} ${a.nuevas == 1 ? 'clienta nueva' : 'clientas nuevas'}');
     if (estilista == null && servicio == null && d.invitacionesAgendaron > 0) {
       dice(', y ');
@@ -463,6 +463,40 @@ List<TrozoDeHistoria> historiaDelPeriodo(
 
   return t;
 }
+
+/// El día más fuerte y el más flojo de la semana, en palabras. El flojo solo
+/// se nombra si es uno: si varios empatan (lo normal en un periodo corto, con
+/// días en cero), nombrar a uno sería arbitrario (visto en el espejo, 04-oct).
+List<TrozoDeHistoria> diasFuerteYFlojo(Map<int, double> promedios) {
+  final t = <TrozoDeHistoria>[];
+  if (promedios.length < 2) return t;
+  final orden = promedios.entries.toList()
+    ..sort((x, y) => y.value.compareTo(x.value));
+  final fuerte = orden.first;
+  if (fuerte.value <= 0) return t;
+  t.add((texto: 'El ', resaltado: false));
+  t.add((texto: diasDeLaSemana[fuerte.key - 1], resaltado: true));
+  t.add((
+    texto: ' es tu día más fuerte (unas ${fuerte.value.round()} '
+        '${fuerte.value.round() == 1 ? 'cita' : 'citas'})',
+    resaltado: false,
+  ));
+  final minimo = orden.last.value;
+  final empatados = orden.where((e) => e.value == minimo).length;
+  if (empatados == 1) {
+    t.add((texto: '; el ', resaltado: false));
+    t.add((texto: diasDeLaSemana[orden.last.key - 1], resaltado: true));
+    t.add((texto: ', el más flojo.', resaltado: false));
+  } else if (minimo == 0) {
+    t.add((texto: '; los demás días, sin citas.', resaltado: false));
+  } else {
+    t.add((texto: '.', resaltado: false));
+  }
+  return t;
+}
+
+/// "de 2 p. m. a 3 p. m." sin que la frase termine en punto doble.
+String franjaHoraria(int hora) => 'de ${horaHablada(hora)} a ${horaHablada(hora + 1)}';
 
 /// El titular de la historia: `86 citas atendidas, 70 clientas`.
 String titularDelPeriodo(TramoDeAtenciones a) {

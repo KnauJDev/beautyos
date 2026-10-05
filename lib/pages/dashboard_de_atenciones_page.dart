@@ -767,9 +767,9 @@ class _Cuando extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final d = resumen.datos;
-    final promedios = d.promedioPorDiaDeLaSemana(resumen.rango.desde, resumen.rango.hasta);
-    final orden = promedios.entries.toList()..sort((x, y) => y.value.compareTo(x.value));
-    final hay = orden.isNotEmpty && orden.first.value > 0 && orden.length > 1;
+    final dias = diasFuerteYFlojo(
+      d.promedioPorDiaDeLaSemana(resumen.rango.desde, resumen.rango.hasta),
+    );
     final unidad = d.granularidad == 'day'
         ? 'por día'
         : d.granularidad == 'week'
@@ -779,15 +779,7 @@ class _Cuando extends StatelessWidget {
     return _Pregunta(
       pregunta: '¿Cuándo vienen?',
       aclaracion: 'citas atendidas $unidad',
-      respuesta: hay
-          ? _respuesta(_trozos([
-              'El ',
-              _R(diasDeLaSemana[orden.first.key - 1]),
-              ' es tu día más fuerte (unas ${orden.first.value.round()} citas); el ',
-              _R(diasDeLaSemana[orden.last.key - 1]),
-              ', el más flojo.',
-            ]))
-          : null,
+      respuesta: dias.isEmpty ? null : _respuesta(dias),
       hijos: [
         BarrasConComparacion(
           actual: d.serie,
@@ -853,8 +845,9 @@ class _AQueHora extends StatelessWidget {
           ? null
           : _respuesta(_trozos([
               'La hora pico es el ',
-              _R('${diasDeLaSemana[pico.diaSemana - 1]} de ${horaHablada(pico.hora)} a ${horaHablada(pico.hora + 1)}'),
-              '. Ahí conviene tener a todo el equipo.',
+              _R('${diasDeLaSemana[pico.diaSemana - 1]} ${franjaHoraria(pico.hora)}'),
+              // "3 p. m." ya trae su punto: sin punto doble (04-oct).
+              '${franjaHoraria(pico.hora).endsWith('.') ? '' : '.'} Ahí conviene tener a todo el equipo.',
             ])),
       hijos: [MapaDeCalor(celdas: datos.calor)],
       deDondeSale:
@@ -959,11 +952,18 @@ class _QuienAtiende extends StatelessWidget {
           ? const Text('Nadie atendió en este periodo.')
           : _respuesta(_trozos([
               _R(lista.first.nombre),
-              ' lleva más citas (${miles(lista.first.citas)}).',
-              if (masNuevas != null && masNuevas.nuevas > 0) ...[
-                ' ',
-                _R(masNuevas.nombre),
-                ' es quien más recibe clientas nuevas (${porcentaje(masNuevas.nuevas, masNuevas.citas)} % de las suyas).',
+              ' lleva más citas (${miles(lista.first.citas)})',
+              // Si es la misma persona, una sola frase y no su nombre dos
+              // veces seguidas (visto en el espejo, 04-oct).
+              if (masNuevas != null && masNuevas.nuevas > 0 && masNuevas.id == lista.first.id)
+                ' y es quien más recibe clientas nuevas (${porcentaje(masNuevas.nuevas, masNuevas.citas)} % de las suyas).'
+              else ...[
+                '.',
+                if (masNuevas != null && masNuevas.nuevas > 0) ...[
+                  ' ',
+                  _R(masNuevas.nombre),
+                  ' es quien más recibe clientas nuevas (${porcentaje(masNuevas.nuevas, masNuevas.citas)} % de las suyas).',
+                ],
               ],
             ])),
       hijos: [
@@ -1034,15 +1034,20 @@ class _PorDondeLlegan extends StatelessWidget {
                 children: [
                   dato('Por tu enlace', miles(a.enLinea), marca: AppColors.brand),
                   dato('En el salón o por teléfono', miles(a.atendidas - a.enLinea), marca: AppColors.brandDeep),
-                  dato(
-                    'Antes',
-                    '${porcentaje(b.enLinea, b.atendidas)} %',
-                    extra: _Variacion(
-                      actual: porcentaje(a.enLinea, a.atendidas),
-                      anterior: porcentaje(b.enLinea, b.atendidas),
-                      puntos: true,
+                  // Sin citas antes no hay porcentaje con qué comparar: un
+                  // "0 % ▲ 50 pts" engaña (visto en el espejo, 04-oct).
+                  if (b.atendidas == 0)
+                    dato('Antes', '—', extra: const _Variacion(actual: 0, anterior: 0))
+                  else
+                    dato(
+                      'Antes',
+                      '${porcentaje(b.enLinea, b.atendidas)} %',
+                      extra: _Variacion(
+                        actual: porcentaje(a.enLinea, a.atendidas),
+                        anterior: porcentaje(b.enLinea, b.atendidas),
+                        puntos: true,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),

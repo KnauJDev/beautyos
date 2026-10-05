@@ -149,6 +149,24 @@ void main() {
       expect(h, isNot(contains('\$')));
     });
 
+    test('lo que se vio en el espejo el 04-oct', () {
+      // "Vinieron 1 clienta nueva" → "Vino".
+      final d = DashboardDeAtenciones.fromMap(respuestaDeEjemplo());
+      expect(
+        texto(historiaDelPeriodo(d, periodo: 'esta semana', desde: DateTime(2026, 9, 28), hasta: DateTime(2026, 10, 4))),
+        contains('Vino 1 clienta nueva'),
+      );
+      // Jueves, viernes y domingo en cero: no se nombra a uno como el flojo.
+      final empate = texto(diasFuerteYFlojo({4: 0, 5: 0, 6: 10, 7: 0}));
+      expect(empate, 'El sábado es tu día más fuerte (unas 10 citas); los demás días, sin citas.');
+      // Un solo día flojo, sí.
+      expect(texto(diasFuerteYFlojo({1: 3, 2: 1, 6: 8})), endsWith('el martes, el más flojo.'));
+      // Sin citas, nada.
+      expect(diasFuerteYFlojo({1: 0, 2: 0}), isEmpty);
+      // "3 p. m." ya trae su punto.
+      expect(franjaHoraria(14), 'de 2 p. m. a 3 p. m.');
+    });
+
     test('con un filtro no habla del salón ni de las invitaciones', () {
       final d = DashboardDeAtenciones.fromMap(respuestaDeEjemplo());
       final h = texto(historiaDelPeriodo(
@@ -236,6 +254,18 @@ void main() {
       await tester.ensureVisible(renglon);
       await tester.tap(renglon);
       expect(tocado?.id, 's-corte');
+    });
+
+    testWidgets('si quien más atiende es quien más recibe nuevas, una sola frase', (tester) async {
+      tester.view.physicalSize = const Size(1280, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(tablero());
+      await tester.pumpAndSettle();
+      // Juliana lleva más citas (2) y es la de la clienta nueva.
+      expect(find.textContaining('lleva más citas (2) y es quien más recibe clientas nuevas'), findsOneWidget);
+      // Ninguna frase termina en punto doble ("3 p. m.. Ahí…").
+      expect(find.textContaining('m.. '), findsNothing);
     });
 
     testWidgets('con un filtro puesto se ve su ficha para quitarlo', (tester) async {

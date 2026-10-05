@@ -538,7 +538,10 @@ class _PintorDeSemanas extends CustomPainter {
     double y(num v) => alto * (1 - v / maximo);
     for (var k = 0; k < semanas.length; k++) {
       final s = semanas[k];
-      final x = k * ancho + ancho * 0.18, w = ancho * 0.64;
+      // Con una o dos semanas la barra ocupaba todo el ancho y parecía un
+      // bloque (visto en el espejo, 04-oct): máximo 56 de ancho.
+      final w = math.min(ancho * 0.64, 56.0);
+      final x = k * ancho + (ancho - w) / 2;
       canvas.drawRRect(
         RRect.fromRectAndRadius(Rect.fromLTRB(x, y(s.vuelven), x + w, alto), const Radius.circular(2)),
         Paint()..color = vuelven,
