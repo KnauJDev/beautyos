@@ -48,10 +48,20 @@ class ConfiguracionPage extends StatefulWidget {
     required this.onSedeCreada,
     this.citasNacenConfirmadas = false,
     this.esSedePrincipal = false,
+    this.sinCaja = false,
+    this.sinComisiones = false,
   });
 
   final String branchId;
   final bool isOwner;
+
+  /// Paso 5 (D-317): la plataforma le apagó la caja a este negocio. No cobra
+  /// en la app, así que no numera ventas ni genera comisiones: esas
+  /// secciones no se muestran (no se borra nada; vuelven al encender la caja).
+  final bool sinCaja;
+
+  /// La plataforma le apagó las comisiones (D-310). Mismo criterio.
+  final bool sinComisiones;
 
   /// D-312: el negocio tiene la caja apagada, y la reserva en línea le llega
   /// confirmada. La tarjeta del enlace no debe decir "pendiente".
@@ -405,6 +415,9 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
             );
           },
         ),
+        // Paso 5 (D-317): sin caja o sin comisiones no hay comisiones que
+        // configurar.
+        if (!widget.sinCaja && !widget.sinComisiones) ...[
         const SizedBox(height: 16),
         const SectionTitle('Comisiones'),
         FutureBuilder<CommissionPolicy>(
@@ -485,7 +498,10 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
             );
           },
         ),
+        ],
         if (widget.isOwner) ...[
+          // Paso 5 (D-317): sin caja no hay ventas que numerar.
+          if (!widget.sinCaja) ...[
           const SizedBox(height: 24),
           const SectionTitle('Numeración de ventas y Resolución DIAN'),
           FutureBuilder<BranchSaleNumbering>(
@@ -511,6 +527,7 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
               );
             },
           ),
+          ],
           const SizedBox(height: 24),
           const SectionTitle('Fotos de trabajos y Portafolio'),
           const _PhotoPolicyCard(),

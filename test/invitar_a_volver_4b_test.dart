@@ -187,11 +187,13 @@ void main() {
     final main = leer('lib/main.dart');
 
     test('la Agenda y Clientes reciben el servicio de invitaciones', () {
+      // Tres desde el 04-oct: el Dashboard de atenciones (D-317) también
+      // muestra "Para invitar hoy" y las que no volvieron.
       expect(
         'paraInvitar: InvitarAVolverService(branchId: branch.branchId),'
             .allMatches(main)
             .length,
-        2,
+        3,
       );
     });
 

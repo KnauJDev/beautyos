@@ -35,6 +35,7 @@ import 'pages/terms_and_privacy_page.dart';
 import 'pages/agenda_page.dart';
 import 'pages/blog_page.dart';
 import 'pages/clients_page.dart';
+import 'pages/dashboard_de_atenciones_page.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/inventory_page.dart';
 import 'pages/my_commission_summary_page.dart';
@@ -587,8 +588,22 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           Icons.dashboard_outlined,
           category: BeautyCategory.finanzas,
         ),
-        ocultableCon: ClaveDeCapacidad.reportesFinancieros,
-        page: DashboardPage(
+        // D-317: su propio interruptor. Hasta el 04-oct lo escondía el de
+        // Finanzas, que también enciende Reportes.
+        ocultableCon: ClaveDeCapacidad.dashboard,
+        // Con la caja apagada, el Dashboard de atenciones: cuenta citas,
+        // clientas, servicios y equipo, sin pesos (D-311, D-317). El de los
+        // demás negocios no cambia.
+        page: cajaOculta
+            ? DashboardDeAtencionesPage(
+                key: ValueKey('dashboard-atenciones-${branch.branchId}'),
+                branchId: branch.branchId,
+                branches: branches,
+                paraInvitar: InvitarAVolverService(branchId: branch.branchId),
+                onIrAAgenda: () => _irAModulo(modules, 'Agenda'),
+                onIrAClientes: () => _irAModulo(modules, 'Clientes'),
+              )
+            : DashboardPage(
           // Como los otros 17 modulos (D-205). Desde D-201 el modulo visible
           // ya se remonta al cambiar de sede --el contador de visitas se
           // reinicia y con el la llave del `KeyedSubtree`-- asi que esto no
@@ -786,6 +801,10 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           citasNacenConfirmadas: cajaOculta,
           // D-313: en la sede principal, el enlace lleva el nombre del salón.
           esSedePrincipal: branch.isPrimary,
+          // Paso 5 (D-317): sin caja no se numeran ventas ni hay comisiones.
+          sinCaja: cajaOculta,
+          sinComisiones:
+              entitlements.apagadoPorLaPlataforma(ClaveDeCapacidad.comisiones),
           // Mismo refresco que usa el badge de prueba (D-238): la lista de
           // sedes se arma aquí, en `_loadHomeContext`, y Configuración no
           // tiene forma de tocarla. No se cambia de sede automáticamente: eso

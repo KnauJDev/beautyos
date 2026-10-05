@@ -47,7 +47,8 @@ void main() {
     test('cada módulo que se puede apagar dice con qué interruptor', () {
       for (final (pagina, clave) in [
         ('TicketsPage', 'cajaYCobros'),
-        ('DashboardPage', 'reportesFinancieros'),
+        // El Dashboard tiene su propio interruptor desde el 04-oct (D-317):
+        // lo vigila `dashboard_de_atenciones_d317_test.dart`.
         ('FotosTrabajosPage', 'portafolio'),
         ('ResenasPage', 'resenas'),
         ('BlogPage', 'blog'),

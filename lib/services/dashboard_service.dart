@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/dashboard_de_atenciones.dart';
 import '../models/dashboard_hoy.dart';
 import '../models/dashboard_metrics.dart';
 import '../models/dashboard_overview.dart';
@@ -21,6 +22,19 @@ class ResumenDashboard {
   });
 
   final DashboardOverview datos;
+  final RangoFechas rango;
+  final RangoFechas rangoAnterior;
+}
+
+/// Lo mismo que [ResumenDashboard], para el Dashboard de atenciones (D-317).
+class ResumenDeAtenciones {
+  const ResumenDeAtenciones({
+    required this.datos,
+    required this.rango,
+    required this.rangoAnterior,
+  });
+
+  final DashboardDeAtenciones datos;
   final RangoFechas rango;
   final RangoFechas rangoAnterior;
 }
@@ -80,6 +94,75 @@ class DashboardService {
         return resultado;
       },
       motivo: 'Fallo al consultar get_dashboard_overview()',
+    );
+  }
+
+  /// El Dashboard de atenciones de los negocios sin caja (D-317): el mismo
+  /// periodo y la misma comparación que [getOverview], contados en citas,
+  /// clientas, servicios y equipo, sin un peso.
+  ///
+  /// Mismo truco del día de la sede que [getOverview]: se pide con la fecha
+  /// del dispositivo y, si la sede dice otra, se pide una vez más.
+  ///
+  /// [estilistaId] y [servicioId] son los filtros que se ponen al tocar una
+  /// estilista o un servicio en el tablero.
+  Future<ResumenDeAtenciones> getAtenciones({
+    required PeriodoDashboard periodo,
+    List<String> branchIds = const <String>[],
+    String? estilistaId,
+    String? servicioId,
+  }) async {
+    return MonitoreoService.capturar(
+      () async {
+        final conjetura = DateTime.now();
+        var resultado = await _pedirAtenciones(
+          periodo, branchIds, conjetura, estilistaId, servicioId,
+        );
+
+        final hoyReal = resultado.datos.hoyEnLaSede;
+        if (hoyReal.year != conjetura.year ||
+            hoyReal.month != conjetura.month ||
+            hoyReal.day != conjetura.day) {
+          resultado = await _pedirAtenciones(
+            periodo, branchIds, hoyReal, estilistaId, servicioId,
+          );
+        }
+
+        return resultado;
+      },
+      motivo: 'Fallo al consultar get_dashboard_atenciones()',
+    );
+  }
+
+  Future<ResumenDeAtenciones> _pedirAtenciones(
+    PeriodoDashboard periodo,
+    List<String> branchIds,
+    DateTime hoy,
+    String? estilistaId,
+    String? servicioId,
+  ) async {
+    final rango = periodo.rango(hoy);
+    final anterior = periodo.rangoAnterior(hoy);
+
+    final response = await Supabase.instance.client.rpc(
+      'get_dashboard_atenciones',
+      params: {
+        'p_branch_ids': branchIds.isEmpty ? null : branchIds,
+        'p_from': _fecha(rango.desde),
+        'p_to': _fecha(rango.hasta),
+        'p_prev_from': _fecha(anterior.desde),
+        'p_prev_to': _fecha(anterior.hasta),
+        'p_stylist_id': estilistaId,
+        'p_service_id': servicioId,
+      },
+    );
+
+    return ResumenDeAtenciones(
+      datos: DashboardDeAtenciones.fromMap(
+        Map<String, dynamic>.from(response as Map),
+      ),
+      rango: rango,
+      rangoAnterior: anterior,
     );
   }
 

@@ -466,6 +466,10 @@ class _AgendaPageState extends State<AgendaPage> {
   /// D-312: las columnas que pinta el tablero.
   List<ColumnaDeAgenda> get _columnasDia =>
       ColumnaDeAgenda.delDia(tresEstados: widget.tresEstados);
+  /// El selector Día / Semana / Mes en una pantalla de celular (D-317).
+  bool _selectorAngosto(BuildContext context) =>
+      MediaQuery.sizeOf(context).width < 420;
+
   List<ColumnaDeAgenda> get _columnasSemana =>
       ColumnaDeAgenda.deLaSemana(tresEstados: widget.tresEstados);
 
@@ -593,23 +597,33 @@ class _AgendaPageState extends State<AgendaPage> {
                 spacing: AppSpacing.md,
                 runSpacing: AppSpacing.sm,
                 children: [
-                  // Selector de modo de vista (Día / Semana / Mes)
+                  // Selector de modo de vista (Día / Semana / Mes).
+                  // Paso 5 (D-317): en el celular "Semana" se partía en dos
+                  // renglones. Angosto, sin íconos ni chulo, y el texto en
+                  // una sola línea.
                   SegmentedButton<AgendaViewMode>(
-                    segments: const [
+                    showSelectedIcon: !_selectorAngosto(context),
+                    segments: [
                       ButtonSegment(
                         value: AgendaViewMode.dia,
-                        label: Text('Día'),
-                        icon: Icon(Icons.view_day_outlined, size: 18),
+                        label: const Text('Día', maxLines: 1, softWrap: false),
+                        icon: _selectorAngosto(context)
+                            ? null
+                            : const Icon(Icons.view_day_outlined, size: 18),
                       ),
                       ButtonSegment(
                         value: AgendaViewMode.semana,
-                        label: Text('Semana'),
-                        icon: Icon(Icons.view_week_outlined, size: 18),
+                        label: const Text('Semana', maxLines: 1, softWrap: false),
+                        icon: _selectorAngosto(context)
+                            ? null
+                            : const Icon(Icons.view_week_outlined, size: 18),
                       ),
                       ButtonSegment(
                         value: AgendaViewMode.mes,
-                        label: Text('Mes'),
-                        icon: Icon(Icons.calendar_month_outlined, size: 18),
+                        label: const Text('Mes', maxLines: 1, softWrap: false),
+                        icon: _selectorAngosto(context)
+                            ? null
+                            : const Icon(Icons.calendar_month_outlined, size: 18),
                       ),
                     ],
                     selected: {_viewMode},

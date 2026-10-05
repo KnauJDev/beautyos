@@ -4069,7 +4069,10 @@ class _ModulosDelNegocio extends StatefulWidget {
   static const modulos = <(String, String, String)>[
     // D-312: apagar la caja también cambia la agenda del negocio.
     ('cash_register', 'Caja y cobros', 'Tickets & Caja y cobrar. Apagada, su agenda queda en tres estados y las citas nacen confirmadas'),
-    ('financial_reports', 'Finanzas', 'Dashboard y Reportes'),
+    // D-317: el Dashboard tiene su propio interruptor; Finanzas se queda con
+    // Reportes.
+    ('dashboard', 'Dashboard', 'El tablero de la dueña. Con la caja apagada, cuenta citas y clientas, no pesos'),
+    ('financial_reports', 'Finanzas', 'Reportes'),
     ('inventory', 'Inventario, compras y gastos', 'Inventario, Compras y Gastos'),
     ('commissions', 'Comisiones', 'El panel financiero de cada estilista'),
     ('portfolio', 'Fotos de trabajos', 'Fotos de trabajos y Mis fotos'),

@@ -135,6 +135,11 @@ abstract final class ClaveDeCapacidad {
   static const comisiones = 'commissions';
   static const blog = 'blog';
 
+  /// D-317: el Dashboard con su propio interruptor, separado de
+  /// [reportesFinancieros], que se queda con Reportes. Encendida en todos los
+  /// planes (`20261004100000`).
+  static const dashboard = 'dashboard';
+
   /// Límites numéricos, no módulos: se leen con `limiteDe`, no con `permite`.
   static const sedes = 'branches';
   static const cuentasDeEquipo = 'team_members';

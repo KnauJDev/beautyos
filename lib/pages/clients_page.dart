@@ -235,7 +235,10 @@ class _ClientesPageState extends State<ClientesPage> {
   Widget build(BuildContext context) {
     return AppPage(
       title: 'Clientes',
-      subtitle: 'Fidelización, historial de valor, frecuencia de visitas y contacto.',
+      // Paso 5 (D-317): sin caja no hay "valor" que mostrar.
+      subtitle: widget.sinDinero
+          ? 'Fidelización, frecuencia de visitas y contacto.'
+          : 'Fidelización, historial de valor, frecuencia de visitas y contacto.',
       children: [
         Wrap(
           spacing: 12,
@@ -447,8 +450,10 @@ class _ClientesPageState extends State<ClientesPage> {
                                 ),
                               ),
                               const Spacer(),
-                              const Text(
-                                'Toca un cliente para ver su ficha de valor',
+                              Text(
+                                widget.sinDinero
+                                    ? 'Toca un cliente para ver su ficha'
+                                    : 'Toca un cliente para ver su ficha de valor',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: AppColors.textMuted,
@@ -1013,7 +1018,9 @@ class _ClientDetailSheet extends StatelessWidget {
 
                   // 2. Tarjetas de Métricas Financieras y Retorno (RFM)
                   _buildSectionCard(
-                    title: 'Análisis de Retorno y Valor (RFM)',
+                    title: sinDinero
+                        ? 'Cada cuánto vuelve'
+                        : 'Análisis de Retorno y Valor (RFM)',
                     icon: Icons.insights_outlined,
                     child: Column(
                       children: [
