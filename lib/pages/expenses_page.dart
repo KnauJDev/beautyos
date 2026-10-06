@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 
 import '../models/expense_management_item.dart';
 import '../models/cifra_escrita.dart';
+import '../models/ticket_board.dart' show formatCOP;
 import '../services/expenses_service.dart';
 import '../services/my_profile_service.dart';
 import '../widgets/app_widgets.dart';
@@ -337,7 +338,7 @@ class _ExpensesSummaryCard extends StatelessWidget {
         ),
         MetricCard(
           title: 'Total gastos',
-          value: '\$${totalAmount.toStringAsFixed(0)}',
+          value: formatCOP(totalAmount), // CM: con punto de miles
           description: 'Valor total activo',
           icon: Icons.attach_money,
         ),

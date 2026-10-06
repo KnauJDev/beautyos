@@ -7,6 +7,7 @@ import '../models/product_management_item.dart';
 import '../models/cifra_escrita.dart';
 import '../models/purchase_item_summary.dart';
 import '../models/purchase_management_item.dart';
+import '../models/ticket_board.dart' show formatCOP;
 import '../services/my_profile_service.dart';
 import '../services/products_service.dart';
 import '../services/purchase_items_service.dart';
@@ -383,7 +384,7 @@ class _PurchasesSummaryCard extends StatelessWidget {
         ),
         MetricCard(
           title: 'Total comprado',
-          value: '\$${totalAmount.toStringAsFixed(0)}',
+          value: formatCOP(totalAmount), // CM: con punto de miles
           description: 'Valor total activo',
           icon: Icons.attach_money,
         ),
@@ -1067,7 +1068,7 @@ class _PurchaseFormDialogState extends State<_PurchaseFormDialog> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Total estimado: \$${_estimatedTotal.toStringAsFixed(0)}',
+                'Total estimado: ${formatCOP(_estimatedTotal)}',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               if (errorMessage != null) ...[

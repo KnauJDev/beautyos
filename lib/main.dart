@@ -1108,29 +1108,18 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                         ),
                         const SizedBox(width: AppSpacing.sm),
                         if (isWide) ...[
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                branch.tenantName,
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.brandDeep,
-                                  letterSpacing: -0.2,
-                                ),
-                              ),
-                              Text(
-                                'BeautyOS',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.brand,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ],
+                          // CL (06-oct): solo el nombre del salón, como marca
+                          // blanca. Debajo decía "BeautyOS", el nombre interno
+                          // del código, que el salón no tiene por qué leer
+                          // (D-089). Decisión del propietario: nada.
+                          Text(
+                            branch.tenantName,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.brandDeep,
+                              letterSpacing: -0.2,
+                            ),
                           ),
                           const SizedBox(width: AppSpacing.lg),
                         ],

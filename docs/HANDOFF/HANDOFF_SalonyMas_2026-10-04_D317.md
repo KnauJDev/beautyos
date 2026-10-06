@@ -10,7 +10,7 @@ interruptor).
 controles en verde (**242** 8/8, **243** 4/4 y **244** 10/10, este último a la primera) y
 una función de Cloudflare Pages. **Todo visto en pantalla** el 03 y el 04-oct (§3).
 `flutter analyze` sin avisos · **747 pruebas** · guardián en verde.
-**Hallazgos: 81 en total, 64 cerrados o decididos, 17 abiertos** (los cuenta
+**Hallazgos: 81 en total, 67 cerrados o decididos, 14 abiertos** (los cuenta
 `python scripts/verificar_documentos.py`).
 
 **Sincronía, comprobada el 04-oct por la noche:** `main` local igual a GitHub (nada sin
@@ -127,7 +127,7 @@ y `Backup_2026-10-04_19-32-49`.
 | **o** | **Las redes:** ¿TikTok o estados de WhatsApp? ¿se hizo el 9.23? | Sin respuesta |
 | **p** | **CH**: que Cloudflare no publique cuando solo cambian documentos (*Build watch paths*) | Del panel de Cloudflare: lo decides tú. Cuidado: desde D-316 hay una carpeta `functions/` que **sí** debe publicarse |
 | **q** | **Juntar las dos tarjetas de enlaces de Configuración** | Propuesto para el paso 6 |
-| **s** | **CL**: qué poner bajo el nombre del salón en la cabecera (hoy *"BeautyOS"*) | Nada, *"Salón y Más"* u otra cosa |
+| **s** | ~~**CL**: qué poner bajo el nombre del salón en la cabecera~~ | ✅ **06-oct: nada** (marca blanca). Hecho |
 | **t** | **El celular del propietario en el historial de git** (nota de CK, 03-oct) | Tapado en los documentos; borrarlo del historial exige reescribirlo. Sin decidir |
 
 **Ya decidido:** el Dashboard tiene su propio interruptor (pregunta **r**, cerrada por
@@ -155,16 +155,16 @@ contraste corregido, en el buzón (I-22).
 
 1. **Multisede:** la dirección con nombre por sede (`salonymas.com/<salon>/<sede>`), y el
    riesgo de que un salón cambie su dirección y rompa los enlaces ya repartidos (D-313).
-2. **CG** (menor): borrar el aviso de términos al marcar la casilla.
-3. **La lista del Panel no se refresca** al mover un interruptor (el chip *"N ajustes
-   especiales"* se queda en el número viejo hasta tocar ↻; visto otra vez el 04-oct).
+2. ~~**CG**: borrar el aviso de términos al marcar la casilla.~~ ✅ 06-oct.
+3. ~~**La lista del Panel no se refresca** al mover un interruptor.~~ ✅ 06-oct: se
+   refresca sola, sin que la ficha abierta parpadee.
 4. **AK**: seis diálogos de `tickets_page.dart` que se cierran antes de guardar (9.13).
 5. **BR y BS**: en el buzón, sin fase.
 6. **Señalado, no tocado:** `private.beautyos_resolve_consent_client` tiene `EXECUTE` para
    `PUBLIC` (no abre nada; no es el patrón, D-286).
 7. **AI**: el repositorio no tiene el esquema entero (`get_my_branch_context_v2`, las
    tablas de citas). Volcarlo va en el turno E.
-8. **CM**: el punto de miles en *Precio medio* (Servicios), Gastos y Compras.
+8. ~~**CM**: el punto de miles en *Precio medio*, Gastos y Compras.~~ ✅ 06-oct.
 9. **Visto una vez, sin confirmar:** justo después de guardar un tema, la cabecera y el menú
    siguieron con el color anterior hasta cambiar de pantalla. Falta verlo otra vez.
 10. **La portada de Éxito pesa 474 KB**: WhatsApp podría no mostrarla. La de David (43 KB)

@@ -110,6 +110,16 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
     });
   }
 
+  /// Vuelve a traer la lista **sin cambiarla por la ruedita de carga**: al
+  /// mover un interruptor, la lista y la ficha abierta se quedan donde están
+  /// y solo cambia el "N ajustes especiales" cuando llega lo nuevo.
+  void _refrescarSinParpadeo() {
+    if (!mounted) return;
+    setState(() {
+      tenantsFuture = platformService.listTenants();
+    });
+  }
+
   Future<void> signOut() async {
     await Supabase.instance.client.auth.signOut();
   }
@@ -1121,6 +1131,7 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
       platformService: platformService,
       embebido: embebido,
       onCerrar: onCerrar,
+      onAjustesCambiados: _refrescarSinParpadeo,
       onApprove: (t) {
         cerrarAntes();
         handleApprove(t);
@@ -1337,7 +1348,11 @@ class _PlatformPanelPageState extends State<PlatformPanelPage>
     return FutureBuilder<List<PlatformTenantSummary>>(
       future: tenantsFuture,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        // La ruedita solo la primera vez. Al recargar, `FutureBuilder`
+        // conserva la lista anterior mientras llega la nueva: sin esto, la
+        // ficha abierta a la derecha se desmontaba y perdía su sitio.
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
 
@@ -2381,6 +2396,7 @@ class _TenantDetailSheet extends StatefulWidget {
     required this.onDeleteDemo,
     required this.onCerrar,
     this.embebido = false,
+    this.onAjustesCambiados,
   });
 
   /// Qué hacer al pulsar la X.
@@ -2390,6 +2406,11 @@ class _TenantDetailSheet extends StatefulWidget {
   /// fuera opcional y cayera en `Navigator.pop()`, la versión empotrada
   /// cerraría el Panel de Plataforma entero (D-239).
   final VoidCallback onCerrar;
+
+  /// Se llama al mover un interruptor o cambiar un límite del negocio, para
+  /// que la lista de la izquierda actualice su "N ajustes especiales" sin
+  /// tocar ↻ (D-310: quedó pendiente; visto otra vez el 04-oct).
+  final VoidCallback? onAjustesCambiados;
 
   /// Se dibuja dentro de la columna derecha en vez de flotar sobre todo.
   ///
@@ -3597,6 +3618,7 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                           tenantId: tenant.tenantId,
                           puedeCambiar: isOwner,
                           platformService: platformService,
+                          onCambio: widget.onAjustesCambiados,
                         ),
                       ],
                     ),
@@ -3949,6 +3971,7 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                       tenant: tenant,
                       isOwner: isOwner,
                       platformService: platformService,
+                      onCambio: widget.onAjustesCambiados,
                     ),
                   ],
                 ),
@@ -4054,9 +4077,13 @@ class _ModulosDelNegocio extends StatefulWidget {
     required this.tenantId,
     required this.puedeCambiar,
     required this.platformService,
+    this.onCambio,
   });
 
   final String tenantId;
+
+  /// Avisa que cambió un interruptor (ver `onAjustesCambiados`).
+  final VoidCallback? onCambio;
 
   /// Solo el `platform_owner` puede poner o quitar excepciones (el servidor
   /// lo exige); los demás roles de plataforma ven los interruptores quietos.
@@ -4134,6 +4161,7 @@ class _ModulosDelNegocioState extends State<_ModulosDelNegocio> {
           widget.tenantId,
         );
       });
+      widget.onCambio?.call();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -4227,11 +4255,15 @@ class _TenantOverridesCard extends StatefulWidget {
     required this.tenant,
     required this.isOwner,
     required this.platformService,
+    this.onCambio,
   });
 
   final PlatformTenantSummary tenant;
   final bool isOwner;
   final PlatformService platformService;
+
+  /// Avisa que cambió un límite (ver `onAjustesCambiados`).
+  final VoidCallback? onCambio;
 
   @override
   State<_TenantOverridesCard> createState() => _TenantOverridesCardState();
@@ -4254,6 +4286,7 @@ class _TenantOverridesCardState extends State<_TenantOverridesCard> {
   }
 
   void _reload() {
+    widget.onCambio?.call();
     setState(() {
       _future = widget.platformService.getTenantFeatureOverrides(
         widget.tenant.tenantId,

@@ -185,9 +185,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     if (!acceptedTerms) {
       setState(() {
-        errorMessage =
-            'Debes aceptar los Términos de Servicio y la Política de '
-            'Privacidad para continuar.';
+        errorMessage = mensajeDeTerminosSinAceptar;
       });
       return;
     }
@@ -458,6 +456,12 @@ class _RegisterPageState extends State<RegisterPage> {
                                 : (value) {
                                     setState(() {
                                       acceptedTerms = value ?? false;
+                                      // CG: al marcar la casilla se va el
+                                      // aviso que pedía marcarla.
+                                      errorMessage = errorTrasMarcarTerminos(
+                                        errorMessage,
+                                        aceptado: acceptedTerms,
+                                      );
                                     });
                                   },
                           ),
@@ -574,3 +578,15 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 }
+
+/// El aviso de cuando se toca *Crear mi cuenta* sin marcar la casilla.
+const mensajeDeTerminosSinAceptar =
+    'Debes aceptar los Términos de Servicio y la Política de '
+    'Privacidad para continuar.';
+
+/// Hallazgo CG (02-oct): el aviso rojo se quedaba en pantalla después de
+/// marcar la casilla, hasta volver a tocar el botón, y parecía que algo
+/// seguía mal. Al marcarla se borra **ese** aviso; cualquier otro (correo,
+/// contraseña) se queda, porque marcar la casilla no lo arregla.
+String? errorTrasMarcarTerminos(String? actual, {required bool aceptado}) =>
+    aceptado && actual == mensajeDeTerminosSinAceptar ? null : actual;

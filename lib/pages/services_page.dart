@@ -9,6 +9,7 @@ import '../services/services_service.dart';
 import '../widgets/app_widgets.dart';
 import '../services/invitar_a_volver_service.dart';
 import '../models/mensaje_para_la_clienta.dart';
+import '../models/ticket_board.dart' show formatCOP;
 
 class ServiciosPage extends StatefulWidget {
   const ServiciosPage({super.key, required this.branchId});
@@ -217,7 +218,8 @@ class _ServiciosPageState extends State<ServiciosPage> {
                     ),
                     MetricCard(
                       title: 'Precio medio',
-                      value: '\$${avgPrice.toStringAsFixed(0)}',
+                      // CM (04-oct): con punto de miles, como la lista de al lado.
+                      value: formatCOP(avgPrice),
                       description: 'Promedio por servicio',
                       icon: Icons.attach_money,
                     ),
