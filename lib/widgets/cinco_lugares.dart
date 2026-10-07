@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/avisos_de_hoy.dart';
 import '../models/lugares_de_la_app.dart';
-import '../pages/settings_page.dart' show PublicBookingLinkCard;
+import '../pages/settings_page.dart' show TuEnlaceCard;
 import '../services/slug_del_salon_service.dart';
 import '../theme/app_theme.dart';
 import 'app_widgets.dart';
@@ -348,12 +348,14 @@ class MiVitrinaPage extends StatefulWidget {
     super.key,
     required this.branchId,
     required this.renglones,
+    this.nombreDelSalon,
     this.citasNacenConfirmadas = false,
     this.esSedePrincipal = false,
   });
 
   final String branchId;
   final List<RenglonDePuerta> renglones;
+  final String? nombreDelSalon;
   final bool citasNacenConfirmadas;
   final bool esSedePrincipal;
 
@@ -371,12 +373,16 @@ class _MiVitrinaPageState extends State<MiVitrinaPage> {
       subtitulo: 'Lo que ven tus clientes.',
       encabezado: FutureBuilder<String?>(
         future: _slug,
-        builder: (context, s) => PublicBookingLinkCard(
-          branchId: widget.branchId,
-          citasNacenConfirmadas: widget.citasNacenConfirmadas,
-          slugDelSalon: s.data,
-          esSedePrincipal: widget.esSedePrincipal,
-        ),
+        // La misma tarjeta de Configuración (D-318, 07-oct).
+        builder: (context, s) => s.connectionState == ConnectionState.waiting
+            ? const LoadingCard(mensaje: 'Cargando tu enlace...')
+            : TuEnlaceCard(
+                branchId: widget.branchId,
+                slugDelSalon: s.data,
+                nombreDelSalon: widget.nombreDelSalon,
+                citasNacenConfirmadas: widget.citasNacenConfirmadas,
+                esSedePrincipal: widget.esSedePrincipal,
+              ),
       ),
       renglones: widget.renglones,
     );

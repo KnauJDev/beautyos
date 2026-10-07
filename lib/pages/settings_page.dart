@@ -297,41 +297,22 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
           ),
         ],
         const SizedBox(height: 16),
-        const SectionTitle('Enlace web de tu negocio'),
+        // D-318 (07-oct): una sola tarjeta donde antes había dos ("Enlace
+        // web de tu negocio" y "Reserva pública"), y sin "Modificar enlace".
+        const SectionTitle('Tu enlace'),
         FutureBuilder<BusinessSettings>(
           future: businessSettingsFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const LoadingCard(mensaje: 'Cargando tu enlace...');
-            }
-
-            if (snapshot.hasError || !snapshot.hasData) {
-              return const InfoPanel(
-                icon: Icons.link_outlined,
-                title: 'No se pudo cargar tu enlace',
-                description: 'Vuelve a abrir Configuración para intentarlo de nuevo.',
-              );
-            }
-
-            return PublicSalonLinkCard(
-              settings: snapshot.data!,
-              businessSettingsService: businessSettingsService,
-              onChanged: _reloadBusinessSettings,
-            );
-          },
-        ),
-        const SizedBox(height: 16),
-        const SectionTitle('Reserva pública'),
-        // D-313: la dirección con el nombre sale de los datos del negocio;
-        // mientras llegan, o si fallan, la tarjeta muestra el enlace directo.
-        FutureBuilder<BusinessSettings>(
-          future: businessSettingsFuture,
-          builder: (context, snapshot) => PublicBookingLinkCard(
-            branchId: widget.branchId,
-            citasNacenConfirmadas: widget.citasNacenConfirmadas,
-            slugDelSalon: snapshot.data?.slug,
-            esSedePrincipal: widget.esSedePrincipal,
-          ),
+          builder: (context, snapshot) =>
+              snapshot.connectionState == ConnectionState.waiting
+              ? const LoadingCard(mensaje: 'Cargando tu enlace...')
+              // Si falla, la tarjeta da el enlace directo de la sede.
+              : TuEnlaceCard(
+                  branchId: widget.branchId,
+                  slugDelSalon: snapshot.data?.slug,
+                  nombreDelSalon: snapshot.data?.name,
+                  citasNacenConfirmadas: widget.citasNacenConfirmadas,
+                  esSedePrincipal: widget.esSedePrincipal,
+                ),
         ),
         const SizedBox(height: 16),
         // D-314 (4B): el tiempo de volver por defecto del salón.
@@ -1670,45 +1651,108 @@ class _CoverPhotoUploadButtonState extends State<_CoverPhotoUploadButton> {
   }
 }
 
-/// Lo que explica la tarjeta del enlace de reservas. D-312: sin caja, la
-/// reserva no queda pendiente; queda confirmada.
+/// Lo que explica la tarjeta del enlace. D-312: sin caja, la reserva no
+/// queda pendiente; queda confirmada.
 String textoDeLaTarjetaDeReserva({required bool citasNacenConfirmadas}) =>
     citasNacenConfirmadas
-    ? 'Comparte este enlace por WhatsApp, redes o un código QR generado a '
-          'partir de él. Tus clientes reservan sin crear cuenta ni contraseña, '
-          'y la cita queda confirmada en tu agenda.'
-    : 'Comparte este enlace por WhatsApp, redes o un código QR generado a '
-          'partir de él. Tus clientes reservan sin crear cuenta ni contraseña; '
-          'la reserva queda pendiente de tu confirmación.';
+    ? 'Compártelo en Instagram, WhatsApp o un código QR. Tus clientes ven '
+          'tu página y reservan sin crear cuenta ni contraseña, y la cita '
+          'queda confirmada en tu agenda.'
+    : 'Compártelo en Instagram, WhatsApp o un código QR. Tus clientes ven '
+          'tu página y reservan sin crear cuenta ni contraseña; la reserva '
+          'queda pendiente de tu confirmación.';
 
-class PublicBookingLinkCard extends StatelessWidget {
-  const PublicBookingLinkCard({
+/// **Tu enlace** (D-318, 07-oct): una sola tarjeta donde antes había dos,
+/// *Enlace web de tu negocio* (D-164) y *Reserva pública* (D-313), que en un
+/// salón de una sede daban el mismo enlace. La usan Configuración y *Mi
+/// vitrina*.
+///
+/// El enlace es la página del salón, `salonymas.com/<nombre>`; si todavía no
+/// se conoce, el directo de la sede, que funciona igual. En una sede que no
+/// es la principal sale además el directo de esa sede, porque la página del
+/// salón agenda siempre en la principal (D-313).
+///
+/// **Sin "Modificar enlace", a propósito** (decisión del propietario, 07-oct):
+/// al cambiarlo, los enlaces y QR ya repartidos dejaban de funcionar, y la
+/// dirección vieja quedaba libre para que otro salón la tomara. Cambiarlo
+/// queda para el Panel de la plataforma, con la dirección vieja llevando a la
+/// nueva (buzón, I-24).
+class TuEnlaceCard extends StatelessWidget {
+  const TuEnlaceCard({
     super.key,
     required this.branchId,
-    this.citasNacenConfirmadas = false,
     this.slugDelSalon,
+    this.nombreDelSalon,
+    this.citasNacenConfirmadas = false,
     this.esSedePrincipal = false,
+    this.origen,
   });
 
   final String branchId;
-  final bool citasNacenConfirmadas;
   final String? slugDelSalon;
+  final String? nombreDelSalon;
+  final bool citasNacenConfirmadas;
   final bool esSedePrincipal;
 
-  // El mismo enlace que comparte el estilista desde Mi agenda (D-267), con
-  // la regla de D-313: la dirección con el nombre en la sede principal.
-  String get _link => enlaceParaCompartir(
-    branchId: branchId,
-    esSedePrincipal: esSedePrincipal,
-    slugDelSalon: slugDelSalon,
-  );
+  /// Solo lo pasan las pruebas, como en [enlaceDeReservaDeSede].
+  final String? origen;
 
-  Future<void> _copyLink(BuildContext context) async {
-    await Clipboard.setData(ClipboardData(text: _link));
+  String get _enlaceDeLaSede => enlaceDeReservaDeSede(branchId, origen: origen);
+
+  String get _enlace {
+    final slug = slugDelSalon?.trim() ?? '';
+    return slug.isEmpty
+        ? _enlaceDeLaSede
+        : enlaceDeLaPaginaDelSalon(slug, origen: origen);
+  }
+
+  Future<void> _copiar(BuildContext context, String enlace) async {
+    await Clipboard.setData(ClipboardData(text: enlace));
     if (!context.mounted) return;
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Enlace copiado.')));
+  }
+
+  Future<void> _compartirEnWhatsApp() async {
+    final nombre = nombreDelSalon?.trim() ?? '';
+    final message = nombre.isEmpty
+        ? 'Reserva tu cita aquí 👉 $_enlace'
+        : 'Visita la página de $nombre 👉 $_enlace';
+    final uri = Uri.https('wa.me', '/', {'text': message});
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Widget _cajaDelEnlace(BuildContext context, String enlace, {bool tenue = false}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceAlt,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              enlace,
+              style: TextStyle(
+                fontSize: 14,
+                color: tenue ? AppColors.textSecondary : null,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          IconButton(
+            tooltip: 'Copiar enlace',
+            icon: const Icon(Icons.copy_outlined),
+            onPressed: () => _copiar(context, enlace),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -1729,371 +1773,35 @@ class PublicBookingLinkCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 10,
-              ),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceAlt,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      _link,
-                      style: const TextStyle(fontSize: 14),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'Copiar enlace',
-                    icon: const Icon(Icons.copy_outlined),
-                    onPressed: () => _copyLink(context),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Enlace público del negocio (D-098, D-164): `salonymas.com/<slug>`. A
-/// diferencia de [PublicBookingLinkCard] (el enlace feo por UUID de la
-/// reserva directa), este es el que se pone en Instagram/WhatsApp.
-class PublicSalonLinkCard extends StatelessWidget {
-  const PublicSalonLinkCard({
-    super.key,
-    required this.settings,
-    required this.businessSettingsService,
-    required this.onChanged,
-  });
-
-  final BusinessSettings settings;
-  final BusinessSettingsService businessSettingsService;
-  final VoidCallback onChanged;
-
-  String get _link => '${Uri.base.origin}/${settings.slug ?? ''}';
-
-  Future<void> _copyLink(BuildContext context) async {
-    await Clipboard.setData(ClipboardData(text: _link));
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Enlace copiado.')));
-  }
-
-  Future<void> _shareOnWhatsApp() async {
-    final message = 'Visita la página de ${settings.name} 👉 $_link';
-    final uri = Uri.https('wa.me', '/', {'text': message});
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
-
-  Future<void> _openEditDialog(BuildContext context) async {
-    final changed = await showDialog<bool>(
-      context: context,
-      builder: (_) => _EditSlugDialog(
-        currentSlug: settings.slug ?? '',
-        businessSettingsService: businessSettingsService,
-      ),
-    );
-
-    if (changed == true) onChanged();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (settings.slug == null || settings.slug!.trim().isEmpty) {
-      return const InfoPanel(
-        icon: Icons.link_off_outlined,
-        title: 'Todavía no tienes un enlace',
-        description:
-            'Vuelve a abrir Configuración en unos minutos: se asigna solo '
-            'a partir del nombre de tu negocio.',
-      );
-    }
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Este es el enlace público de tu negocio. Compártelo en tu '
-              'perfil de Instagram, WhatsApp o donde quieras: tus clientes '
-              'lo abren sin crear cuenta ni contraseña.',
-              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
-            ),
+            _cajaDelEnlace(context, _enlace),
             const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 10,
+            OutlinedButton.icon(
+              onPressed: _compartirEnWhatsApp,
+              icon: const Icon(
+                Icons.chat_bubble_outline,
+                size: 16,
+                color: AppColors.whatsapp,
               ),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceAlt,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      _link,
-                      style: const TextStyle(fontSize: 14),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'Copiar enlace',
-                    icon: const Icon(Icons.copy_outlined),
-                    onPressed: () => _copyLink(context),
-                  ),
-                ],
+              label: const Text('Compartir en WhatsApp'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.whatsapp,
               ),
             ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                OutlinedButton.icon(
-                  onPressed: _shareOnWhatsApp,
-                  icon: const Icon(
-                    Icons.chat_bubble_outline,
-                    size: 16,
-                    color: AppColors.whatsapp,
-                  ),
-                  label: const Text('Compartir en WhatsApp'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.whatsapp,
-                  ),
-                ),
-                OutlinedButton.icon(
-                  onPressed: () => _openEditDialog(context),
-                  icon: const Icon(Icons.edit_outlined, size: 16),
-                  label: const Text('Modificar enlace'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _EditSlugDialog extends StatefulWidget {
-  const _EditSlugDialog({
-    required this.currentSlug,
-    required this.businessSettingsService,
-  });
-
-  final String currentSlug;
-  final BusinessSettingsService businessSettingsService;
-
-  @override
-  State<_EditSlugDialog> createState() => _EditSlugDialogState();
-}
-
-enum _SlugCheckStatus { idle, checking, available, taken, invalid }
-
-class _EditSlugDialogState extends State<_EditSlugDialog> {
-  late final TextEditingController _controller;
-  Timer? _debounce;
-  _SlugCheckStatus _status = _SlugCheckStatus.idle;
-  bool _isSaving = false;
-  String? _saveError;
-
-  static final _formatoValido = RegExp(r'^[a-z0-9]+(-[a-z0-9]+)*$');
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.currentSlug);
-  }
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _onChanged(String value) {
-    _debounce?.cancel();
-    setState(() => _saveError = null);
-
-    final candidate = value.trim().toLowerCase();
-    if (candidate == widget.currentSlug) {
-      setState(() => _status = _SlugCheckStatus.idle);
-      return;
-    }
-
-    if (candidate.isEmpty ||
-        candidate.length < 3 ||
-        candidate.length > 50 ||
-        !_formatoValido.hasMatch(candidate)) {
-      setState(() => _status = _SlugCheckStatus.invalid);
-      return;
-    }
-
-    setState(() => _status = _SlugCheckStatus.checking);
-
-    _debounce = Timer(const Duration(milliseconds: 400), () async {
-      try {
-        final disponible = await widget.businessSettingsService
-            .checkSlugAvailability(candidate);
-        if (!mounted || _controller.text.trim().toLowerCase() != candidate) {
-          return;
-        }
-        setState(() {
-          _status = disponible
-              ? _SlugCheckStatus.available
-              : _SlugCheckStatus.taken;
-        });
-      } catch (_) {
-        if (!mounted) return;
-        setState(() => _status = _SlugCheckStatus.invalid);
-      }
-    });
-  }
-
-  bool get _canSave {
-    final candidate = _controller.text.trim().toLowerCase();
-    return !_isSaving &&
-        candidate != widget.currentSlug &&
-        _status == _SlugCheckStatus.available;
-  }
-
-  Future<void> _save() async {
-    setState(() {
-      _isSaving = true;
-      _saveError = null;
-    });
-
-    try {
-      await widget.businessSettingsService.updateTenantSlug(
-        _controller.text.trim().toLowerCase(),
-      );
-      if (!mounted) return;
-      Navigator.of(context).pop(true);
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _isSaving = false;
-        _saveError = error.toString();
-      });
-    }
-  }
-
-  Widget _buildStatusLine() {
-    switch (_status) {
-      case _SlugCheckStatus.idle:
-        return const SizedBox.shrink();
-      case _SlugCheckStatus.checking:
-        return const Row(
-          children: [
-            SizedBox(
-              width: 14,
-              height: 14,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-            SizedBox(width: 8),
-            Text('Comprobando disponibilidad...'),
-          ],
-        );
-      case _SlugCheckStatus.available:
-        return const Row(
-          children: [
-            Icon(Icons.check_circle_outline, size: 16, color: AppColors.success),
-            SizedBox(width: 6),
-            Text('Disponible', style: TextStyle(color: AppColors.success)),
-          ],
-        );
-      case _SlugCheckStatus.taken:
-        return const Row(
-          children: [
-            Icon(Icons.cancel_outlined, size: 16, color: AppColors.danger),
-            SizedBox(width: 6),
-            Text('Ya está en uso', style: TextStyle(color: AppColors.danger)),
-          ],
-        );
-      case _SlugCheckStatus.invalid:
-        return const Row(
-          children: [
-            Icon(Icons.error_outline, size: 16, color: AppColors.danger),
-            SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                'Entre 3 y 50 caracteres: minúsculas, números y guiones.',
-                style: TextStyle(color: AppColors.danger, fontSize: 12),
+            // Sin la dirección del salón, el de arriba ya es el de la sede.
+            if (!esSedePrincipal && (slugDelSalon?.trim().isNotEmpty ?? false)) ...[
+              const SizedBox(height: 12),
+              const Divider(height: 1),
+              const SizedBox(height: 12),
+              const Text(
+                'Reservar directo en esta sede',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
-            ),
-          ],
-        );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Modificar enlace'),
-      content: SizedBox(
-        width: 420,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${Uri.base.origin}/',
-              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
-            ),
-            TextField(
-              controller: _controller,
-              autofocus: true,
-              onChanged: _onChanged,
-              decoration: const InputDecoration(
-                hintText: 'nombre-de-tu-negocio',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 10),
-            _buildStatusLine(),
-            if (_saveError != null) ...[
-              const SizedBox(height: 10),
-              Text(
-                _saveError!,
-                style: const TextStyle(color: AppColors.danger, fontSize: 13),
-              ),
+              const SizedBox(height: 8),
+              _cajaDelEnlace(context, _enlaceDeLaSede, tenue: true),
             ],
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: _isSaving ? null : () => Navigator.of(context).pop(false),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton(
-          onPressed: _canSave ? _save : null,
-          child: _isSaving
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Guardar'),
-        ),
-      ],
     );
   }
 }

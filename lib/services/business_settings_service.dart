@@ -74,6 +74,12 @@ class BusinessSettingsService {
     );
   }
 
+  // D-318 (07-oct): estas dos ya no las usa ninguna pantalla. El salón no
+  // cambia su enlace desde la app: los enlaces y QR repartidos dejaban de
+  // funcionar y la dirección vieja quedaba libre para otro. Se quedan para
+  // cuando se haga desde el Panel, con la dirección vieja llevando a la
+  // nueva (buzón, I-24).
+
   /// `true` si el slug está bien formado, no es una palabra reservada y
   /// nadie más lo tiene (D-164). No lo reserva -- solo consulta.
   Future<bool> checkSlugAvailability(String slug) async {

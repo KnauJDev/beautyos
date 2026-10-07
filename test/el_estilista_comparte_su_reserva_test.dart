@@ -39,8 +39,11 @@ void main() {
     // D-313: las dos tarjetas usan `enlaceParaCompartir`, que vive en el
     // mismo archivo que `enlaceDeReservaDeSede` y la llama cuando no puede
     // usar la dirección con el nombre del salón. Sigue siendo un solo sitio.
+    // D-318 (07-oct): Configuración tiene una sola tarjeta, *Tu enlace*, que
+    // usa la página del salón en cualquier sede (y el directo de la sede
+    // debajo): `enlaceDeLaPaginaDelSalon`, del mismo archivo.
     for (final (ruta, funcion) in [
-      ('lib/pages/settings_page.dart', 'enlaceParaCompartir('),
+      ('lib/pages/settings_page.dart', 'enlaceDeLaPaginaDelSalon('),
       ('lib/widgets/compartir_reserva_del_estilista.dart', 'enlaceParaCompartir('),
     ]) {
       final codigo = File(ruta).readAsStringSync();

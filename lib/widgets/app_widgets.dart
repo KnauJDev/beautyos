@@ -77,46 +77,70 @@ class MetricCard extends StatelessWidget {
     required this.description,
   });
 
+  /// Por debajo de este ancho disponible (un celular), dos por fila.
+  static const anchoAngosto = 560.0;
+
+  /// El espacio entre tarjetas en todas las filas que las usan.
+  static const separacion = 16.0;
+
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 240,
-      child: Card(
-        elevation: 2,
-        color: Colors.white,
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, size: 34, color: AppColors.brand),
-              const SizedBox(height: 16),
-              Text(
-                title,
-                style: const TextStyle(fontSize: 15, color: AppColors.textSecondary),
+    // D-318 (07-oct): en el celular cabía una sola de 240 por fila, a dos
+    // tercios del ancho, y había que bajar mucho para pasar los números. Lo
+    // vio el propietario en Fotos y Reseñas. Ahora, en lo angosto, dos por
+    // fila y más compactas; en el computador, igual que siempre.
+    return LayoutBuilder(
+      builder: (context, c) {
+        final angosto = c.maxWidth < anchoAngosto;
+        return SizedBox(
+          width: angosto ? ((c.maxWidth - separacion) / 2).floorToDouble() : 240,
+          child: Card(
+            elevation: 2,
+            color: Colors.white,
+            child: Padding(
+              padding: EdgeInsets.all(angosto ? 14 : 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(icon, size: angosto ? 24 : 34, color: AppColors.brand),
+                  SizedBox(height: angosto ? 8 : 16),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: angosto ? 13 : 15,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  SizedBox(height: angosto ? 4 : 8),
+                  // Una cifra larga ("$1.280.000") se achica en vez de
+                  // partirse en dos renglones.
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: angosto ? 24 : 30,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.brandDeep,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: angosto ? 4 : 8),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      fontSize: angosto ? 12 : 13,
+                      height: 1.4,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.brandDeep,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                description,
-                style: const TextStyle(
-                  fontSize: 13,
-                  height: 1.4,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

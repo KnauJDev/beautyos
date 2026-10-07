@@ -1023,6 +1023,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           key: ValueKey('mi-vitrina-${branch.branchId}'),
           branchId: branch.branchId,
           renglones: renglonesDe(LugarDeLaApp.vitrina),
+          nombreDelSalon: branch.tenantName,
           citasNacenConfirmadas: cajaOculta,
           esSedePrincipal: branch.isPrimary,
         ),

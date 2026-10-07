@@ -10,8 +10,9 @@ import 'package:salonymas/models/tenant_entitlements.dart';
 import 'package:salonymas/models/ticket_board.dart';
 import 'package:salonymas/pages/agenda_page.dart';
 import 'package:salonymas/pages/dashboard_de_atenciones_page.dart';
+import 'package:salonymas/pages/settings_page.dart' show TuEnlaceCard;
 import 'package:salonymas/services/dashboard_service.dart';
-import 'package:salonymas/widgets/app_widgets.dart' show AppPage;
+import 'package:salonymas/widgets/app_widgets.dart' show AppPage, MetricCard;
 import 'package:salonymas/widgets/cinco_lugares.dart';
 
 import 'dashboard_de_atenciones_d317_test.dart' show respuestaDeEjemplo;
@@ -363,6 +364,89 @@ void main() {
       await tester.tap(abajo);
       expect(quitado, isTrue);
       expect(find.textContaining('tócalo otra vez para quitarlo'), findsOneWidget);
+    });
+
+    testWidgets('las tarjetas de números: dos por fila en el celular, igual en el computador', (tester) async {
+      Widget fila(double ancho) => MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: ancho,
+              child: const Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                children: [
+                  MetricCard(icon: Icons.photo, title: 'Fotos', value: '4', description: 'Registros cargados'),
+                  MetricCard(icon: Icons.visibility, title: 'Visibles', value: '4', description: 'Fotos visibles al cliente'),
+                  MetricCard(icon: Icons.payments, title: 'Total gastos', value: '\$1.280.000', description: 'Del periodo'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Un celular: 360 de ancho menos los 24 + 24 de la página.
+      await tester.pumpWidget(fila(312));
+      expect(tester.takeException(), isNull);
+      final fotos = tester.getRect(find.byType(MetricCard).at(0));
+      final visibles = tester.getRect(find.byType(MetricCard).at(1));
+      expect(fotos.top, visibles.top, reason: 'las dos primeras, en la misma fila');
+      expect(fotos.width, 148);
+      // La cifra larga cabe en un renglón (se achica, no se parte).
+      final cifra = tester.getRect(find.text('\$1.280.000'));
+      expect(cifra.height, lessThan(40));
+
+      // Un computador: como siempre, de 240.
+      await tester.pumpWidget(fila(1000));
+      expect(tester.getRect(find.byType(MetricCard).first).width, 240);
+    });
+
+    group('Tu enlace: una tarjeta donde había dos, sin "Modificar enlace" (07-oct)', () {
+      Widget tarjeta({String? slug, bool principal = true}) => MaterialApp(
+        home: Scaffold(
+          body: TuEnlaceCard(
+            branchId: 'sede-1',
+            slugDelSalon: slug,
+            nombreDelSalon: 'Peluquería Éxito Prueba',
+            citasNacenConfirmadas: true,
+            esSedePrincipal: principal,
+            origen: 'https://salonymas.com',
+          ),
+        ),
+      );
+
+      testWidgets('en la sede principal: la página del salón y nada más', (tester) async {
+        await tester.pumpWidget(tarjeta(slug: 'peluqueria-exito-prueba'));
+        expect(find.text('https://salonymas.com/peluqueria-exito-prueba'), findsOneWidget);
+        expect(find.text('Compartir en WhatsApp'), findsOneWidget);
+        expect(find.text('Modificar enlace'), findsNothing);
+        expect(find.text('Reservar directo en esta sede'), findsNothing);
+        expect(find.textContaining('queda confirmada'), findsOneWidget);
+      });
+
+      testWidgets('en otra sede, además el directo de esa sede', (tester) async {
+        await tester.pumpWidget(tarjeta(slug: 'peluqueria-exito-prueba', principal: false));
+        expect(find.text('https://salonymas.com/peluqueria-exito-prueba'), findsOneWidget);
+        expect(find.text('Reservar directo en esta sede'), findsOneWidget);
+        expect(find.text('https://salonymas.com/?reservar=sede-1'), findsOneWidget);
+      });
+
+      testWidgets('sin la dirección del salón, el directo de la sede, una sola vez', (tester) async {
+        await tester.pumpWidget(tarjeta(principal: false));
+        expect(find.text('https://salonymas.com/?reservar=sede-1'), findsOneWidget);
+        expect(find.text('Reservar directo en esta sede'), findsNothing);
+      });
+
+      test('Configuración y Mi vitrina usan la misma, y el diálogo de cambiar ya no existe', () {
+        final ajustes = leer('lib/pages/settings_page.dart');
+        expect(ajustes, contains("const SectionTitle('Tu enlace'),"));
+        expect(ajustes, isNot(contains('_EditSlugDialog')));
+        expect(ajustes, isNot(contains("Text('Modificar enlace')")));
+        expect(ajustes, isNot(contains('class PublicSalonLinkCard')));
+        expect(ajustes, isNot(contains('class PublicBookingLinkCard')));
+        expect(leer('lib/widgets/cinco_lugares.dart'), contains(': TuEnlaceCard('));
+      });
     });
 
     test('las barras crecen con una animación al filtrar (ronda 2)', () {

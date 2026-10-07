@@ -33,7 +33,12 @@ String enlaceParaCompartir({
 }) {
   final slug = slugDelSalon?.trim() ?? '';
   if (esSedePrincipal && slug.isNotEmpty) {
-    return '${origen ?? Uri.base.origin}/$slug';
+    return enlaceDeLaPaginaDelSalon(slug, origen: origen);
   }
   return enlaceDeReservaDeSede(branchId, origen: origen);
 }
+
+/// La página del salón, `salonymas.com/<nombre-del-salon>` (D-098, D-164).
+/// La usan [enlaceParaCompartir] y la tarjeta *Tu enlace* (D-318).
+String enlaceDeLaPaginaDelSalon(String slug, {String? origen}) =>
+    '${origen ?? Uri.base.origin}/${slug.trim()}';
