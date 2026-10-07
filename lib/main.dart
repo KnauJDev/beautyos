@@ -35,7 +35,12 @@ import 'pages/terms_and_privacy_page.dart';
 import 'pages/agenda_page.dart';
 import 'pages/blog_page.dart';
 import 'pages/clients_page.dart';
+import 'models/avisos_de_hoy.dart';
+import 'models/lugares_de_la_app.dart';
 import 'pages/dashboard_de_atenciones_page.dart';
+import 'services/avisos_service.dart';
+import 'widgets/app_widgets.dart' show SectionTitle;
+import 'widgets/cinco_lugares.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/inventory_page.dart';
 import 'pages/my_commission_summary_page.dart';
@@ -269,6 +274,18 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
   late Future<_HomeContextData> homeContextFuture;
   BranchContext? selectedBranch;
 
+  /// D-318: lo que dice la campana. Lo leen también los globos del menú de
+  /// los cinco lugares, por eso es un `ValueNotifier` y no un `Future`.
+  final ValueNotifier<AvisosDeHoy?> _avisos = ValueNotifier<AvisosDeHoy?>(null);
+
+  /// La sede de la que son los avisos cargados: al cambiar de sede se cargan
+  /// otra vez.
+  String? _avisosDeLaSede;
+
+  /// Clientes ya filtrado al llegar desde la campana ("para invitar"). Se
+  /// consume una sola vez, como `_pendingOpenTicketId`.
+  String? _filtroDeClientesAlEntrar;
+
   /// Aviso que hay que ensenar al volver de la pasarela (D-200).
   ///
   /// Lo escribe `_loadHomeContext`, que corre desde `initState` y por
@@ -281,6 +298,46 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
   void initState() {
     super.initState();
     homeContextFuture = _loadHomeContext();
+  }
+
+  @override
+  void dispose() {
+    _avisos.dispose();
+    super.dispose();
+  }
+
+  /// D-318: la app en cinco lugares, solo si la plataforma se la encendió a
+  /// este negocio (nace apagada) y para la gente del salón. La estilista tiene
+  /// su propia app (D-219).
+  bool _usaCincoLugares(MyProfile? profile, TenantEntitlements entitlements) =>
+      entitlements.encendido(ClaveDeCapacidad.cincoLugares) &&
+      const {'owner', 'admin', 'assistant'}.contains(profile?.role);
+
+  Future<AvisosDeHoy> _cargarAvisos(
+    BranchContext branch,
+    TenantEntitlements entitlements,
+    String? role,
+  ) async {
+    final avisos = await AvisosService(branchId: branch.branchId).cargar(
+      conCaja: !entitlements.apagadoPorLaPlataforma(ClaveDeCapacidad.cajaYCobros),
+      conInventario:
+          entitlements.permite(ClaveDeCapacidad.inventario) &&
+          !entitlements.apagadoPorLaPlataforma(ClaveDeCapacidad.inventario),
+      esDuena: role == 'owner',
+    );
+    if (mounted && _avisosDeLaSede == branch.branchId) _avisos.value = avisos;
+    return avisos;
+  }
+
+  /// Ir a un aviso de la campana: a su módulo, y a Clientes ya filtrado.
+  void _irAlAviso(List<BeautyModule> modules, AvisoDeLaCampana aviso) {
+    if (aviso.filtroDeClientes != null) {
+      setState(() => _filtroDeClientesAlEntrar = aviso.filtroDeClientes);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _filtroDeClientesAlEntrar = null);
+      });
+    }
+    _irAModulo(modules, aviso.destino);
   }
 
   Future<_HomeContextData> _loadHomeContext() async {
@@ -434,6 +491,14 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
     // modulo SIGUIENTE a la agenda, que sin Tickets seria Clientes.
     final cajaOculta =
         entitlements.apagadoPorLaPlataforma(ClaveDeCapacidad.cajaYCobros);
+    final cinco = _usaCincoLugares(profile, entitlements);
+
+    // Hallazgo CN (07-oct): los saltos entre módulos (`_irAModulo`) buscaban
+    // el título en esta lista SIN filtrar, que para la dueña trae también los
+    // cuatro módulos de la estilista; el índice no era el de la pila que se
+    // ve, y "Primeros pasos → Servicios" acababa en la Agenda. Ahora buscan
+    // en la lista que se devuelve.
+    late final List<BeautyModule> resultado;
     late final List<BeautyModule> modules;
     modules = <BeautyModule>[
       // ======================================================================
@@ -455,6 +520,13 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           // D-314 (4B): "Para invitar hoy", arriba del tablero.
           paraInvitar: InvitarAVolverService(branchId: branch.branchId),
           esSedePrincipal: branch.isPrimary,
+          // D-318: en los cinco lugares, la Agenda es la puerta del primer
+          // lugar: arriba lleva Nueva cita, Llegó sin cita y la tarjeta de
+          // citas; con caja, Tickets & Caja se abre desde ella.
+          accionesRapidas: cinco,
+          onAbrirCaja: cinco && !cajaOculta
+              ? () => _irAModulo(resultado, 'Tickets & Caja')
+              : null,
           // Agenda y Tickets comparten exactamente los mismos allowedRoles
           // y son adyacentes en esta lista: Tickets siempre queda en el
           // indice inmediatamente siguiente al de Agenda, para cualquier
@@ -512,6 +584,8 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           esSedePrincipal: branch.isPrimary,
           // D-314 (4B): los filtros "Para invitar" y "No volvieron".
           paraInvitar: InvitarAVolverService(branchId: branch.branchId),
+          // D-318: desde la campana, Clientes llega ya filtrado.
+          filtroInicial: _filtroDeClientesAlEntrar,
         ),
         allowedRoles: const <String>{'owner', 'admin', 'assistant'},
       ),
@@ -600,8 +674,8 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                 branchId: branch.branchId,
                 branches: branches,
                 paraInvitar: InvitarAVolverService(branchId: branch.branchId),
-                onIrAAgenda: () => _irAModulo(modules, 'Agenda'),
-                onIrAClientes: () => _irAModulo(modules, 'Clientes'),
+                onIrAAgenda: () => _irAModulo(resultado, 'Agenda'),
+                onIrAClientes: () => _irAModulo(resultado, 'Clientes'),
               )
             : DashboardPage(
           // Como los otros 17 modulos (D-205). Desde D-201 el modulo visible
@@ -617,13 +691,13 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           nombreParaSaludo: (profile?.fullName.trim().isNotEmpty ?? false)
               ? profile!.fullName
               : branch.tenantName,
-          onIrAAgenda: () => _irAModulo(modules, 'Agenda'),
-          onIrATickets: () => _irAModulo(modules, 'Tickets & Caja'),
-          onIrAClientes: () => _irAModulo(modules, 'Clientes'),
+          onIrAAgenda: () => _irAModulo(resultado, 'Agenda'),
+          onIrATickets: () => _irAModulo(resultado, 'Tickets & Caja'),
+          onIrAClientes: () => _irAModulo(resultado, 'Clientes'),
           // Los tres destinos de la lista de Primeros pasos (paso 8.8, D-186).
-          onIrAServicios: () => _irAModulo(modules, 'Servicios'),
-          onIrAEstilistas: () => _irAModulo(modules, 'Estilistas'),
-          onIrAConfiguracion: () => _irAModulo(modules, 'Configuración'),
+          onIrAServicios: () => _irAModulo(resultado, 'Servicios'),
+          onIrAEstilistas: () => _irAModulo(resultado, 'Estilistas'),
+          onIrAConfiguracion: () => _irAModulo(resultado, 'Configuración'),
         ),
         allowedRoles: const <String>{'owner', 'admin'},
       ),
@@ -822,7 +896,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
       ),
     ];
 
-    return modules
+    final visibles = modules
         .where((module) => module.canAccess(role))
         // D-310: lo que la plataforma le apago a este negocio desaparece, en
         // el menu de la duena y en la barra de sus estilistas. Lo que su plan
@@ -833,6 +907,126 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           ),
         )
         .toList(growable: false);
+
+    if (!cinco || !(role == 'owner' || role == 'admin')) {
+      resultado = visibles;
+      return resultado;
+    }
+
+    // D-318: las puertas de Mi negocio, Mi vitrina y Ajustes. Van al final
+    // de la lista para no mover el índice de ningún módulo que ya existía
+    // (Agenda y Tickets siguen siendo 0 y 1, D-163).
+    RenglonDePuerta renglon(BeautyModule m) => RenglonDePuerta(
+      titulo: m.section.title,
+      descripcion: descripcionDeModulo[m.section.title] ?? '',
+      icono: m.section.icon,
+      onTap: () => _irAModulo(resultado, m.section.title),
+    );
+    List<RenglonDePuerta> renglonesDe(LugarDeLaApp lugar) => [
+      for (final titulo in modulosDentroDe[lugar] ?? const <String>[])
+        for (final m in visibles)
+          if (m.section.title == titulo) renglon(m),
+    ];
+    final hayDashboard = visibles.any((m) => m.section.title == 'Dashboard');
+    final puertas = <BeautyModule>[];
+
+    // Mi negocio: el Dashboard arriba y lo demás debajo (decisión del 07-oct).
+    final enNegocio = renglonesDe(LugarDeLaApp.negocio);
+    Widget? miNegocio;
+    if (hayDashboard && cajaOculta) {
+      miNegocio = DashboardDeAtencionesPage(
+        key: ValueKey('mi-negocio-${branch.branchId}'),
+        branchId: branch.branchId,
+        branches: branches,
+        paraInvitar: InvitarAVolverService(branchId: branch.branchId),
+        compacto: true,
+        onVerCompleto: () => _irAModulo(resultado, 'Dashboard'),
+        onIrAAgenda: () => _irAModulo(resultado, 'Agenda'),
+        onIrAClientes: () => _irAModulo(resultado, 'Clientes'),
+      );
+    } else if (hayDashboard) {
+      miNegocio = DashboardPage(
+        key: ValueKey('mi-negocio-${branch.branchId}'),
+        branchId: branch.branchId,
+        branches: branches,
+        titulo: 'Mi negocio',
+        nombreParaSaludo: (profile?.fullName.trim().isNotEmpty ?? false)
+            ? profile!.fullName
+            : branch.tenantName,
+        onIrAAgenda: () => _irAModulo(resultado, 'Agenda'),
+        onIrATickets: () => _irAModulo(resultado, 'Tickets & Caja'),
+        onIrAClientes: () => _irAModulo(resultado, 'Clientes'),
+        onIrAServicios: () => _irAModulo(resultado, 'Servicios'),
+        onIrAEstilistas: () => _irAModulo(resultado, 'Estilistas'),
+        onIrAConfiguracion: () => _irAModulo(resultado, 'Configuración'),
+        pie: enNegocio.isEmpty
+            ? const <Widget>[]
+            : [
+                const SizedBox(height: AppSpacing.lg),
+                const SectionTitle('Lo demás de tu negocio'),
+                RenglonesDePuerta(renglones: enNegocio),
+              ],
+      );
+    } else if (enNegocio.isNotEmpty) {
+      miNegocio = PuertaDeLugarPage(
+        titulo: 'Mi negocio',
+        subtitulo: 'Lo demás de tu negocio.',
+        renglones: enNegocio,
+      );
+    }
+    if (miNegocio != null) {
+      puertas.add(
+        BeautyModule(
+          section: const BeautySection(
+            'Mi negocio',
+            Icons.insights_outlined,
+            category: BeautyCategory.finanzas,
+          ),
+          page: miNegocio,
+          allowedRoles: const <String>{'owner', 'admin'},
+        ),
+      );
+    }
+
+    puertas.add(
+      BeautyModule(
+        section: const BeautySection(
+          'Mi vitrina',
+          Icons.storefront_outlined,
+          category: BeautyCategory.portafolio,
+        ),
+        page: MiVitrinaPage(
+          key: ValueKey('mi-vitrina-${branch.branchId}'),
+          branchId: branch.branchId,
+          renglones: renglonesDe(LugarDeLaApp.vitrina),
+          citasNacenConfirmadas: cajaOculta,
+          esSedePrincipal: branch.isPrimary,
+        ),
+        allowedRoles: const <String>{'owner', 'admin'},
+      ),
+    );
+
+    final enAjustes = renglonesDe(LugarDeLaApp.ajustes);
+    if (enAjustes.isNotEmpty) {
+      puertas.add(
+        BeautyModule(
+          section: const BeautySection(
+            'Ajustes',
+            Icons.settings_outlined,
+            category: BeautyCategory.sistema,
+          ),
+          page: PuertaDeLugarPage(
+            titulo: 'Ajustes',
+            subtitulo: 'Lo que se configura una vez.',
+            renglones: enAjustes,
+          ),
+          allowedRoles: const <String>{'owner', 'admin'},
+        ),
+      );
+    }
+
+    resultado = [...visibles, ...puertas];
+    return resultado;
   }
 
   /// Ensena el aviso de vuelta de la pasarela, si hay uno pendiente
@@ -996,6 +1190,19 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           branches,
           entitlements,
         );
+
+        // D-318: los cinco lugares, si la plataforma se los encendió.
+        final cinco = _usaCincoLugares(profile, entitlements);
+        if (cinco && _avisosDeLaSede != branch.branchId) {
+          _avisosDeLaSede = branch.branchId;
+          // Fuera del build: avisar a los oyentes mientras se construye
+          // dispararía "markNeedsBuild() called during build".
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            _avisos.value = null;
+            _cargarAvisos(branch, entitlements, profile.role);
+          });
+        }
 
         if (modules.isEmpty) {
           return Scaffold(
@@ -1192,6 +1399,19 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                           ),
                         ),
 
+                      // D-318: la campana, con lo básico.
+                      if (cinco &&
+                          (profile.role == 'owner' || profile.role == 'admin'))
+                        ValueListenableBuilder<AvisosDeHoy?>(
+                          valueListenable: _avisos,
+                          builder: (context, avisos, _) => CampanaDeAvisos(
+                            avisos: avisos,
+                            onAbrir: () =>
+                                _cargarAvisos(branch, entitlements, profile.role),
+                            onIr: (aviso) => _irAlAviso(modules, aviso),
+                          ),
+                        ),
+
                       // Badge de Prueba / Gracia discreto
                       if (isWide &&
                           (profile.role == 'owner' || profile.role == 'admin'))
@@ -1214,22 +1434,66 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                   Expanded(
                     child: Row(
                       children: [
-                        if (isWide)
+                        if (isWide && cinco)
+                          ValueListenableBuilder<AvisosDeHoy?>(
+                            valueListenable: _avisos,
+                            builder: (context, avisos, _) => MenuDeLugares(
+                              lugares: lugaresVisibles(
+                                modules.map((m) => m.section.title),
+                              ),
+                              actual: lugarDe(
+                                modules[currentIndex].section.title,
+                              ),
+                              avisos: avisos,
+                              onElegir: (l) => _irAModulo(modules, l.nombre),
+                            ),
+                          )
+                        else if (isWide)
                           _CategorizedSideMenu(
                             sections: sections,
                             selectedIndex: currentIndex,
                             onDestinationSelected: _irAIndice,
                           ),
                         Expanded(
-                          child: IndexedStack(
-                            index: currentIndex,
-                            children: pilaDeModulos(
-                              modules: modules,
-                              pages: pages,
-                              abiertos: _modulosAbiertos,
-                              visitas: _visitasPorModulo,
-                              indiceActual: currentIndex,
-                            ),
+                          child: Column(
+                            children: [
+                              // D-318: un módulo abierto desde su puerta trae
+                              // un "← volver" a ella.
+                              if (cinco &&
+                                  lugarDe(modules[currentIndex].section.title) !=
+                                      null &&
+                                  !esPuerta(modules[currentIndex].section.title) &&
+                                  modules.any(
+                                    (m) =>
+                                        m.section.title ==
+                                        lugarDe(
+                                          modules[currentIndex].section.title,
+                                        )!.nombre,
+                                  ))
+                                VolverAlLugar(
+                                  lugar: lugarDe(
+                                    modules[currentIndex].section.title,
+                                  )!,
+                                  onVolver: () => _irAModulo(
+                                    modules,
+                                    lugarDe(
+                                      modules[currentIndex].section.title,
+                                    )!.nombre,
+                                  ),
+                                ),
+                              Expanded(
+                                child: IndexedStack(
+                                  index: currentIndex,
+                                  children: pilaDeModulos(
+                                    modules: modules,
+                                    pages: pages,
+                                    abiertos: _modulosAbiertos,
+                                    visitas: _visitasPorModulo,
+                                    indiceActual: currentIndex,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -1239,6 +1503,19 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
               ),
               bottomNavigationBar: isWide
                   ? null
+                  : cinco
+                  // D-318: abajo, los cinco lugares y nada más (sin "Más").
+                  ? ValueListenableBuilder<AvisosDeHoy?>(
+                      valueListenable: _avisos,
+                      builder: (context, avisos, _) => BarraDeLugares(
+                        lugares: lugaresVisibles(
+                          modules.map((m) => m.section.title),
+                        ),
+                        actual: lugarDe(modules[currentIndex].section.title),
+                        avisos: avisos,
+                        onElegir: (l) => _irAModulo(modules, l.nombre),
+                      ),
+                    )
                   : _MobileNavBar(
                       sections: sections,
                       currentIndex: currentIndex,

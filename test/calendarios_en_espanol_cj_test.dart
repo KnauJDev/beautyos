@@ -218,8 +218,9 @@ void main() {
       expect(ajustes, contains('esSedePrincipal: widget.esSedePrincipal,'));
       expect(
         'esSedePrincipal: branch.isPrimary,'.allMatches(leer('lib/main.dart')).length,
-        4,
-        reason: 'la estilista, Configuración, Clientes (4A) y la Agenda (4B)',
+        5,
+        reason: 'la estilista, Configuración, Clientes (4A), la Agenda (4B) '
+            'y Mi vitrina de los cinco lugares (D-318)',
       );
     });
 

@@ -38,7 +38,14 @@ class DashboardPage extends StatefulWidget {
     this.onIrAServicios,
     this.onIrAEstilistas,
     this.onIrAConfiguracion,
+    this.titulo = 'Dashboard',
+    this.pie = const <Widget>[],
   });
+
+  /// D-318: en los cinco lugares, este Dashboard es la puerta de *Mi negocio*
+  /// de los salones con caja, con lo demás del negocio debajo ([pie]).
+  final String titulo;
+  final List<Widget> pie;
 
   final String branchId;
 
@@ -240,7 +247,7 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     return AppPage(
-      title: 'Dashboard',
+      title: widget.titulo,
       subtitle: '¿Cómo está tu negocio?',
       children: [
         FutureBuilder<ResumenDashboard>(
@@ -397,6 +404,7 @@ class _DashboardPageState extends State<DashboardPage> {
             );
           },
         ),
+        ...widget.pie,
       ],
     );
   }

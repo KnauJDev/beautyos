@@ -3620,6 +3620,14 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                           platformService: platformService,
                           onCambio: widget.onAjustesCambiados,
                         ),
+                        const SizedBox(height: 12),
+                        // D-318: lo nuevo se enciende salón por salón.
+                        NovedadesDelNegocio(
+                          tenantId: tenant.tenantId,
+                          puedeCambiar: isOwner,
+                          platformService: platformService,
+                          onCambio: widget.onAjustesCambiados,
+                        ),
                       ],
                     ),
 
@@ -5796,6 +5804,142 @@ class _PartnerDetailSheetState extends State<_PartnerDetailSheet> {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ============================================================================
+// D-318: LO NUEVO, QUE NACE APAGADO Y SE ENCIENDE SALÓN POR SALÓN
+// ============================================================================
+/// Los interruptores de lo nuevo (D-318). Al revés que [_ModulosDelNegocio]:
+/// aquí todo **nace apagado** en los planes, y encender es poner una
+/// excepción con `enabled = true` (que deja su evento en el historial);
+/// apagar es cerrarla. Así una novedad se prueba primero en el espejo y
+/// después en cada salón, sin que nadie más note nada.
+///
+/// Es público para poder probarlo en una prueba de widget.
+class NovedadesDelNegocio extends StatefulWidget {
+  const NovedadesDelNegocio({
+    super.key,
+    required this.tenantId,
+    required this.puedeCambiar,
+    required this.platformService,
+    this.onCambio,
+  });
+
+  final String tenantId;
+  final bool puedeCambiar;
+  final PlatformService platformService;
+  final VoidCallback? onCambio;
+
+  /// Clave, nombre y qué cambia para el salón.
+  static const novedades = <(String, String, String)>[
+    (
+      'cinco_lugares',
+      'Los cinco lugares',
+      'La app en cinco lugares: Agenda, Clientes, Mi negocio, Mi vitrina y Ajustes, con la campana de avisos',
+    ),
+  ];
+
+  @override
+  State<NovedadesDelNegocio> createState() => _NovedadesDelNegocioState();
+}
+
+class _NovedadesDelNegocioState extends State<NovedadesDelNegocio> {
+  late Future<List<PlatformTenantFeatureOverride>> _future;
+  String? _guardando;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = widget.platformService.getTenantFeatureOverrides(widget.tenantId);
+  }
+
+  List<PlatformTenantFeatureOverride> _encendidaPor(
+    List<PlatformTenantFeatureOverride> lista,
+    String clave,
+  ) => lista
+      .where((o) => o.featureKey == clave && o.isActive && o.enabled)
+      .toList(growable: false);
+
+  Future<void> _cambiar(
+    String clave,
+    String nombre,
+    bool encender,
+    List<PlatformTenantFeatureOverride> encendidaPor,
+  ) async {
+    setState(() => _guardando = clave);
+    try {
+      if (encender) {
+        await widget.platformService.setTenantFeatureOverride(
+          tenantId: widget.tenantId,
+          featureKey: clave,
+          enabled: true,
+          reason: 'Encendido desde el Panel: $nombre (D-318).',
+        );
+      } else {
+        for (final o in encendidaPor) {
+          await widget.platformService.deleteTenantFeatureOverride(o.overrideId);
+        }
+      }
+      if (!mounted) return;
+      setState(() {
+        _guardando = null;
+        _future = widget.platformService.getTenantFeatureOverrides(widget.tenantId);
+      });
+      widget.onCambio?.call();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            encender
+                ? '$nombre, encendido. El negocio lo verá al volver a abrir su app.'
+                : '$nombre, apagado. Vuelve a lo de antes al abrir su app.',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _guardando = null);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo cambiar $nombre: $error')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<PlatformTenantFeatureOverride>>(
+      future: _future,
+      builder: (context, snapshot) {
+        final lista = snapshot.data ?? const <PlatformTenantFeatureOverride>[];
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Novedades',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Nacen apagadas. Se encienden aquí, salón por salón: primero en el espejo.',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12.5),
+            ),
+            const SizedBox(height: 8),
+            for (final (clave, nombre, descripcion) in NovedadesDelNegocio.novedades)
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(nombre),
+                subtitle: Text(descripcion),
+                value: _encendidaPor(lista, clave).isNotEmpty,
+                onChanged: !widget.puedeCambiar ||
+                        _guardando != null ||
+                        snapshot.connectionState == ConnectionState.waiting
+                    ? null
+                    : (v) => _cambiar(clave, nombre, v, _encendidaPor(lista, clave)),
+              ),
+          ],
+        );
+      },
     );
   }
 }

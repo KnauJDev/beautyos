@@ -14,6 +14,7 @@ import '../widgets/para_invitar_hoy.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_widgets.dart';
 import '../widgets/elegir_fecha.dart';
+import 'tickets_page.dart' show openCreateAppointmentDialog;
 
 /// Construye el enlace de WhatsApp a partir de un teléfono de cliente.
 ///
@@ -160,7 +161,19 @@ class AgendaPage extends StatefulWidget {
     this.ejecutarAccion,
     this.paraInvitar,
     this.esSedePrincipal = false,
+    this.accionesRapidas = false,
+    this.onAbrirCaja,
   });
+
+  /// D-318 (los cinco lugares): la Agenda es la puerta del primer lugar, y
+  /// arriba del Tablero de siempre lleva *Nueva cita*, *Llegó sin cita* y una
+  /// sola tarjeta con las citas del día (atendidas, pendientes, perdidas). El
+  /// Tablero no cambia: el propietario lo quiere por su horizonte de planeación.
+  final bool accionesRapidas;
+
+  /// Con caja, la tarjeta "Por cobrar" abre Tickets & Caja (la caja vive en
+  /// la Agenda, D-219). Sin caja no hay.
+  final VoidCallback? onAbrirCaja;
 
   /// D-314 (paso 4B): la tarjeta "Para invitar hoy" arriba del tablero. Solo
   /// la monta el shell (`main.dart`); sin ella, no hay tarjeta (las pruebas
@@ -283,6 +296,17 @@ class _AgendaPageState extends State<AgendaPage> {
 
   DateTime _lastDayOfMonth(DateTime date) {
     return DateTime(date.year, date.month + 1, 0);
+  }
+
+  /// *Nueva cita* y *Llegó sin cita* desde la propia Agenda (D-318).
+  Future<void> _nuevaCita({required bool atenderYa}) async {
+    final creada = await openCreateAppointmentDialog(
+      context,
+      widget.branchId,
+      citasNacenConfirmadas: widget.tresEstados,
+      atenderYa: atenderYa,
+    );
+    if (creada && mounted) _loadData(silent: true);
   }
 
   Future<void> _loadData({bool silent = false}) async {
@@ -541,6 +565,24 @@ class _AgendaPageState extends State<AgendaPage> {
       title: 'Tablero de Agenda',
       subtitle: subtituloDelTablero(tresEstados: widget.tresEstados),
       children: [
+        if (widget.accionesRapidas) ...[
+          AccionesDeLaAgenda(
+            onNuevaCita: () => _nuevaCita(atenderYa: false),
+            onLlegoSinCita: () => _nuevaCita(atenderYa: true),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          ResumenDeCitasCard(
+            titulo: tituloDelResumen(
+              vista: _viewMode,
+              fecha: _selectedDate,
+              hoy: _ahora(),
+            ),
+            resumen: resumenDeCitas(_counts),
+            conCaja: !widget.tresEstados,
+            onAbrirCaja: widget.onAbrirCaja,
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
         if (widget.paraInvitar != null)
           ParaInvitarHoyCard(
             servicio: widget.paraInvitar!,
@@ -2263,4 +2305,220 @@ Future<String?> pedirMotivoDeLaCita(
       },
     ),
   );
+}
+
+// ---------------------------------------------------------------------------
+// D-318: lo que va arriba del Tablero en la Agenda de los cinco lugares
+// ---------------------------------------------------------------------------
+
+/// Los números de la tarjeta de citas, del mismo conteo que pinta el Tablero.
+///
+/// *Atendidas* = Cerrado o Finalizado (en un salón sin caja, cerrada es
+/// atendida, D-312; con caja, finalizada es atendida por cobrar). *Perdidas* =
+/// canceladas o que no llegaron. *Pendientes* = todo lo demás. *Por cobrar* =
+/// finalizadas, que con caja es lo que espera en Tickets & Caja.
+typedef ResumenDeCitas = ({
+  int total,
+  int atendidas,
+  int pendientes,
+  int perdidas,
+  int porCobrar,
+});
+
+ResumenDeCitas resumenDeCitas(Iterable<TicketBoardCount> conteos) {
+  var total = 0, atendidas = 0, perdidas = 0, porCobrar = 0;
+  for (final c in conteos) {
+    total += c.ticketCount;
+    switch (c.status) {
+      case 'cerrado':
+        atendidas += c.ticketCount;
+      case 'finalizado':
+        atendidas += c.ticketCount;
+        porCobrar += c.ticketCount;
+      case 'cancelado' || 'no_asistio':
+        perdidas += c.ticketCount;
+    }
+  }
+  return (
+    total: total,
+    atendidas: atendidas,
+    pendientes: total - atendidas - perdidas,
+    perdidas: perdidas,
+    porCobrar: porCobrar,
+  );
+}
+
+/// "Citas de hoy", "Citas del día", "Citas de la semana" o "Citas del mes",
+/// según lo que esté mirando el Tablero: la tarjeta cuenta lo mismo que él.
+String tituloDelResumen({
+  required AgendaViewMode vista,
+  required DateTime fecha,
+  required DateTime hoy,
+}) {
+  switch (vista) {
+    case AgendaViewMode.semana:
+      return 'Citas de la semana';
+    case AgendaViewMode.mes:
+      return 'Citas del mes';
+    case AgendaViewMode.dia:
+      final esHoy = fecha.year == hoy.year &&
+          fecha.month == hoy.month &&
+          fecha.day == hoy.day;
+      return esHoy ? 'Citas de hoy' : 'Citas del día';
+  }
+}
+
+class AccionesDeLaAgenda extends StatelessWidget {
+  const AccionesDeLaAgenda({
+    super.key,
+    required this.onNuevaCita,
+    required this.onLlegoSinCita,
+  });
+
+  final VoidCallback onNuevaCita;
+  final VoidCallback onLlegoSinCita;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.sm,
+      children: [
+        FilledButton.icon(
+          onPressed: onNuevaCita,
+          icon: const Icon(Icons.add),
+          label: const Text('Nueva cita'),
+        ),
+        OutlinedButton.icon(
+          onPressed: onLlegoSinCita,
+          icon: const Icon(Icons.bolt_outlined),
+          label: const Text('Llegó sin cita'),
+        ),
+      ],
+    );
+  }
+}
+
+class ResumenDeCitasCard extends StatelessWidget {
+  const ResumenDeCitasCard({
+    super.key,
+    required this.titulo,
+    required this.resumen,
+    required this.conCaja,
+    this.onAbrirCaja,
+  });
+
+  final String titulo;
+  final ResumenDeCitas resumen;
+  final bool conCaja;
+  final VoidCallback? onAbrirCaja;
+
+  static Widget _etiqueta(String texto) => Text(
+    texto.toUpperCase(),
+    style: TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.w800,
+      color: AppColors.textSecondary,
+      letterSpacing: 0.6,
+    ),
+  );
+
+  static Widget _numero(int n) => Text(
+    '$n',
+    style: const TextStyle(
+      fontSize: 32,
+      fontWeight: FontWeight.w800,
+      height: 1.15,
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    Widget dato(Color color, int n, String texto) => Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text('$n', style: const TextStyle(fontWeight: FontWeight.w800)),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            texto,
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          ),
+        ),
+      ],
+    );
+
+    final citas = AppCard(
+      child: Row(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [_etiqueta(titulo), _numero(resumen.total)],
+          ),
+          const SizedBox(width: AppSpacing.lg),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                dato(
+                  AppColors.stateConfirmed,
+                  resumen.atendidas,
+                  resumen.atendidas == 1 ? 'atendida' : 'atendidas',
+                ),
+                const SizedBox(height: 3),
+                dato(
+                  AppColors.stateInProgress,
+                  resumen.pendientes,
+                  resumen.pendientes == 1 ? 'pendiente' : 'pendientes',
+                ),
+                const SizedBox(height: 3),
+                dato(
+                  AppColors.danger,
+                  resumen.perdidas,
+                  'canceladas o no asistieron',
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (!conCaja || onAbrirCaja == null) return citas;
+
+    final caja = AppCard(
+      onTap: onAbrirCaja,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _etiqueta('Tickets & Caja'),
+          _numero(resumen.porCobrar),
+          Text(
+            'por cobrar · abrir la caja',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          ),
+        ],
+      ),
+    );
+
+    return LayoutBuilder(
+      builder: (context, c) => c.maxWidth < 560
+          ? Column(
+              children: [citas, const SizedBox(height: AppSpacing.sm), caja],
+            )
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(flex: 2, child: citas),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(child: caja),
+              ],
+            ),
+    );
+  }
 }

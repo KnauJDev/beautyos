@@ -23,7 +23,11 @@ class ClientesPage extends StatefulWidget {
     this.branchId,
     this.esSedePrincipal = false,
     this.paraInvitar,
+    this.filtroInicial,
   });
+
+  /// D-318: al llegar desde la campana, ya filtrado ("para_invitar").
+  final String? filtroInicial;
 
   /// D-314 (4B): las invitaciones a volver, por servicio. Sin él (las
   /// pruebas), no hay filtros "Para invitar" ni "No volvieron".
@@ -51,7 +55,7 @@ class _ClientesPageState extends State<ClientesPage> {
 
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  String _selectedSegmentFilter = 'todos'; // 'todos', 'vip', 'en_riesgo', 'recurrente', 'nuevo', 'con_saldo', 'inactivos'
+  late String _selectedSegmentFilter = widget.filtroInicial ?? 'todos'; // 'todos', 'vip', 'en_riesgo', 'recurrente', 'nuevo', 'con_saldo', 'inactivos'
 
   /// La dirección del salón, para el enlace de la invitación a volver
   /// (D-313). `null` mientras llega o si no se pudo leer.

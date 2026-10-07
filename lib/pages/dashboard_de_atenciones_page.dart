@@ -29,9 +29,17 @@ class DashboardDeAtencionesPage extends StatefulWidget {
     this.paraInvitar,
     this.onIrAAgenda,
     this.onIrAClientes,
+    this.compacto = false,
+    this.onVerCompleto,
   });
 
   final String branchId;
+
+  /// D-318: la puerta de *Mi negocio* lleva el Dashboard resumido (periodo,
+  /// historia, números y los dos gráficos que se filtran) y un botón al
+  /// completo. Es lo que el propietario aprobó en el prototipo.
+  final bool compacto;
+  final VoidCallback? onVerCompleto;
 
   /// Las sedes que se pueden consultar. Con una sola, no hay selector.
   final List<BranchContext> branches;
@@ -95,7 +103,7 @@ class _DashboardDeAtencionesPageState extends State<DashboardDeAtencionesPage> {
   @override
   Widget build(BuildContext context) {
     return AppPage(
-      title: 'Dashboard',
+      title: widget.compacto ? 'Mi negocio' : 'Dashboard',
       subtitle: 'La historia de tu negocio, en citas y clientas.',
       children: [
         FutureBuilder<ResumenDeAtenciones>(
@@ -129,6 +137,8 @@ class _DashboardDeAtencionesPageState extends State<DashboardDeAtencionesPage> {
               onQuitarServicio: () => _cambiar(() => _servicioElegido = null),
               onIrAAgenda: widget.onIrAAgenda,
               onIrAClientes: widget.onIrAClientes,
+              compacto: widget.compacto,
+              onVerCompleto: widget.onVerCompleto,
             );
           },
         ),
@@ -161,7 +171,13 @@ class TableroDeAtenciones extends StatelessWidget {
     required this.onQuitarServicio,
     this.onIrAAgenda,
     this.onIrAClientes,
+    this.compacto = false,
+    this.onVerCompleto,
   });
+
+  /// Ver [DashboardDeAtencionesPage.compacto].
+  final bool compacto;
+  final VoidCallback? onVerCompleto;
 
   final ResumenDeAtenciones resumen;
   final PeriodoDashboard periodo;
@@ -234,6 +250,28 @@ class TableroDeAtenciones extends StatelessWidget {
           ),
         if (sinNada)
           const _SinCitasTodavia()
+        else if (compacto) ...[
+          _Historia(resumen: r, periodo: periodo, estilista: estilista?.nombre, servicio: servicio?.nombre),
+          const SizedBox(height: AppSpacing.lg),
+          _Indicadores(datos: d),
+          const SizedBox(height: AppSpacing.lg),
+          _Rejilla(
+            pares: [
+              (
+                _QuePiden(datos: d, elegido: servicio?.id, filtroEstilista: estilista?.nombre, onTocar: onTocarServicio),
+                _QuienAtiende(datos: d, elegida: estilista?.id, filtroServicio: servicio?.nombre, onTocar: onTocarEstilista),
+              ),
+            ],
+          ),
+          if (onVerCompleto != null)
+            Center(
+              child: FilledButton.icon(
+                onPressed: onVerCompleto,
+                icon: const Icon(Icons.insights_outlined),
+                label: const Text('Ver el Dashboard completo'),
+              ),
+            ),
+        ]
         else ...[
           _Historia(resumen: r, periodo: periodo, estilista: estilista?.nombre, servicio: servicio?.nombre),
           const SizedBox(height: AppSpacing.lg),

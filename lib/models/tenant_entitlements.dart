@@ -104,6 +104,13 @@ class TenantEntitlements {
   ///
   /// Falla en `false` (se ve) igual que [permite] falla en `true`: si la
   /// consulta no respondió, no se esconde nada.
+  /// Encendida **de verdad**: se consultó y la respuesta fue sí (D-318).
+  ///
+  /// [permite] da `true` cuando no se pudo consultar o la clave no vino, para
+  /// no bloquear a nadie por un fallo de red. Para una capacidad que nace
+  /// apagada eso sería encenderla sin querer, así que se pregunta por aquí.
+  bool encendido(String clave) => consultado && porClave[clave] == true;
+
   bool apagadoPorLaPlataforma(String? clave) {
     if (clave == null || clave.isEmpty || !consultado) return false;
     return porClave[clave] == false && fuentesPorClave[clave] == 'override';
@@ -139,6 +146,12 @@ abstract final class ClaveDeCapacidad {
   /// [reportesFinancieros], que se queda con Reportes. Encendida en todos los
   /// planes (`20261004100000`).
   static const dashboard = 'dashboard';
+
+  /// D-318: la app en cinco lugares (Agenda, Clientes, Mi negocio, Mi vitrina,
+  /// Ajustes). **Nace apagada** en todos los planes (`20261007100000`) y la
+  /// plataforma la enciende salón por salón. Se pregunta con
+  /// [TenantEntitlements.encendido], no con `permite`.
+  static const cincoLugares = 'cinco_lugares';
 
   /// Límites numéricos, no módulos: se leen con `limiteDe`, no con `permite`.
   static const sedes = 'branches';

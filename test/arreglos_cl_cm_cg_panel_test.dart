@@ -58,7 +58,8 @@ void main() {
 
   test('el Panel avisa a la lista al mover un interruptor o un límite', () {
     final panel = leer('lib/pages/platform_panel_page.dart');
-    expect('onCambio: widget.onAjustesCambiados,'.allMatches(panel).length, 2);
+    // Tres desde el 07-oct: las Novedades (D-318) también avisan.
+    expect('onCambio: widget.onAjustesCambiados,'.allMatches(panel).length, 3);
     expect(panel, contains('onAjustesCambiados: _refrescarSinParpadeo,'));
     expect(panel, contains('      widget.onCambio?.call();'));
     // Y la lista no se cambia por la ruedita al recargar: la ficha abierta se

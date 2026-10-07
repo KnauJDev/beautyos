@@ -668,13 +668,21 @@ class RenglonDeRanking extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 6),
+                      // D-318 (ronda 2): al filtrar, la barra crece hasta su
+                      // valor nuevo en vez de cambiar de golpe. El propietario:
+                      // "no se perciben los cambios… que es lo que atrae".
                       ClipRRect(
                         borderRadius: BorderRadius.circular(999),
-                        child: LinearProgressIndicator(
-                          value: fraccion.clamp(0, 1).toDouble(),
-                          minHeight: 8,
-                          backgroundColor: AppColors.brandTintSoft,
-                          valueColor: AlwaysStoppedAnimation(AppColors.brand),
+                        child: TweenAnimationBuilder<double>(
+                          tween: Tween(end: fraccion.clamp(0, 1).toDouble()),
+                          duration: const Duration(milliseconds: 550),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, valor, _) => LinearProgressIndicator(
+                            value: valor,
+                            minHeight: 8,
+                            backgroundColor: AppColors.brandTintSoft,
+                            valueColor: AlwaysStoppedAnimation(AppColors.brand),
+                          ),
                         ),
                       ),
                       if (datos != null) ...[

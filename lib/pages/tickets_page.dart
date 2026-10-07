@@ -33,6 +33,9 @@ Future<bool> openCreateAppointmentDialog(
   BuildContext context,
   String branchId, {
   bool citasNacenConfirmadas = false,
+  // D-318: "Llegó sin cita" desde la Agenda de los cinco lugares. Es el mismo
+  // diálogo, con el "Atender ya" de D-195 disparado al elegir el servicio.
+  bool atenderYa = false,
 }) async {
   final clientsService = const ClientsService();
   final ticketsService = TicketsService(branchId: branchId);
@@ -63,6 +66,7 @@ Future<bool> openCreateAppointmentDialog(
         clientsService: clientsService,
         ticketsService: ticketsService,
         options: options,
+        atenderYa: atenderYa,
       ),
     );
 
@@ -1482,12 +1486,18 @@ class CreateAppointmentDialog extends StatefulWidget {
     required this.clientsService,
     required this.ticketsService,
     required this.options,
+    this.atenderYa = false,
   });
 
   final List<ClientSummary> clients;
   final ClientsService clientsService;
   final TicketsService ticketsService;
   final List<TicketServiceOption> options;
+
+  /// "Llegó sin cita" (D-318): el título lo dice y, en cuanto se elige el
+  /// servicio, corre solo el "Atender ya (walk-in)" de D-195, que busca el
+  /// primer horario libre de hoy sin saltarse la disponibilidad real.
+  final bool atenderYa;
 
   @override
   State<CreateAppointmentDialog> createState() =>
@@ -1955,7 +1965,7 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
     final resolvedStylistName = _resolvedStylistName;
 
     return AlertDialog(
-      title: const Text('Nueva cita'),
+      title: Text(widget.atenderYa ? 'Llegó sin cita' : 'Nueva cita'),
       content: SizedBox(
         width: 560,
         child: Form(
@@ -1991,6 +2001,8 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
                       _availableSlots = null;
                       slotsError = null;
                     });
+                    // D-318: llegó sin cita, así que se atiende ya.
+                    if (widget.atenderYa && value != null) _atenderYa();
                   },
                   validator: (value) => value == null || value.isEmpty
                       ? 'Selecciona un servicio'

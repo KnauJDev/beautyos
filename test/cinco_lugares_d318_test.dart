@@ -1,0 +1,270 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:salonymas/models/avisos_de_hoy.dart';
+import 'package:salonymas/models/dashboard_de_atenciones.dart';
+import 'package:salonymas/models/lugares_de_la_app.dart';
+import 'package:salonymas/models/periodo_dashboard.dart';
+import 'package:salonymas/models/tenant_entitlements.dart';
+import 'package:salonymas/models/ticket_board.dart';
+import 'package:salonymas/pages/agenda_page.dart';
+import 'package:salonymas/pages/dashboard_de_atenciones_page.dart';
+import 'package:salonymas/services/dashboard_service.dart';
+import 'package:salonymas/widgets/cinco_lugares.dart';
+
+import 'dashboard_de_atenciones_d317_test.dart' show respuestaDeEjemplo;
+
+/// D-318 (07-oct): los cinco lugares, aprobados por el propietario vista por
+/// vista, detrás del interruptor `cinco_lugares` que nace apagado. El
+/// servidor lo prueba el control 245.
+String leer(String ruta) =>
+    File(ruta).readAsStringSync().replaceAll('\r\n', '\n');
+
+TicketBoardCount conteo(String status, int n) => TicketBoardCount(
+  bucket: '2026-10-07',
+  status: status,
+  ticketCount: n,
+  totalPrice: 0,
+  totalPendingBalance: 0,
+);
+
+Widget enApp(Widget hijo, {double ancho = 390}) => MaterialApp(
+  home: MediaQuery(
+    data: MediaQueryData(size: Size(ancho, 900)),
+    child: Scaffold(body: SingleChildScrollView(child: hijo)),
+  ),
+);
+
+void main() {
+  group('el interruptor nace apagado', () {
+    test('si no se pudo consultar, NO cuenta como encendido', () {
+      const e = TenantEntitlements.desconocido();
+      // `permite` da sí para no bloquear a nadie por un fallo...
+      expect(e.permite(ClaveDeCapacidad.cincoLugares), isTrue);
+      // ...pero esta capacidad se pregunta con `encendido`.
+      expect(e.encendido(ClaveDeCapacidad.cincoLugares), isFalse);
+    });
+
+    test('apagada por el plan: no; encendida por el Panel: sí', () {
+      final apagada = TenantEntitlements.fromList(<dynamic>[
+        {'feature_key': 'cinco_lugares', 'entitled': false, 'limit_value': null, 'source': 'plan'},
+      ]);
+      expect(apagada.encendido(ClaveDeCapacidad.cincoLugares), isFalse);
+      final encendida = TenantEntitlements.fromList(<dynamic>[
+        {'feature_key': 'cinco_lugares', 'entitled': true, 'limit_value': null, 'source': 'override'},
+      ]);
+      expect(encendida.encendido(ClaveDeCapacidad.cincoLugares), isTrue);
+      // Y la clave es la del servidor.
+      expect(
+        leer('supabase/migrations/20261007100000_cinco_lugares_interruptor_d318.sql'),
+        contains("select p.id, f.id, false"),
+      );
+    });
+
+    test('el menú nuevo solo sale con el interruptor encendido', () {
+      final main = leer('lib/main.dart');
+      expect(main, contains('entitlements.encendido(ClaveDeCapacidad.cincoLugares)'));
+      expect(main, contains('if (isWide && cinco)'));
+      expect(main, contains('else if (isWide)\n                          _CategorizedSideMenu('));
+      expect(main, contains(': _MobileNavBar('));
+    });
+  });
+
+  group('dónde vive cada módulo', () {
+    test('cada módulo de hoy tiene su lugar, y la estilista no está', () {
+      expect(lugarDe('Tickets & Caja'), LugarDeLaApp.agenda);
+      expect(lugarDe('Reportes'), LugarDeLaApp.negocio);
+      expect(lugarDe('Blog'), LugarDeLaApp.vitrina);
+      expect(lugarDe('Configuración'), LugarDeLaApp.ajustes);
+      expect(lugarDe('Mi agenda'), isNull);
+      expect(esPuerta('Mi negocio'), isTrue);
+      expect(esPuerta('Dashboard'), isFalse);
+    });
+
+    test('la recepción ve solo los lugares que tiene', () {
+      expect(
+        lugaresVisibles(['Agenda', 'Tickets & Caja', 'Clientes']),
+        [LugarDeLaApp.agenda, LugarDeLaApp.clientes],
+      );
+      expect(
+        lugaresVisibles(['Agenda', 'Clientes', 'Mi negocio', 'Mi vitrina', 'Ajustes']).map((l) => l.nombre),
+        ['Agenda', 'Clientes', 'Mi negocio', 'Mi vitrina', 'Ajustes'],
+      );
+    });
+
+    test('hallazgo CN: los saltos buscan en la lista que se ve', () {
+      final main = leer('lib/main.dart');
+      final i0 = main.indexOf('  List<BeautyModule> _modulesForProfile(');
+      final i1 = main.indexOf('  void _mostrarAvisoDePagoSiHayUno(');
+      final cuerpo = main.substring(i0, i1);
+      expect(cuerpo, isNot(contains('_irAModulo(modules, ')));
+      expect('_irAModulo(resultado, '.allMatches(cuerpo).length, greaterThanOrEqualTo(8));
+    });
+  });
+
+  group('la Agenda: una sola tarjeta de citas', () {
+    test('los cuatro números del ejemplo del propietario', () {
+      final r = resumenDeCitas([
+        conteo('cerrado', 2),
+        conteo('finalizado', 1),
+        conteo('confirmado', 3),
+        conteo('en_proceso', 1),
+        conteo('solicitado', 1),
+        conteo('cancelado', 1),
+      ]);
+      expect((r.total, r.atendidas, r.pendientes, r.perdidas, r.porCobrar), (9, 3, 5, 1, 1));
+    });
+
+    test('el título dice lo que mira el tablero', () {
+      final hoy = DateTime(2026, 10, 7, 11);
+      expect(tituloDelResumen(vista: AgendaViewMode.dia, fecha: DateTime(2026, 10, 7), hoy: hoy), 'Citas de hoy');
+      expect(tituloDelResumen(vista: AgendaViewMode.dia, fecha: DateTime(2026, 10, 8), hoy: hoy), 'Citas del día');
+      expect(tituloDelResumen(vista: AgendaViewMode.semana, fecha: hoy, hoy: hoy), 'Citas de la semana');
+      expect(tituloDelResumen(vista: AgendaViewMode.mes, fecha: hoy, hoy: hoy), 'Citas del mes');
+    });
+
+    testWidgets('se dibuja en el celular, con y sin caja', (tester) async {
+      final r = resumenDeCitas([conteo('cerrado', 3), conteo('confirmado', 5), conteo('cancelado', 1)]);
+      for (final caja in [false, true]) {
+        await tester.pumpWidget(enApp(ResumenDeCitasCard(
+          titulo: 'Citas de hoy',
+          resumen: r,
+          conCaja: caja,
+          onAbrirCaja: () {},
+        )));
+        expect(tester.takeException(), isNull);
+        expect(find.text('CITAS DE HOY'), findsOneWidget);
+        expect(find.text('9'), findsOneWidget);
+        expect(find.text('TICKETS & CAJA'), caja ? findsOneWidget : findsNothing);
+      }
+    });
+
+    test('Llegó sin cita es el diálogo de siempre con su "Atender ya"', () {
+      final tickets = leer('lib/pages/tickets_page.dart');
+      expect(tickets, contains("title: Text(widget.atenderYa ? 'Llegó sin cita' : 'Nueva cita'),"));
+      expect(tickets, contains('if (widget.atenderYa && value != null) _atenderYa();'));
+    });
+  });
+
+  group('la campana', () {
+    test('lo básico, y cada aviso a su módulo', () {
+      const a = AvisosDeHoy(
+        sinConfirmar: 2,
+        paraInvitar: 4,
+        inventarioBajo: 1,
+        sedes: [SedePorVencer(nombre: 'Cedritos', dias: 5, vencida: false)],
+      );
+      final l = a.lista;
+      expect(l.map((x) => x.texto), [
+        '2 citas de hoy sin confirmar',
+        '4 clientes para invitar hoy: ya les toca volver',
+        '1 producto por debajo del mínimo',
+        'La sede Cedritos vence en 5 días',
+      ]);
+      expect(l.map((x) => x.destino), ['Agenda', 'Clientes', 'Inventario', 'Configuración']);
+      expect(l[1].filtroDeClientes, 'para_invitar');
+      expect(AvisosDeHoy.vacio.cuantos, 0);
+    });
+
+    test('una sede vencida es urgente', () {
+      const a = AvisosDeHoy(sedes: [SedePorVencer(nombre: 'Norte', dias: 0, vencida: true)]);
+      expect(a.lista.single.urgente, isTrue);
+      expect(a.lista.single.texto, contains('está vencida'));
+    });
+  });
+
+  group('las piezas de pantalla', () {
+    testWidgets('la barra del celular: cinco lugares y el globo de Clientes', (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          bottomNavigationBar: BarraDeLugares(
+            lugares: LugarDeLaApp.values,
+            actual: LugarDeLaApp.agenda,
+            avisos: const AvisosDeHoy(paraInvitar: 4),
+            onElegir: (_) {},
+          ),
+        ),
+      ));
+      for (final l in LugarDeLaApp.values) {
+        expect(find.text(l.nombre), findsOneWidget);
+      }
+      expect(find.text('4'), findsWidgets);
+      expect(find.text('Más'), findsNothing);
+    });
+
+    testWidgets('una puerta abre sus módulos', (tester) async {
+      String? abierto;
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: PuertaDeLugarPage(
+            titulo: 'Ajustes',
+            subtitulo: 'Lo que se configura una vez.',
+            renglones: [
+              for (final t in modulosDentroDe[LugarDeLaApp.ajustes]!)
+                RenglonDePuerta(
+                  titulo: t,
+                  descripcion: descripcionDeModulo[t]!,
+                  icono: Icons.circle,
+                  onTap: () => abierto = t,
+                ),
+            ],
+          ),
+        ),
+      ));
+      await tester.tap(find.text('Estilistas'));
+      expect(abierto, 'Estilistas');
+    });
+
+    testWidgets('Mi negocio sin caja: el Dashboard resumido y el botón al completo', (tester) async {
+      tester.view.physicalSize = const Size(390, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      var completo = false;
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: TableroDeAtenciones(
+              resumen: ResumenDeAtenciones(
+                datos: DashboardDeAtenciones.fromMap(respuestaDeEjemplo()),
+                rango: RangoFechas(DateTime(2026, 9, 28), DateTime(2026, 10, 4)),
+                rangoAnterior: RangoFechas(DateTime(2026, 9, 21), DateTime(2026, 9, 27)),
+              ),
+              periodo: PeriodoDashboard.estaSemana,
+              compacto: true,
+              onVerCompleto: () => completo = true,
+              onPeriodo: (_) {},
+              onAmbito: (_) {},
+              onTocarEstilista: (_) {},
+              onTocarServicio: (_) {},
+              onQuitarEstilista: () {},
+              onQuitarServicio: () {},
+            ),
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.text('¿Qué piden?'), findsOneWidget);
+      expect(find.text('¿Quién atiende?'), findsOneWidget);
+      expect(find.text('¿Cuándo vienen?'), findsNothing);
+      await tester.ensureVisible(find.text('Ver el Dashboard completo'));
+      await tester.tap(find.text('Ver el Dashboard completo'));
+      expect(completo, isTrue);
+    });
+
+    test('las barras crecen con una animación al filtrar (ronda 2)', () {
+      expect(
+        leer('lib/widgets/graficos_de_atenciones.dart'),
+        contains('child: TweenAnimationBuilder<double>('),
+      );
+    });
+
+    test('el Panel enciende la novedad salón por salón', () {
+      final panel = leer('lib/pages/platform_panel_page.dart');
+      expect(panel, contains("'cinco_lugares',\n      'Los cinco lugares',"));
+      expect(panel, contains('enabled: true,'));
+      expect(panel, contains('NovedadesDelNegocio(\n                          tenantId: tenant.tenantId,'));
+    });
+  });
+}
