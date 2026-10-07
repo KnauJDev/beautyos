@@ -263,14 +263,35 @@ class TableroDeAtenciones extends StatelessWidget {
               ),
             ],
           ),
-          if (onVerCompleto != null)
-            Center(
-              child: FilledButton.icon(
-                onPressed: onVerCompleto,
-                icon: const Icon(Icons.insights_outlined),
-                label: const Text('Ver el Dashboard completo'),
-              ),
+          // D-318 (07-oct): el filtro también aquí abajo, junto al botón,
+          // para quitarlo sin subir. Arriba se queda: avisa que la historia
+          // y los números están filtrados. Lo pidió el propietario.
+          Center(
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                if (estilista != null)
+                  _ChipDeFiltro(
+                    texto: 'Solo ${estilista!.nombre}',
+                    onQuitar: onQuitarEstilista,
+                  ),
+                if (servicio != null)
+                  _ChipDeFiltro(
+                    texto: 'Solo ${servicio!.nombre}',
+                    onQuitar: onQuitarServicio,
+                  ),
+                if (onVerCompleto != null)
+                  FilledButton.icon(
+                    onPressed: onVerCompleto,
+                    icon: const Icon(Icons.insights_outlined),
+                    label: const Text('Ver el Dashboard completo'),
+                  ),
+              ],
             ),
+          ),
         ]
         else ...[
           _Historia(resumen: r, periodo: periodo, estilista: estilista?.nombre, servicio: servicio?.nombre),
@@ -957,7 +978,7 @@ class _QuePiden extends StatelessWidget {
           ),
       ],
       deDondeSale:
-          'Toca un servicio para ver todo el tablero solo con él. Cuenta cada servicio de las citas cerradas, sin precios.',
+          'Toca un servicio para ver todo el tablero solo con él; tócalo otra vez para quitarlo. Cuenta cada servicio de las citas cerradas, sin precios.',
     );
   }
 }
@@ -1024,7 +1045,7 @@ class _QuienAtiende extends StatelessWidget {
           ),
       ],
       deDondeSale:
-          'Toca una persona para ver el tablero solo con sus citas. Las estrellas salen de las reseñas de sus citas del periodo.',
+          'Toca una persona para ver el tablero solo con sus citas; tócala otra vez para quitarlo. Las estrellas salen de las reseñas de sus citas del periodo.',
     );
   }
 }

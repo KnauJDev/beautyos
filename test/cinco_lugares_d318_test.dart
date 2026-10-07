@@ -320,6 +320,51 @@ void main() {
       expect(completo, isTrue);
     });
 
+    testWidgets('con un filtro puesto, se quita también abajo, junto al botón (07-oct)', (tester) async {
+      tester.view.physicalSize = const Size(390, 3200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      var quitado = false;
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: TableroDeAtenciones(
+              resumen: ResumenDeAtenciones(
+                datos: DashboardDeAtenciones.fromMap(respuestaDeEjemplo()),
+                rango: RangoFechas(DateTime(2026, 9, 28), DateTime(2026, 10, 4)),
+                rangoAnterior: RangoFechas(DateTime(2026, 9, 21), DateTime(2026, 9, 27)),
+              ),
+              periodo: PeriodoDashboard.estaSemana,
+              servicio: (id: 's-corte', nombre: 'Corte'),
+              compacto: true,
+              onVerCompleto: () {},
+              onPeriodo: (_) {},
+              onAmbito: (_) {},
+              onTocarEstilista: (_) {},
+              onTocarServicio: (_) {},
+              onQuitarEstilista: () {},
+              onQuitarServicio: () => quitado = true,
+            ),
+          ),
+        ),
+      ));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      // Arriba (avisa que todo está filtrado) y abajo, junto al botón.
+      expect(find.text('Solo Corte'), findsNWidgets(2));
+      final abajo = find.text('Solo Corte').last;
+      final boton = find.text('Ver el Dashboard completo');
+      expect(
+        (tester.getTopLeft(abajo).dy - tester.getTopLeft(boton).dy).abs(),
+        lessThan(80),
+        reason: 'el de abajo va junto al botón',
+      );
+      await tester.ensureVisible(abajo);
+      await tester.tap(abajo);
+      expect(quitado, isTrue);
+      expect(find.textContaining('tócalo otra vez para quitarlo'), findsOneWidget);
+    });
+
     test('las barras crecen con una animación al filtrar (ronda 2)', () {
       expect(
         leer('lib/widgets/graficos_de_atenciones.dart'),

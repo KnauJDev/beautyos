@@ -17,7 +17,8 @@ una función de Cloudflare Pages. **Todo visto en pantalla** el 03 y el 04-oct (
 > en el Panel (*Novedades*). **Encendida en Éxito el 07-oct.** Al verla, el propietario
 > decidió quitar el título y la explicación de **todas las pantallas del salón, en todos
 > los salones** (las de la estilista los conservan hasta la entrega 3). Probando la campana
-> salieron tres arreglos más (ver D-318). **774 pruebas.**
+> salieron tres arreglos más, y en *Mi negocio* el filtro también abajo (ver D-318).
+> **775 pruebas.**
 > Lo siguiente está en §3 y §7.
 **Hallazgos: 82 en total, 68 cerrados o decididos, 14 abiertos** (al 07-oct, con **CN**; los cuenta
 `python scripts/verificar_documentos.py`).
@@ -121,7 +122,8 @@ y `Backup_2026-10-04_19-32-49`.
    (celular y computador), Clientes, Servicios con su *"← Ajustes"*, la tarjeta *Para
    invitar hoy*, la campana y el número de *Clientes*. De ahí salieron tres arreglos (el
    filtro de la campana, los números que no se enteraban de un cambio y los filtros
-   cortados) **que falta mirar**. Falta también *Mi negocio*, *Mi vitrina* y el celular. Mirar en el computador y en el celular: el menú (lateral / barra de abajo, sin
+   cortados), ✅ **vistos**. ✅ *Mi negocio* en el celular; de ahí salió el filtro también
+   abajo, junto a *Ver el Dashboard completo* (falta mirarlo). Falta *Mi vitrina*. Mirar en el computador y en el celular: el menú (lateral / barra de abajo, sin
    *Más*), la Agenda con *Nueva cita*, *Llegó sin cita* y la tarjeta de citas, *Mi negocio*
    (filtrar un servicio y ver crecer las barras sin que la página suba), *Mi vitrina*,
    *Ajustes*, el *"← volver"* y la campana. **Solo después, a David.** Apagarlo devuelve
@@ -296,9 +298,10 @@ NUNCA dart format en bloque.
 
 ## 9. Pruebas al cerrar
 
-**774 pruebas, todas en verde**, en la corrida completa del 07-oct con la entrega 2 de
-D-318, las pantallas sin título y los arreglos de la campana (`flutter test`, 3 min 30 s),
-y `flutter build web` compila. 21 son de los cinco lugares (`cinco_lugares_d318_test.dart`); tres viejas se
+**775 pruebas, todas en verde**, en la corrida completa del 07-oct con la entrega 2 de
+D-318, las pantallas sin título, los arreglos de la campana y el filtro de *Mi negocio*
+también abajo (`flutter test`, 3 min 42 s), y `flutter build web` compila. 22 son de los
+cinco lugares (`cinco_lugares_d318_test.dart`); tres viejas se
 actualizaron porque cuentan piezas que ahora aparecen una vez más (Mi negocio y Mi vitrina
 reciben las mismas que la Agenda y Configuración; el Panel avisa también desde
 *Novedades*), y una porque buscaba el título *Tablero de Agenda*, que ya no se pinta.
