@@ -25,6 +25,10 @@
   /// `salonymas.com/<slug>`. Null si todavía no se le asignó uno.
   final String? slug;
 
+  /// TikTok del salón (D-319): usuario o dirección, como lo escriban. Null
+  /// si no lo han puesto.
+  final String? tiktok;
+
   /// Dirección física de la sede principal (D-166). `tenants` no tiene
   /// dirección propia, solo cada sede -- mismo criterio que la página
   /// pública (D-164).
@@ -44,6 +48,7 @@
     this.themeKey,
     this.brandColor,
     this.slug,
+    this.tiktok,
   });
 
   factory BusinessSettings.fromMap(Map<String, dynamic> map) {
@@ -62,6 +67,7 @@
       themeKey: map['theme_key']?.toString(),
       brandColor: map['brand_color']?.toString(),
       slug: map['slug']?.toString(),
+      tiktok: map['tiktok']?.toString(),
     );
   }
 }

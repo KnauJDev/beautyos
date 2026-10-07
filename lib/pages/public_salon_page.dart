@@ -362,6 +362,13 @@ class _HeroHeader extends StatelessWidget {
                         icon: const Icon(Icons.public_outlined, size: 16),
                         label: const Text('Facebook'),
                       ),
+                    // D-319: lo pidió David, el primer cliente real.
+                    if (salon.tiktokUri != null)
+                      OutlinedButton.icon(
+                        onPressed: () => _abrir(salon.tiktokUri!),
+                        icon: const Icon(Icons.music_note_outlined, size: 16),
+                        label: const Text('TikTok'),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 12),

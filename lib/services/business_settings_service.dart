@@ -60,6 +60,9 @@ class BusinessSettingsService {
     String? whatsapp,
     String? instagram,
     String? facebook,
+    // Obligatorio a propósito: con un valor por defecto, una pantalla que
+    // olvidara pasarlo lo borraría al guardar.
+    required String tiktok,
   }) async {
     await Supabase.instance.client.rpc(
       'update_tenant_contact_info',
@@ -70,6 +73,9 @@ class BusinessSettingsService {
         'p_whatsapp': whatsapp,
         'p_instagram': instagram,
         'p_facebook': facebook,
+        // D-319: siempre texto. En el servidor, null es "no lo toques" (para
+        // una app vieja que no lo manda) y vacío lo borra.
+        'p_tiktok': tiktok,
       },
     );
   }

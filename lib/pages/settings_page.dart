@@ -34,6 +34,7 @@ import '../widgets/dialogo_datos_de_sede.dart';
 import '../widgets/sedes_suscripcion_card.dart';
 import '../services/app_version_service.dart';
 import '../widgets/app_widgets.dart';
+import '../widgets/codigo_qr_del_enlace.dart' show mostrarCodigoQr;
 import '../widgets/create_branch_dialog.dart';
 import '../widgets/theme_selector_card.dart';
 import '../widgets/update_banner.dart';
@@ -1001,6 +1002,7 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
   late final TextEditingController _whatsappController;
   late final TextEditingController _instagramController;
   late final TextEditingController _facebookController;
+  late final TextEditingController _tiktokController;
   bool _isSaving = false;
 
   @override
@@ -1022,6 +1024,7 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
     _facebookController = TextEditingController(
       text: _editableOrEmpty(widget.settings.facebook, 'Sin Facebook'),
     );
+    _tiktokController = TextEditingController(text: widget.settings.tiktok ?? '');
   }
 
   /// [BusinessSettings] rellena estos campos con un texto de reemplazo
@@ -1044,6 +1047,7 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
     _whatsappController.dispose();
     _instagramController.dispose();
     _facebookController.dispose();
+    _tiktokController.dispose();
     super.dispose();
   }
 
@@ -1060,6 +1064,7 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
         whatsapp: _whatsappController.text.trim(),
         instagram: _instagramController.text.trim(),
         facebook: _facebookController.text.trim(),
+        tiktok: _tiktokController.text.trim(),
       );
       if (!mounted) return;
       widget.onChanged();
@@ -1128,6 +1133,16 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
           controller: _facebookController,
           decoration: const InputDecoration(
             labelText: 'Facebook',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 10),
+        // D-319: lo pidió David, el primer cliente real.
+        TextField(
+          controller: _tiktokController,
+          decoration: const InputDecoration(
+            labelText: 'TikTok',
+            hintText: '@tusalon',
             border: OutlineInputBorder(),
           ),
         ),
@@ -1775,17 +1790,34 @@ class TuEnlaceCard extends StatelessWidget {
             const SizedBox(height: 12),
             _cajaDelEnlace(context, _enlace),
             const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: _compartirEnWhatsApp,
-              icon: const Icon(
-                Icons.chat_bubble_outline,
-                size: 16,
-                color: AppColors.whatsapp,
-              ),
-              label: const Text('Compartir en WhatsApp'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.whatsapp,
-              ),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: _compartirEnWhatsApp,
+                  icon: const Icon(
+                    Icons.chat_bubble_outline,
+                    size: 16,
+                    color: AppColors.whatsapp,
+                  ),
+                  label: const Text('Compartir en WhatsApp'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.whatsapp,
+                  ),
+                ),
+                // D-319: el texto de arriba habla de un código QR; aquí se
+                // ve y se descarga para imprimirlo.
+                OutlinedButton.icon(
+                  onPressed: () => mostrarCodigoQr(
+                    context,
+                    enlace: _enlace,
+                    nombreDelSalon: nombreDelSalon,
+                  ),
+                  icon: const Icon(Icons.qr_code_2, size: 16),
+                  label: const Text('Código QR'),
+                ),
+              ],
             ),
             // Sin la dirección del salón, el de arriba ya es el de la sede.
             if (!esSedePrincipal && (slugDelSalon?.trim().isNotEmpty ?? false)) ...[

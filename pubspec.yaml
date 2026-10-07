@@ -51,6 +51,11 @@ dependencies:
   # Para recordar la sesion del Portal de la Clienta en su dispositivo
   # (D-167): guarda el celular y el token, no el PIN.
   shared_preferences: ^2.3.3
+  # D-319 (07-oct): el código QR del enlace del salón, para imprimirlo.
+  qr_flutter: ^4.1.0
+  # Para descargar ese QR como imagen en el navegador. Ya venía como
+  # dependencia transitiva (1.1.1); se declara porque ahora se usa directo.
+  web: ^1.1.1
 
 dev_dependencies:
   flutter_test:

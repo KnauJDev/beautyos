@@ -24,6 +24,7 @@ class PublicSalonProfile {
     this.contactPhone,
     this.instagram,
     this.facebook,
+    this.tiktok,
     this.primaryBranchId,
     this.businessHours = const [],
   });
@@ -53,6 +54,9 @@ class PublicSalonProfile {
   final String? instagram;
   final String? facebook;
 
+  /// D-319: usuario (@salon) o dirección, como lo escriba el salón.
+  final String? tiktok;
+
   /// Sede a la que apunta el botón "Agendar Cita" (D-165). Null si el
   /// negocio no tiene ninguna sede principal activa.
   final String? primaryBranchId;
@@ -76,6 +80,7 @@ class PublicSalonProfile {
       contactPhone: map['contact_phone']?.toString(),
       instagram: map['instagram']?.toString(),
       facebook: map['facebook']?.toString(),
+      tiktok: map['tiktok']?.toString(),
       primaryBranchId: map['primary_branch_id']?.toString(),
       businessHours: (map['business_hours'] as List<dynamic>? ?? [])
           .map(
@@ -117,6 +122,21 @@ class PublicSalonProfile {
     }
     final handle = value.startsWith('@') ? value.substring(1) : value;
     return Uri.https('facebook.com', '/$handle');
+  }
+
+  /// D-319. Acepta el usuario con o sin "@" ("@salon", "salon"), la
+  /// dirección completa, o la dirección sin "https://" ("tiktok.com/@salon").
+  /// En TikTok el perfil lleva la "@" en la dirección: tiktok.com/@salon.
+  Uri? get tiktokUri {
+    final value = tiktok?.trim();
+    if (value == null || value.isEmpty) return null;
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      return Uri.tryParse(value);
+    }
+    if (value.contains('tiktok.com/')) return Uri.tryParse('https://$value');
+    final usuario = value.startsWith('@') ? value.substring(1) : value;
+    if (usuario.isEmpty) return null;
+    return Uri.https('www.tiktok.com', '/@$usuario');
   }
 }
 
