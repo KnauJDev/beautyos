@@ -55,7 +55,11 @@ class _ClientesPageState extends State<ClientesPage> {
 
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  late String _selectedSegmentFilter = widget.filtroInicial ?? 'todos'; // 'todos', 'vip', 'en_riesgo', 'recurrente', 'nuevo', 'con_saldo', 'inactivos'
+  // 'todos', 'vip', 'en_riesgo', 'recurrente', 'nuevo', 'con_saldo', 'inactivos',
+  // 'para_invitar', 'no_volvieron'. Se fija en `initState` y no con `late`:
+  // el filtro de la campana (D-318) dura un solo cuadro, y un `late` se leía
+  // cuando ya habían cargado los clientes, con el filtro ya borrado.
+  String _selectedSegmentFilter = 'todos';
 
   /// La dirección del salón, para el enlace de la invitación a volver
   /// (D-313). `null` mientras llega o si no se pudo leer.
@@ -91,6 +95,7 @@ class _ClientesPageState extends State<ClientesPage> {
   @override
   void initState() {
     super.initState();
+    _selectedSegmentFilter = widget.filtroInicial ?? 'todos';
     clientsFuture = clientsService.getClientsManagementSummary();
     _cargarInvitaciones();
     final branchId = widget.branchId;
@@ -354,18 +359,22 @@ class _ClientesPageState extends State<ClientesPage> {
                             children: [
                               _buildSegmentChip('todos', 'Todos (${allClients.length})', null),
                               const SizedBox(width: 8),
-                              _buildSegmentChip('vip', '⭐ VIP ($vipCount)', AppColors.brand),
+                              // D-318 (07-oct): sin emojis. Los de la estrella
+                              // de VIP y el sobre de Para invitar salían
+                              // cortados; cada filtro ya lleva su punto de
+                              // color. Decisión del propietario.
+                              _buildSegmentChip('vip', 'VIP ($vipCount)', AppColors.brand),
                               const SizedBox(width: 8),
-                              _buildSegmentChip('en_riesgo', '⚠️ En riesgo ($inRiskCount)', AppColors.stateToCollect),
+                              _buildSegmentChip('en_riesgo', 'En riesgo ($inRiskCount)', AppColors.stateToCollect),
                               const SizedBox(width: 8),
-                              _buildSegmentChip('recurrente', '🟢 Recurrentes ($recurrentCount)', AppColors.stateConfirmed),
+                              _buildSegmentChip('recurrente', 'Recurrentes ($recurrentCount)', AppColors.stateConfirmed),
                               const SizedBox(width: 8),
-                              _buildSegmentChip('nuevo', '🆕 Nuevos ($newCount)', AppColors.stateInProgress),
+                              _buildSegmentChip('nuevo', 'Nuevos ($newCount)', AppColors.stateInProgress),
                               if (_invitaciones.any((f) => f.tocaHoy)) ...[
                                 const SizedBox(width: 8),
                                 _buildSegmentChip(
                                   'para_invitar',
-                                  '📨 Para invitar (${clientasDe(_invitaciones.where((f) => f.tocaHoy)).length})',
+                                  'Para invitar (${clientasDe(_invitaciones.where((f) => f.tocaHoy)).length})',
                                   AppColors.whatsapp,
                                 ),
                               ],
@@ -373,13 +382,13 @@ class _ClientesPageState extends State<ClientesPage> {
                                 const SizedBox(width: 8),
                                 _buildSegmentChip(
                                   'no_volvieron',
-                                  '↩️ No volvieron (${clientasDe(_invitaciones.where((f) => f.invitadaSinVolver)).length})',
+                                  'No volvieron (${clientasDe(_invitaciones.where((f) => f.invitadaSinVolver)).length})',
                                   AppColors.stateToCollect,
                                 ),
                               ],
                               if (withBalanceCount > 0 && !widget.sinDinero) ...[
                                 const SizedBox(width: 8),
-                                _buildSegmentChip('con_saldo', '🔴 Con saldo ($withBalanceCount)', AppColors.danger),
+                                _buildSegmentChip('con_saldo', 'Con saldo ($withBalanceCount)', AppColors.danger),
                               ],
                               if (inactiveCount > 0) ...[
                                 const SizedBox(width: 8),

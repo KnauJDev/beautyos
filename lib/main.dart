@@ -282,6 +282,9 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
   /// otra vez.
   String? _avisosDeLaSede;
 
+  /// Cuántas cargas de avisos se han pedido; solo vale la última.
+  int _avisosPedidos = 0;
+
   /// Clientes ya filtrado al llegar desde la campana ("para invitar"). Se
   /// consume una sola vez, como `_pendingOpenTicketId`.
   String? _filtroDeClientesAlEntrar;
@@ -318,6 +321,7 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
     TenantEntitlements entitlements,
     String? role,
   ) async {
+    final pedido = ++_avisosPedidos;
     final avisos = await AvisosService(branchId: branch.branchId).cargar(
       conCaja: !entitlements.apagadoPorLaPlataforma(ClaveDeCapacidad.cajaYCobros),
       conInventario:
@@ -325,8 +329,28 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           !entitlements.apagadoPorLaPlataforma(ClaveDeCapacidad.inventario),
       esDuena: role == 'owner',
     );
-    if (mounted && _avisosDeLaSede == branch.branchId) _avisos.value = avisos;
+    // Solo la respuesta más reciente: si se cambia rápido de lugar, una
+    // carga vieja que llegue tarde no pisa a la nueva.
+    if (mounted &&
+        _avisosDeLaSede == branch.branchId &&
+        pedido == _avisosPedidos) {
+      _avisos.value = avisos;
+    }
     return avisos;
+  }
+
+  /// Cambiar de lugar desde el menú o la barra (D-318). Los avisos se cuentan
+  /// otra vez cada vez: el 07-oct, al cambiar un servicio en Ajustes, la
+  /// campana y el número de Clientes no se enteraron hasta recargar la app.
+  void _irAlLugar(
+    List<BeautyModule> modules,
+    LugarDeLaApp lugar,
+    BranchContext branch,
+    TenantEntitlements entitlements,
+    String? role,
+  ) {
+    _irAModulo(modules, lugar.nombre);
+    _cargarAvisos(branch, entitlements, role);
   }
 
   /// Ir a un aviso de la campana: a su módulo, y a Clientes ya filtrado.
@@ -1445,7 +1469,13 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                                 modules[currentIndex].section.title,
                               ),
                               avisos: avisos,
-                              onElegir: (l) => _irAModulo(modules, l.nombre),
+                              onElegir: (l) => _irAlLugar(
+                                modules,
+                                l,
+                                branch,
+                                entitlements,
+                                profile.role,
+                              ),
                             ),
                           )
                         else if (isWide)
@@ -1513,7 +1543,13 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
                         ),
                         actual: lugarDe(modules[currentIndex].section.title),
                         avisos: avisos,
-                        onElegir: (l) => _irAModulo(modules, l.nombre),
+                        onElegir: (l) => _irAlLugar(
+                          modules,
+                          l,
+                          branch,
+                          entitlements,
+                          profile.role,
+                        ),
                       ),
                     )
                   : _MobileNavBar(

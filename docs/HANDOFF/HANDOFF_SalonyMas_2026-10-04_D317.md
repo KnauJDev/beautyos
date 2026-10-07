@@ -16,7 +16,8 @@ una función de Cloudflare Pages. **Todo visto en pantalla** el 03 y el 04-oct (
 > publicada, apagada para todos**: nadie ve nada nuevo hasta que el propietario la encienda
 > en el Panel (*Novedades*). **Encendida en Éxito el 07-oct.** Al verla, el propietario
 > decidió quitar el título y la explicación de **todas las pantallas del salón, en todos
-> los salones** (las de la estilista los conservan hasta la entrega 3). **771 pruebas.**
+> los salones** (las de la estilista los conservan hasta la entrega 3). Probando la campana
+> salieron tres arreglos más (ver D-318). **774 pruebas.**
 > Lo siguiente está en §3 y §7.
 **Hallazgos: 82 en total, 68 cerrados o decididos, 14 abiertos** (al 07-oct, con **CN**; los cuenta
 `python scripts/verificar_documentos.py`).
@@ -116,8 +117,11 @@ y `Backup_2026-10-04_19-32-49`.
 
 ## 3. Lo que tienes que mirar en pantalla (regla 21)
 
-0. 🔲 **07-oct: los cinco lugares en el espejo.** ✅ Encendido en Éxito y visto en el
-   celular (la Agenda). Falta el resto. Mirar en el computador y en el celular: el menú (lateral / barra de abajo, sin
+0. 🔲 **07-oct: los cinco lugares en el espejo.** ✅ Encendido en Éxito; vistos la Agenda
+   (celular y computador), Clientes, Servicios con su *"← Ajustes"*, la tarjeta *Para
+   invitar hoy*, la campana y el número de *Clientes*. De ahí salieron tres arreglos (el
+   filtro de la campana, los números que no se enteraban de un cambio y los filtros
+   cortados) **que falta mirar**. Falta también *Mi negocio*, *Mi vitrina* y el celular. Mirar en el computador y en el celular: el menú (lateral / barra de abajo, sin
    *Más*), la Agenda con *Nueva cita*, *Llegó sin cita* y la tarjeta de citas, *Mi negocio*
    (filtrar un servicio y ver crecer las barras sin que la página suba), *Mi vitrina*,
    *Ajustes*, el *"← volver"* y la campana. **Solo después, a David.** Apagarlo devuelve
@@ -171,7 +175,7 @@ contraste corregido, en el buzón (I-22).
 | 1 | Interruptores por negocio | ✅ D-310. A David: apagados *Caja y cobros, Finanzas* (Reportes)*, Inventario, Comisiones, Blog*; encendidos *Dashboard* (desde el 04-oct), *Fotos* y *Reseñas* |
 | 2 | Agenda de tres estados | ✅ D-312 |
 | 3 | Su tema y su página | ✅ lo nuestro (D-315, D-316, paso 9.60). **Falta de David:** elegir Inspirant y subir las fotos de su equipo (§3.5) |
-| 4 | Invitar a volver | ✅ D-314 (paso 9.59). **En Éxito, Corte de Cabello y Pedicure Basico quedaron en 1 día de prueba**: devolverlos a vacío cuando ya no hagan falta |
+| 4 | Invitar a volver | ✅ D-314 (paso 9.59). El propietario ya devolvió Corte de Cabello y Pedicure Basico a vacío, pero **el 07-oct Pedicure Basico se volvió a poner en 1 día** para probar la campana de los cinco lugares: **devolverlo a vacío al terminar la revisión** |
 | 5 | Agenda sin cobro y Dashboard de atenciones | ✅ D-317 (paso 9.61). Falta solo mirar las capturas de David (§3.1) |
 | 6 | **Los cinco lugares** (9.25) | **07-oct, en diseño. Decidido por el propietario:** los nombres son **Hoy · Clientes · Mi negocio · Mi vitrina · Ajustes** ("Clientes" sirve también a barberías; "Mi negocio" le sirve a David, sin dinero); **el Dashboard va arriba de *Mi negocio*** y debajo lo que el salón tenga encendido (Reportes, Gastos, Compras, Inventario, Comisiones); y **la campana de avisos se construye en este paso**, con lo básico (citas de hoy por confirmar, clientas para invitar hoy, inventario bajo, sede por vencer). **Prototipo actualizado el 07-oct** en el mismo enlace de D-304 (https://claude.ai/artifact/1ESsefBVb3dhH6iSYEgqPb, versión 3): los nombres nuevos, *Mi negocio* con el Dashboard arriba (sin caja, el de atenciones; con caja, el de pesos y debajo Reportes, Gastos, Compras, Inventario y Comisiones), la campana con lo básico, *Clientes* con los filtros *Para invitar* y *No volvieron*, la agenda de la estilista **en tarjetas con Día / Semana / Mes**, y una franja solo del prototipo para alternar **con caja / sin caja (como David)**, **Morado / Inspirant** y **dueña / estilista**. Sin caja, la estilista tiene 3 lugares (sin *Mi plata*). **07-oct, al revisarlo, el propietario corrigió:** la agenda que ya existe le gusta porque deja planear (una fecha, el día siguiente, la semana, el mes) y el prototipo la había reducido a *hoy*. **Decidido:** el primer lugar se llama **Agenda** (no *Hoy*) y abre en **su Tablero de Agenda de siempre**, con Día / Semana / Mes, *Hoy*, flechas y calendario, y arriba *Nueva cita*, *Llegó sin cita* y las tarjetas del día; y la estilista conserva **Mi agenda** (no *Mi día*), que gana fecha, día siguiente, semana y mes, en tarjetas. Nombres: **Agenda · Clientes · Mi negocio · Mi vitrina · Ajustes**; estilista: **Mi agenda · Mis fotos · Mis reseñas** (y *Mi plata* con caja). **Lo que ya funciona no se reduce** (regla 25). **Revisión vista por vista (07-oct), lo acordado:** **(1) Agenda:** las tarjetas *Atendidas* y *Citas de hoy* se repetían: una sola tarjeta **"Citas de hoy 9 · atendidas 3 · pendientes 5 · canceladas o no asistieron 1"** (con caja, *Caja de hoy* al lado); **sin tarjeta de Equipo**, porque la app no sabe el horario de cada estilista (idea **I-23** en el buzón). **(2) Mi negocio:** la historia, citas, clientes, asistencia y horas se quedan; se agregan **dos gráficos que se filtran entre sí**, *¿Qué piden?* (servicios) y *¿Quién lo presta?* (estilistas), como en el Dashboard de D-317 (no toca el servidor). **(3) Mi negocio, ronda 2:** faltaba **elegir el periodo**: lleva el mismo filtro del Dashboard real (*Hoy, Esta semana, Este mes, Este año, Últimos 7 / 30 días, Últimos meses* y **Otras fechas** para un rango); y al filtrar las gráficas **la página no debe volver arriba** y **las barras deben crecer con una animación**, para que el cambio se note (el propietario: *"no se perciben los cambios… que es lo que atrae al cliente final"*). **Para construir:** el Dashboard real ya conserva la posición al filtrar, pero sus barras cambian de golpe: animarlas. Prototipo versión 6. ✅ **Revisión terminada y aprobada el 07-oct (D-318):** Clientes, Mi vitrina, Ajustes, la campana y la app de la estilista, bien. **Se construye en tres entregas, detrás del interruptor *Los cinco lugares* que nace apagado:** (1) el interruptor (migración `20261007100000_cinco_lugares_interruptor_d318.sql`, control 245) ✅ **aplicado el 07-oct, control 245 en 6/6** (respaldo `Backup_2026-10-07_12-40-22`), (2) la app de la dueña ✅ **escrita y publicada el 07-oct, apagada para todos** (770 pruebas; de paso se cerró el hallazgo **CN**, los atajos del Dashboard que abrían otro módulo), (3) *Mi agenda* de la estilista en tarjetas. Se prueba encendiéndolo primero en Éxito (§3.0). **Lo siguiente.** Con él: la agenda de la estilista en tarjetas, con semana y mes (hoy es una tabla ancha); sus flechas de fecha descuadradas; juntar las tarjetas de enlaces de Configuración (**q**); quitar los tipos de foto *Final* y *Portafolio* (**h**). El prototipo de D-304 está en https://claude.ai/artifact/1ESsefBVb3dhH6iSYEgqPb. **Antes de proponer, preguntar** (regla 25) |
 
@@ -292,9 +296,9 @@ NUNCA dart format en bloque.
 
 ## 9. Pruebas al cerrar
 
-**771 pruebas, todas en verde**, en la corrida completa del 07-oct con la entrega 2 de
-D-318 y las pantallas sin título (`flutter test`, 3 min 29 s), y `flutter build web`
-compila. 18 son de los cinco lugares (`cinco_lugares_d318_test.dart`); tres viejas se
+**774 pruebas, todas en verde**, en la corrida completa del 07-oct con la entrega 2 de
+D-318, las pantallas sin título y los arreglos de la campana (`flutter test`, 3 min 30 s),
+y `flutter build web` compila. 21 son de los cinco lugares (`cinco_lugares_d318_test.dart`); tres viejas se
 actualizaron porque cuentan piezas que ahora aparecen una vez más (Mi negocio y Mi vitrina
 reciben las mismas que la Agenda y Configuración; el Panel avisa también desde
 *Novedades*), y una porque buscaba el título *Tablero de Agenda*, que ya no se pinta.

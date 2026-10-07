@@ -105,8 +105,11 @@ void main() {
         fila(cliente: 'Bea', servicio: 'Corte', tocaHoy: true),
       ];
       expect(clientasDe(filas).length, 2);
-      expect(tituloDeParaInvitarHoy(1), 'Para invitar hoy (1 clienta)');
-      expect(tituloDeParaInvitarHoy(2), 'Para invitar hoy (2 clientas)');
+      // "clientes" desde el 07-oct (D-318), como el lugar y la campana.
+      expect(tituloDeParaInvitarHoy(1), 'Para invitar hoy (1 cliente)');
+      expect(tituloDeParaInvitarHoy(2), 'Para invitar hoy (2 clientes)');
+      expect(subtituloDeParaInvitarHoy(1), 'Ya le toca volver. Invítalo por WhatsApp.');
+      expect(subtituloDeParaInvitarHoy(2), 'Ya les toca volver. Invítalos por WhatsApp.');
     });
   });
 
@@ -155,8 +158,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Para invitar hoy (2 clientas)'), findsOneWidget);
-      await tester.tap(find.text('Para invitar hoy (2 clientas)'));
+      expect(find.text('Para invitar hoy (2 clientes)'), findsOneWidget);
+      await tester.tap(find.text('Para invitar hoy (2 clientes)'));
       await tester.pumpAndSettle();
       expect(find.text('Ana'), findsOneWidget);
       expect(find.text('Bea'), findsOneWidget);

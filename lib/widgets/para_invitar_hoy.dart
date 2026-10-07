@@ -130,8 +130,8 @@ class _ParaInvitarHoyCardState extends State<ParaInvitarHoyCard> {
                   tituloDeParaInvitarHoy(clientasDe(hoy).length),
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
-                subtitle: const Text(
-                  'Ya les toca volver. Invítalas por WhatsApp.',
+                subtitle: Text(
+                  subtituloDeParaInvitarHoy(clientasDe(hoy).length),
                 ),
                 children: [
                   for (final fila in hoy)
@@ -168,7 +168,13 @@ class _ParaInvitarHoyCardState extends State<ParaInvitarHoyCard> {
   }
 }
 
-/// "Para invitar hoy (3 clientas)", con su singular.
-String tituloDeParaInvitarHoy(int clientas) => clientas == 1
-    ? 'Para invitar hoy (1 clienta)'
-    : 'Para invitar hoy ($clientas clientas)';
+/// "Para invitar hoy (3 clientes)", con su singular. Decía "clientas" hasta el
+/// 07-oct: el propietario eligió *Clientes*, que sirve también a las
+/// barberías, y la campana ya lo decía así (D-318).
+String tituloDeParaInvitarHoy(int clientes) => clientes == 1
+    ? 'Para invitar hoy (1 cliente)'
+    : 'Para invitar hoy ($clientes clientes)';
+
+String subtituloDeParaInvitarHoy(int clientes) => clientes == 1
+    ? 'Ya le toca volver. Invítalo por WhatsApp.'
+    : 'Ya les toca volver. Invítalos por WhatsApp.';

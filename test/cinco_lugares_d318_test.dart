@@ -205,6 +205,35 @@ void main() {
       expect(AvisosDeHoy.vacio.cuantos, 0);
     });
 
+    test('el aviso abre Clientes ya filtrado (lo vio el propietario el 07-oct)', () {
+      // Con `late`, el filtro se leía cuando ya habían cargado los clientes,
+      // y para entonces la campana ya lo había borrado: salía "Todos".
+      final clientes = leer('lib/pages/clients_page.dart');
+      expect(clientes, isNot(contains('late String _selectedSegmentFilter')));
+      expect(
+        clientes,
+        contains("super.initState();\n    _selectedSegmentFilter = widget.filtroInicial ?? 'todos';"),
+      );
+    });
+
+    test('los números se cuentan otra vez al cambiar de lugar, y gana la última carga', () {
+      final main = leer('lib/main.dart');
+      expect('onElegir: (l) => _irAlLugar('.allMatches(main).length, 2);
+      expect(main, isNot(contains('onElegir: (l) => _irAModulo(')));
+      expect(main, contains('pedido == _avisosPedidos'));
+    });
+
+    test('los filtros de Clientes, sin emojis (se cortaban "⭐ VIP (" y "📨 Para invitar (")', () {
+      final clientes = leer('lib/pages/clients_page.dart');
+      final i0 = clientes.indexOf("_buildSegmentChip('todos'");
+      final i1 = clientes.indexOf("_buildSegmentChip('inactivos'");
+      final filtros = clientes.substring(i0, i1);
+      for (final emoji in ['⭐', '⚠️', '🟢', '🆕', '📨', '↩️', '🔴']) {
+        expect(filtros, isNot(contains(emoji)), reason: emoji);
+      }
+      expect(filtros, contains("'VIP (\$vipCount)'"));
+    });
+
     test('una sede vencida es urgente', () {
       const a = AvisosDeHoy(sedes: [SedePorVencer(nombre: 'Norte', dias: 0, vencida: true)]);
       expect(a.lista.single.urgente, isTrue);
