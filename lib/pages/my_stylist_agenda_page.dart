@@ -272,6 +272,8 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
     return AppPage(
       title: 'Mi agenda',
       subtitle: 'Citas y servicios asignados a tu usuario estilista.',
+      // D-318: la estilista conserva el título hasta que se decida.
+      conEncabezado: true,
       children: [
         _TimeOffSection(
           timeOffFuture: timeOffFuture,

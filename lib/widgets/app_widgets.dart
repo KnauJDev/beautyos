@@ -10,11 +10,22 @@ class AppPage extends StatelessWidget {
   final String subtitle;
   final List<Widget> children;
 
+  /// D-318 (07-oct): las pantallas del salón van **sin título ni
+  /// explicación**, en todos los salones. El menú ya dice dónde se está, y en
+  /// el celular ocupaban media pantalla antes de lo útil. Lo decidió el
+  /// propietario al verlo en la Agenda: *"si estorba acá, estorba en todos"*.
+  /// [title] y [subtitle] se quedan como nombre de la pantalla en el código.
+  ///
+  /// Las de la estilista lo conservan (`true`) hasta que él decida, con la
+  /// entrega 3 de los cinco lugares.
+  final bool conEncabezado;
+
   const AppPage({
     super.key,
     required this.title,
     required this.subtitle,
     required this.children,
+    this.conEncabezado = false,
   });
 
   @override
@@ -27,20 +38,22 @@ class AppPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 34,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.brandDeep,
+              if (conEncabezado) ...[
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 34,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.brandDeep,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                subtitle,
-                style: const TextStyle(fontSize: 17, color: AppColors.textSecondary),
-              ),
-              const SizedBox(height: 28),
+                const SizedBox(height: 8),
+                Text(
+                  subtitle,
+                  style: const TextStyle(fontSize: 17, color: AppColors.textSecondary),
+                ),
+                const SizedBox(height: 28),
+              ],
               ...children,
             ],
           ),

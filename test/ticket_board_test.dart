@@ -238,8 +238,9 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Título y columnas
-      expect(find.text('Tablero de Agenda'), findsOneWidget);
+      // Columnas. Sin título desde el 07-oct: las pantallas del salón van
+      // sin título ni explicación (D-318, "si estorba acá, estorba en todos").
+      expect(find.text('Tablero de Agenda'), findsNothing);
       expect(find.text('Por confirmar'), findsWidgets);
       expect(find.text('Confirmado'), findsWidgets);
       expect(find.text('En proceso'), findsWidgets);

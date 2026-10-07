@@ -85,6 +85,8 @@ class _MyCommissionSummaryPageState extends State<MyCommissionSummaryPage> {
     return AppPage(
       title: 'Mi panel financiero',
       subtitle: 'Lo que te ha generado cada servicio que has prestado.',
+      // D-318: la estilista conserva el título hasta que se decida.
+      conEncabezado: true,
       children: [
         // Hallazgo AJ. El estilista es quien tiene el dinero en juego y era el
         // único que veía la cifra -- el dueño ni siquiera tiene esta pantalla.

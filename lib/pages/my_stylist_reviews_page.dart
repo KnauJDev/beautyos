@@ -38,6 +38,8 @@ class _MyStylistReviewsPageState extends State<MyStylistReviewsPage> {
       title: 'Mis reseñas',
       subtitle:
           'Calificaciones y comentarios que tus clientes dejaron sobre ti.',
+      // D-318: la estilista conserva el título hasta que se decida.
+      conEncabezado: true,
       children: [
         Align(
           alignment: Alignment.centerRight,

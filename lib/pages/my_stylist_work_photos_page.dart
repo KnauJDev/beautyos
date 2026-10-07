@@ -34,6 +34,8 @@ class _MyStylistWorkPhotosPageState extends State<MyStylistWorkPhotosPage> {
     return AppPage(
       title: 'Mis fotos',
       subtitle: 'Fotos de trabajos asociadas a tu usuario estilista.',
+      // D-318: la estilista conserva el título hasta que se decida.
+      conEncabezado: true,
       children: [
         FutureBuilder<List<MyStylistWorkPhoto>>(
           future: photosFuture,

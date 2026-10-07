@@ -11,6 +11,7 @@ import 'package:salonymas/models/ticket_board.dart';
 import 'package:salonymas/pages/agenda_page.dart';
 import 'package:salonymas/pages/dashboard_de_atenciones_page.dart';
 import 'package:salonymas/services/dashboard_service.dart';
+import 'package:salonymas/widgets/app_widgets.dart' show AppPage;
 import 'package:salonymas/widgets/cinco_lugares.dart';
 
 import 'dashboard_de_atenciones_d317_test.dart' show respuestaDeEjemplo;
@@ -138,6 +139,43 @@ void main() {
         expect(find.text('9'), findsOneWidget);
         expect(find.text('TICKETS & CAJA'), caja ? findsOneWidget : findsNothing);
       }
+    });
+
+    testWidgets('las pantallas del salón, sin título ni explicación; la estilista los conserva', (tester) async {
+      // "Si estorba acá, estorba en todos" (el propietario, 07-oct).
+      Widget pagina({bool? conEncabezado}) => MaterialApp(
+        home: Scaffold(
+          body: conEncabezado == null
+              ? const AppPage(
+                  title: 'Tablero de Agenda',
+                  subtitle: 'Tus citas pasan de Confirmado a En proceso y a Cerrado.',
+                  children: [Text('Nueva cita')],
+                )
+              : AppPage(
+                  title: 'Tablero de Agenda',
+                  subtitle: 'Tus citas pasan de Confirmado a En proceso y a Cerrado.',
+                  conEncabezado: conEncabezado,
+                  children: const [Text('Nueva cita')],
+                ),
+        ),
+      );
+      await tester.pumpWidget(pagina());
+      expect(find.text('Tablero de Agenda'), findsNothing);
+      expect(find.textContaining('Tus citas pasan'), findsNothing);
+      expect(find.text('Nueva cita'), findsOneWidget);
+
+      await tester.pumpWidget(pagina(conEncabezado: true));
+      expect(find.text('Tablero de Agenda'), findsOneWidget);
+
+      for (final ruta in [
+        'lib/pages/my_stylist_agenda_page.dart',
+        'lib/pages/my_stylist_work_photos_page.dart',
+        'lib/pages/my_stylist_reviews_page.dart',
+        'lib/pages/my_commission_summary_page.dart',
+      ]) {
+        expect(leer(ruta), contains('conEncabezado: true,'), reason: ruta);
+      }
+      expect(leer('lib/pages/agenda_page.dart'), isNot(contains('conEncabezado')));
     });
 
     test('Llegó sin cita es el diálogo de siempre con su "Atender ya"', () {

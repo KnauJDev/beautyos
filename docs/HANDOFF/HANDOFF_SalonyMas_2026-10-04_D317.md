@@ -14,7 +14,10 @@ una función de Cloudflare Pages. **Todo visto en pantalla** el 03 y el 04-oct (
 > **Actualizado el 07-oct con D-318 (paso 6, los cinco lugares).** El interruptor *Los cinco
 > lugares* está aplicado (**control 245** 6/6) y **la app de la dueña quedó escrita y
 > publicada, apagada para todos**: nadie ve nada nuevo hasta que el propietario la encienda
-> en el Panel (*Novedades*). **770 pruebas.** Lo siguiente está en §3 y §7.
+> en el Panel (*Novedades*). **Encendida en Éxito el 07-oct.** Al verla, el propietario
+> decidió quitar el título y la explicación de **todas las pantallas del salón, en todos
+> los salones** (las de la estilista los conservan hasta la entrega 3). **771 pruebas.**
+> Lo siguiente está en §3 y §7.
 **Hallazgos: 82 en total, 68 cerrados o decididos, 14 abiertos** (al 07-oct, con **CN**; los cuenta
 `python scripts/verificar_documentos.py`).
 
@@ -113,9 +116,8 @@ y `Backup_2026-10-04_19-32-49`.
 
 ## 3. Lo que tienes que mirar en pantalla (regla 21)
 
-0. 🔲 **07-oct: los cinco lugares en el espejo.** En el Panel → *Peluquería Éxito Prueba* →
-   *Novedades* → encender *Los cinco lugares*; en la app de Éxito, *Actualizar* o volver a
-   abrirla. Mirar en el computador y en el celular: el menú (lateral / barra de abajo, sin
+0. 🔲 **07-oct: los cinco lugares en el espejo.** ✅ Encendido en Éxito y visto en el
+   celular (la Agenda). Falta el resto. Mirar en el computador y en el celular: el menú (lateral / barra de abajo, sin
    *Más*), la Agenda con *Nueva cita*, *Llegó sin cita* y la tarjeta de citas, *Mi negocio*
    (filtrar un servicio y ver crecer las barras sin que la página suba), *Mi vitrina*,
    *Ajustes*, el *"← volver"* y la campana. **Solo después, a David.** Apagarlo devuelve
@@ -290,8 +292,9 @@ NUNCA dart format en bloque.
 
 ## 9. Pruebas al cerrar
 
-**770 pruebas, todas en verde**, en la corrida completa del 07-oct con la entrega 2 de
-D-318 (`flutter test`, 3 min 9 s), y `flutter build web` compila. 17 son de los cinco
-lugares (`cinco_lugares_d318_test.dart`); tres viejas se actualizaron porque cuentan piezas
-que ahora aparecen una vez más (Mi negocio y Mi vitrina reciben las mismas que la Agenda y
-Configuración; el Panel avisa también desde *Novedades*).
+**771 pruebas, todas en verde**, en la corrida completa del 07-oct con la entrega 2 de
+D-318 y las pantallas sin título (`flutter test`, 3 min 29 s), y `flutter build web`
+compila. 18 son de los cinco lugares (`cinco_lugares_d318_test.dart`); tres viejas se
+actualizaron porque cuentan piezas que ahora aparecen una vez más (Mi negocio y Mi vitrina
+reciben las mismas que la Agenda y Configuración; el Panel avisa también desde
+*Novedades*), y una porque buscaba el título *Tablero de Agenda*, que ya no se pinta.
