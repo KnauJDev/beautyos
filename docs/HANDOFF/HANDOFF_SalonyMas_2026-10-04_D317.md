@@ -242,6 +242,24 @@ contraste corregido, en el buzón (I-22).
 
 ## 7. Por dónde seguir
 
+**Pedidos de David del 08-oct, con prototipo esperando el visto bueno del propietario:**
+1. **Cuándo vuelve cada clienta** (https://claude.ai/artifact/N48aApd2qmN17Fxc5kHTne): al cerrar
+   una cita, preguntar en cuántos días invitar a volver a **esa clienta** para cada servicio,
+   ya lleno (su número si ya tiene; si no, el del servicio o los 45 del salón), y
+   **recordarlo** en su ficha. Decidido por el propietario: se recuerda; sale siempre ya
+   lleno; lo ponen dueño, recepción **y estilista** (al terminar en *Mi agenda*); se puede
+   cambiar en la ficha de Clientes. La llave es la ficha de la clienta (un celular, una
+   clienta por salón, D-249). **Lleva servidor** (lectura viva, migración, control): un número
+   por clienta y servicio, y que *Para invitar hoy* lo use.
+2. **Elegir servicio por cuadritos** (https://claude.ai/artifact/2NAFZNYbz3fqxwAX6H7qaQ): en la
+   reserva en línea **y** en *Nueva cita*, la cuadrícula de categorías a pantalla completa →
+   sus servicios → se cierra con el elegido. Sin servidor.
+3. **Por qué solo salían 3 servicios para agendar:** de sus 28, solo 3 tienen estilista
+   asignado (la reserva solo ofrece lo que alguien hace). **David los asigna en *Estilistas***
+   (decisión del propietario: no se agrega en *Servicios*). En la página pública, **los
+   servicios sin estilista se ven con "Pregunta por WhatsApp"** en vez de *Reservar* (y así
+   sirven de control). **Las categorías repetidas las corrige David** (no la app).
+
 **Lo inmediato (08-oct): la visita a David, en persona.** Con él: (1) encenderle *Los cinco
 lugares* (Panel → Inspirant → *Novedades*) y enseñárselos; (2) que elija el tema
 **Inspirant** (*Configuración → Colores de tu negocio*); (3) que suba como logo **el emblema
