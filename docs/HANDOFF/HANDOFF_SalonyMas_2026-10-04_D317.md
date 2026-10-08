@@ -52,7 +52,9 @@ después (así se hizo con el Dashboard el 04-oct).
 | D-316 | **La tarjeta de WhatsApp de cada salón**: al compartir `salonymas.com/<nombre>` salen el nombre, *"Agenda tu cita en línea · <ciudad>"* y la **portada** (o el logo). Una **función de Cloudflare Pages** (`functions/[slug].js`) que solo responde a los lectores de vistas previas de las redes; a las personas, la página como siempre. Y fuera los emojis 📅 y 👤 de la página pública | ✅ en vivo (comprobado con `curl`, cabeceras de seguridad idénticas) y **visto en un WhatsApp de verdad** el 04-oct |
 | D-317 | **Paso 5, el Dashboard de atenciones**: en los negocios sin caja, un Dashboard nuevo que cuenta la historia del negocio en citas, clientas, servicios y equipo, **sin un peso**, con **su propio interruptor** en el Panel (*Finanzas* se queda con Reportes). Diseñado en un prototipo que el propietario aprobó (*"me encantó"*). En el mismo cambio, lo que quedaba del paso 5: Configuración sin comisiones ni numeración, *Semana* entero en el celular y los textos de dinero de Clientes | ✅ control 244 en 10/10, **visto en el espejo en computador y celular**, seis arreglos el mismo día, y **encendido para David el 04-oct por la noche** |
 | D-318 | **Paso 6, los cinco lugares**: *Agenda · Clientes · Mi negocio · Mi vitrina · Ajustes*, diseñados con el propietario vista por vista en el prototipo y aprobados. La Agenda abre en su Tablero de siempre, con *Nueva cita*, *Llegó sin cita* y una sola tarjeta de citas; *Mi negocio* con el Dashboard arriba; la campana con lo básico. **Detrás de un interruptor que nace apagado** | ✅ entrega 1 (control 245 en 6/6) y ✅ entrega 2 (la app de la dueña, publicada y **apagada para todos**). ⬜ Encenderla en Éxito y mirarla; ⬜ entrega 3 (*Mi agenda* de la estilista) |
-| D-319 | **El enlace se comparte también en TikTok y en papel**: TikTok en Configuración y en la página pública (pedido de David), y el botón *Código QR* en *Tu enlace*, que lo descarga para imprimir. Lectura viva hecha; migración `20261007200000_tiktok_del_salon_d319.sql` y **control 246** escritos | ✅ **Aplicada el 08-oct** (respaldo `Backup_2026-10-08_07-06-39`), **control 246 en 6/6**, y la app publicada después. ⬜ Mirar en Éxito TikTok y el QR |
+| D-319 | **El enlace se comparte también en TikTok y en papel**: TikTok en Configuración y en la página pública (pedido de David), y el botón *Código QR* en *Tu enlace*, que lo descarga para imprimir. Lectura viva hecha; migración `20261007200000_tiktok_del_salon_d319.sql` y **control 246** escritos | ✅ **Aplicada el 08-oct** (respaldo `Backup_2026-10-08_07-06-39`), **control 246 en 6/6**, y la app publicada después. ✅ TikTok y el QR vistos en Éxito |
+| D-320 | **La página pública, rediseñada** con un prototipo aprobado (https://claude.ai/artifact/H4GUdBqnaVu1h3rhzTgGPF): portada que manda, *abierto ahora* en hora de Colombia, botones redondos, el trabajo arriba, servicios por categoría, equipo y reseñas en tarjetas, *Agendar cita* siempre a mano. Sin servidor; cambia la página de **todos** los salones | ✅ Publicada el 08-oct, probada antes con los datos de Éxito en celular y computador. ⬜ Que el propietario la mire en Éxito y en la de David |
+
 
 **Hallazgos de estos dos días:** **CK** (cerrado: WhatsApp sin el 57) · **CL** (abierto: la
 cabecera dice *"BeautyOS"* bajo el nombre del salón, en pantalla ancha; qué poner lo
@@ -239,8 +241,10 @@ contraste corregido, en el buzón (I-22).
 
 ## 7. Por dónde seguir
 
-**Lo inmediato: D-319**, aplicada el 08-oct (control 246 en 6/6) y publicada: mirar en
-Éxito el TikTok (Configuración y la página pública) y el código QR de *Tu enlace*. **El 08-oct, en persona con David**, encenderle *Los cinco lugares* en
+**Lo inmediato:** que el propietario mire la página pública nueva (D-320) en Éxito y en la
+de David, en el celular y en el computador. **En Éxito quedaron redes de prueba** (un TikTok
+inventado, Instagram y Facebook de prueba): vaciarlas al terminar, para que su página no
+tenga botones a perfiles que no existen. **El 08-oct, en persona con David**, encenderle *Los cinco lugares* en
 el Panel (*Novedades*) y enseñárselo. Mientras tanto, **la entrega 3**: *Mi agenda* de la
 estilista en tarjetas, con fecha (*Hoy*, flechas, calendario) y *Día / Semana / Mes*
 (`my_stylist_agenda_page.dart`; *Mi plata* solo con caja). Sus pantallas conservan el

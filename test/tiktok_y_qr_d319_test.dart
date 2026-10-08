@@ -53,7 +53,8 @@ void main() {
     test('la página pública enseña su botón', () {
       final pagina = leer('lib/pages/public_salon_page.dart');
       expect(pagina, contains('if (salon.tiktokUri != null)'));
-      expect(pagina, contains("label: const Text('TikTok'),"));
+      // Desde D-320, un botón redondo más de la fila de contacto.
+      expect(pagina, contains("etiqueta: 'TikTok',"));
     });
 
     test('la migración: una columna, null no borra, y los permisos de siempre', () {

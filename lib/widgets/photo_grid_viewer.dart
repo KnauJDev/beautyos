@@ -47,7 +47,7 @@ class PhotoGridViewer extends StatelessWidget {
         );
         return InkWell(
           borderRadius: BorderRadius.circular(12),
-          onTap: () => _openViewer(context, photo),
+          onTap: () => abrirFotoEnGrande(context, photo),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: etiqueta == null
@@ -91,8 +91,14 @@ class PhotoGridViewer extends StatelessWidget {
       },
     );
   }
+}
 
-  void _openViewer(BuildContext context, ({String url, String? caption}) photo) {
+/// El visor en grande (zoom con `InteractiveViewer`). Lo usan esta grilla y
+/// el carrusel de *Nuestro trabajo* de la página pública (D-320).
+void abrirFotoEnGrande(
+  BuildContext context,
+  ({String url, String? caption}) photo,
+) {
     showDialog<void>(
       context: context,
       builder: (context) => Dialog(
@@ -130,5 +136,4 @@ class PhotoGridViewer extends StatelessWidget {
         ),
       ),
     );
-  }
 }
