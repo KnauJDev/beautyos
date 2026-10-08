@@ -8,12 +8,14 @@ import '../models/agenda_de_tres_estados.dart';
 import '../models/mensaje_para_la_clienta.dart';
 import '../models/ticket_board.dart';
 import '../services/agenda_board_service.dart';
+import '../services/cuando_vuelve_service.dart';
 import '../services/tickets_service.dart';
 import '../services/invitar_a_volver_service.dart';
 import '../widgets/para_invitar_hoy.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_widgets.dart';
 import '../widgets/elegir_fecha.dart';
+import '../widgets/hoja_cuando_vuelve.dart';
 import 'tickets_page.dart' show openCreateAppointmentDialog;
 
 /// Construye el enlace de WhatsApp a partir de un teléfono de cliente.
@@ -537,6 +539,16 @@ class _AgendaPageState extends State<AgendaPage> {
       }
     }
     if (mounted) await _loadData(silent: true);
+    // 9.63 (D-323): cerrada la cita, cuándo invitarla a volver, ya lleno.
+    if (propio == null && accion == AccionDeTresEstados.cerrar && mounted) {
+      await preguntarCuandoVuelve(
+        context,
+        servicio: CuandoVuelveService(branchId: widget.branchId),
+        ticketId: cita.id,
+        nombreDeLaClienta: cita.clientName,
+        citaCerrada: true,
+      );
+    }
   }
 
   @override

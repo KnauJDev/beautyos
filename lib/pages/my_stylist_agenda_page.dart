@@ -7,6 +7,7 @@ import '../models/acciones_de_ticket.dart';
 import '../models/my_stylist_agenda_item.dart';
 import '../models/stylist_time_off.dart';
 import '../models/ticket_board.dart' show formatCOP;
+import '../services/cuando_vuelve_service.dart';
 import '../services/my_stylist_agenda_service.dart';
 import '../services/stylist_time_off_service.dart';
 import '../widgets/add_work_photo_dialog.dart';
@@ -15,6 +16,7 @@ import '../widgets/candado_de_plan.dart';
 import '../widgets/compartir_reserva_del_estilista.dart';
 import '../widgets/create_time_off_dialog.dart';
 import '../widgets/elegir_fecha.dart';
+import '../widgets/hoja_cuando_vuelve.dart';
 import '../services/slug_del_salon_service.dart';
 
 class MyStylistAgendaPage extends StatefulWidget {
@@ -191,6 +193,16 @@ class _MyStylistAgendaPageState extends State<MyStylistAgendaPage> {
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
       _refreshAgenda();
+      // 9.63 (D-323): terminado su servicio, cuándo invitarla a volver.
+      if (newStatus == 'finalizado') {
+        await preguntarCuandoVuelve(
+          context,
+          servicio: CuandoVuelveService(branchId: widget.branchId),
+          ticketId: item.ticketId,
+          nombreDeLaClienta: item.clientName,
+          soloEstos: {item.ticketServiceId},
+        );
+      }
     } catch (error) {
       if (!mounted) {
         return;

@@ -5,13 +5,16 @@ import 'package:url_launcher/url_launcher.dart';
 import '../theme/app_theme.dart';
 import '../models/celular_colombiano.dart';
 import '../models/client_summary.dart';
+import '../models/cuando_vuelve.dart' show primerNombre;
 import '../models/enlace_de_reserva.dart';
 import '../models/invitacion_a_volver.dart';
 import '../services/invitar_a_volver_service.dart';
 import '../widgets/para_invitar_hoy.dart' show invitarAVolver;
 import '../services/clients_service.dart';
+import '../services/cuando_vuelve_service.dart';
 import '../services/slug_del_salon_service.dart';
 import '../widgets/app_widgets.dart';
+import '../widgets/cuando_vuelve_en_la_ficha.dart';
 import '../widgets/pedir_autorizacion.dart';
 import 'agenda_page.dart' show buildWhatsAppUri;
 
@@ -232,6 +235,10 @@ class _ClientesPageState extends State<ClientesPage> {
       builder: (context) => _ClientDetailSheet(
         client: client,
         sinDinero: widget.sinDinero,
+        // 9.63 (D-323): sin el servicio de invitar (las pruebas), no sale.
+        cuandoVuelve: widget.paraInvitar == null
+            ? null
+            : CuandoVuelveService(branchId: widget.paraInvitar!.branchId),
         onEdit: () {
           Navigator.of(context).pop();
           _openEditClientDialog(client);
@@ -811,10 +818,14 @@ class _ClientDetailSheet extends StatelessWidget {
     required this.client,
     required this.onEdit,
     this.sinDinero = false,
+    this.cuandoVuelve,
   });
 
   final ClientSummary client;
   final VoidCallback onEdit;
+
+  /// 9.63 (D-323): *Cuándo vuelve, por servicio*. `null` = no sale.
+  final CuandoVuelveService? cuandoVuelve;
 
   /// Paso 4A: sin caja, la ficha no enseña gasto, ticket promedio ni saldo.
   final bool sinDinero;
@@ -1108,6 +1119,19 @@ class _ClientDetailSheet extends StatelessWidget {
                       ],
                     ),
                   ),
+
+                  if (cuandoVuelve != null) ...[
+                    const SizedBox(height: 16),
+                    _buildSectionCard(
+                      title: 'Cuándo vuelve, por servicio',
+                      icon: Icons.event_repeat_outlined,
+                      child: CuandoVuelveEnLaFicha(
+                        servicio: cuandoVuelve!,
+                        clientId: client.id,
+                        nombre: primerNombre(client.name),
+                      ),
+                    ),
+                  ],
 
                   const SizedBox(height: 16),
 

@@ -258,7 +258,10 @@ contraste corregido, en el buzón (I-22).
    versión 2. En la base, además del número, una marca de *"esta vez no"* que deja de
    valer sola en el próximo cierre de ese servicio. **08-oct: lectura viva corrida;
    migración `20261008200000_cuando_vuelve_cada_clienta_9_63.sql` y control 248 escritos
-   (D-323), por aplicar.** Después, la app (la hoja al cerrar y la tarjeta en la ficha).
+   (D-323).** ✅ **Aplicada** (respaldo `Backup_2026-10-08_17-47-03`), **control 248 en 8/8**.
+   ✅ **App escrita** (la hoja al cerrar en la Agenda y en *Mi agenda*; la tarjeta en la ficha
+   de Clientes; 841 pruebas). ⬜ Publicarla y probarla en Éxito. ⬜ El propietario decide si
+   sale también al *Finalizar* de Tickets y Caja (salones con caja).
 2. ✅ **Elegir servicio por cuadritos — HECHO (D-322, 9.62)** (https://claude.ai/artifact/2NAFZNYbz3fqxwAX6H7qaQ):
    en la reserva en línea **y** en *Nueva cita* / *Llegó sin cita*. Publicado el 08-oct.
 3. **Por qué solo salían 3 servicios para agendar:** de sus 28, solo 3 tienen estilista
