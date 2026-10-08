@@ -144,6 +144,7 @@ class PublicSalonFullProfile {
     required this.team,
     required this.reviews,
     required this.blogPosts,
+    this.serviciosConEstilista,
   });
 
   final PublicSalonProfile profile;
@@ -154,4 +155,11 @@ class PublicSalonFullProfile {
 
   /// Artículos publicados del blog (paso 6.6, D-171).
   final List<PublicSalonBlogPost> blogPosts;
+
+  /// Los servicios que se pueden reservar en línea en la sede principal:
+  /// los que tienen al menos un estilista asignado. Los demás dicen
+  /// "Pregunta por WhatsApp" en vez de *Reservar* (D-322), y así el salón ve
+  /// también a cuál le falta estilista. `null` si no se pudo saber: entonces
+  /// todos dicen *Reservar*, como antes.
+  final Set<String>? serviciosConEstilista;
 }

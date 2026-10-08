@@ -11,6 +11,7 @@ import '../models/public_branch_info.dart';
 import '../models/public_service_option.dart';
 import '../services/public_booking_service.dart';
 import '../widgets/elegir_fecha.dart';
+import '../widgets/elegir_servicio.dart';
 import 'agenda_page.dart' show buildWhatsAppUri;
 
 /// Pagina publica de reserva (web/QR), D-005. No requiere sesion: usa el
@@ -529,24 +530,21 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
                 'reservar en linea.',
               )
             else
-              DropdownButtonFormField<String>(
-                initialValue: selectedServiceId,
-                isExpanded: true,
-                decoration: const InputDecoration(border: OutlineInputBorder()),
-                hint: const Text('Selecciona un servicio'),
-                items: _distinctServices
-                    .map(
-                      (service) => DropdownMenuItem(
-                        value: service.serviceId,
-                        child: Text(
-                          '${service.serviceName} · ${service.durationMinutes} min · '
-                          '${service.formattedPrice}',
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    )
-                    .toList(),
-                onChanged: _selectService,
+              // D-322: por cuadritos, no en una lista larga (pedido de David).
+              CampoDeServicio(
+                servicios: [
+                  for (final s in _distinctServices)
+                    ServicioParaElegir(
+                      id: s.serviceId,
+                      nombre: s.serviceName,
+                      categoria: s.category,
+                      duracionMinutos: s.durationMinutes,
+                      precio: s.formattedPrice,
+                    ),
+                ],
+                elegidoId: selectedServiceId,
+                onElegido: _selectService,
+                decoracion: const InputDecoration(border: OutlineInputBorder()),
               ),
             if (selectedServiceId != null) ...[
               const SizedBox(height: 20),

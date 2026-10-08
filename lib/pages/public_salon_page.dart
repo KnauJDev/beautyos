@@ -50,6 +50,12 @@ Future<void> abrirEnlace(Uri uri) async {
 const mensajeDesdeLaPagina = 'Hola, vengo de tu página en Salón y Más '
     '¿me cuentas más?';
 
+/// El mensaje del botón "Pregunta por WhatsApp" de un servicio que todavía
+/// no se puede reservar en línea (D-322).
+String mensajeParaPreguntarPorServicio(String servicio) =>
+    'Hola, vengo de tu página en Salón y Más. Quiero preguntar por '
+    '"${servicio.trim()}".';
+
 class _PublicSalonPageState extends State<PublicSalonPage> {
   final PublicSalonService salonService = const PublicSalonService();
   final ScrollController _scroll = ScrollController();
@@ -290,7 +296,13 @@ class _ContenidoDeLaPaginaPublicaState
               child: _Carrusel(fotos: perfil.portfolio, amplia: amplia),
             ),
           if (perfil.services.isNotEmpty)
-            _Servicios(servicios: perfil.services, onReserve: widget.onReserve),
+            _Servicios(
+              servicios: perfil.services,
+              onReserve: widget.onReserve,
+              conEstilista: perfil.serviciosConEstilista,
+              whatsapp: salon.whatsapp?.trim() ?? '',
+              onAbrir: widget.onAbrir,
+            ),
           if (perfil.team.isNotEmpty)
             _Seccion(
               titulo: 'Quién te atiende',
@@ -956,10 +968,21 @@ class _Carrusel extends StatelessWidget {
 // ----------------------------------------------------------------- servicios
 
 class _Servicios extends StatefulWidget {
-  const _Servicios({required this.servicios, required this.onReserve});
+  const _Servicios({
+    required this.servicios,
+    required this.onReserve,
+    required this.conEstilista,
+    required this.whatsapp,
+    required this.onAbrir,
+  });
 
   final List<PublicSalonServiceItem> servicios;
   final void Function(String serviceId)? onReserve;
+
+  /// Ver [PublicSalonFullProfile.serviciosConEstilista].
+  final Set<String>? conEstilista;
+  final String whatsapp;
+  final Future<void> Function(Uri uri) onAbrir;
 
   @override
   State<_Servicios> createState() => _ServiciosState();
@@ -1010,7 +1033,13 @@ class _ServiciosState extends State<_Servicios> {
               children: [
                 for (var i = 0; i < lista.length; i++) ...[
                   if (i > 0) const Divider(height: 1, color: AppColors.border),
-                  _FilaDeServicio(servicio: lista[i], onReserve: widget.onReserve),
+                  _FilaDeServicio(
+                    servicio: lista[i],
+                    onReserve: widget.onReserve,
+                    conEstilista: widget.conEstilista,
+                    whatsapp: widget.whatsapp,
+                    onAbrir: widget.onAbrir,
+                  ),
                 ],
               ],
             ),
@@ -1056,13 +1085,29 @@ class _Pildora extends StatelessWidget {
 }
 
 class _FilaDeServicio extends StatelessWidget {
-  const _FilaDeServicio({required this.servicio, required this.onReserve});
+  const _FilaDeServicio({
+    required this.servicio,
+    required this.onReserve,
+    required this.conEstilista,
+    required this.whatsapp,
+    required this.onAbrir,
+  });
 
   final PublicSalonServiceItem servicio;
   final void Function(String serviceId)? onReserve;
+  final Set<String>? conEstilista;
+  final String whatsapp;
+  final Future<void> Function(Uri uri) onAbrir;
 
   @override
   Widget build(BuildContext context) {
+    // D-322: un servicio sin estilista no se puede reservar en línea. Se ve
+    // igual, pero en vez de *Reservar* invita a preguntar por WhatsApp; y al
+    // salón le avisa que a ese servicio le falta estilista.
+    final reservable =
+        onReserve != null &&
+        (conEstilista == null || conEstilista!.contains(servicio.id));
+    final preguntar = onReserve != null && !reservable && whatsapp.isNotEmpty;
     return Padding(
       padding: const EdgeInsets.all(14),
       child: Row(
@@ -1097,7 +1142,32 @@ class _FilaDeServicio extends StatelessWidget {
               ],
             ),
           ),
-          if (onReserve != null) ...[
+          if (preguntar) ...[
+            const SizedBox(width: 10),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 150),
+              child: OutlinedButton(
+                onPressed: () => onAbrir(
+                  buildWhatsAppUri(
+                    whatsapp,
+                    text: mensajeParaPreguntarPorServicio(servicio.name),
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  backgroundColor: AppColors.successTint,
+                  foregroundColor: AppColors.success,
+                  side: BorderSide(
+                    color: Color.lerp(AppColors.success, Colors.white, 0.6)!,
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  textStyle: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+                ),
+                child: const Text('Pregunta por WhatsApp', textAlign: TextAlign.center),
+              ),
+            ),
+          ],
+          if (reservable) ...[
             const SizedBox(width: 10),
             OutlinedButton(
               onPressed: () => onReserve!(servicio.id),

@@ -55,6 +55,7 @@ después (así se hizo con el Dashboard el 04-oct).
 | D-319 | **El enlace se comparte también en TikTok y en papel**: TikTok en Configuración y en la página pública (pedido de David), y el botón *Código QR* en *Tu enlace*, que lo descarga para imprimir. Lectura viva hecha; migración `20261007200000_tiktok_del_salon_d319.sql` y **control 246** escritos | ✅ **Aplicada el 08-oct** (respaldo `Backup_2026-10-08_07-06-39`), **control 246 en 6/6**, y la app publicada después. ✅ TikTok y el QR vistos en Éxito |
 | D-320 | **La página pública, rediseñada** con un prototipo aprobado (https://claude.ai/artifact/H4GUdBqnaVu1h3rhzTgGPF): portada que manda, *abierto ahora* en hora de Colombia, botones redondos, el trabajo arriba, servicios por categoría, equipo y reseñas en tarjetas, *Agendar cita* siempre a mano. Sin servidor; cambia la página de **todos** los salones | ✅ Publicada el 08-oct y vista por el propietario en Éxito y en la de David; el pie se queda. Portada *Champán* y emblema como logo, elegidos por David (los sube él) |
 | D-321 | **Las redes se escriben como usuario o enlace**: David había puesto los *nombres* de sus cuentas en Facebook y TikTok, y los botones llevaban a cuentas inexistentes. Configuración avisa y no guarda un nombre con espacios; la página no enseña un botón roto; el Panel ve el TikTok | ✅ App publicada. ✅ Migración aplicada (respaldo `Backup_2026-10-08_14-38-32`), **control 247 en 4/4**. ⬜ David: pegar el enlace de su Facebook y de su TikTok |
+| D-322 | **Elegir el servicio por cuadritos** (reserva de la clienta y Nueva cita / Llegó sin cita) y, en la página pública, **"Pregunta por WhatsApp"** para los servicios sin estilista, que le avisa al salón a cuál le falta. Pedidos de David del 08-oct, prototipo aprobado (*"están espectaculares"*). Sin servidor | ✅ App publicada el 08-oct; probada en el navegador con los datos de David (3 cuadritos, el servicio y su precio). ⬜ El propietario: probar Nueva cita en Éxito. ⬜ David: asignar estilistas en *Estilistas* y corregir sus categorías repetidas |
 
 
 **Hallazgos de estos dos días:** **CK** (cerrado: WhatsApp sin el 57) · **CL** (abierto: la
@@ -242,23 +243,29 @@ contraste corregido, en el buzón (I-22).
 
 ## 7. Por dónde seguir
 
-**Pedidos de David del 08-oct, con prototipo esperando el visto bueno del propietario:**
-1. **Cuándo vuelve cada clienta** (https://claude.ai/artifact/N48aApd2qmN17Fxc5kHTne): al cerrar
+**Pedidos de David del 08-oct** (pasos **9.62** y **9.63** del Plan Maestro):
+1. **Cuándo vuelve cada clienta — LO SIGUIENTE (9.63)** (https://claude.ai/artifact/N48aApd2qmN17Fxc5kHTne): al cerrar
    una cita, preguntar en cuántos días invitar a volver a **esa clienta** para cada servicio,
    ya lleno (su número si ya tiene; si no, el del servicio o los 45 del salón), y
    **recordarlo** en su ficha. Decidido por el propietario: se recuerda; sale siempre ya
    lleno; lo ponen dueño, recepción **y estilista** (al terminar en *Mi agenda*); se puede
    cambiar en la ficha de Clientes. La llave es la ficha de la clienta (un celular, una
    clienta por salón, D-249). **Lleva servidor** (lectura viva, migración, control): un número
-   por clienta y servicio, y que *Para invitar hoy* lo use.
-2. **Elegir servicio por cuadritos** (https://claude.ai/artifact/2NAFZNYbz3fqxwAX6H7qaQ): en la
-   reserva en línea **y** en *Nueva cita*, la cuadrícula de categorías a pantalla completa →
-   sus servicios → se cierra con el elegido. Sin servidor.
+   por clienta y servicio, y que *Para invitar hoy* lo use. **Añadido el 08-oct a pedido del
+   propietario:** cada servicio trae un interruptor *"Invitar a volver"*; apagado, ese servicio
+   no la invita esta vez **y su número no se borra**; cuando vuelva a hacérselo, se pregunta
+   otra vez con el interruptor prendido. En la ficha dice *"esta vez no se invita"*. Prototipo
+   versión 2, **esperando el sí del propietario**. En la base, además del número, una marca
+   de *"esta vez no"* que se borra sola en el próximo cierre de ese servicio.
+2. ✅ **Elegir servicio por cuadritos — HECHO (D-322, 9.62)** (https://claude.ai/artifact/2NAFZNYbz3fqxwAX6H7qaQ):
+   en la reserva en línea **y** en *Nueva cita* / *Llegó sin cita*. Publicado el 08-oct.
 3. **Por qué solo salían 3 servicios para agendar:** de sus 28, solo 3 tienen estilista
    asignado (la reserva solo ofrece lo que alguien hace). **David los asigna en *Estilistas***
    (decisión del propietario: no se agrega en *Servicios*). En la página pública, **los
    servicios sin estilista se ven con "Pregunta por WhatsApp"** en vez de *Reservar* (y así
-   sirven de control). **Las categorías repetidas las corrige David** (no la app).
+   sirven de control) — ✅ **hecho con D-322**. **Las categorías repetidas las corrige David**
+   (no la app: los cuadritos juntan *Peluquería* y *peluquería*, pero *peluqueria* sin tilde
+   sale aparte).
 
 **Lo inmediato (08-oct): la visita a David, en persona.** Con él: (1) encenderle *Los cinco
 lugares* (Panel → Inspirant → *Novedades*) y enseñárselos; (2) que elija el tema
@@ -313,8 +320,12 @@ lugares): el interruptor y la app de la dueña están publicados y APAGADOS
 para todos; se encienden en el Panel, sección Novedades.
 
 LO PRIMERO
-D-319 (TikTok y el código QR): aplicada el 08-oct, control 246 en 6/6, app
-publicada; falta mirarla en Éxito. Los cinco lugares ya se revisaron en Éxito. El 08-oct el propietario se los
+D-322 (servicio por cuadritos y "Pregunta por WhatsApp") publicada el 08-oct.
+Lo siguiente es "Cuándo vuelve cada clienta" (paso 9.63): prototipo con el
+interruptor "Invitar a volver" esperando el sí del propietario; después,
+lectura viva de get_return_invitations y del cierre de citas, migración y
+control. D-319 (TikTok y el código QR): aplicada el 08-oct, control 246 en
+6/6, app publicada y vista en Éxito. Los cinco lugares ya se revisaron en Éxito. El 08-oct el propietario se los
 enciende a David en persona. Mientras tanto, la entrega 3 (Mi agenda de la
 estilista en tarjetas). Pendientes de David: sus capturas del Dashboard,
 Inspirant, fotos.
@@ -334,6 +345,12 @@ NUNCA dart format en bloque.
 ---
 
 ## 9. Pruebas al cerrar
+
+> **08-oct, con D-322: 827 pruebas, todas en verde** (`flutter test` completo), `flutter
+> analyze` sin avisos y `flutter build web` compila. 12 nuevas en
+> `elegir_servicio_d322_test.dart`; dos viejas ajustadas porque buscaban la lista desplegable
+> del servicio (`create_appointment_walkin_test.dart` y una línea de
+> `cinco_lugares_d318_test.dart`).
 
 **780 pruebas, todas en verde**, en la corrida completa del 07-oct con la entrega 2 de
 D-318 y todo lo que salió de la revisión en el espejo (`flutter test`, 5 min 26 s), y

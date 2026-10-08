@@ -126,10 +126,11 @@ void main() {
     await tester.tap(find.text('abrir'));
     await tester.pumpAndSettle();
 
-    // 1. Servicio
-    await tester.tap(find.byType(DropdownButtonFormField<String>).first);
+    // 1. Servicio. Con una sola categoría no hay cuadritos: sale directo la
+    // lista (D-322).
+    await tester.tap(find.text('1. Servicio'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Corte · \$40.000').last);
+    await tester.tap(find.text('Corte'));
     await tester.pumpAndSettle();
 
     // Atender ya (walk-in): sin elegir estilista ni fecha a mano.

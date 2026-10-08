@@ -21,6 +21,7 @@ import '../widgets/add_work_photo_dialog.dart';
 import '../widgets/app_widgets.dart';
 import '../widgets/candado_de_plan.dart';
 import '../widgets/elegir_fecha.dart';
+import '../widgets/elegir_servicio.dart';
 import '../widgets/pedir_autorizacion.dart';
 import 'agenda_page.dart' show buildWhatsAppUri;
 
@@ -1974,39 +1975,44 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                DropdownButtonFormField<String>(
-                  initialValue: selectedServiceId,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: '1. Servicio',
-                    prefixIcon: Icon(Icons.content_cut_outlined),
-                  ),
-                  items: services
-                      .map(
-                        (option) => DropdownMenuItem(
-                          value: option.serviceId,
-                          child: Text(
-                            '${option.serviceName} · ${option.formattedPrice}',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedServiceId = value;
-                      selectedStylistId = null;
-                      scheduledAt = null;
-                      _bookingStylistId = null;
-                      _availableSlots = null;
-                      slotsError = null;
-                    });
-                    // D-318: llegó sin cita, así que se atiende ya.
-                    if (widget.atenderYa && value != null) _atenderYa();
-                  },
-                  validator: (value) => value == null || value.isEmpty
+                // D-322: por cuadritos, no en una lista larga (pedido de David).
+                FormField<String>(
+                  validator: (_) => selectedServiceId == null
                       ? 'Selecciona un servicio'
                       : null,
+                  builder: (field) => CampoDeServicio(
+                    servicios: [
+                      for (final option in services)
+                        ServicioParaElegir(
+                          id: option.serviceId,
+                          nombre: option.serviceName,
+                          categoria: option.category,
+                          duracionMinutos: option.durationMinutes,
+                          precio: option.formattedPrice,
+                        ),
+                    ],
+                    elegidoId: selectedServiceId,
+                    errorText: field.errorText,
+                    decoracion: const InputDecoration(
+                      labelText: '1. Servicio',
+                      prefixIcon: Icon(Icons.content_cut_outlined),
+                    ),
+                    onElegido: (value) {
+                      setState(() {
+                        selectedServiceId = value;
+                        selectedStylistId = null;
+                        scheduledAt = null;
+                        _bookingStylistId = null;
+                        _availableSlots = null;
+                        slotsError = null;
+                      });
+                      field.didChange(value);
+                      // Si ya decía "Selecciona un servicio", que se quite.
+                      if (field.hasError) field.validate();
+                      // D-318: llegó sin cita, así que se atiende ya.
+                      if (widget.atenderYa) _atenderYa();
+                    },
+                  ),
                 ),
                 if (selectedServiceId != null) ...[
                   const SizedBox(height: 8),

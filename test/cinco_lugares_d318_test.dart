@@ -182,7 +182,8 @@ void main() {
     test('Llegó sin cita es el diálogo de siempre con su "Atender ya"', () {
       final tickets = leer('lib/pages/tickets_page.dart');
       expect(tickets, contains("title: Text(widget.atenderYa ? 'Llegó sin cita' : 'Nueva cita'),"));
-      expect(tickets, contains('if (widget.atenderYa && value != null) _atenderYa();'));
+      // D-322: el servicio sale de los cuadritos y nunca llega vacío.
+      expect(tickets, contains('if (widget.atenderYa) _atenderYa();'));
     });
   });
 

@@ -6,6 +6,7 @@ import '../models/public_salon_profile.dart';
 import '../models/public_salon_review_item.dart';
 import '../models/public_salon_service_item.dart';
 import '../models/public_salon_team_member.dart';
+import 'public_booking_service.dart';
 
 /// Llama a las RPC públicas (rol "anon", sin sesión) que arman la página
 /// completa de un negocio (D-098, D-164, D-165).
@@ -96,9 +97,25 @@ class PublicSalonService {
         .toList();
   }
 
+  /// Los servicios con estilista en la sede principal, que son los que se
+  /// pueden reservar (D-322). Es la misma consulta de la reserva en línea.
+  /// `null` si falla: la página se ve igual y todos dicen *Reservar*.
+  Future<Set<String>?> getServiciosConEstilista(String? branchId) async {
+    if (branchId == null) return null;
+    try {
+      final opciones = await const PublicBookingService().getBookableServices(
+        branchId,
+      );
+      return {for (final o in opciones) o.serviceId};
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Perfil completo de la página pública: resuelve el slug primero (para
   /// tener el `tenant_id`) y luego trae servicios, portafolio, equipo,
-  /// reseñas y blog en paralelo. `null` si el slug no existe.
+  /// reseñas, blog y qué servicios tienen estilista, en paralelo. `null` si
+  /// el slug no existe.
   Future<PublicSalonFullProfile?> getFullProfile(String slug) async {
     final profile = await getSalonBySlug(slug);
     if (profile == null) return null;
@@ -109,6 +126,7 @@ class PublicSalonService {
       getTeam(profile.tenantId),
       getReviews(profile.tenantId),
       getBlogPosts(profile.tenantId),
+      getServiciosConEstilista(profile.primaryBranchId),
     ]);
 
     return PublicSalonFullProfile(
@@ -118,6 +136,7 @@ class PublicSalonService {
       team: results[2] as List<PublicSalonTeamMember>,
       reviews: results[3] as PublicSalonReviewsSummary,
       blogPosts: results[4] as List<PublicSalonBlogPost>,
+      serviciosConEstilista: results[5] as Set<String>?,
     );
   }
 }
