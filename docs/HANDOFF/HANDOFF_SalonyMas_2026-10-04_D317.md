@@ -241,8 +241,14 @@ contraste corregido, en el buzón (I-22).
 
 ## 7. Por dónde seguir
 
-**Lo inmediato:** que el propietario mire la página pública nueva (D-320) en Éxito y en la
-de David, en el celular y en el computador. **En Éxito quedaron redes de prueba** (un TikTok
+**Lo inmediato (08-oct): la visita a David, en persona.** Con él: (1) encenderle *Los cinco
+lugares* (Panel → Inspirant → *Novedades*) y enseñárselos; (2) que elija el tema
+**Inspirant** (*Configuración → Colores de tu negocio*); (3) que suba como logo **el emblema
+*DM*** que se le preparó (recortado de su mismo logo, sin cambios) y, si quiere, el logo
+completo como portada; (4) las fotos de su equipo; (5) sus categorías de servicios repetidas
+(*peluquería* / *peluqueria*): si las corrige él o si la página las junta (lo dirá el
+propietario); (6) las capturas de su Dashboard y que su equipo entre. La página pública
+nueva (D-320) ya la vio el propietario en Éxito y en la de David; **el pie se queda**. **En Éxito quedaron redes de prueba** (un TikTok
 inventado, Instagram y Facebook de prueba): vaciarlas al terminar, para que su página no
 tenga botones a perfiles que no existen. **El 08-oct, en persona con David**, encenderle *Los cinco lugares* en
 el Panel (*Novedades*) y enseñárselo. Mientras tanto, **la entrega 3**: *Mi agenda* de la
