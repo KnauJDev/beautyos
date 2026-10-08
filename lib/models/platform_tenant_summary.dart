@@ -16,6 +16,7 @@ class PlatformTenantSummary {
     required this.whatsapp,
     this.instagram,
     this.facebook,
+    this.tiktok,
     this.realBranchesCount = 0,
     this.realTeamCount = 0,
     this.teamBreakdown,
@@ -59,6 +60,9 @@ class PlatformTenantSummary {
   final String? whatsapp;
   final String? instagram;
   final String? facebook;
+
+  /// D-321: el TikTok que el salón escribió en su Configuración (D-319).
+  final String? tiktok;
 
   /// Sedes activas contadas en vivo desde `branches` (D-162), no lo que el
   /// negocio declaró al registrarse (`estimatedBranches`).
@@ -289,6 +293,7 @@ class PlatformTenantSummary {
       whatsapp: map['whatsapp']?.toString(),
       instagram: map['instagram']?.toString(),
       facebook: map['facebook']?.toString(),
+      tiktok: map['tiktok']?.toString(),
       realBranchesCount: _parseInt(map['real_branches_count']) ?? 0,
       realTeamCount: _parseInt(map['real_team_count']) ?? 0,
       teamBreakdown: map['team_breakdown']?.toString(),

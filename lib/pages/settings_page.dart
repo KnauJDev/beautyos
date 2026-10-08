@@ -40,6 +40,7 @@ import '../widgets/theme_selector_card.dart';
 import '../widgets/update_banner.dart';
 import '../services/invitar_a_volver_service.dart';
 import '../models/mensaje_para_la_clienta.dart';
+import '../models/redes_sociales.dart' show avisoDeRed;
 
 class ConfiguracionPage extends StatefulWidget {
   const ConfiguracionPage({
@@ -1051,7 +1052,22 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
     super.dispose();
   }
 
+  /// D-321: el aviso de cada red, si lo escrito no lleva a un perfil.
+  String? _avisoInstagram;
+  String? _avisoFacebook;
+  String? _avisoTiktok;
+
   Future<void> _save() async {
+    // Un nombre con espacios ("Inspirant salon") no abre ningún perfil: se
+    // avisa en el campo y no se guarda (08-oct, lo que le pasó a David).
+    setState(() {
+      _avisoInstagram = avisoDeRed(_instagramController.text);
+      _avisoFacebook = avisoDeRed(_facebookController.text);
+      _avisoTiktok = avisoDeRed(_tiktokController.text);
+    });
+    if (_avisoInstagram != null || _avisoFacebook != null || _avisoTiktok != null) {
+      return;
+    }
     setState(() => _isSaving = true);
     try {
       await widget.businessSettingsService.updateContactInfo(
@@ -1120,30 +1136,44 @@ class _ContactInfoEditorState extends State<_ContactInfoEditor> {
           ),
         ),
         const SizedBox(height: 10),
+        // D-321: el usuario o el enlace del perfil, nunca el nombre de la
+        // cuenta; si no, el botón de la página manda a una cuenta que no existe.
         TextField(
           controller: _instagramController,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Instagram',
             hintText: '@naguaradeunas',
-            border: OutlineInputBorder(),
+            helperText: 'Tu usuario o el enlace de tu perfil',
+            errorText: _avisoInstagram,
+            errorMaxLines: 2,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 10),
         TextField(
           controller: _facebookController,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Facebook',
-            border: OutlineInputBorder(),
+            hintText: 'facebook.com/tusalon',
+            helperText: 'El enlace de tu página: en Facebook, ⋯ → Copiar enlace',
+            helperMaxLines: 2,
+            errorText: _avisoFacebook,
+            errorMaxLines: 2,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 10),
         // D-319: lo pidió David, el primer cliente real.
         TextField(
           controller: _tiktokController,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'TikTok',
             hintText: '@tusalon',
-            border: OutlineInputBorder(),
+            helperText: 'Tu @usuario o el enlace: en TikTok, Perfil → compartir → Copiar enlace',
+            helperMaxLines: 2,
+            errorText: _avisoTiktok,
+            errorMaxLines: 2,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 12),

@@ -3310,6 +3310,11 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                           'Facebook:',
                           tenant.facebook ?? 'Sin registrar',
                         ),
+                        // D-321: el TikTok del salón (D-319).
+                        _buildInfoRow(
+                          'TikTok:',
+                          tenant.tiktok ?? 'Sin registrar',
+                        ),
                         if (isOwner) ...[
                           const SizedBox(height: 10),
                           Align(

@@ -4,6 +4,7 @@ import 'public_salon_photo_item.dart';
 import 'public_salon_review_item.dart';
 import 'public_salon_service_item.dart';
 import 'public_salon_team_member.dart';
+import 'redes_sociales.dart';
 
 /// Perfil comercial público de un negocio, resuelto por su slug sin sesión
 /// (D-098, D-164). Solo trae datos de vitrina -- nada operativo ni de
@@ -108,36 +109,29 @@ class PublicSalonProfile {
     return value.startsWith('@') ? value.substring(1) : value;
   }
 
-  Uri? get instagramUri {
-    final handle = instagramHandle;
-    if (handle == null || handle.isEmpty) return null;
-    return Uri.https('instagram.com', '/$handle');
-  }
+  // D-321 (08-oct): las tres redes aceptan el usuario (con o sin "@") o el
+  // enlace del perfil, y devuelven null si lo escrito no lleva a ningún
+  // perfil (un nombre con espacios, como "Inspirant salon"): la página no
+  // enseña un botón que manda a una cuenta que no existe.
 
-  Uri? get facebookUri {
-    final value = facebook?.trim();
-    if (value == null || value.isEmpty) return null;
-    if (value.startsWith('http://') || value.startsWith('https://')) {
-      return Uri.tryParse(value);
-    }
-    final handle = value.startsWith('@') ? value.substring(1) : value;
-    return Uri.https('facebook.com', '/$handle');
-  }
+  Uri? get instagramUri => enlaceDeRed(
+    instagram,
+    dominio: 'instagram.com',
+    armar: (u) => Uri.https('instagram.com', '/$u'),
+  );
 
-  /// D-319. Acepta el usuario con o sin "@" ("@salon", "salon"), la
-  /// dirección completa, o la dirección sin "https://" ("tiktok.com/@salon").
-  /// En TikTok el perfil lleva la "@" en la dirección: tiktok.com/@salon.
-  Uri? get tiktokUri {
-    final value = tiktok?.trim();
-    if (value == null || value.isEmpty) return null;
-    if (value.startsWith('http://') || value.startsWith('https://')) {
-      return Uri.tryParse(value);
-    }
-    if (value.contains('tiktok.com/')) return Uri.tryParse('https://$value');
-    final usuario = value.startsWith('@') ? value.substring(1) : value;
-    if (usuario.isEmpty) return null;
-    return Uri.https('www.tiktok.com', '/@$usuario');
-  }
+  Uri? get facebookUri => enlaceDeRed(
+    facebook,
+    dominio: 'facebook.com',
+    armar: (u) => Uri.https('facebook.com', '/$u'),
+  );
+
+  /// D-319. En TikTok el perfil lleva la "@" en la dirección: tiktok.com/@salon.
+  Uri? get tiktokUri => enlaceDeRed(
+    tiktok,
+    dominio: 'tiktok.com',
+    armar: (u) => Uri.https('www.tiktok.com', '/@$u'),
+  );
 }
 
 /// Todo lo que necesita la página pública del negocio en una sola llamada:
