@@ -16,12 +16,14 @@ import '../models/acciones_de_ticket.dart';
 import '../models/ticket_board.dart' show formatCOP;
 import '../models/ticket_summary.dart';
 import '../services/clients_service.dart';
+import '../services/cuando_vuelve_service.dart';
 import '../services/tickets_service.dart';
 import '../widgets/add_work_photo_dialog.dart';
 import '../widgets/app_widgets.dart';
 import '../widgets/candado_de_plan.dart';
 import '../widgets/elegir_fecha.dart';
 import '../widgets/elegir_servicio.dart';
+import '../widgets/hoja_cuando_vuelve.dart';
 import '../widgets/pedir_autorizacion.dart';
 import 'agenda_page.dart' show buildWhatsAppUri;
 
@@ -3863,6 +3865,18 @@ class _AttendServicesDialogState extends State<_AttendServicesDialog> {
             ? '${servicio.serviceName}: iniciado.'
             : '${servicio.serviceName}: terminado.',
       );
+      // 9.63 (D-323): también con caja, decidido por el propietario el 08-oct.
+      if (siguiente == 'finalizado') {
+        await preguntarCuandoVuelve(
+          context,
+          servicio: CuandoVuelveService(
+            branchId: widget.ticketsService.branchId,
+          ),
+          ticketId: widget.ticket.id,
+          nombreDeLaClienta: widget.ticket.clientName,
+          soloEstos: {servicio.ticketServiceId},
+        );
+      }
     } catch (error) {
       if (!mounted) return;
       setState(() => enEspera = null);

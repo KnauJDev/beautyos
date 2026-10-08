@@ -339,13 +339,17 @@ void main() {
     });
   });
 
-  test('sale en los dos cierres y en la ficha', () {
+  test('sale en los tres cierres y en la ficha', () {
     final agenda = leer('lib/pages/agenda_page.dart');
     expect(agenda, contains('if (propio == null && accion == AccionDeTresEstados.cerrar && mounted) {'));
     expect(agenda, contains('citaCerrada: true,'));
     final estilista = leer('lib/pages/my_stylist_agenda_page.dart');
     expect(estilista, contains("if (newStatus == 'finalizado') {"));
     expect(estilista, contains('soloEstos: {item.ticketServiceId},'));
+    // Con caja, al Finalizar en Tickets y Caja (decidido el 08-oct).
+    final caja = leer('lib/pages/tickets_page.dart');
+    expect(caja, contains('// 9.63 (D-323): también con caja'));
+    expect(caja, contains('soloEstos: {servicio.ticketServiceId},'));
     final clientes = leer('lib/pages/clients_page.dart');
     expect(clientes, contains("title: 'Cuándo vuelve, por servicio',"));
   });
