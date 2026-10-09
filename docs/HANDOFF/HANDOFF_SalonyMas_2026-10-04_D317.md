@@ -271,7 +271,11 @@ contraste corregido, en el buzón (I-22).
    servicios sin estilista se ven con "Pregunta por WhatsApp"** en vez de *Reservar* (y así
    sirven de control) — ✅ **hecho con D-322**. **Las categorías repetidas las corrige David**
    (no la app: los cuadritos juntan *Peluquería* y *peluquería*, pero *peluqueria* sin tilde
-   sale aparte).
+   sale aparte). **09-oct, D-324: cambia.** Con el sí de David, el catálogo lo ordenamos
+   nosotros: 8 categorías y la ortografía corregida, ni precios ni duraciones
+   (`intervenciones/ordenar_servicios_de_inspirant_d324.sql`, escrito desde su lectura viva).
+   A David le quedan: la duración de *Keratina* (30 min), el precio de *Extensiones*
+   ($2.900.000) y asignar estilistas, *Corte personalizado y asesoría* solo a él.
 
 **Lo inmediato (08-oct): la visita a David, en persona.** Con él: (1) encenderle *Los cinco
 lugares* (Panel → Inspirant → *Novedades*) y enseñárselos; (2) que elija el tema
