@@ -275,6 +275,9 @@ contraste corregido, en el buzón (I-22).
    nosotros: 8 categorías y la ortografía corregida, ni precios ni duraciones
    (`intervenciones/ordenar_servicios_de_inspirant_d324.sql`, escrito desde su lectura viva).
    ✅ **Aplicado el 09-oct** (respaldo `Backup_2026-10-09_11-00-44`) y visto en su página.
+   **D-325 (09-oct):** con su sí, los 4 estilistas (Antonio, David, Diana, Mauricio) hacen los
+   28 servicios, menos *Corte personalizado y asesoría*, solo de David. ✅ Aplicado (respaldo
+   `Backup_2026-10-09_11-19-14`): **28 servicios reservables en línea** (eran 3).
    A David le quedan: la duración de *Keratina* (30 min), el precio de *Extensiones*
    ($2.900.000) y asignar estilistas, *Corte personalizado y asesoría* solo a él.
 
