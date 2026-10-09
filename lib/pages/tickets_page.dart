@@ -17,6 +17,7 @@ import '../models/ticket_board.dart' show formatCOP;
 import '../models/ticket_summary.dart';
 import '../services/clients_service.dart';
 import '../services/cuando_vuelve_service.dart';
+import '../services/precios_desde_service.dart';
 import '../services/tickets_service.dart';
 import '../widgets/add_work_photo_dialog.dart';
 import '../widgets/app_widgets.dart';
@@ -46,8 +47,11 @@ Future<bool> openCreateAppointmentDialog(
   try {
     final clientsFuture = clientsService.getClientsSummary();
     final optionsFuture = ticketsService.getTicketServiceOptions();
+    // D-326: para que los cuadritos digan "Desde". Nunca falla.
+    final desdeFuture = PreciosDesdeService(branchId: branchId).cargarEnElSalon();
     final clients = await clientsFuture;
     final options = await optionsFuture;
+    await desdeFuture;
 
     if (!context.mounted) {
       return false;
@@ -190,6 +194,8 @@ class _TicketsPageState extends State<TicketsPage> {
     super.initState();
     ticketsService = TicketsService(branchId: widget.branchId);
     ticketsFuture = ticketsService.getTicketsSummary();
+    // D-326: los precios "desde" que leen los diálogos de servicios.
+    PreciosDesdeService(branchId: widget.branchId).cargarEnElSalon();
     _maybeOpenPendingTicket();
     _maybeOpenPendingCollectTicket();
   }
@@ -394,7 +400,10 @@ class _TicketsPageState extends State<TicketsPage> {
 
       final action = await showDialog<_TicketServiceManagementAction>(
         context: context,
-        builder: (context) => _ManageTicketServicesDialog(items: items),
+        builder: (context) => _ManageTicketServicesDialog(
+          items: items,
+          categorias: {for (final o in options) o.serviceId: o.category},
+        ),
       );
 
       if (action == null || !mounted) {
@@ -1990,7 +1999,7 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
                           nombre: option.serviceName,
                           categoria: option.category,
                           duracionMinutos: option.durationMinutes,
-                          precio: option.formattedPrice,
+                          precio: preciosDesdeDelSalon.value.precio(option.formattedPrice, option.category),
                         ),
                     ],
                     elegidoId: selectedServiceId,
@@ -2281,7 +2290,7 @@ class CreateAppointmentDialogState extends State<CreateAppointmentDialog> {
                     // cual: "con Luiscar\n23/09/2026" (23-sep, hallazgo BJ).
                     child: Text(
                       '${service.serviceName} con $resolvedStylistName\n'
-                      '$scheduledAtText · ${service.formattedPrice} · '
+                      '$scheduledAtText · ${preciosDesdeDelSalon.value.precio(service.formattedPrice, service.category)} · '
                       '${service.durationMinutes} min',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
@@ -2900,7 +2909,7 @@ class _AddTicketServiceDialogState extends State<_AddTicketServiceDialog> {
                         (option) => DropdownMenuItem<String>(
                           value: option.serviceId,
                           child: Text(
-                            '${option.serviceName} · ${option.formattedPrice}',
+                            '${option.serviceName} · ${preciosDesdeDelSalon.value.precio(option.formattedPrice, option.category)}',
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -2962,7 +2971,7 @@ class _AddTicketServiceDialogState extends State<_AddTicketServiceDialog> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Text(
-                      '${service.category} · ${service.formattedPrice} · '
+                      '${service.category} · ${preciosDesdeDelSalon.value.precio(service.formattedPrice, service.category)} · '
                       '${service.durationMinutes} min',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
@@ -3021,9 +3030,15 @@ class _TicketServiceManagementAction {
 }
 
 class _ManageTicketServicesDialog extends StatelessWidget {
-  const _ManageTicketServicesDialog({required this.items});
+  const _ManageTicketServicesDialog({
+    required this.items,
+    this.categorias = const {},
+  });
 
   final List<TicketServiceManagementItem> items;
+
+  /// D-326: la categoría de cada servicio, por su id, para el "Desde".
+  final Map<String, String> categorias;
 
   @override
   Widget build(BuildContext context) {
@@ -3074,7 +3089,7 @@ class _ManageTicketServicesDialog extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '${item.formattedPrice} · ${item.durationMinutes} min',
+                            '${preciosDesdeDelSalon.value.precio(item.formattedPrice, categorias[item.serviceId])} · ${item.durationMinutes} min',
                             style: const TextStyle(
                               fontWeight: FontWeight.w600,
                               color: AppColors.success,
@@ -3250,7 +3265,7 @@ class _EditTicketServiceDialogState extends State<_EditTicketServiceDialog> {
                         (option) => DropdownMenuItem<String>(
                           value: option.serviceId,
                           child: Text(
-                            '${option.serviceName} · ${option.formattedPrice}',
+                            '${option.serviceName} · ${preciosDesdeDelSalon.value.precio(option.formattedPrice, option.category)}',
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -3321,7 +3336,7 @@ class _EditTicketServiceDialogState extends State<_EditTicketServiceDialog> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Text(
-                      '${service.category} · ${service.formattedPrice} · '
+                      '${service.category} · ${preciosDesdeDelSalon.value.precio(service.formattedPrice, service.category)} · '
                       '${service.durationMinutes} min',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,

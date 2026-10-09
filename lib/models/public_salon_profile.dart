@@ -1,4 +1,5 @@
 import 'business_hour.dart';
+import 'precios_desde.dart';
 import 'public_salon_blog_post.dart';
 import 'public_salon_photo_item.dart';
 import 'public_salon_review_item.dart';
@@ -145,6 +146,7 @@ class PublicSalonFullProfile {
     required this.reviews,
     required this.blogPosts,
     this.serviciosConEstilista,
+    this.preciosDesde = PreciosDesde.ninguno,
   });
 
   final PublicSalonProfile profile;
@@ -162,4 +164,7 @@ class PublicSalonFullProfile {
   /// también a cuál le falta estilista. `null` si no se pudo saber: entonces
   /// todos dicen *Reservar*, como antes.
   final Set<String>? serviciosConEstilista;
+
+  /// Las categorías con precio "desde" (D-326).
+  final PreciosDesde preciosDesde;
 }

@@ -3,11 +3,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../theme/app_theme.dart';
 
+import '../models/precios_desde.dart';
 import '../models/service_management_item.dart';
 import '../models/cifra_escrita.dart';
 import '../services/services_service.dart';
 import '../widgets/app_widgets.dart';
 import '../services/invitar_a_volver_service.dart';
+import '../services/precios_desde_service.dart';
 import '../models/mensaje_para_la_clienta.dart';
 import '../models/ticket_board.dart' show formatCOP;
 
@@ -47,6 +49,47 @@ class _ServiciosPageState extends State<ServiciosPage> {
   String _searchQuery = '';
   String _selectedCategory = 'all';
 
+  /// D-326: las categorías con precio "desde".
+  late final PreciosDesdeService _preciosDesde = PreciosDesdeService(
+    branchId: widget.branchId,
+  );
+  PreciosDesde _desde = PreciosDesde.ninguno;
+  bool _marcandoDesde = false;
+
+  Future<void> _cargarDesde() async {
+    final lista = await _preciosDesde.cargarEnElSalon();
+    if (!mounted) return;
+    setState(() => _desde = lista);
+  }
+
+  Future<void> _marcarDesde(String categoria, bool desde) async {
+    setState(() => _marcandoDesde = true);
+    try {
+      final lista = await _preciosDesde.marcar(
+        categoria: categoria,
+        desde: desde,
+      );
+      if (!mounted) return;
+      setState(() => _desde = lista);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            desde
+                ? 'Listo: los precios de $categoria dicen "Desde".'
+                : 'Listo: los precios de $categoria ya no dicen "Desde".',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(mensajeParaLaClienta(error))),
+      );
+    } finally {
+      if (mounted) setState(() => _marcandoDesde = false);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -54,6 +97,7 @@ class _ServiciosPageState extends State<ServiciosPage> {
       widget.branchId,
     );
     _cargarTiempos();
+    _cargarDesde();
   }
 
   void reload() {
@@ -277,6 +321,26 @@ class _ServiciosPageState extends State<ServiciosPage> {
                             ],
                           ),
                         ),
+                        // D-326: al elegir una categoría, su interruptor.
+                        if (categories.contains(_selectedCategory)) ...[
+                          const SizedBox(height: 8),
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            value: _desde.aplica(_selectedCategory),
+                            onChanged: _marcandoDesde
+                                ? null
+                                : (v) => _marcarDesde(_selectedCategory, v),
+                            title: Text(
+                              'Precios "desde" en $_selectedCategory',
+                              style: const TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                            subtitle: const Text(
+                              'Todos sus servicios dicen "Desde \$…" en tu página, '
+                              'al agendar y en cada cita. El total y el cobro '
+                              'siguen con el precio exacto.',
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -336,6 +400,7 @@ class _ServiciosPageState extends State<ServiciosPage> {
                               onEdit: () => openEditServiceDialog(service),
                               onToggleActive: () => toggleActive(service),
                               tiempoDeVolver: _tiempos[service.id],
+                              desde: _desde.aplica(service.category),
                             ),
                           ),
                       ],
@@ -374,10 +439,14 @@ class ServiceRow extends StatelessWidget {
     required this.onEdit,
     required this.onToggleActive,
     this.tiempoDeVolver,
+    this.desde = false,
   });
 
   /// D-314: su propio tiempo de volver, si tiene (si no, manda el del salón).
   final int? tiempoDeVolver;
+
+  /// D-326: su categoría tiene precio "desde".
+  final bool desde;
 
   @override
   Widget build(BuildContext context) {
@@ -421,7 +490,7 @@ class ServiceRow extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      service.formattedPrice,
+                      desde ? 'Desde ${service.formattedPrice}' : service.formattedPrice,
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,

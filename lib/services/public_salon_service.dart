@@ -6,7 +6,9 @@ import '../models/public_salon_profile.dart';
 import '../models/public_salon_review_item.dart';
 import '../models/public_salon_service_item.dart';
 import '../models/public_salon_team_member.dart';
+import 'precios_desde_service.dart';
 import 'public_booking_service.dart';
+import '../models/precios_desde.dart';
 
 /// Llama a las RPC públicas (rol "anon", sin sesión) que arman la página
 /// completa de un negocio (D-098, D-164, D-165).
@@ -127,6 +129,10 @@ class PublicSalonService {
       getReviews(profile.tenantId),
       getBlogPosts(profile.tenantId),
       getServiciosConEstilista(profile.primaryBranchId),
+      // D-326: las categorías con precio "desde". Nunca falla.
+      profile.primaryBranchId == null
+          ? Future.value(PreciosDesde.ninguno)
+          : PreciosDesdeService(branchId: profile.primaryBranchId!).leer(),
     ]);
 
     return PublicSalonFullProfile(
@@ -137,6 +143,7 @@ class PublicSalonService {
       reviews: results[3] as PublicSalonReviewsSummary,
       blogPosts: results[4] as List<PublicSalonBlogPost>,
       serviciosConEstilista: results[5] as Set<String>?,
+      preciosDesde: results[6] as PreciosDesde,
     );
   }
 }

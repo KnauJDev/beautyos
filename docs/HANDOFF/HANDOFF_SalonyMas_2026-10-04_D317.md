@@ -278,6 +278,9 @@ contraste corregido, en el buzón (I-22).
    **D-325 (09-oct):** con su sí, los 4 estilistas (Antonio, David, Diana, Mauricio) hacen los
    28 servicios, menos *Corte personalizado y asesoría*, solo de David. ✅ Aplicado (respaldo
    `Backup_2026-10-09_11-19-14`): **28 servicios reservables en línea** (eran 3).
+   **D-326 (09-oct):** precios *"desde"* por categoría, marcados en Servicios; a David, Color.
+   ✅ Migración aplicada (respaldo `Backup_2026-10-09_11-33-28`), control 249 en 7/7, app
+   escrita. El total y *"Cobrar"* siguen exactos.
    A David le quedan: la duración de *Keratina* (30 min), el precio de *Extensiones*
    ($2.900.000) y asignar estilistas, *Corte personalizado y asesoría* solo a él.
 

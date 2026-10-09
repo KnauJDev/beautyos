@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
 import '../models/pagina_publica.dart';
+import '../models/precios_desde.dart';
 import '../models/public_salon_blog_post.dart';
 import '../models/public_salon_photo_item.dart';
 import '../models/public_salon_profile.dart';
@@ -302,6 +303,7 @@ class _ContenidoDeLaPaginaPublicaState
               conEstilista: perfil.serviciosConEstilista,
               whatsapp: salon.whatsapp?.trim() ?? '',
               onAbrir: widget.onAbrir,
+              preciosDesde: perfil.preciosDesde,
             ),
           if (perfil.team.isNotEmpty)
             _Seccion(
@@ -974,6 +976,7 @@ class _Servicios extends StatefulWidget {
     required this.conEstilista,
     required this.whatsapp,
     required this.onAbrir,
+    this.preciosDesde = PreciosDesde.ninguno,
   });
 
   final List<PublicSalonServiceItem> servicios;
@@ -983,6 +986,7 @@ class _Servicios extends StatefulWidget {
   final Set<String>? conEstilista;
   final String whatsapp;
   final Future<void> Function(Uri uri) onAbrir;
+  final PreciosDesde preciosDesde;
 
   @override
   State<_Servicios> createState() => _ServiciosState();
@@ -1039,6 +1043,7 @@ class _ServiciosState extends State<_Servicios> {
                     conEstilista: widget.conEstilista,
                     whatsapp: widget.whatsapp,
                     onAbrir: widget.onAbrir,
+                    preciosDesde: widget.preciosDesde,
                   ),
                 ],
               ],
@@ -1091,6 +1096,7 @@ class _FilaDeServicio extends StatelessWidget {
     required this.conEstilista,
     required this.whatsapp,
     required this.onAbrir,
+    this.preciosDesde = PreciosDesde.ninguno,
   });
 
   final PublicSalonServiceItem servicio;
@@ -1098,6 +1104,7 @@ class _FilaDeServicio extends StatelessWidget {
   final Set<String>? conEstilista;
   final String whatsapp;
   final Future<void> Function(Uri uri) onAbrir;
+  final PreciosDesde preciosDesde;
 
   @override
   Widget build(BuildContext context) {
@@ -1129,7 +1136,8 @@ class _FilaDeServicio extends StatelessWidget {
                       style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
                     ),
                     Text(
-                      servicio.priceLabel,
+                      // D-326: "Desde $400.000" si su categoría está marcada.
+                      preciosDesde.precio(servicio.priceLabel, servicio.description),
                       style: const TextStyle(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w800,

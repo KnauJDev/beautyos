@@ -8,7 +8,9 @@ import '../models/mensaje_para_la_clienta.dart';
 import '../models/available_appointment_slot.dart';
 import '../models/public_booking_result.dart';
 import '../models/public_branch_info.dart';
+import '../models/precios_desde.dart';
 import '../models/public_service_option.dart';
+import '../services/precios_desde_service.dart';
 import '../services/public_booking_service.dart';
 import '../widgets/elegir_fecha.dart';
 import '../widgets/elegir_servicio.dart';
@@ -69,6 +71,9 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
   PublicBranchInfo? branchInfo;
   List<PublicServiceOption> services = [];
 
+  /// D-326: las categorías con precio "desde".
+  PreciosDesde preciosDesde = PreciosDesde.ninguno;
+
   String? selectedServiceId;
 
   /// `null` significa "Cualquiera disponible" (D-166).
@@ -109,6 +114,7 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
       final serviceOptions = await bookingService.getBookableServices(
         widget.branchId,
       );
+      final desde = await PreciosDesdeService(branchId: widget.branchId).leer();
 
       // D-093d: el cliente que reserva ve los colores de SU salon, no los de
       // Salon y Mas. Se aplica antes del setState para que la pantalla se
@@ -119,6 +125,7 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
       setState(() {
         branchInfo = info;
         services = serviceOptions;
+        preciosDesde = desde;
         isLoading = false;
         if (widget.preselectedServiceId != null &&
             serviceOptions.any(
@@ -539,7 +546,7 @@ class _PublicBookingPageState extends State<PublicBookingPage> {
                       nombre: s.serviceName,
                       categoria: s.category,
                       duracionMinutos: s.durationMinutes,
-                      precio: s.formattedPrice,
+                      precio: preciosDesde.precio(s.formattedPrice, s.category),
                     ),
                 ],
                 elegidoId: selectedServiceId,

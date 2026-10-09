@@ -7,6 +7,7 @@ import '../theme/app_theme.dart';
 import '../models/stylist_management_item.dart';
 import '../models/stylist_service_option.dart';
 import '../models/stylist_service_summary.dart';
+import '../services/precios_desde_service.dart';
 import '../services/stylist_photo_upload_service.dart';
 import '../services/stylist_services_service.dart';
 import '../services/stylists_service.dart';
@@ -47,6 +48,8 @@ class _EstilistasPageState extends State<EstilistasPage> {
     );
     final stylistServices = await stylistServicesService
         .getStylistServicesSummary();
+    // D-326: los precios "desde" de las fichas de servicios. Nunca falla.
+    await PreciosDesdeService(branchId: widget.branchId).cargarEnElSalon();
 
     return _StylistsPageData(
       stylists: stylists,
@@ -589,7 +592,9 @@ class StylistServiceChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
-        '${service.serviceName} · ${service.formattedPrice} · ${service.durationMinutes} min',
+        '${service.serviceName} · '
+        '${preciosDesdeDelSalon.value.precio(service.formattedPrice, service.category)} · '
+        '${service.durationMinutes} min',
         style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w700,
@@ -666,7 +671,8 @@ class _ManageStylistServicesDialogState
                       controlAffinity: ListTileControlAffinity.leading,
                       title: Text(option.serviceName),
                       subtitle: Text(
-                        '${option.category} · ${option.formattedPrice} · '
+                        '${option.category} · '
+                        '${preciosDesdeDelSalon.value.precio(option.formattedPrice, option.category)} · '
                         '${option.durationMinutes} min',
                       ),
                       onChanged: (value) {
