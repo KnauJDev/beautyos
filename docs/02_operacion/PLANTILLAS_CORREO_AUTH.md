@@ -31,11 +31,11 @@ hoy desde algún lugar de la aplicación:
 | Plantilla | ¿Se usa hoy en Salón y Más? |
 |---|---|
 | **Confirm signup** | ✅ **Sí.** `register_page.dart` llama a `auth.signUp(...)` y este es el correo que confirma la cuenta nueva. **Reescrita el 18-sep (D-248): ya no lleva enlace, lleva un código.** *(Decía «de 6 números» hasta el 19-sep: la longitud la decide Supabase, y la de este proyecto es de **ocho** — hallazgo AY.)* |
-| **Reset Password** | ⬜ No. No existe todavía un enlace de "olvidé mi contraseña" en `LoginPage` ni ninguna llamada a `resetPasswordForEmail`. |
+| **Reset Password** | ✅ **Sí, desde el 09-oct (D-327, hallazgo CO).** *¿Olvidaste tu contraseña?* en `LoginPage` llama a `resetPasswordForEmail` y la persona escribe el código con `verifyOTP(type: recovery)`. **Reescrita ese día: lleva un código, no un enlace** (sección 5). *(Hasta el 09-oct decía «No. No existe todavía un enlace de "olvidé mi contraseña"».)* |
 | **Magic Link** | ⬜ No. Ninguna pantalla llama a `signInWithOtp`. |
 | **Invite user** | ⬜ No. Las invitaciones de equipo de este proyecto usan un flujo propio (`create_team_invitation` + Edge Function `send-invitation-email` por Resend, D-062/D-065) — **no** el invite nativo de Supabase Auth (`admin.inviteUserByEmail`). Esta plantilla queda lista por si alguna vez se usa ese camino nativo, pero hoy no lo dispara nada. |
 | **Change Email Address** | ⬜ No. No hay pantalla para cambiar el correo de la cuenta todavía. |
-| **Reauthentication** | ⬜ No. Ninguna pantalla llama a `reauthenticate()`. |
+| **Reauthentication** | ✅ **Sí, desde el 09-oct (D-327).** *Cambiar contraseña* (en *Seguridad de tu cuenta*) llama a `reauthenticate()` cuando Supabase responde `reauthentication_needed`, y la persona escribe el código. Ya llevaba `{{ .Token }}` (sección 9). *(Hasta el 09-oct decía «No. Ninguna pantalla llama a `reauthenticate()`».)* |
 
 **Por qué se traducen las seis igual, aunque cinco estén dormidas:** el panel
 de Supabase no avisa cuándo una plantilla en inglés queda huérfana el día que
@@ -149,11 +149,25 @@ Tu código para activar tu cuenta en Salón y Más
 
 ## 5. Reset Password (Recuperación de contraseña)
 
-**Estado:** ⬜ dormida — lista para cuando exista "olvidé mi contraseña".
+**Estado:** activa desde el 09-oct (D-327, hallazgo CO). **Reescrita ese día: lleva un código.**
+
+> ### Por qué esta plantilla ya no lleva enlace
+>
+> Hasta el 09-oct estaba dormida, con un botón **Crear nueva contraseña** y
+> `{{ .ConfirmationURL }}`. Es el mismo enlace de un solo uso que en *Confirm
+> signup* gastaban los escáneres antifraude del buzón antes que la persona
+> (D-248). Además, la app no tiene una pantalla que reciba ese enlace: la
+> persona escribe el código en *¿Olvidaste tu contraseña?*.
+>
+> **Cuántos dígitos trae lo decide Supabase**, igual que en *Confirm signup*:
+> la app no lo escribe en ningún lado (hallazgo AY).
+>
+> **Si la cuenta tiene la verificación en dos pasos, se sigue pidiendo**
+> después del código del correo: con solo el correo no se entra.
 
 **Subject heading:**
 ```
-Recupera el acceso a tu cuenta en Salón y Más
+Tu código para recuperar tu cuenta en Salón y Más
 ```
 
 **Message body:**
@@ -168,9 +182,9 @@ Recupera el acceso a tu cuenta en Salón y Más
   .header { background:#7C3AED; padding:28px 24px; text-align:center; }
   .header h1 { color:#FFFFFF; margin:0; font-size:20px; font-weight:700; }
   .content { padding:32px 24px; line-height:1.6; font-size:14px; }
-  .btn-container { text-align:center; margin:28px 0; }
-  .btn { display:inline-block; background-color:#7C3AED; color:#FFFFFF !important; text-decoration:none; padding:14px 28px; font-weight:700; font-size:15px; border-radius:8px; }
-  .muted { font-size:12px; color:#6B7280; word-break:break-all; }
+  .codigo { text-align:center; margin:28px 0; }
+  .codigo span { display:inline-block; background:#F8F5FF; border:2px solid #7C3AED; border-radius:10px; padding:16px 28px; font-size:34px; font-weight:800; letter-spacing:10px; color:#4C1D95; }
+  .muted { font-size:12px; color:#6B7280; }
   .footer { background:#F8FAFC; border-top:1px solid #E5E7EB; padding:16px; text-align:center; font-size:12px; color:#94A3B8; }
   .footer a { color:#7C3AED; text-decoration:none; }
 </style>
@@ -179,25 +193,26 @@ Recupera el acceso a tu cuenta en Salón y Más
   <div class="container">
     <div class="header"><h1>Salón y Más</h1></div>
     <div class="content">
-      <p>Hola,</p>
-      <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta en
-      <strong>Salón y Más</strong>. Si fuiste tú, crea una nueva contraseña aquí:</p>
-      <div class="btn-container">
-        <a href="{{ .ConfirmationURL }}" class="btn">Crear nueva contraseña</a>
-      </div>
-      <p>Si el botón no funciona, copia y pega este enlace en tu navegador:</p>
-      <p class="muted">{{ .ConfirmationURL }}</p>
-      <p style="color:#6B7280;">Si no solicitaste este cambio, ignora este correo:
-      tu contraseña actual sigue siendo válida y tu cuenta está segura.</p>
+      <p>¡Hola!</p>
+      <p>Pediste recuperar tu cuenta. Escribe este código en la pantalla de
+      <strong>¿Olvidaste tu contraseña?</strong> y crea una contraseña nueva:</p>
+      <div class="codigo"><span>{{ .Token }}</span></div>
+      <p class="muted">El código sirve una sola vez y caduca en una hora. Si se
+      te pasa, pide otro desde la misma pantalla: el anterior deja de servir.</p>
+      <p style="color:#6B7280;">Si no fuiste tú, ignora este correo: tu
+      contraseña de ahora sigue sirviendo y nadie entra sin este código.</p>
     </div>
     <div class="footer">
-      Salón y Más — Plataforma de gestión para centros de estética, barberías y spas<br>
-      <a href="{{ .SiteURL }}">{{ .SiteURL }}</a> · hola@salonymas.com
+      Salón y Más &mdash; Plataforma de gestión para centros de estética, barberías y spas<br>
+      <a href="{{ .SiteURL }}">{{ .SiteURL }}</a> &middot; hola@salonymas.com
     </div>
   </div>
 </body>
 </html>
 ```
+
+> **Al pegarla, no dejes ningún `{{ .ConfirmationURL }}` en el cuerpo**, por la
+> misma razón que en *Confirm signup*: el escáner del buzón lo visitaría.
 
 ---
 

@@ -281,6 +281,10 @@ contraste corregido, en el buzón (I-22).
    **D-326 (09-oct):** precios *"desde"* por categoría, marcados en Servicios; a David, Color.
    ✅ Migración aplicada (respaldo `Backup_2026-10-09_11-33-28`), control 249 en 7/7, app
    escrita. El total y *"Cobrar"* siguen exactos.
+   **D-327 (09-oct), hallazgo CO:** *¿Olvidaste tu contraseña?* con un código al correo (y la
+   verificación en dos pasos si la cuenta la tiene) y *Cambiar contraseña* en *Seguridad de tu
+   cuenta*, para todos los roles. ✅ App escrita (859 pruebas). ⬜ El propietario pega la
+   plantilla *Reset Password* (`PLANTILLAS_CORREO_AUTH.md` §5) y lo prueba de verdad.
    ✅ *Keratina* ya en 180 min y *Extensiones* confirmado en $2.900.000 (09-oct); los
    estilistas, con D-325.
 

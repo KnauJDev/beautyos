@@ -9,6 +9,7 @@ import '../services/limpiar_direccion.dart';
 import '../theme/app_theme.dart';
 
 import 'public_plans_page.dart';
+import 'recuperar_contrasena_page.dart';
 import 'register_page.dart';
 import 'terms_and_privacy_page.dart';
 
@@ -439,7 +440,21 @@ class _LoginPageState extends State<LoginPage> {
                         }),
                         child: const Text('Volver a entrar con contraseña'),
                       ),
-                    ] else
+                    ] else ...[
+                      // CO (D-327): con un código al correo, como al
+                      // activar la cuenta.
+                      TextButton(
+                        onPressed: isLoading
+                            ? null
+                            : () => Navigator.of(context).push<bool>(
+                                MaterialPageRoute(
+                                  builder: (_) => RecuperarContrasenaPage(
+                                    correoInicial: emailController.text,
+                                  ),
+                                ),
+                              ),
+                        child: const Text('¿Olvidaste tu contraseña?'),
+                      ),
                       TextButton(
                         onPressed: () =>
                             pasarAConfirmarPorCodigo(avisar: false),
@@ -448,6 +463,7 @@ class _LoginPageState extends State<LoginPage> {
                           textAlign: TextAlign.center,
                         ),
                       ),
+                    ],
                     const SizedBox(height: 18),
                     Container(
                       width: double.infinity,

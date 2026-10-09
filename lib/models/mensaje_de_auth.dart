@@ -40,6 +40,13 @@ class MensajeDeAuth {
         return 'Revisa el correo: parece que está mal escrito.';
       case 'signup_disabled':
         return 'Los registros están cerrados en este momento.';
+      // Recuperar y cambiar la contraseña (hallazgo CO, D-327).
+      case 'same_password':
+        return 'Esa es la misma contraseña que ya tienes. Escribe una distinta.';
+      case 'reauthentication_not_valid':
+        return 'Ese código no sirve. Revisa el del correo más reciente o pide otro.';
+      case 'insufficient_aal':
+        return 'Primero confirma con el código de tu app autenticadora.';
       default:
         // A propósito: si no lo conocemos, se enseña tal cual. Tragarse un
         // error porque no está traducido es exactamente lo que hacía AM.

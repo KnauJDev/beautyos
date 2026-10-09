@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../theme/app_theme.dart';
 import '../services/app_version_service.dart';
+import 'cambiar_contrasena_dialog.dart';
 import 'update_banner.dart';
 
 /// Activar/desactivar verificacion en dos pasos (TOTP) para el usuario
@@ -209,6 +210,23 @@ class _SecuritySettingsDialogState extends State<SecuritySettingsDialog> {
     }
   }
 
+  /// CO (D-327): cambiar la contraseña, para todos los roles.
+  Future<void> _cambiarContrasena() async {
+    final cambiada = await showDialog<bool>(
+      context: context,
+      builder: (_) => const CambiarContrasenaDialog(),
+    );
+    if (cambiada == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Contraseña cambiada. La próxima vez entras con la nueva.',
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -219,6 +237,40 @@ class _SecuritySettingsDialogState extends State<SecuritySettingsDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              children: [
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Contraseña',
+                        style: TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      Text(
+                        'La que usas para ingresar',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                TextButton(
+                  onPressed: isBusy || _pendingFactorId != null
+                      ? null
+                      : _cambiarContrasena,
+                  child: const Text('Cambiar'),
+                ),
+              ],
+            ),
+            const Divider(height: 24),
+            const Text(
+              'Verificación en dos pasos',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
             Flexible(
               child: FutureBuilder<List<Factor>>(
                 future: factorsFuture,
