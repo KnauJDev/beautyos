@@ -387,8 +387,15 @@ Confirma el cambio de correo de tu cuenta en Salón y Más
 
 ## 9. Reauthentication (Código de verificación / Reautenticación)
 
-**Estado:** ⬜ dormida — lista para cuando exista una acción sensible que
-pida confirmar identidad de nuevo.
+**Estado:** activa desde el 09-oct (D-327): la usa *Cambiar contraseña* cuando
+Supabase pide confirmar (`reauthentication_needed`). *(Decía «dormida — lista
+para cuando exista una acción sensible que pida confirmar identidad de nuevo».)*
+
+> **El asunto del panel no era el de este documento.** El 09-oct, al
+> revisarla, el panel decía *«{{ .Token }} Es tú código de verificación de
+> Salón y Más»*: alguien le había puesto el código al principio (buena idea:
+> se ve en la notificación del celular) y una tilde que no va. Se dejó el
+> código y se corrigió la tilde. **El asunto vigente es el de abajo.**
 
 **Distinto de las otras cinco:** no es un enlace, es un **código numérico**
 que la persona debe volver a escribir dentro de la aplicación. Por eso no usa
@@ -396,7 +403,7 @@ que la persona debe volver a escribir dentro de la aplicación. Por eso no usa
 
 **Subject heading:**
 ```
-Tu código de verificación de Salón y Más
+{{ .Token }} es tu código de verificación de Salón y Más
 ```
 
 **Message body:**
