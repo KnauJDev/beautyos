@@ -115,7 +115,7 @@ como con D-323).
 
 | | Qué | Estado |
 |---|---|---|
-| **u** | **No recuperar *Prueba Barbería Elite*** (D-328) | El asistente lo aconsejó; falta tu sí |
+| **u** | ~~**No recuperar *Prueba Barbería Elite***~~ (D-328) | ✅ 09-oct: *"sí, no la recuperes"* |
 | **v** | **CP**: el texto del campo del estilista en Nueva cita | Propuesta: *"2. Estilista"*, con *"Cualquiera disponible"* dentro de la lista |
 | **c** | **Cuándo pasar a Supabase Pro** | El asistente aconsejó esperar |
 | **d** | **I-13**: acceso de lectura a la base para el asistente | Hoy cada lectura es un comando tuyo |
