@@ -281,8 +281,8 @@ contraste corregido, en el buzón (I-22).
    **D-326 (09-oct):** precios *"desde"* por categoría, marcados en Servicios; a David, Color.
    ✅ Migración aplicada (respaldo `Backup_2026-10-09_11-33-28`), control 249 en 7/7, app
    escrita. El total y *"Cobrar"* siguen exactos.
-   A David le quedan: la duración de *Keratina* (30 min), el precio de *Extensiones*
-   ($2.900.000) y asignar estilistas, *Corte personalizado y asesoría* solo a él.
+   ✅ *Keratina* ya en 180 min y *Extensiones* confirmado en $2.900.000 (09-oct); los
+   estilistas, con D-325.
 
 **Lo inmediato (08-oct): la visita a David, en persona.** Con él: (1) encenderle *Los cinco
 lugares* (Panel → Inspirant → *Novedades*) y enseñárselos; (2) que elija el tema
