@@ -143,6 +143,14 @@ void main() {
     expect(panel, contains('child: Text(etiquetaDelEstadoDeSede(e)),'));
     expect(panel, contains('Esto borra el negocio entero, con todas sus '));
     expect(panel, contains('const servicio = CerrarSedeService(desdeLaPlataforma: true);'));
+    // Hallazgo CS: tras cambiar una sede, la lista de la izquierda también se
+    // recarga (no solo la ficha).
+    final recargar = panel.substring(
+      panel.indexOf('  void _recargarSedes() {'),
+      panel.indexOf('  /// Cambia el estado de pago de UNA sede'),
+    );
+    expect(recargar, contains('widget.onAjustesCambiados?.call();'));
+    expect(panel, contains('onAjustesCambiados: _refrescarSinParpadeo,'));
     final tarjeta = leer('lib/widgets/sedes_suscripcion_card.dart');
     expect(tarjeta, contains("'Sedes cerradas',"));
     expect(tarjeta, contains('onCerrarOAbrir: widget.puedeCerrar && !s.isPrimary'));

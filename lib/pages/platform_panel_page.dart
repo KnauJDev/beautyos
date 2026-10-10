@@ -2412,7 +2412,9 @@ class _TenantDetailSheet extends StatefulWidget {
 
   /// Se llama al mover un interruptor o cambiar un límite del negocio, para
   /// que la lista de la izquierda actualice su "N ajustes especiales" sin
-  /// tocar ↻ (D-310: quedó pendiente; visto otra vez el 04-oct).
+  /// tocar ↻ (D-310: quedó pendiente; visto otra vez el 04-oct). Y al
+  /// cambiar una sede (*Pago*, *Datos*, *Cerrar sede*, *Volver a abrir*),
+  /// para que la tarjeta cuente bien sus sedes (hallazgo CS, 10-oct).
   final VoidCallback? onAjustesCambiados;
 
   /// Se dibuja dentro de la columna derecha en vez de flotar sobre todo.
@@ -2527,6 +2529,9 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
         widget.tenant.tenantId,
       );
     });
+    // Hallazgo CS: la tarjeta de la izquierda seguía diciendo "1 sede · 1 sin
+    // pagar" tras reabrir una sede, hasta recargar la página.
+    widget.onAjustesCambiados?.call();
   }
 
   /// Cambia el estado de pago de UNA sede (D-236, paso 9.36).

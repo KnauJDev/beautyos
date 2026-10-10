@@ -193,7 +193,7 @@ como con D-323).
 2. ✅ **Paso 9.65, cerrar una sede sin perder nada** (CQ, D-328). ✅ 10-oct: aplicado (control
    250 en 8/8), publicado y **probado de verdad** con *Prueba Dos Sedes*; **CQ cerrado**. De la
    prueba salió **CR** → paso **9.66** (D-329, reabrir como estaba): aplicado, control 251 en
-   6/6, publicado y probado; **CR cerrado**. Salió **CS** (🟢 la lista del Panel no se refresca). (1) Lectura viva de lo que
+   6/6, publicado y probado; **CR cerrado**. Salió **CS** (🟢 la lista del Panel no se refresca): arreglado el 10-oct; ⬜ verlo en el Panel. (1) Lectura viva de lo que
    hace hoy cada estado de la sede; (2) prototipo de *Cerrar sede* y *Volver a abrir*, con
    los estados en español y el aviso junto a *Borrar negocio de prueba*; (3) construir; (4)
    probarlo con **un negocio de prueba nuevo de dos sedes**.
