@@ -5,8 +5,8 @@ import '../models/cerrar_sede.dart';
 /// Las funciones del paso 9.65 (D-328), migración `20261010100000`, control
 /// 250. El dueño del salón (`close_branch`, `reopen_branch`) o la plataforma
 /// desde el Panel (`platform_close_branch`, `platform_reopen_branch`). Al
-/// reabrirla el dueño queda pendiente de pago, como una sede nueva; al
-/// reabrirla la plataforma, activa.
+/// reabrirla vuelve con el estado de pago que tenía al cerrarse (D-329,
+/// migración `20261010200000`, control 251).
 class CerrarSedeService {
   const CerrarSedeService({this.desdeLaPlataforma = false});
 

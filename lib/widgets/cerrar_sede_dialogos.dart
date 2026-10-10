@@ -72,11 +72,12 @@ Future<bool> reabrirSede(
       content: SizedBox(
         width: 420,
         child: Text(
+          // D-329: vuelve como estaba al cerrarse, desde los dos sitios.
           plataforma
-              ? 'Vuelve a verse, a recibir citas y queda activa. Si hace falta, '
-                    'cámbiale después el estado de pago.'
-              : 'Vuelve a verse y a recibir citas. Queda pendiente de pago, como '
-                    'una sede nueva.',
+              ? 'Vuelve a verse y a recibir citas, con el estado de pago que '
+                    'tenía al cerrarse. Si hace falta, cámbialo después en Pago.'
+              : 'Vuelve a verse y a recibir citas, con el estado de pago que '
+                    'tenía al cerrarse.',
         ),
       ),
       actions: [
@@ -101,11 +102,7 @@ Future<bool> reabrirSede(
   }
   avisos.showSnackBar(
     SnackBar(
-      content: Text(
-        plataforma
-            ? '$nombre abierta otra vez, activa.'
-            : '$nombre abierta otra vez. Queda pendiente de pago, como una sede nueva.',
-      ),
+      content: Text('$nombre abierta otra vez, con el pago como estaba al cerrarse.'),
     ),
   );
   return true;

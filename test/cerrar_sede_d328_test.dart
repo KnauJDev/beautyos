@@ -119,17 +119,21 @@ void main() {
       expect(falso.cerradas, isEmpty);
     });
 
-    testWidgets('el dueño la reabre pendiente de pago; la plataforma, activa', (tester) async {
+    // D-329: vuelve como estaba al cerrarse, la reabra quien la reabra.
+    testWidgets('reabrir dice que vuelve con el pago que tenía', (tester) async {
       final salon = FakeCerrar();
       await correr(tester, salon, reabrir: true);
-      expect(find.textContaining('pendiente de pago, como una sede nueva'), findsOneWidget);
+      expect(find.textContaining('con el estado de pago que tenía al cerrarse'), findsOneWidget);
+      expect(find.textContaining('pendiente de pago'), findsNothing);
       await tester.tap(find.text('Volver a abrir'));
       await tester.pumpAndSettle();
       expect(salon.reabiertas, ['b2']);
+      expect(find.text('Norte abierta otra vez, con el pago como estaba al cerrarse.'), findsOneWidget);
 
       final panel = FakeCerrar(plataforma: true);
       await correr(tester, panel, reabrir: true);
-      expect(find.textContaining('queda activa'), findsOneWidget);
+      expect(find.textContaining('cámbialo después en Pago'), findsOneWidget);
+      expect(find.textContaining('queda activa'), findsNothing);
     });
   });
 

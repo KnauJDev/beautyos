@@ -10,8 +10,11 @@
 --      cierra dos veces.
 --   5. Su historial sigue: el Dashboard la cuenta, su reporte se puede pedir
 --      y el reporte del negocio la suma y la marca `cerrada`.
---   6. El dueño la reabre: activa y pendiente de pago, con su rastro.
---   7. La plataforma la cierra y la reabre: queda activa.
+--   6. El dueño la reabre: activa y como estaba (en mora), con su rastro.
+--   7. La plataforma la cierra y la reabre: queda como estaba.
+--   (6 y 7 cambiaron con D-329, el 10-oct: antes esperaban `pending` y
+--   `active`; ahora una sede reabierta vuelve como estaba al cerrarse. Lo
+--   nuevo lo prueba a fondo el CONTROL 251.)
 --   8. Un administrador no la cierra, y sin sesión no se puede.
 --
 -- COMO SE EJECUTA (despues de aplicar 20261010100000_cerrar_una_sede_sin_borrar_nada_d328.sql)
@@ -225,7 +228,7 @@ begin
   perform public.reopen_branch(v_sede);
   select bs.status into v_texto from public.branch_subscriptions bs where bs.branch_id = v_sede;
   if not exists (select 1 from public.branches b where b.id = v_sede and b.active)
-     or v_texto is distinct from 'pending' then
+     or v_texto is distinct from 'past_due' then
     raise exception 'FALLO 6: al reabrirla el dueno quedo activa=% estado=%',
       exists (select 1 from public.branches b where b.id = v_sede and b.active), v_texto;
   end if;
@@ -235,7 +238,7 @@ begin
   ) then
     raise exception 'FALLO 6b: no quedo el rastro sede_reabierta';
   end if;
-  raise notice 'OK 6   el dueno la reabre: activa y pendiente de pago, con su rastro';
+  raise notice 'OK 6   el dueno la reabre: activa y como estaba (en mora), con su rastro';
 
   -- ---------------------------------------------------------------- 7
   perform set_config('request.jwt.claims',
@@ -243,11 +246,11 @@ begin
   perform public.platform_close_branch(v_sede);
   perform public.platform_reopen_branch(v_sede);
   select bs.status into v_texto from public.branch_subscriptions bs where bs.branch_id = v_sede;
-  if v_texto is distinct from 'active'
+  if v_texto is distinct from 'past_due'
      or not exists (select 1 from public.branches b where b.id = v_sede and b.active) then
     raise exception 'FALLO 7: tras cerrar y reabrir desde el Panel quedo %', v_texto;
   end if;
-  raise notice 'OK 7   la plataforma la cierra y la reabre: queda activa';
+  raise notice 'OK 7   la plataforma la cierra y la reabre: queda como estaba';
 
   -- ---------------------------------------------------------------- 8
   perform set_config('request.jwt.claims',
