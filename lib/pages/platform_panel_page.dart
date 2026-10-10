@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
 import '../models/branch_subscription.dart';
+import '../models/cerrar_sede.dart' show etiquetaDelEstadoDeSede;
 import '../models/cifra_escrita.dart';
 import '../models/platform_partner.dart';
 import '../models/platform_saas_metrics.dart';
@@ -13,10 +14,12 @@ import '../models/platform_tenant_summary.dart';
 import '../models/tenant_subscription_history_entry.dart';
 import '../models/ticket_board.dart' show formatCOP;
 import '../models/tipo_de_negocio.dart';
+import '../services/cerrar_sede_service.dart';
 import '../services/epayco_checkout_service.dart';
 import '../services/monitoreo_service.dart';
 import '../services/platform_service.dart';
 import '../services/slug_del_salon_service.dart';
+import '../widgets/cerrar_sede_dialogos.dart';
 import '../widgets/dialogo_datos_de_sede.dart';
 import '../widgets/security_settings_dialog.dart';
 import '../widgets/update_banner.dart';
@@ -2494,6 +2497,25 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
     );
   }
 
+  /// D-328: cerrar una sede (o volver a abrirla) sin borrar nada.
+  Future<void> _cerrarOAbrirSede(BranchSubscription sede) async {
+    const servicio = CerrarSedeService(desdeLaPlataforma: true);
+    final hecho = sede.branchActive
+        ? await cerrarSedeConCuidado(
+            context,
+            servicio: servicio,
+            branchId: sede.branchId,
+            nombre: sede.branchName,
+          )
+        : await reabrirSede(
+            context,
+            servicio: servicio,
+            branchId: sede.branchId,
+            nombre: sede.branchName,
+          );
+    if (hecho && mounted) _recargarSedes();
+  }
+
   void _recargarSedes() {
     setState(() {
       _branchesFuture = widget.platformService.getTenantBranches(
@@ -2569,8 +2591,12 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                     border: OutlineInputBorder(),
                   ),
                   items: [
+                    // D-328: en español (decían `past_due`, `cancelled`…).
                     for (final e in estados)
-                      DropdownMenuItem(value: e, child: Text(e)),
+                      DropdownMenuItem(
+                        value: e,
+                        child: Text(etiquetaDelEstadoDeSede(e)),
+                      ),
                   ],
                   onChanged: (v) => setModalState(() => estado = v ?? estado),
                 ),
@@ -2899,7 +2925,9 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
     // Hallazgo BI: el 23-sep esta ficha decía *Al día · Pagada hasta 22/09*
     // un día después de vencer. `al_dia` solo mira el estado, y nada lo mueve
     // cuando la fecha pasa.
-    final etiqueta = sede.estaAlDia
+    final etiqueta = !sede.branchActive
+        ? 'Cerrada (D-328): no se ve, no recibe citas y no se cobra'
+        : sede.estaAlDia
         ? 'Al día'
         : sede.periodoVencido && sede.alDia
         ? 'Vencida sin pagar'
@@ -2966,6 +2994,26 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                     foregroundColor: AppColors.brand,
                   ),
                 ),
+                // D-328: cerrar no es borrar. La principal no se cierra.
+                if (!sede.isPrimary) ...[
+                  const SizedBox(width: AppSpacing.xs),
+                  OutlinedButton.icon(
+                    onPressed: () => _cerrarOAbrirSede(sede),
+                    icon: Icon(
+                      sede.branchActive
+                          ? Icons.store_mall_directory_outlined
+                          : Icons.storefront_outlined,
+                      size: 15,
+                    ),
+                    label: Text(sede.branchActive ? 'Cerrar sede' : 'Volver a abrir'),
+                    style: OutlinedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      foregroundColor: sede.branchActive
+                          ? AppColors.danger
+                          : AppColors.success,
+                    ),
+                  ),
+                ],
               ],
             ],
           ),
@@ -3017,8 +3065,9 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
           Text(
             sede.branchActive
                 ? 'La sede está abierta y operando.'
-                : 'La sede está cerrada. Ojo: cerrada y en mora no son lo mismo '
-                      '— esta puede estar pagada igual.',
+                // D-328: cerrar ya no es solo apagarla: tampoco se cobra.
+                : 'La sede está cerrada: no se ve, no recibe citas y no se '
+                      'cobra. Su historial se conserva y se puede volver a abrir.',
             style: TextStyle(
               fontSize: 11,
               color: sede.branchActive ? AppColors.textMuted : color,
@@ -3772,6 +3821,19 @@ class _TenantDetailSheetState extends State<_TenantDetailSheet> {
                                     fontWeight: FontWeight.w800,
                                     color: AppColors.danger,
                                     letterSpacing: 0.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                // D-328 (hallazgo CQ): el 09-oct se usó este
+                                // botón queriendo cerrar una sede.
+                                const Text(
+                                  'Esto borra el negocio entero, con todas sus '
+                                  'sedes. Para cerrar solo una sede, usa '
+                                  '"Cerrar sede" en su ficha: no se pierde nada.',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.textPrimary,
                                   ),
                                 ),
                                 const SizedBox(height: 4),

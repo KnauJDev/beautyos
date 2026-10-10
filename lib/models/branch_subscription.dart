@@ -161,6 +161,8 @@ class BranchSubscription {
 
   /// Lo que se le dice al dueño, en su idioma y no en el de la base de datos.
   String get etiquetaEstado {
+    // D-328: cerrada manda sobre cualquier estado de pago.
+    if (!branchActive) return 'Cerrada';
     if (alDia && periodoVencido) return 'Período vencido';
     if (alDia) return 'Al día';
     switch (status) {

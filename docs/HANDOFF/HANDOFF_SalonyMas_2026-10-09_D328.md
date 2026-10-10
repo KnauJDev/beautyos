@@ -47,7 +47,7 @@ como con D-323).
 | D-325 | **Los 4 estilistas de David hacen los 28 servicios** (la asesoría, solo David) | ✅ 28 servicios reservables en línea (eran 3) |
 | D-326 | **Precios "desde", por categoría**; a David, Color | ✅ Control 249 en 7/7, visto en su página |
 | D-327 | **Recuperar y cambiar la contraseña**, para todos los roles. Cierra **CO** | ✅ Probado de verdad. ⬜ Con la cuenta de dueño de la plataforma (verificación en dos pasos) |
-| D-328 | **Una sede que se cierra no se borra** (hallazgo **CQ**) | ⬜ Paso 9.65. ⬜ Su sí a no recuperar *Prueba Barbería Elite* |
+| D-328 | **Una sede que se cierra no se borra** (hallazgo **CQ**) | ✅ Sin recuperar *Prueba Barbería Elite* (su sí). ✅ 10-oct: migración aplicada, **control 250 en 8/8**, app escrita. ⬜ Probarlo con un negocio de prueba nuevo de dos sedes |
 
 **Respaldos del propietario de este bloque:** `Backup_2026-10-08_07-06-39`,
 `Backup_2026-10-08_14-38-32`, `Backup_2026-10-08_17-47-03`, `Backup_2026-10-09_11-00-44`,
@@ -155,8 +155,8 @@ como con D-323).
 
 ## 6. Lo que NO hay que hacer
 
-- **NO borrar un negocio para cerrar una sede** (D-328). Hasta el 9.65, una sede se para
-  desde *Sede: … → estado* en la ficha del Panel.
+- **NO borrar un negocio para cerrar una sede** (D-328): se usa *Cerrar sede*, en la ficha de
+  la sede en el Panel o en *Tus sedes* del salón. No se pierde nada.
 - **NO borrar la Peluquería Éxito Prueba.** Es el banco de pruebas y el **espejo de David**.
 - **NO probar cobros ni caja en Éxito mientras sea espejo.**
 - **NO cambiarle nada a David sin probarlo antes en el espejo**, o sin su sí si no hay
@@ -189,7 +189,8 @@ como con D-323).
 **Pedido por el propietario el 09-oct, "ya con la contraseña superada".** En orden:
 
 1. **Tu sí a no recuperar *Prueba Barbería Elite*** (D-328). Un minuto.
-2. 🔴 **Paso 9.65, cerrar una sede sin perder nada** (CQ, D-328). (1) Lectura viva de lo que
+2. 🟡 **Paso 9.65, cerrar una sede sin perder nada** (CQ, D-328). ✅ 10-oct: aplicado (control
+   250 en 8/8) y app escrita; ⬜ falta probarlo con un negocio de prueba nuevo de dos sedes. (1) Lectura viva de lo que
    hace hoy cada estado de la sede; (2) prototipo de *Cerrar sede* y *Volver a abrir*, con
    los estados en español y el aviso junto a *Borrar negocio de prueba*; (3) construir; (4)
    probarlo con **un negocio de prueba nuevo de dos sedes**.

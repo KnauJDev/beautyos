@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import '../models/branch_subscription.dart';
 import '../models/tenant_subscription_status.dart';
 import '../services/branch_subscriptions_service.dart';
+import '../services/cerrar_sede_service.dart';
 import '../services/epayco_checkout_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_dimens.dart';
 import 'app_states.dart';
+import 'cerrar_sede_dialogos.dart';
 
 /// Las sedes del negocio con su estado de pago (D-193, cierra la Etapa 3b).
 ///
@@ -15,11 +17,23 @@ import 'app_states.dart';
 /// pantalla, porque enseñarle a un dueño *"esta sede está pendiente"* sin un
 /// botón que la pueda pagar es frustración, no información.
 class SedesSuscripcionCard extends StatefulWidget {
-  const SedesSuscripcionCard({super.key, required this.subscription});
+  const SedesSuscripcionCard({
+    super.key,
+    required this.subscription,
+    this.puedeCerrar = false,
+    this.onSedesCambiaron,
+  });
 
   /// La suscripción del negocio. La necesita el checkout para saber a nombre de
   /// quién se paga; el monto lo calcula siempre el servidor.
   final TenantSubscriptionStatus? subscription;
+
+  /// D-328: el dueño puede cerrar una sede (no la principal) y volver a
+  /// abrirla. Cerrar no es borrar.
+  final bool puedeCerrar;
+
+  /// Avisa a la app que cambiaron las sedes, para que el selector se entere.
+  final VoidCallback? onSedesCambiaron;
 
   @override
   State<SedesSuscripcionCard> createState() => _SedesSuscripcionCardState();
@@ -41,6 +55,27 @@ class _SedesSuscripcionCardState extends State<SedesSuscripcionCard> {
     setState(() {
       _sedes = _service.getBranchSubscriptions();
     });
+  }
+
+  Future<void> _cerrarOAbrir(BranchSubscription sede) async {
+    const servicio = CerrarSedeService();
+    final hecho = sede.branchActive
+        ? await cerrarSedeConCuidado(
+            context,
+            servicio: servicio,
+            branchId: sede.branchId,
+            nombre: sede.branchName,
+          )
+        : await reabrirSede(
+            context,
+            servicio: servicio,
+            branchId: sede.branchId,
+            nombre: sede.branchName,
+          );
+    if (!hecho) return;
+    if (mounted) _recargar();
+    // Va al final: reconstruye la app desde la raíz.
+    widget.onSedesCambiaron?.call();
   }
 
   Future<void> _pagar(BranchSubscription sede) async {
@@ -148,16 +183,40 @@ class _SedesSuscripcionCardState extends State<SedesSuscripcionCard> {
                 );
               }
 
+              // D-328: las cerradas, abajo y aparte.
+              final abiertas = [for (final s in sedes) if (s.branchActive) s];
+              final cerradas = [for (final s in sedes) if (!s.branchActive) s];
+              Widget fila(BranchSubscription s) => _FilaSede(
+                sede: s,
+                onPagar: widget.subscription == null || !s.branchActive
+                    ? null
+                    : () => _pagar(s),
+                onCerrarOAbrir: widget.puedeCerrar && !s.isPrimary
+                    ? () => _cerrarOAbrir(s)
+                    : null,
+              );
               return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  for (var i = 0; i < sedes.length; i++) ...[
+                  for (var i = 0; i < abiertas.length; i++) ...[
                     if (i > 0) const Divider(height: AppSpacing.xl),
-                    _FilaSede(
-                      sede: sedes[i],
-                      onPagar: widget.subscription == null
-                          ? null
-                          : () => _pagar(sedes[i]),
+                    fila(abiertas[i]),
+                  ],
+                  if (cerradas.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.lg),
+                    const Text(
+                      'Sedes cerradas',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textSecondary,
+                      ),
                     ),
+                    const SizedBox(height: AppSpacing.sm),
+                    for (var i = 0; i < cerradas.length; i++) ...[
+                      if (i > 0) const Divider(height: AppSpacing.xl),
+                      fila(cerradas[i]),
+                    ],
                   ],
                 ],
               );
@@ -170,10 +229,13 @@ class _SedesSuscripcionCardState extends State<SedesSuscripcionCard> {
 }
 
 class _FilaSede extends StatelessWidget {
-  const _FilaSede({required this.sede, this.onPagar});
+  const _FilaSede({required this.sede, this.onPagar, this.onCerrarOAbrir});
 
   final BranchSubscription sede;
   final VoidCallback? onPagar;
+
+  /// D-328: *Cerrar sede* si está abierta, *Volver a abrir* si no.
+  final VoidCallback? onCerrarOAbrir;
 
   @override
   Widget build(BuildContext context) {
@@ -183,10 +245,15 @@ class _FilaSede extends StatelessWidget {
     final vencida = sede.alDia && sede.periodoVencido;
     // Suspendida también es rojo: desde D-261 no puede agendar citas nuevas.
     final enRojo = vencida || sede.status == 'suspended';
-    final color = sede.estaAlDia
+    final cerrada = !sede.branchActive;
+    final color = cerrada
+        ? AppColors.stateClosed
+        : sede.estaAlDia
         ? AppColors.success
         : (enRojo ? AppColors.danger : AppColors.warning);
-    final fondo = sede.estaAlDia
+    final fondo = cerrada
+        ? AppColors.stateClosedTint
+        : sede.estaAlDia
         ? AppColors.successTint
         : (enRojo ? AppColors.dangerTint : AppColors.warningTint);
 
@@ -294,11 +361,35 @@ class _FilaSede extends StatelessWidget {
             ),
           ),
         ],
+        if (onCerrarOAbrir != null) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: onCerrarOAbrir,
+              icon: Icon(
+                cerrada
+                    ? Icons.storefront_outlined
+                    : Icons.store_mall_directory_outlined,
+                size: 16,
+              ),
+              label: Text(cerrada ? 'Volver a abrir' : 'Cerrar sede'),
+              style: TextButton.styleFrom(
+                foregroundColor: cerrada ? AppColors.success : AppColors.danger,
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
 
   String _detalle(BranchSubscription sede) {
+    // D-328: una sede cerrada no se cobra.
+    if (!sede.branchActive) {
+      return 'No se ve, no recibe citas y no se cobra. Su historial se conserva.';
+    }
+
     final precio = '\$${_miles(sede.precioCop)} al mes';
 
     if (sede.alDia && sede.currentPeriodEnd != null) {

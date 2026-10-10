@@ -1208,7 +1208,14 @@ class _BeautyOSHomeState extends State<BeautyOSHome> {
           );
         }
 
-        final branch = selectedBranch ?? _initialBranch(branches);
+        // D-328: si la sede elegida ya no está (se cerró), se vuelve a la
+        // principal en vez de quedarse en una sede que no responde.
+        final elegida = selectedBranch;
+        final branch =
+            elegida != null &&
+                branches.any((b) => b.branchId == elegida.branchId)
+            ? elegida
+            : _initialBranch(branches);
         final modules = _modulesForProfile(
           profile,
           branch,

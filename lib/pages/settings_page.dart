@@ -516,7 +516,8 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
           const _PhotoPolicyCard(),
           const SizedBox(height: 24),
           const SectionTitle('Suscripción y Facturación'),
-          const _SubscriptionSettingsCard(),
+          // D-328: cerrar o reabrir una sede cambia el selector de sedes.
+          _SubscriptionSettingsCard(onSedesCambiaron: widget.onSedeCreada),
         ],
         const SizedBox(height: 24),
         const SectionTitle('Soporte'),
@@ -531,7 +532,10 @@ class _ConfiguracionPageState extends State<ConfiguracionPage> {
 
 /// Tarjeta de gestión de suscripción y pagos con ePayco (D-141).
 class _SubscriptionSettingsCard extends StatefulWidget {
-  const _SubscriptionSettingsCard();
+  const _SubscriptionSettingsCard({this.onSedesCambiaron});
+
+  /// D-328: lo mismo que `onSedeCreada`, para cerrar o reabrir una sede.
+  final VoidCallback? onSedesCambiaron;
 
   @override
   State<_SubscriptionSettingsCard> createState() =>
@@ -781,7 +785,13 @@ class _SubscriptionSettingsCardState extends State<_SubscriptionSettingsCard> {
                 // pantalla ya cargó, en vez de pedirla dos veces -- y porque es
                 // donde el dueño ya está mirando el dinero.
                 const SizedBox(height: 4),
-                SedesSuscripcionCard(subscription: sub),
+                SedesSuscripcionCard(
+                  subscription: sub,
+                  // Esta sección solo la ve el dueño (`isOwner`), y cerrar una
+                  // sede es del dueño (D-328).
+                  puedeCerrar: true,
+                  onSedesCambiaron: widget.onSedesCambiaron,
+                ),
               ],
             ),
           ),
