@@ -16,7 +16,7 @@ migraciones con sus controles en verde y a la primera (**246** 6/6, **247** 4/4,
 documentos (este HANDOFF y lo del 09-oct por la tarde); se suben con el siguiente cambio de
 la app, para no sacar la franja de *"versión nueva"* sin motivo (**CH**).
 
-**Hallazgos: 87 en total, 71 cerrados o decididos, 16 abiertos** (los cuenta
+**Hallazgos: 87 en total, 72 cerrados o decididos, 15 abiertos** (los cuenta
 `python scripts/verificar_documentos.py`).
 
 > El HANDOFF anterior está en `docs/_archivo/handoffs/HANDOFF_SalonyMas_2026-10-04_D317.md`
@@ -193,7 +193,8 @@ como con D-323).
 2. ✅ **Paso 9.65, cerrar una sede sin perder nada** (CQ, D-328). ✅ 10-oct: aplicado (control
    250 en 8/8), publicado y **probado de verdad** con *Prueba Dos Sedes*; **CQ cerrado**. De la
    prueba salió **CR** → paso **9.66** (D-329, reabrir como estaba): aplicado, control 251 en
-   6/6, publicado y probado; **CR cerrado**. Salió **CS** (🟢 la lista del Panel no se refresca): arreglado el 10-oct; ⬜ verlo en el Panel. (1) Lectura viva de lo que
+   6/6, publicado y probado; **CR cerrado**. Salió **CS** (🟢 la lista del Panel no se refresca): arreglado y visto en el Panel el
+   10-oct; **CS cerrado**. (1) Lectura viva de lo que
    hace hoy cada estado de la sede; (2) prototipo de *Cerrar sede* y *Volver a abrir*, con
    los estados en español y el aviso junto a *Borrar negocio de prueba*; (3) construir; (4)
    probarlo con **un negocio de prueba nuevo de dos sedes**.
