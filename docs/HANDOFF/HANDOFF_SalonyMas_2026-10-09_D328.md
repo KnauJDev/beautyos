@@ -16,7 +16,7 @@ migraciones con sus controles en verde y a la primera (**246** 6/6, **247** 4/4,
 documentos (este HANDOFF y lo del 09-oct por la tarde); se suben con el siguiente cambio de
 la app, para no sacar la franja de *"versión nueva"* sin motivo (**CH**).
 
-**Hallazgos: 86 en total, 71 cerrados o decididos, 15 abiertos** (los cuenta
+**Hallazgos: 87 en total, 71 cerrados o decididos, 16 abiertos** (los cuenta
 `python scripts/verificar_documentos.py`).
 
 > El HANDOFF anterior está en `docs/_archivo/handoffs/HANDOFF_SalonyMas_2026-10-04_D317.md`
@@ -48,7 +48,7 @@ como con D-323).
 | D-326 | **Precios "desde", por categoría**; a David, Color | ✅ Control 249 en 7/7, visto en su página |
 | D-327 | **Recuperar y cambiar la contraseña**, para todos los roles. Cierra **CO** | ✅ Probado de verdad. ⬜ Con la cuenta de dueño de la plataforma (verificación en dos pasos) |
 | D-328 | **Una sede que se cierra no se borra** (hallazgo **CQ**) | ✅ Sin recuperar *Prueba Barbería Elite* (su sí). ✅ 10-oct: migración aplicada, **control 250 en 8/8**, publicada y **probada de verdad** con *Prueba Dos Sedes*. Cierra **CQ** |
-| D-329 | **Una sede que se vuelve a abrir queda como estaba** (hallazgo **CR**, salió de la prueba de D-328) | ✅ Aplicada (respaldo `Backup_2026-10-10_14-42-41`), **control 251 en 6/6**. ⬜ Publicar y probarlo con Sede Norte |
+| D-329 | **Una sede que se vuelve a abrir queda como estaba** (hallazgo **CR**, salió de la prueba de D-328) | ✅ Aplicada (respaldo `Backup_2026-10-10_14-42-41`), **control 251 en 6/6**, publicada (`1b266ad`) y **probada de verdad** con Sede Norte: se reabrió desde el Panel y siguió *Sin pagar*. Cierra **CR** |
 
 **Respaldos del propietario de este bloque:** `Backup_2026-10-08_07-06-39`,
 `Backup_2026-10-08_14-38-32`, `Backup_2026-10-08_17-47-03`, `Backup_2026-10-09_11-00-44`,
@@ -193,7 +193,7 @@ como con D-323).
 2. ✅ **Paso 9.65, cerrar una sede sin perder nada** (CQ, D-328). ✅ 10-oct: aplicado (control
    250 en 8/8), publicado y **probado de verdad** con *Prueba Dos Sedes*; **CQ cerrado**. De la
    prueba salió **CR** → paso **9.66** (D-329, reabrir como estaba): aplicado, control 251 en
-   6/6; ⬜ publicar y probarlo con Sede Norte. (1) Lectura viva de lo que
+   6/6, publicado y probado; **CR cerrado**. Salió **CS** (🟢 la lista del Panel no se refresca). (1) Lectura viva de lo que
    hace hoy cada estado de la sede; (2) prototipo de *Cerrar sede* y *Volver a abrir*, con
    los estados en español y el aviso junto a *Borrar negocio de prueba*; (3) construir; (4)
    probarlo con **un negocio de prueba nuevo de dos sedes**.
